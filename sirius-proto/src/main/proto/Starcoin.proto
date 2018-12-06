@@ -1,0 +1,540 @@
+syntax = "proto3";
+import "google/protobuf/any.proto";
+import "google/protobuf/empty.proto";
+
+package org.starcoin.proto;
+
+enum ProtoMessageType {
+    MSG_UNKNOWN = 0;
+    MSG_VERSION = 1;
+    MSG_VERSION_ACK = 2;
+    MSG_PING = 3;
+    MSG_PONG = 4;
+    MSG_INVENTORY = 5;
+    MSG_BLOCK = 6;
+    MSG_TX = 7;
+    MSG_REJECT = 8;
+    MSG_NOT_FOUND = 9;
+    MSG_GETDATA = 10;
+    MSG_RPC_REQUEST = 11;
+    MSG_RPC_RESPONSE = 12;
+}
+
+message ProtoMessagePacket {
+    ProtoMessageType type = 1;
+    google.protobuf.Any playload = 2;
+}
+
+message ProtoNetAddress {
+    uint64 timestamp = 1;
+    uint64 services = 2;
+    bytes ip = 3; //16byte
+    uint32 port = 4;
+}
+
+message ProtoMsgVersion {
+    uint64 services = 1;
+    uint64 timestamp = 2;
+    ProtoNetAddress addrRecv = 3;
+    ProtoNetAddress addrFrom = 4;
+    uint64 nonce = 5;
+    string userAgent = 6;
+    int32 startHeight = 7;
+    bool relay = 8;
+}
+
+message ProtoMsgVersionAck {
+    uint64 nonce = 1; //newNonce from MsgVersion
+}
+
+message ProtoMsgPing {
+    uint64 nonce = 1;
+}
+
+message ProtoMsgPong {
+    uint64 nonce = 1; //newNonce from MsgPing
+}
+
+enum InventoryType {
+    INV_ERROR = 0;
+    INV_TX = 1;
+    INV_BLOCK = 2;
+}
+
+message ProtoChainHash {
+    bytes hash = 1;
+}
+
+message ProtoInventory {
+    uint32 InventoryType = 1;
+    ProtoChainHash hash = 2;
+}
+
+message ProtoMsgInventory {
+    repeated ProtoInventory inventory = 2;
+}
+
+message ProtoBlockHeader {
+    int32 version = 1;
+    ProtoChainHash prevBlock = 2;
+    ProtoChainHash merkleRoot = 3;
+    int64 ts = 4;
+    int64 bits = 5;
+    int64 nonce = 6;
+    uint32 txCount = 7;
+}
+
+message ProtoMsgHeaders {
+    repeated ProtoBlockHeader headers = 2;
+}
+
+message ProtoOutpoint {
+    ProtoChainHash hash = 1; //32 byte
+    uint32 index = 2;
+}
+
+message ProtoOutput {
+    ProtoCoin value = 1;
+    ProtoBlockAddress to = 2;
+}
+
+message ProtoCoinType {
+    bytes data = 1;
+}
+
+message ProtoCoin {
+    int64 value = 1;
+    ProtoCoinType type = 2;
+}
+
+message ProtoBlockAddress {
+    bytes address = 1;
+}
+
+message ProtoSignature {
+    bytes sign = 1;
+}
+
+message ProtoTransaction {
+    int32 version = 1;
+    uint32 txInCount = 2;
+    repeated ProtoOutpoint txInputs = 3;
+    repeated ProtoOutput txOutputs = 4;
+    ProtoSignature signature = 5;
+}
+
+message ProtoBlock {
+    ProtoBlockHeader header = 1;
+    repeated ProtoTransaction transaction = 2;
+}
+
+message ProtoMsgRawBlock {
+    bytes header = 1;
+    bytes transactions = 2;
+}
+
+message ProtoMsgRawTransaction {
+    bytes rawData = 1;
+}
+
+message ProtoUTXO {
+    ProtoCoin value = 1;
+    ProtoChainHash hash = 2;
+    uint32 index = 3;
+    bool coinbase = 4;
+    uint32 height = 5;
+    ProtoBlockAddress address = 6;
+}
+
+enum ProtoRejectCode {
+    REJECT_OTHER = 0;
+    REJECT_MALFORMED = 1;
+    REJECT_INVALID = 2;
+    REJECT_DUPLICATE = 3;
+    REJECT_OBSOLETE = 4;
+}
+
+message ProtoMsgReject {
+    ProtoMessageType rejectMsgType = 1;
+    ProtoRejectCode code = 2;
+    string reason = 3;
+    bytes data = 4;
+}
+
+//just for test
+message ProtoRawBytes {
+    bytes rawBytes = 1;
+}
+
+message ProtoMsgRpcRequest {
+    string id = 1;
+    string service = 2;
+    string method = 3;
+    bytes argument = 4;
+}
+
+message ProtoMsgRpcResponse {
+    string id = 1;
+    bool error = 2;
+    bytes data = 3;
+}
+
+message GetBlocksArg {
+    bytes startHash = 1;
+    bytes endHash = 2;
+}
+
+service NodeService {
+    rpc ping (ProtoMsgPing) returns (ProtoMsgPong);
+}
+
+service BlockService {
+    rpc getBlocks (GetBlocksArg) returns (ProtoMsgInventory);
+}
+
+message GetUTXORequest {
+    ProtoBlockAddress address = 1;
+}
+
+message GetUTXOResponse {
+    repeated ProtoUTXO utxos = 1;
+}
+
+
+service UTXOService {
+    rpc getUTXO (GetUTXORequest) returns (GetUTXOResponse);
+}
+
+message SubmitRawTransactionResponse {
+    ProtoChainHash hash = 1;
+}
+
+service TransactionService {
+    rpc submitRawTransaction (ProtoMsgRawTransaction) returns (SubmitRawTransactionResponse);
+}
+
+message SuccResponse {
+    bool succ = 1;
+}
+
+message DepositRequest {
+    ProtoBlockAddress address = 1;
+    uint64 amount = 2;
+}
+
+message ProtoOffchainTransaction {
+    uint32 eon = 1;
+    ProtoBlockAddress from = 2;
+    ProtoBlockAddress to = 3;
+    uint64 amount = 4;
+    uint64 timestamp = 5;
+    ProtoSignature sign = 6;
+}
+
+message ProtoAccountInfo {
+    ProtoChainHash address = 1;
+    uint64 allotment = 2;
+    ProtoUpdate update = 3;
+}
+
+message ProtoNodeInfo {
+    ProtoChainHash left = 1;
+    uint64 offset = 2;
+    ProtoChainHash right = 3;
+}
+
+message ProtoAugmentedMerkleTreeNode {
+    uint64 offset = 1;
+    ProtoNodeInfo node = 2;
+    ProtoAccountInfo account = 3;
+    uint64 allotment = 4;
+}
+
+message InitiateWithdrawalRequest {
+    ProtoBlockAddress address = 1;
+    ProtoAugmentedMerklePath path = 2;
+    uint64 amount = 3;
+}
+
+enum ProtoWithdrawalStatusType {
+    WITHDRAWAL_STATUS_INIT = 0;
+    WITHDRAWAL_STATUS_CANCEL = 1;
+    WITHDRAWAL_STATUS_PASSED = 2;
+    WITHDRAWAL_STATUS_CONFIRMED = 3;
+}
+
+message ProtoWithdrawalStatus {
+    ProtoWithdrawalStatusType type = 1;
+    InitiateWithdrawalRequest withdrawal = 2;
+}
+
+enum ProtoMerklePathDirection {
+    DIRECTION_UNKNOWN = 0;
+    DIRECTION_LEFT = 1;
+    DIRECTION_RIGTH = 2;
+}
+
+message ProtoAugmentedMerklePathNode {
+    ProtoAugmentedMerkleTreeNode node = 1;
+    ProtoMerklePathDirection direction = 2;
+}
+
+message ProtoAugmentedMerklePath {
+    uint32 eon = 1;
+    repeated ProtoAugmentedMerklePathNode nodes = 2;
+}
+
+//Update
+message ProtoUpdate {
+    ProtoChainHash root = 1;
+    uint64 sendAmount = 2;
+    uint64 receiveAmount = 3;
+    uint64 version = 4;
+    ProtoSignature sign = 5;
+    ProtoSignature hubSign = 6;
+    uint32 eon = 7;
+}
+
+message ProtoParticipant {
+    bytes publicKey = 1;
+}
+
+message ProtoParticipantGang {
+    ProtoParticipant participant = 1;
+    bytes privateKey = 2;
+}
+
+message CancelWithdrawalRequest {
+    ProtoParticipant participant = 1;
+    ProtoUpdate update = 2;
+    ProtoAugmentedMerklePath path = 3;
+}
+
+message ProtoBalanceUpdateChallenge {
+    ProtoBalanceUpdateProof proof = 1;
+    bytes publicKey = 2;
+}
+
+message ProtoBalanceUpdateProof {
+    ProtoAugmentedMerklePath path = 1;
+    ProtoUpdate update = 2;
+}
+
+message CloseBalanceUpdateChallengeRequest {
+    ProtoBalanceUpdateProof proof = 1;
+}
+
+message RegisterParticipantRequest {
+    ProtoParticipant participant = 1;
+    ProtoUpdate update = 2;
+}
+
+message QueryHubCommitRequest {
+    uint32 eon = 1;
+}
+
+message ProtoHubRoot {
+    ProtoAugmentedMerkleTreeNode root = 1;
+    uint32 eon = 2;
+}
+
+message CreateHubRequest {
+    //hub address
+    ProtoBlockAddress address = 1;
+    bytes publicKey = 2;
+}
+
+message ProtoHubInfo {
+    bool ready = 1;
+    uint32 eon = 2;
+    ProtoAugmentedMerkleTreeNode root = 3;
+    bytes publicKey = 4;
+    uint32 blocksPerEon = 5;
+}
+
+message ProtoBlockInfo {
+    uint32 height = 1;
+    repeated ProtoChainTransaction transactions = 2;
+}
+
+message ProtoReceipt {
+    bool success = 1;
+    string error = 2;
+    bytes data = 3;
+}
+
+message ProtoChainTransaction {
+    ProtoBlockAddress from = 1;
+    ProtoBlockAddress to = 2;
+    uint64 amount = 3;
+    uint64 timestamp = 4;
+    string action = 5;
+    bytes arguments = 6;
+    ProtoReceipt receipt = 7;
+    bytes publicKey = 8;
+    ProtoSignature sign = 9;
+}
+
+message ProtoBlockListRequest {
+    ProtoBlockAddress from = 1;
+    ProtoBlockAddress to = 2;
+}
+
+message ProtoMerkleTreeNode {
+    ProtoChainHash hash = 1;
+    google.protobuf.Any data = 2;
+}
+
+message ProtoMerklePathNode {
+    ProtoMerkleTreeNode node = 1;
+    ProtoMerklePathDirection direction = 2;
+}
+
+message ProtoMerklePath {
+    repeated ProtoMerklePathNode nodes = 1;
+}
+
+message OpenTransferDeliveryChallengeRequest {
+    ProtoUpdate update = 1;
+    ProtoOffchainTransaction transaction = 2;
+    ProtoMerklePath path = 3;
+}
+
+message CloseTransferDeliveryChallengeRequest {
+    ProtoAugmentedMerklePath balancePath = 1;
+    ProtoUpdate update = 2;
+    ProtoMerklePath transPath = 3;
+    bytes toUserPublicKey = 4;
+}
+
+message RecoverFundsRequest {
+    ProtoAugmentedMerklePath path = 1;
+    ProtoBlockAddress address = 2;
+}
+
+message GetBlocksResponse {
+    repeated ProtoBlockInfo blocks = 1;
+}
+
+message GetBlockResponse {
+    ProtoBlockInfo block = 1;
+}
+
+enum Order {
+    ASC = 0;
+    DESC = 1;
+}
+
+message GetBlocksRequest {
+    uint32 height = 1;
+    uint32 count = 2;
+    Order order = 3;
+}
+
+message SyncTransactionsRequest {
+    uint32 height = 1;
+    ProtoBlockAddress addr = 2;
+}
+
+message SyncTransactionsResponse {
+    uint32 height = 1;
+    repeated ProtoChainTransaction transactions = 2;
+}
+
+message QueryBalanceUpdateChallengesRequest {
+    ProtoBlockAddress addr = 1;
+}
+
+message QueryBalanceUpdateChallengesResponse {
+    repeated BalanceUpdateChallengeStatus challenges = 1;
+}
+
+enum ChallengeStatus {
+    OPEN = 0;
+    CLOSE = 1;
+}
+
+message BalanceUpdateChallengeStatus {
+    ProtoBalanceUpdateChallenge challenge = 1;
+    ChallengeStatus status = 2;
+}
+
+message ProtoHubAccount {
+    ProtoBlockAddress address = 1;
+    ProtoUpdate update = 2;
+    uint64 allotment = 3;
+    uint64 deposit = 4;
+    uint64 withdraw = 5;
+    repeated ProtoOffchainTransaction transactions = 6;
+    bytes publicKey = 7;
+}
+
+message ChainBalanceResponse {
+    uint64 amount = 1;
+}
+
+message GetBlockRequest {
+    uint32 height = 1;
+}
+
+message QueryWithdrawalStatusRequest {
+    uint32 eon = 1;
+    ProtoBlockAddress addr = 2;
+}
+
+message ProtoIOU {
+    ProtoOffchainTransaction transaction = 1;
+    ProtoUpdate update = 2;
+}
+
+enum ProtoHubEventType {
+    HUB_EVENT_NEW_HUB_ROOT = 0;
+    HUB_EVENT_NEW_DEPOSIT = 1;
+    HUB_EVENT_WITHDRAWAL = 2;
+    HUB_EVENT_NEW_TX = 3;
+    HUB_EVENT_NEW_UPDATE = 4;
+}
+
+message ProtoHubEvent {
+    ProtoHubEventType type = 1;
+    ProtoBlockAddress address = 2;
+    google.protobuf.Any payload = 3;
+}
+
+message BlockAddressAndEon {
+    ProtoBlockAddress address = 1;
+    int32 eon = 2;
+}
+
+enum ProtoHubMaliciousFlag {
+    PROTO_STEAL_DEPOSIT = 0;
+    PROTO_STEAL_WITHDRAWAL = 1;
+    PROTO_STEAL_TRANSACTION = 2;
+    PROTO_STEAL_TRANSACTION_IOU = 3;
+}
+
+message ProtoHubMaliciousFlags {
+    repeated ProtoHubMaliciousFlag flags = 1;
+}
+
+service HubService {
+    rpc registerParticipant (RegisterParticipantRequest) returns (ProtoUpdate);
+    rpc sendNewTransfer (ProtoIOU) returns (SuccResponse);
+    rpc queryNewTransfer (ProtoBlockAddress) returns (ProtoOffchainTransaction);
+    rpc receiveNewTransfer (ProtoIOU) returns (SuccResponse);
+    rpc querySignedUpdate (ProtoBlockAddress) returns (ProtoUpdate);
+    rpc querySignedUpdateWithEon (BlockAddressAndEon) returns (ProtoUpdate);
+    rpc getProof (ProtoBlockAddress) returns (ProtoAugmentedMerklePath);
+    rpc getProofWithEon (BlockAddressAndEon) returns (ProtoAugmentedMerklePath);
+    rpc getHubInfo (google.protobuf.Empty) returns (ProtoHubInfo);
+    rpc watch (ProtoBlockAddress) returns (stream ProtoHubEvent);
+    rpc watchHubRoot (google.protobuf.Empty) returns (stream ProtoHubRoot);
+    rpc getHubAccount (ProtoBlockAddress) returns (ProtoHubAccount);
+    //just for mock test.
+    rpc deposit (DepositRequest) returns (SuccResponse);
+    //return flags merge result.
+    rpc setMaliciousFlags (ProtoHubMaliciousFlags) returns (ProtoHubMaliciousFlags);
+    rpc getMaliciousFlags (google.protobuf.Empty) returns (ProtoHubMaliciousFlags);
+    //return previous Flags
+    rpc resetMaliciousFlags (google.protobuf.Empty) returns (ProtoHubMaliciousFlags);
+}
