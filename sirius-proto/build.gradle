@@ -1,0 +1,42 @@
+apply plugin: 'com.google.protobuf'
+
+buildscript {
+    dependencies {
+        classpath 'com.google.protobuf:protobuf-gradle-plugin:0.8.5'
+    }
+}
+
+sourceSets {
+    main {
+        java {
+            srcDirs 'build/generated/source/proto/main/grpc'
+            srcDirs 'build/generated/source/proto/main/java'
+        }
+    }
+}
+
+
+protobuf {
+    protoc {
+        artifact = "com.google.protobuf:protoc:${protoc_version}"
+    }
+    plugins {
+        grpc {
+            artifact = "io.grpc:protoc-gen-grpc-java:${grpc_version}"
+        }
+    }
+    generateProtoTasks {
+        all()*.plugins {
+            grpc {}
+        }
+    }
+}
+
+dependencies {
+    compile "com.google.protobuf:protobuf-java:${protobuf_version}"
+    compile "io.grpc:grpc-alts:${grpc_version}"
+    compile "io.grpc:grpc-netty:${grpc_version}"
+    compile "io.grpc:grpc-protobuf:${grpc_version}"
+    compile "io.grpc:grpc-stub:${grpc_version}"
+}
+

@@ -1,2 +1,5 @@
 rootProject.name = 'sirius'
+include 'sirius-proto'
+include 'sirius-core'
+include 'sirius-hub'
 

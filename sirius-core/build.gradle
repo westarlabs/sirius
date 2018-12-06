@@ -1,0 +1,7 @@
+dependencies{
+    compile project(":sirius-proto")
+
+    compile 'org.bouncycastle:bcprov-jdk15on:1.59'
+    compile "org.apache.commons:commons-lang3:3.7"
+    compile "com.google.guava:guava:${guava_version}"
+}
