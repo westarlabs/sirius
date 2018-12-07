@@ -4,3 +4,5 @@ gradle
 *.iml
 *.class
 target/
+build
+out

@@ -14,9 +14,6 @@ import java.security.PublicKey
 import java.util.Arrays
 import java.util.Objects
 
-/**
- * Created by dqm on 2018/9/29.
- */
 class ChainTransaction : ProtobufCodec<Starcoin.ProtoChainTransaction>, Hashable, Mockable {
     var from: BlockAddress? = null
     var to: BlockAddress? = null

@@ -39,7 +39,7 @@ class Update : ProtobufCodec<Starcoin.ProtoUpdate>, Mockable {
         this.root = null
     }
 
-    constructor(eon: Int, version: Long, sendAmount: Long, receiveAmount: Long, root: Hash) {
+    constructor(eon: Int, version: Long, sendAmount: Long, receiveAmount: Long, root: Hash?) {
         this.eon = eon
         this.version = version
         this.sendAmount = sendAmount

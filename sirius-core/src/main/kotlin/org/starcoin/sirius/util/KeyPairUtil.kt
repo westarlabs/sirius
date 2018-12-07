@@ -18,7 +18,8 @@ import java.security.spec.PKCS8EncodedKeySpec
 object KeyPairUtil {
 
     //just for junit test
-    val TEST_KEYPAIR = generateKeyPair()
+    val TEST_KEYPAIR: KeyPair
+        get() = generateKeyPair()
 
     init {
         Security.addProvider(BouncyCastleProvider())
@@ -65,7 +66,7 @@ object KeyPairUtil {
         return false
     }
 
-    fun recoverPublicKey(encoded: ByteArray): PublicKey? {
+    fun recoverPublicKey(encoded: ByteArray): PublicKey {
         try {
             val params = ECNamedCurveTable.getParameterSpec("secp256k1")
             val fact = KeyFactory.getInstance("ECDSA", "BC")
@@ -76,25 +77,20 @@ object KeyPairUtil {
             val keySpec = java.security.spec.ECPublicKeySpec(point, params2)
             return fact.generatePublic(keySpec) as ECPublicKey
         } catch (ex: Exception) {
-            ex.printStackTrace()
+            throw java.lang.RuntimeException(ex)
         }
-
-        return null
     }
 
-    fun recoverPrivateKey(bytes: ByteArray): PrivateKey? {
+    fun recoverPrivateKey(bytes: ByteArray): PrivateKey {
         val keyGen: KeyFactory
         try {
             keyGen = KeyFactory.getInstance("ECDSA")
             return keyGen.generatePrivate(PKCS8EncodedKeySpec(bytes))
         } catch (e: NoSuchAlgorithmException) {
-            // TODO Auto-generated catch block
-            e.printStackTrace()
+            throw java.lang.RuntimeException(e)
         } catch (e: InvalidKeySpecException) {
-            e.printStackTrace()
+            throw java.lang.RuntimeException(e)
         }
-
-        return null
     }
 
     fun encodePrivateKey(privateKey: PrivateKey): ByteArray {
@@ -168,7 +164,7 @@ object KeyPairUtil {
      * @return returns the privatekey which is read from the file;
      * @throws Exception
      */
-    fun loadPemPrivateKey(file: File): PrivateKey? {
+    fun loadPemPrivateKey(file: File): PrivateKey {
         try {
             val keyBytes = FileUtil.readFile(file)
             val rdr = StringReader(String(keyBytes))
@@ -183,7 +179,7 @@ object KeyPairUtil {
 
     }
 
-    fun loadPemPublicKey(file: File): PublicKey? {
+    fun loadPemPublicKey(file: File): PublicKey {
         try {
             val keyBytes = FileUtil.readFile(file)
             val rdr = StringReader(String(keyBytes))

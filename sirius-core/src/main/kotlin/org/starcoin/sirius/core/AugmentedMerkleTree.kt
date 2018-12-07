@@ -278,7 +278,7 @@ class AugmentedMerkleTree {
         private fun buildTreeNodes(
             accountInformationList: List<AccountInformation>
         ): List<AugmentedMerkleTreeNode> {
-            val prev = arrayOf<AugmentedMerkleTreeNode>()
+            val prev = arrayOfNulls<AugmentedMerkleTreeNode>(1)
             return accountInformationList
                 .stream()
                 .map { accountInformation ->
