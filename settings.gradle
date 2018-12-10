@@ -2,4 +2,9 @@ rootProject.name = 'sirius'
 include 'sirius-proto'
 include 'sirius-core'
 include 'sirius-hub'
+<<<<<<< HEAD
 include 'sirius-contract'
+=======
+include 'sirius-wallet'
+
+>>>>>>> rebuild module
