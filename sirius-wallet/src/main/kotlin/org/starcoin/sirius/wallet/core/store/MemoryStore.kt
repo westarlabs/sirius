@@ -6,11 +6,11 @@ class MemoryStore<T>(private val clazz: Class<T>) : Store<T> {
 
     private var bytes: ByteArray? = null
 
-    fun save(t: T) {
-        bytes = JSON.toJSONString(t).getBytes()
+    override fun save(t: T) {
+        bytes = JSON.toJSONString(t).toByteArray()
     }
 
-    fun load(): T? {
+    override fun load(): T? {
         if (bytes != null) {
             println(String(bytes!!))
             return JSON.parseObject(bytes, clazz)

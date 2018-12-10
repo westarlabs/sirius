@@ -12,7 +12,6 @@ buildscript {
     repositories {
         jcenter()
         maven { url "https://dl.bintray.com/kotlin/kotlin-eap" }
-        maven { url "https://dl.bintray.com/ethereum/maven/" }
     }
 
     dependencies {
@@ -49,8 +48,10 @@ subprojects {
     sourceCompatibility = 1.8
 
     repositories {
+        mavenCentral()
         jcenter()
         maven { url "https://dl.bintray.com/kotlin/kotlin-eap" }
+        maven { url "https://dl.bintray.com/ethereum/maven/" }
     }
 
     dependencies {
@@ -58,7 +59,8 @@ subprojects {
         compile 'org.jetbrains.kotlinx:kotlinx-coroutines-core:1.0.1'
         testCompile("junit:junit:4.12")
         testCompile("org.mockito:mockito-core:2.10.0")
-        testCompile("org.ethereum:ethereumj-core:1.9.+")
+        testCompile group: 'org.ethereum', name: 'solcJ-all', version: '0.4.25'
+        testCompile group: 'org.ethereum', name: 'ethereumj-core', version: '1.9.1-RELEASE'
     }
 
     compileKotlin {

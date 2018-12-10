@@ -4,5 +4,5 @@ interface Store<T> {
 
     fun save(t: T)
 
-    fun load(): T
+    fun load(): T?
 }
