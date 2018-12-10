@@ -217,7 +217,7 @@ class MerkleTree<D : MerkleTreeData<*>> : Hashable {
         }
     }
 
-    fun getMembershipProof(nodeHash: Hash): MerklePath<*>? {
+    fun getMembershipProof(nodeHash: Hash): MerklePath<D>? {
         val nodeOptional = this.findTreeNode(nodeHash)
         if (!nodeOptional.isPresent) {
             return null

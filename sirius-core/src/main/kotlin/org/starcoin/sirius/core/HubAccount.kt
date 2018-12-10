@@ -109,7 +109,7 @@ class HubAccount : ProtobufCodec<ProtoHubAccount> {
 
     fun toNextEon(eon: Int): HubAccount {
         val allotment = this.calculateNewAllotment()
-        return HubAccount(address!!, allotment, Update(eon, 0, 0, 0, null!!), publicKey!!)
+        return HubAccount(address!!, allotment, Update(eon, 0, 0, 0, null), publicKey!!)
     }
 
     override fun marshalProto(): ProtoHubAccount {
