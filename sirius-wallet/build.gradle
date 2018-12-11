@@ -4,6 +4,7 @@ dependencies{
     compile "info.picocli:picocli:3.6.1"
     compile group: 'jline', name: 'jline', version: '2.14.5'
     compile group: 'com.alibaba', name: 'fastjson', version: '1.2.35'
+    compile ('org.web3j:core:4.0.0')
 
     testCompile group: 'junit', name: 'junit', version: '4.12'
 }
