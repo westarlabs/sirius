@@ -4,6 +4,7 @@ import com.google.common.base.Preconditions
 import com.google.common.base.Preconditions.checkArgument
 import com.google.common.io.ByteStreams
 import com.google.common.primitives.Ints
+import com.google.protobuf.ByteString
 import com.google.protobuf.UnsafeByteOperations
 import org.apache.commons.lang3.RandomUtils
 import org.starcoin.proto.Starcoin
@@ -65,6 +66,9 @@ class Hash private constructor(private val bytes: ByteBuffer) : Serializable, Co
     }
 
     fun getBytes() = bytes.asReadOnlyBuffer()
+    fun toBytes() = this.getBytes()
+
+    fun toByteString() = ByteString.copyFrom(this.getBytes())
 
     override fun compareTo(other: Hash): Int {
         for (i in LENGTH - 1 downTo 0) {
@@ -86,12 +90,6 @@ class Hash private constructor(private val bytes: ByteBuffer) : Serializable, Co
     @Throws(IOException::class)
     fun writeTo(out: OutputStream) {
         out.write(this.bytes.array())
-    }
-
-    fun toProto(): Starcoin.ProtoChainHash {
-        return Starcoin.ProtoChainHash.newBuilder()
-            .setHash(UnsafeByteOperations.unsafeWrap(this.bytes.asReadOnlyBuffer()))
-            .build()
     }
 
     override fun hash(): Hash {
@@ -119,12 +117,6 @@ class Hash private constructor(private val bytes: ByteBuffer) : Serializable, Co
             return Hash(bytes)
         }
 
-        fun wrap(protoChainHash: Starcoin.ProtoChainHash?): Hash? {
-            return if (protoChainHash == null) {
-                null
-            } else wrap(protoChainHash.hash.toByteArray())
-        }
-
         /**
          * Creates a new instance that wraps the given hash value (represented as a hex string).
          *
@@ -135,6 +127,10 @@ class Hash private constructor(private val bytes: ByteBuffer) : Serializable, Co
          */
         fun wrap(hexString: String): Hash {
             return wrap(Utils.HEX.decode(hexString))
+        }
+
+        fun wrap(byteString: ByteString): Hash {
+            return wrap(byteString.toByteArray())
         }
 
         /**

@@ -1,6 +1,8 @@
 package org.starcoin.sirius.core
 
 
+import kotlinx.serialization.Optional
+import kotlinx.serialization.Serializable
 import org.apache.commons.lang3.RandomUtils
 import org.starcoin.proto.Starcoin.ProtoOffchainTransaction
 import org.starcoin.sirius.util.KeyPairUtil
@@ -9,6 +11,7 @@ import java.security.PrivateKey
 import java.security.PublicKey
 import java.util.Objects
 
+@Serializable
 class OffchainTransaction : Hashable, ProtobufCodec<ProtoOffchainTransaction>,
     MerkleTree.MerkleTreeData<ProtoOffchainTransaction>, Mockable {
 
@@ -18,6 +21,7 @@ class OffchainTransaction : Hashable, ProtobufCodec<ProtoOffchainTransaction>,
     var timestamp: Long = 0
     var amount: Long = 0
 
+    @Optional
     var sign: Signature? = null
 
     constructor() {
@@ -52,8 +56,8 @@ class OffchainTransaction : Hashable, ProtobufCodec<ProtoOffchainTransaction>,
     private fun marshalSignData(): ProtoOffchainTransaction.Builder {
         return ProtoOffchainTransaction.newBuilder()
             .setEon(this.eon)
-            .setFrom(this.from!!.toProto())
-            .setTo(this.to!!.toProto())
+            .setFrom(this.from!!.toByteString())
+            .setTo(this.to!!.toByteString())
             .setAmount(this.amount)
             .setTimestamp(this.timestamp)
     }
@@ -61,7 +65,7 @@ class OffchainTransaction : Hashable, ProtobufCodec<ProtoOffchainTransaction>,
     override fun marshalProto(): ProtoOffchainTransaction {
         val builder = this.marshalSignData()
         if (this.sign != null) {
-            builder.sign = this.sign!!.toProto()
+            builder.sign = this.sign!!.toByteString()
         }
         return builder.build()
     }
@@ -72,7 +76,7 @@ class OffchainTransaction : Hashable, ProtobufCodec<ProtoOffchainTransaction>,
         this.to = BlockAddress.valueOf(proto.to)
         this.amount = proto.amount
         this.timestamp = proto.timestamp
-        this.sign = if (proto.hasSign()) Signature.wrap(proto.sign) else null
+        this.sign = if (proto.sign.isEmpty) null else Signature.wrap(proto.sign)
     }
 
     override fun equals(o: Any?): Boolean {

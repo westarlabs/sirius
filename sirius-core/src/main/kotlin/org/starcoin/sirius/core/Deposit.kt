@@ -4,33 +4,22 @@ import org.starcoin.proto.Starcoin.DepositRequest
 
 import java.util.Objects
 
-class Deposit : ProtobufCodec<DepositRequest> {
+class Deposit(address: BlockAddress, amount: Long) : ProtobufCodec<DepositRequest> {
 
-    var address: BlockAddress? = null
+    var address: BlockAddress = address
         private set
-    var amount: Long = 0
+    var amount: Long = amount
         private set
-
-    constructor() {}
-
-    constructor(proto: DepositRequest) {
-        this.unmarshalProto(proto)
-    }
-
-    constructor(address: BlockAddress, amount: Long) {
-        this.address = address
-        this.amount = amount
-    }
 
     override fun marshalProto(): DepositRequest {
         val builder = DepositRequest.newBuilder()
-        if (this.address != null) builder.address = this.address!!.toProto()
+        builder.address = this.address.toByteString()
         builder.amount = this.amount
         return builder.build()
     }
 
     override fun unmarshalProto(proto: DepositRequest) {
-        this.address = if (proto.hasAddress()) BlockAddress.valueOf(proto.address) else null
+        this.address = BlockAddress.valueOf(proto.address)
         this.amount = proto.amount
     }
 

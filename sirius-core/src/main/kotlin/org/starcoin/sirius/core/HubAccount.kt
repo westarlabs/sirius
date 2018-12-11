@@ -114,7 +114,7 @@ class HubAccount : ProtobufCodec<ProtoHubAccount> {
 
     override fun marshalProto(): ProtoHubAccount {
         return ProtoHubAccount.newBuilder()
-            .setAddress(this.address!!.toProto())
+            .setAddress(this.address!!.toByteString())
             .setUpdate(this.update!!.toProto())
             .setAllotment(this.allotment)
             .setDeposit(this.deposit)

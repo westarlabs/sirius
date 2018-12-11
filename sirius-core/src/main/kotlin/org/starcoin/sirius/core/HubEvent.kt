@@ -37,7 +37,7 @@ class HubEvent<D : ProtobufCodec<*>> : ProtobufCodec<Starcoin.ProtoHubEvent> {
     override fun marshalProto(): Starcoin.ProtoHubEvent {
         val builder = Starcoin.ProtoHubEvent.newBuilder().setType(this.type!!.toProto())
         if (this.address != null) {
-            builder.address = address!!.toProto()
+            builder.address = address!!.toByteString()
         }
         if (this.payload != null) {
             builder.payload = Any.pack<GeneratedMessageV3>(payload!!.toProto())
@@ -47,7 +47,7 @@ class HubEvent<D : ProtobufCodec<*>> : ProtobufCodec<Starcoin.ProtoHubEvent> {
 
     override fun unmarshalProto(proto: Starcoin.ProtoHubEvent) {
         this.type = HubEventType.valueOf(proto.typeValue)
-        this.address = if (proto.hasAddress()) BlockAddress.valueOf(proto.address) else null
+        this.address = if (proto.address.isEmpty) null else BlockAddress.valueOf(proto.address)
         this.payload = if (proto.hasPayload()) this.type!!.parsePayload(proto.payload) else null
     }
 

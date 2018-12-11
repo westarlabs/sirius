@@ -73,7 +73,7 @@ class Update : ProtobufCodec<Starcoin.ProtoUpdate>, Mockable {
             .setSendAmount(this.sendAmount)
             .setReceiveAmount(this.receiveAmount)
         if (this.root != null) {
-            builder.root = this.root!!.toProto()
+            builder.root = this.root!!.toByteString()
         }
         return builder
     }
@@ -81,10 +81,10 @@ class Update : ProtobufCodec<Starcoin.ProtoUpdate>, Mockable {
     override fun marshalProto(): Starcoin.ProtoUpdate {
         val builder = this.marshalSginData()
         if (this.sign != null) {
-            builder.sign = this.sign!!.toProto()
+            builder.sign = this.sign!!.toByteString()
         }
         if (this.hubSign != null) {
-            builder.hubSign = this.hubSign!!.toProto()
+            builder.hubSign = this.hubSign!!.toByteString()
         }
         return builder.build()
     }
@@ -94,9 +94,9 @@ class Update : ProtobufCodec<Starcoin.ProtoUpdate>, Mockable {
         this.version = proto.version
         this.sendAmount = proto.sendAmount
         this.receiveAmount = proto.receiveAmount
-        this.root = if (proto.hasRoot()) Hash.wrap(proto.root) else null
-        this.sign = if (proto.hasSign()) Signature.wrap(proto.sign) else null
-        this.hubSign = if (proto.hasHubSign()) Signature.wrap(proto.hubSign) else null
+        this.root = if (proto.root.isEmpty) null else Hash.wrap(proto.root)
+        this.sign = if (proto.sign.isEmpty) null else Signature.wrap(proto.sign)
+        this.hubSign = if (proto.hubSign.isEmpty) null else Signature.wrap(proto.hubSign)
     }
 
     override fun equals(o: Any?): Boolean {

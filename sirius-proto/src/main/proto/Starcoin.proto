@@ -4,49 +4,6 @@ import "google/protobuf/empty.proto";
 
 package org.starcoin.proto;
 
-enum ProtoMessageType {
-    MSG_UNKNOWN = 0;
-    MSG_VERSION = 1;
-    MSG_VERSION_ACK = 2;
-    MSG_PING = 3;
-    MSG_PONG = 4;
-    MSG_INVENTORY = 5;
-    MSG_BLOCK = 6;
-    MSG_TX = 7;
-    MSG_REJECT = 8;
-    MSG_NOT_FOUND = 9;
-    MSG_GETDATA = 10;
-    MSG_RPC_REQUEST = 11;
-    MSG_RPC_RESPONSE = 12;
-}
-
-message ProtoMessagePacket {
-    ProtoMessageType type = 1;
-    google.protobuf.Any playload = 2;
-}
-
-message ProtoNetAddress {
-    uint64 timestamp = 1;
-    uint64 services = 2;
-    bytes ip = 3; //16byte
-    uint32 port = 4;
-}
-
-message ProtoMsgVersion {
-    uint64 services = 1;
-    uint64 timestamp = 2;
-    ProtoNetAddress addrRecv = 3;
-    ProtoNetAddress addrFrom = 4;
-    uint64 nonce = 5;
-    string userAgent = 6;
-    int32 startHeight = 7;
-    bool relay = 8;
-}
-
-message ProtoMsgVersionAck {
-    uint64 nonce = 1; //newNonce from MsgVersion
-}
-
 message ProtoMsgPing {
     uint64 nonce = 1;
 }
@@ -55,192 +12,34 @@ message ProtoMsgPong {
     uint64 nonce = 1; //newNonce from MsgPing
 }
 
-enum InventoryType {
-    INV_ERROR = 0;
-    INV_TX = 1;
-    INV_BLOCK = 2;
-}
-
-message ProtoChainHash {
-    bytes hash = 1;
-}
-
-message ProtoInventory {
-    uint32 InventoryType = 1;
-    ProtoChainHash hash = 2;
-}
-
-message ProtoMsgInventory {
-    repeated ProtoInventory inventory = 2;
-}
-
-message ProtoBlockHeader {
-    int32 version = 1;
-    ProtoChainHash prevBlock = 2;
-    ProtoChainHash merkleRoot = 3;
-    int64 ts = 4;
-    int64 bits = 5;
-    int64 nonce = 6;
-    uint32 txCount = 7;
-}
-
-message ProtoMsgHeaders {
-    repeated ProtoBlockHeader headers = 2;
-}
-
-message ProtoOutpoint {
-    ProtoChainHash hash = 1; //32 byte
-    uint32 index = 2;
-}
-
-message ProtoOutput {
-    ProtoCoin value = 1;
-    ProtoBlockAddress to = 2;
-}
-
-message ProtoCoinType {
-    bytes data = 1;
-}
-
-message ProtoCoin {
-    int64 value = 1;
-    ProtoCoinType type = 2;
-}
-
-message ProtoBlockAddress {
-    bytes address = 1;
-}
-
-message ProtoSignature {
-    bytes sign = 1;
-}
-
-message ProtoTransaction {
-    int32 version = 1;
-    uint32 txInCount = 2;
-    repeated ProtoOutpoint txInputs = 3;
-    repeated ProtoOutput txOutputs = 4;
-    ProtoSignature signature = 5;
-}
-
-message ProtoBlock {
-    ProtoBlockHeader header = 1;
-    repeated ProtoTransaction transaction = 2;
-}
-
-message ProtoMsgRawBlock {
-    bytes header = 1;
-    bytes transactions = 2;
-}
-
-message ProtoMsgRawTransaction {
-    bytes rawData = 1;
-}
-
-message ProtoUTXO {
-    ProtoCoin value = 1;
-    ProtoChainHash hash = 2;
-    uint32 index = 3;
-    bool coinbase = 4;
-    uint32 height = 5;
-    ProtoBlockAddress address = 6;
-}
-
-enum ProtoRejectCode {
-    REJECT_OTHER = 0;
-    REJECT_MALFORMED = 1;
-    REJECT_INVALID = 2;
-    REJECT_DUPLICATE = 3;
-    REJECT_OBSOLETE = 4;
-}
-
-message ProtoMsgReject {
-    ProtoMessageType rejectMsgType = 1;
-    ProtoRejectCode code = 2;
-    string reason = 3;
-    bytes data = 4;
-}
-
-//just for test
-message ProtoRawBytes {
-    bytes rawBytes = 1;
-}
-
-message ProtoMsgRpcRequest {
-    string id = 1;
-    string service = 2;
-    string method = 3;
-    bytes argument = 4;
-}
-
-message ProtoMsgRpcResponse {
-    string id = 1;
-    bool error = 2;
-    bytes data = 3;
-}
-
-message GetBlocksArg {
-    bytes startHash = 1;
-    bytes endHash = 2;
-}
-
-service NodeService {
-    rpc ping (ProtoMsgPing) returns (ProtoMsgPong);
-}
-
-service BlockService {
-    rpc getBlocks (GetBlocksArg) returns (ProtoMsgInventory);
-}
-
-message GetUTXORequest {
-    ProtoBlockAddress address = 1;
-}
-
-message GetUTXOResponse {
-    repeated ProtoUTXO utxos = 1;
-}
-
-
-service UTXOService {
-    rpc getUTXO (GetUTXORequest) returns (GetUTXOResponse);
-}
-
-message SubmitRawTransactionResponse {
-    ProtoChainHash hash = 1;
-}
-
-service TransactionService {
-    rpc submitRawTransaction (ProtoMsgRawTransaction) returns (SubmitRawTransactionResponse);
-}
-
 message SuccResponse {
     bool succ = 1;
 }
 
 message DepositRequest {
-    ProtoBlockAddress address = 1;
+    bytes address = 1;
     uint64 amount = 2;
 }
 
 message ProtoOffchainTransaction {
     uint32 eon = 1;
-    ProtoBlockAddress from = 2;
-    ProtoBlockAddress to = 3;
+    bytes from = 2;
+    bytes to = 3;
     uint64 amount = 4;
     uint64 timestamp = 5;
-    ProtoSignature sign = 6;
+    bytes sign = 6;
 }
 
 message ProtoAccountInfo {
-    ProtoChainHash address = 1;
+    bytes address = 1;
     uint64 allotment = 2;
     ProtoUpdate update = 3;
 }
 
 message ProtoNodeInfo {
-    ProtoChainHash left = 1;
+    bytes left = 1;
     uint64 offset = 2;
-    ProtoChainHash right = 3;
+    bytes right = 3;
 }
 
 message ProtoAugmentedMerkleTreeNode {
@@ -251,7 +50,7 @@ message ProtoAugmentedMerkleTreeNode {
 }
 
 message InitiateWithdrawalRequest {
-    ProtoBlockAddress address = 1;
+    bytes address = 1;
     ProtoAugmentedMerklePath path = 2;
     uint64 amount = 3;
 }
@@ -286,12 +85,12 @@ message ProtoAugmentedMerklePath {
 
 //Update
 message ProtoUpdate {
-    ProtoChainHash root = 1;
+    bytes root = 1;
     uint64 sendAmount = 2;
     uint64 receiveAmount = 3;
     uint64 version = 4;
-    ProtoSignature sign = 5;
-    ProtoSignature hubSign = 6;
+    bytes sign = 5;
+    bytes hubSign = 6;
     uint32 eon = 7;
 }
 
@@ -340,7 +139,7 @@ message ProtoHubRoot {
 
 message CreateHubRequest {
     //hub address
-    ProtoBlockAddress address = 1;
+    bytes address = 1;
     bytes publicKey = 2;
 }
 
@@ -364,24 +163,24 @@ message ProtoReceipt {
 }
 
 message ProtoChainTransaction {
-    ProtoBlockAddress from = 1;
-    ProtoBlockAddress to = 2;
+    bytes from = 1;
+    bytes to = 2;
     uint64 amount = 3;
     uint64 timestamp = 4;
     string action = 5;
     bytes arguments = 6;
     ProtoReceipt receipt = 7;
     bytes publicKey = 8;
-    ProtoSignature sign = 9;
+    bytes sign = 9;
 }
 
 message ProtoBlockListRequest {
-    ProtoBlockAddress from = 1;
-    ProtoBlockAddress to = 2;
+    bytes from = 1;
+    bytes to = 2;
 }
 
 message ProtoMerkleTreeNode {
-    ProtoChainHash hash = 1;
+    bytes hash = 1;
     google.protobuf.Any data = 2;
 }
 
@@ -409,7 +208,7 @@ message CloseTransferDeliveryChallengeRequest {
 
 message RecoverFundsRequest {
     ProtoAugmentedMerklePath path = 1;
-    ProtoBlockAddress address = 2;
+    bytes address = 2;
 }
 
 message GetBlocksResponse {
@@ -433,7 +232,7 @@ message GetBlocksRequest {
 
 message SyncTransactionsRequest {
     uint32 height = 1;
-    ProtoBlockAddress addr = 2;
+    bytes addr = 2;
 }
 
 message SyncTransactionsResponse {
@@ -442,7 +241,7 @@ message SyncTransactionsResponse {
 }
 
 message QueryBalanceUpdateChallengesRequest {
-    ProtoBlockAddress addr = 1;
+    bytes addr = 1;
 }
 
 message QueryBalanceUpdateChallengesResponse {
@@ -460,7 +259,7 @@ message BalanceUpdateChallengeStatus {
 }
 
 message ProtoHubAccount {
-    ProtoBlockAddress address = 1;
+    bytes address = 1;
     ProtoUpdate update = 2;
     uint64 allotment = 3;
     uint64 deposit = 4;
@@ -479,7 +278,7 @@ message GetBlockRequest {
 
 message QueryWithdrawalStatusRequest {
     uint32 eon = 1;
-    ProtoBlockAddress addr = 2;
+    bytes addr = 2;
 }
 
 message ProtoIOU {
@@ -497,12 +296,12 @@ enum ProtoHubEventType {
 
 message ProtoHubEvent {
     ProtoHubEventType type = 1;
-    ProtoBlockAddress address = 2;
+    bytes address = 2;
     google.protobuf.Any payload = 3;
 }
 
 message BlockAddressAndEon {
-    ProtoBlockAddress address = 1;
+    bytes address = 1;
     int32 eon = 2;
 }
 
@@ -515,6 +314,10 @@ enum ProtoHubMaliciousFlag {
 
 message ProtoHubMaliciousFlags {
     repeated ProtoHubMaliciousFlag flags = 1;
+}
+
+message ProtoBlockAddress {
+    bytes address = 1;
 }
 
 service HubService {

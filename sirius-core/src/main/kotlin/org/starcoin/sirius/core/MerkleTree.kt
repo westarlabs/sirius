@@ -134,7 +134,7 @@ class MerkleTree<D : MerkleTreeData<*>> : Hashable {
             if (this.data != null) {
                 builder.data = Any.pack(this.data!!.marshalProto())
             } else {
-                builder.hash = this.hash().toProto()
+                builder.hash = this.hash().toByteString()
             }
             return builder.build()
         }

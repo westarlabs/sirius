@@ -7,12 +7,9 @@ import org.apache.commons.lang3.RandomUtils
 import org.starcoin.proto.Starcoin
 import org.starcoin.proto.Starcoin.ProtoChainTransaction
 import org.starcoin.sirius.util.KeyPairUtil
-
 import java.io.ByteArrayInputStream
 import java.security.KeyPair
-import java.security.PublicKey
-import java.util.Arrays
-import java.util.Objects
+import java.util.*
 
 class ChainTransaction : ProtobufCodec<Starcoin.ProtoChainTransaction>, Hashable, Mockable {
     var from: BlockAddress? = null
@@ -24,10 +21,6 @@ class ChainTransaction : ProtobufCodec<Starcoin.ProtoChainTransaction>, Hashable
     var action: String? = null
     var arguments: ByteArray? = null
     var receipt: Receipt? = null
-
-    private var publicKey: PublicKey? = null
-
-    private var sign: Signature? = null
 
     @Transient
     private var hash: Hash? = null
@@ -112,22 +105,16 @@ class ChainTransaction : ProtobufCodec<Starcoin.ProtoChainTransaction>, Hashable
 
     override fun marshalProto(): Starcoin.ProtoChainTransaction {
         val builder = this.marshalSignData()
-        if (this.sign != null) {
-            builder.sign = this.sign!!.toProto()
-        }
         if (this.receipt != null) {
             builder.receipt = this.receipt!!.toProto()
-        }
-        if (this.publicKey != null) {
-            builder.publicKey = ByteString.copyFrom(KeyPairUtil.encodePublicKey(this.publicKey!!))
         }
         return builder.build()
     }
 
     fun marshalSignData(): Starcoin.ProtoChainTransaction.Builder {
         val builder = Starcoin.ProtoChainTransaction.newBuilder()
-            .setFrom(this.from!!.toProto())
-            .setTo(this.to!!.toProto())
+            .setFrom(this.from!!.toByteString())
+            .setTo(this.to!!.toByteString())
             .setTimestamp(this.timestamp)
             .setAmount(this.amount)
         if (this.action != null) {
@@ -149,11 +136,6 @@ class ChainTransaction : ProtobufCodec<Starcoin.ProtoChainTransaction>, Hashable
         // protobuf bytestring default value is empty bytes.
         this.arguments = if (proto.arguments.isEmpty) null else proto.arguments.toByteArray()
         this.receipt = if (proto.hasReceipt()) Receipt(proto.receipt) else null
-        this.sign = if (proto.hasSign()) Signature.wrap(proto.sign) else null
-        this.publicKey = if (proto.publicKey.isEmpty)
-            null
-        else
-            KeyPairUtil.recoverPublicKey(proto.publicKey.toByteArray())
     }
 
     override fun hash(): Hash {
@@ -192,38 +174,19 @@ class ChainTransaction : ProtobufCodec<Starcoin.ProtoChainTransaction>, Hashable
         this.to = BlockAddress.random()
         this.amount = RandomUtils.nextLong()
         this.timestamp = System.currentTimeMillis()
-        this.publicKey = keyPair.public
     }
 
     fun sign(keyPair: KeyPair) {
-        this.publicKey = keyPair.public
-        this.sign = Signature.of(keyPair.private, this.marshalSignData().build().toByteArray())
+        //TODO
     }
 
     fun verify(): Boolean {
+
         if (this.amount < 0) {
             return false
         }
-        if (this.sign == null) {
-            return false
-        }
-        if (this.publicKey == null) {
-            return false
-        }
-        if (this.from == Constants.CONTRACT_ADDRESS) {
-            return true
-        }
-        return if (this.from != BlockAddress.genBlockAddressFromPublicKey(this.publicKey!!)) {
-            false
-        } else this.sign!!.verify(this.publicKey!!, this.marshalSignData().build().toByteArray())
-    }
-
-    fun setPublicKey(publicKey: PublicKey) {
-        this.publicKey = publicKey
-    }
-
-    fun setSign(sign: Signature) {
-        this.sign = sign
+        //TODO
+        return true
     }
 
     fun setHash(hash: Hash) {

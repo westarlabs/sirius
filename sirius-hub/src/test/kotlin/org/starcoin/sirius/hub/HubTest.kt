@@ -264,7 +264,7 @@ class HubTest {
                 "InitiateWithdrawal",
                 //sirius.coreContractServiceGrpc.getInitiateWithdrawalMethod().getFullMethodName(),
                 InitiateWithdrawalRequest.newBuilder()
-                    .setAddress(address.toProto())
+                    .setAddress(address.toByteString())
                     .setAmount(amount)
                     .setPath(hub!!.getProof(address)!!.toProto())
                     .build()

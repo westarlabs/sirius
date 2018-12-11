@@ -3,17 +3,17 @@ package org.starcoin.sirius.core
 
 import com.google.common.base.Preconditions
 import com.google.protobuf.ByteString
+import kotlinx.serialization.*
+import kotlinx.serialization.internal.StringDescriptor
 import org.apache.commons.lang3.RandomUtils
-import org.starcoin.proto.Starcoin.ProtoBlockAddress
 import org.starcoin.sirius.util.HashUtil
 import org.starcoin.sirius.util.KeyPairUtil
 import org.starcoin.sirius.util.Utils
-
 import java.io.EOFException
 import java.io.IOException
 import java.io.InputStream
 import java.security.PublicKey
-import java.util.Arrays
+import java.util.*
 
 /**
  * BlockMsg Address:
@@ -26,7 +26,8 @@ import java.util.Arrays
  *
  * @author Tim
  */
-class BlockAddress private constructor(val address: ByteArray) : Protobufable<ProtoBlockAddress>, Hashable {
+@Serializable
+class BlockAddress private constructor(val address: ByteArray) : Hashable {
 
     init {
         Preconditions.checkArgument(address.size == LENGTH, "expect address length:$LENGTH")
@@ -35,6 +36,10 @@ class BlockAddress private constructor(val address: ByteArray) : Protobufable<Pr
     fun toBytes(): ByteArray {
         // not changeable
         return address.clone()
+    }
+
+    fun toByteString(): ByteString {
+        return ByteString.copyFrom(this.address)
     }
 
     override fun equals(o: Any?): Boolean {
@@ -56,20 +61,28 @@ class BlockAddress private constructor(val address: ByteArray) : Protobufable<Pr
         return Utils.HEX.encode(this.address)
     }
 
-    override fun toProto(): ProtoBlockAddress {
-        return ProtoBlockAddress.newBuilder().setAddress(ByteString.copyFrom(address)).build()
-    }
-
     override fun hash(): Hash {
         return Hash.of(this.address)
     }
 
-    companion object {
+    @Serializer(forClass = BlockAddress::class)
+    companion object : KSerializer<BlockAddress> {
 
         val LENGTH = 20
         val DEFAULT_ADDRESS = BlockAddress(
             byteArrayOf(1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20)
         )
+
+        override val descriptor: SerialDescriptor =
+            StringDescriptor.withName("BlockAddress")
+
+        override fun serialize(output: Encoder, obj: BlockAddress) {
+            output.encodeString(obj.toString())
+        }
+
+        override fun deserialize(input: Decoder): BlockAddress {
+            return BlockAddress.valueOf(input.decodeString())
+        }
 
         @Throws(IOException::class)
         fun readFrom(`in`: InputStream): BlockAddress {
@@ -81,13 +94,15 @@ class BlockAddress private constructor(val address: ByteArray) : Protobufable<Pr
             return BlockAddress(ad)
         }
 
-        fun valueOf(address: ProtoBlockAddress): BlockAddress {
-            return BlockAddress(address.address.toByteArray())
-        }
-
         fun valueOf(addressHex: String): BlockAddress {
             Preconditions.checkNotNull(addressHex, "addressHex")
             return BlockAddress(Utils.HEX.decode(addressHex))
+        }
+
+        fun valueOf(address: ByteString): BlockAddress {
+            Preconditions.checkNotNull(address, "address")
+            Preconditions.checkArgument(!address.isEmpty, "address")
+            return BlockAddress(address.toByteArray())
         }
 
         fun random(): BlockAddress {

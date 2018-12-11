@@ -24,9 +24,9 @@ class NodeInformation : ProtobufCodec<Starcoin.ProtoNodeInfo> {
 
     override fun marshalProto(): Starcoin.ProtoNodeInfo {
         return Starcoin.ProtoNodeInfo.newBuilder()
-            .setLeft(this.left!!.toProto())
+            .setLeft(this.left!!.toByteString())
             .setOffset(this.offset)
-            .setRight(this.right!!.toProto())
+            .setRight(this.right!!.toByteString())
             .build()
     }
 

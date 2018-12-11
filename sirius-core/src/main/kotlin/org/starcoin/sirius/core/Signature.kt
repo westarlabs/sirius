@@ -1,7 +1,8 @@
 package org.starcoin.sirius.core
 
 import com.google.protobuf.ByteString
-import org.starcoin.proto.Starcoin.ProtoSignature
+import kotlinx.serialization.*
+import kotlinx.serialization.internal.StringDescriptor
 import org.starcoin.sirius.util.KeyPairUtil
 import org.starcoin.sirius.util.Utils
 
@@ -13,6 +14,7 @@ import java.security.PrivateKey
 import java.security.PublicKey
 import java.util.Arrays
 
+@Serializable
 class Signature private constructor(private val sign: ByteArray) {
 
 
@@ -22,10 +24,6 @@ class Signature private constructor(private val sign: ByteArray) {
 
     fun marshalSize(): Int {
         return 1 + sign.size
-    }
-
-    fun toProto(): ProtoSignature {
-        return ProtoSignature.newBuilder().setSign(ByteString.copyFrom(sign)).build()
     }
 
     override fun equals(o: Any?): Boolean {
@@ -47,6 +45,12 @@ class Signature private constructor(private val sign: ByteArray) {
         return Utils.HEX.encode(this.sign)
     }
 
+    fun toBytes(): ByteArray {
+        return this.sign.clone()
+    }
+
+    fun toByteString(): ByteString = ByteString.copyFrom(this.sign)
+
     /**
      * Write sign bytes to out
      */
@@ -56,7 +60,19 @@ class Signature private constructor(private val sign: ByteArray) {
         out.write(this.sign)
     }
 
-    companion object {
+    @Serializer(forClass = Signature::class)
+    companion object : KSerializer<Signature> {
+
+        override val descriptor: SerialDescriptor =
+            StringDescriptor.withName("Signature")
+
+        override fun serialize(output: Encoder, obj: Signature) {
+            output.encodeString(obj.toString())
+        }
+
+        override fun deserialize(input: Decoder): Signature {
+            return Signature.valueOf(input.decodeString())
+        }
 
         val COINBASE_SIGNATURE = Signature.wrap(byteArrayOf(0))
 
@@ -64,12 +80,17 @@ class Signature private constructor(private val sign: ByteArray) {
             return Signature(sign)
         }
 
-        fun wrap(protoSignature: ProtoSignature): Signature {
-            return Signature(protoSignature.sign.toByteArray())
+        fun wrap(byteString: ByteString): Signature {
+            return Signature(byteString.toByteArray())
         }
+
 
         fun of(privateKey: PrivateKey, data: ByteArray): Signature {
             return Signature(KeyPairUtil.signData(data, privateKey))
+        }
+
+        fun valueOf(signString: String): Signature {
+            return wrap(Utils.HEX.decode(signString))
         }
 
         /**

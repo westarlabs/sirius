@@ -28,7 +28,7 @@ class AccountInformation : ProtobufCodec<Starcoin.ProtoAccountInfo> {
 
     override fun marshalProto(): Starcoin.ProtoAccountInfo {
         val builder = Starcoin.ProtoAccountInfo.newBuilder()
-            .setAddress(this.address!!.toProto())
+            .setAddress(this.address!!.toByteString())
             .setAllotment(this.allotment)
         if (this.update != null) {
             builder.update = this.update!!.toProto()

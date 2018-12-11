@@ -26,7 +26,7 @@ class Withdrawal : ProtobufCodec<InitiateWithdrawalRequest> {
     override fun marshalProto(): InitiateWithdrawalRequest {
         return InitiateWithdrawalRequest.newBuilder()
             .setPath(path!!.toProto())
-            .setAddress(this.address!!.toProto())
+            .setAddress(this.address!!.toByteString())
             .setAmount(amount)
             .build()
     }

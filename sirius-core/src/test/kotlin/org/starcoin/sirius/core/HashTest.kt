@@ -10,7 +10,6 @@ import org.junit.Assert
 import org.junit.Test
 import org.starcoin.sirius.io.ByteBufferInputStream
 import org.starcoin.sirius.io.ByteBufferOutputStream
-import org.starcoin.proto.Starcoin.ProtoChainHash
 
 class HashTest {
 
@@ -108,11 +107,9 @@ class HashTest {
     @Throws(InvalidProtocolBufferException::class)
     fun testProto() {
         val hash = Hash.random()
-        val protoChainHash = hash.toProto()
-        val hash1 = Hash.wrap(ProtoChainHash.parseFrom(protoChainHash.toByteString()))
-        val hash2 = Hash.wrap(hash.toProto())
+        val protoChainHash = hash.toByteString()
+        val hash1 = Hash.wrap(protoChainHash)
         Assert.assertEquals(hash, hash1)
-        Assert.assertEquals(hash, hash2)
     }
 
     @Test
@@ -121,7 +118,7 @@ class HashTest {
         val buffer = ByteBuffer.allocate(rand).put(RandomUtils.nextBytes(rand))
         val hash = Hash.of(buffer)
 
-        val hash1 = Hash.wrap(hash.toProto())
+        val hash1 = Hash.wrap(hash.toByteString())
         Assert.assertEquals(hash, hash1)
     }
 
@@ -134,8 +131,8 @@ class HashTest {
         buffer.get(bytes)
         Assert.assertEquals(0, buffer.remaining().toLong())
 
-        val protoChainHash = hash.toProto()
-        val hash1 = Hash.wrap(ProtoChainHash.parseFrom(protoChainHash.toByteString()))
+        val protoChainHash = hash.toByteString()
+        val hash1 = Hash.wrap(protoChainHash)
         Assert.assertEquals(hash, hash1)
     }
 
