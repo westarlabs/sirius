@@ -63,9 +63,6 @@ class Signature private constructor(private val sign: ByteArray) {
     @Serializer(forClass = Signature::class)
     companion object : KSerializer<Signature> {
 
-        override val descriptor: SerialDescriptor =
-            StringDescriptor.withName("Signature")
-
         override fun serialize(output: Encoder, obj: Signature) {
             output.encodeString(obj.toString())
         }

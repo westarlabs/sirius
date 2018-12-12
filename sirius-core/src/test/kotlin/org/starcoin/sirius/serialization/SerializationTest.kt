@@ -17,8 +17,6 @@ data class DataBytes private constructor(val bytes: ByteArray) {
 
     @Serializer(forClass = DataBytes::class)
     companion object : KSerializer<DataBytes> {
-        override val descriptor: SerialDescriptor =
-            StringDescriptor.withName("DataBytes")
 
         override fun serialize(output: Encoder, obj: DataBytes) {
             output.encodeString(Utils.HEX.encode(obj.bytes))

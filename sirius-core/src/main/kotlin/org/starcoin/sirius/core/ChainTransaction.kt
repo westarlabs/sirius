@@ -11,7 +11,7 @@ import java.io.ByteArrayInputStream
 import java.security.KeyPair
 import java.util.*
 
-class ChainTransaction : ProtobufCodec<Starcoin.ProtoChainTransaction>, Hashable, Mockable {
+open class ChainTransaction : ProtobufCodec<Starcoin.ProtoChainTransaction>, Hashable, Mockable {
     var from: BlockAddress? = null
     var to: BlockAddress? = null
     var timestamp: Long = 0
