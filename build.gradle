@@ -7,6 +7,7 @@ buildscript {
         protobuf_version = '3.5.1'
         protoc_version = '3.5.1-1'
         grpc_version = '1.12.0'
+        ktor_version = '1.0.1'
     }
 
     repositories {
