@@ -1,22 +1,20 @@
 package org.starcoin.sirius.core
 
+import org.apache.commons.lang3.RandomUtils
 import org.starcoin.proto.Starcoin.ProtoBlockInfo
 import java.util.*
 import java.util.stream.Collectors
 
-class BlockInfo : ProtobufCodec<ProtoBlockInfo>, Hashable {
+class BlockInfo : ProtobufCodec<ProtoBlockInfo>, CachedHash {
 
     var height: Int = 0
         private set
-    var hash: Hash? = null
     private var transactions: MutableList<ChainTransaction>? = null
 
     constructor() {}
 
     constructor(height: Int) {
         this.height = height
-        // TODO calculate hash from data.
-        this.hash = Hash.random()
         this.transactions = ArrayList()
     }
 
@@ -24,8 +22,9 @@ class BlockInfo : ProtobufCodec<ProtoBlockInfo>, Hashable {
         this.unmarshalProto(blockInfo)
     }
 
-    override fun hash(): Hash {
-        return this.hash!!
+    override fun hashData(): ByteArray {
+        //TODO
+        return RandomUtils.nextBytes(100)
     }
 
     fun addTransaction(tx: ChainTransaction) {

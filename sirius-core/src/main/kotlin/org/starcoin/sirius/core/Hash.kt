@@ -24,7 +24,7 @@ import kotlin.experimental.and
  * used as keys in a map. It also checks that the length is correct and provides a bit more type
  * safety. It is a final unmodifiable object.
  */
-class Hash private constructor(private val bytes: ByteBuffer) : Serializable, Comparable<Hash>, Hashable {
+class Hash private constructor(private val bytes: ByteBuffer) : Serializable, Comparable<Hash> {
 
     override fun equals(o: Any?): Boolean {
         if (this === o) {
@@ -90,10 +90,6 @@ class Hash private constructor(private val bytes: ByteBuffer) : Serializable, Co
     @Throws(IOException::class)
     fun writeTo(out: OutputStream) {
         out.write(this.bytes.array())
-    }
-
-    override fun hash(): Hash {
-        return this
     }
 
     companion object {

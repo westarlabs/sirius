@@ -11,7 +11,8 @@ import java.io.ByteArrayInputStream
 import java.security.KeyPair
 import java.util.*
 
-open class ChainTransaction : ProtobufCodec<Starcoin.ProtoChainTransaction>, Hashable, Mockable {
+open class ChainTransaction : ProtobufCodec<Starcoin.ProtoChainTransaction>, CachedHash, Mockable {
+
     var from: BlockAddress? = null
     var to: BlockAddress? = null
     var timestamp: Long = 0
@@ -21,9 +22,6 @@ open class ChainTransaction : ProtobufCodec<Starcoin.ProtoChainTransaction>, Has
     var action: String? = null
     var arguments: ByteArray? = null
     var receipt: Receipt? = null
-
-    @Transient
-    private var hash: Hash? = null
 
     val isSuccess: Boolean
         get() = this.receipt == null || this.receipt!!.isSuccess
@@ -138,13 +136,8 @@ open class ChainTransaction : ProtobufCodec<Starcoin.ProtoChainTransaction>, Has
         this.receipt = if (proto.hasReceipt()) Receipt(proto.receipt) else null
     }
 
-    override fun hash(): Hash {
-        //TODO !!
-        if (this.hash != null) {
-            return this.hash!!
-        }
-        this.hash = Hash.of(this.marshalSignData().build().toByteArray())
-        return this.hash!!
+    override fun hashData(): ByteArray {
+        return this.marshalSignData().build().toByteArray()
     }
 
     override fun equals(o: Any?): Boolean {
@@ -187,10 +180,6 @@ open class ChainTransaction : ProtobufCodec<Starcoin.ProtoChainTransaction>, Has
         }
         //TODO
         return true
-    }
-
-    fun setHash(hash: Hash) {
-        this.hash = hash
     }
 
     companion object {

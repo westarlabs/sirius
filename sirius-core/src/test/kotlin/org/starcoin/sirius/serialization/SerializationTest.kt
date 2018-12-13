@@ -1,11 +1,15 @@
 package org.starcoin.sirius.serialization
 
 import kotlinx.serialization.*
-import kotlinx.serialization.internal.StringDescriptor
 import kotlinx.serialization.json.JSON
 import kotlinx.serialization.protobuf.ProtoBuf
+import org.apache.commons.lang3.RandomUtils
 import org.junit.Assert
 import org.junit.Test
+import org.starcoin.proto.Starcoin
+import org.starcoin.sirius.core.BlockAddress
+import org.starcoin.sirius.core.OffchainTransaction
+import org.starcoin.sirius.util.KeyPairUtil
 import org.starcoin.sirius.util.Utils
 
 @Serializable
@@ -66,4 +70,18 @@ class SerializationTest {
         Assert.assertEquals(data, data2)
     }
 
+//    @Test
+//    fun testTransform() {
+//        //TODO type converter
+//        val from = BlockAddress.random()
+//        val to = BlockAddress.random()
+//
+//        val tx = OffchainTransaction(0, from, to, RandomUtils.nextLong())
+//        tx.sign(KeyPairUtil.TEST_KEYPAIR.private)
+//        var proto = Transform.transform<Starcoin.ProtoOffchainTransaction, OffchainTransaction>(tx)
+//
+//        val tx1 = OffchainTransaction.genarateHubTransaction(proto!!)
+//
+//        Assert.assertEquals(tx1, tx)
+//    }
 }

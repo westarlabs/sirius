@@ -7,13 +7,11 @@ import org.starcoin.sirius.core.MerklePath.Direction
 import java.util.*
 import java.util.stream.Collectors
 
-class AugmentedMerklePath : ProtobufCodec<ProtoAugmentedMerklePath>, Hashable {
+class AugmentedMerklePath : ProtobufCodec<ProtoAugmentedMerklePath>, CachedHash {
 
     var eon: Int = 0
         private set
     private var nodes: MutableList<AugmentedMerklePathNode>? = null
-    @Transient
-    private var hash: Hash? = null
 
     val leaf: AugmentedMerkleTreeNode?
         get() = this.getNodes()!![0].node
@@ -78,7 +76,6 @@ class AugmentedMerklePath : ProtobufCodec<ProtoAugmentedMerklePath>, Hashable {
 
     fun append(node: AugmentedMerkleTreeNode, direction: Direction) {
         this.nodes!!.add(AugmentedMerklePathNode(node, direction))
-        this.hash = null
     }
 
     fun getNodes(): List<AugmentedMerklePathNode>? {
@@ -105,13 +102,8 @@ class AugmentedMerklePath : ProtobufCodec<ProtoAugmentedMerklePath>, Hashable {
             .collect(Collectors.toList())
     }
 
-    override fun hash(): Hash {
-        //TODO use lazy calculate get.
-        if (this.hash != null) {
-            return this.hash!!
-        }
-        this.hash = Hash.of(this.marshalProto().toByteArray())
-        return this.hash!!
+    override fun hashData(): ByteArray {
+        return this.marshalProto().toByteArray()
     }
 
     override fun equals(o: Any?): Boolean {

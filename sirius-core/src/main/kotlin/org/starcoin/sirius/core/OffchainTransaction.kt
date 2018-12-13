@@ -12,8 +12,9 @@ import java.security.PublicKey
 import java.util.Objects
 
 @Serializable
-class OffchainTransaction : Hashable, ProtobufCodec<ProtoOffchainTransaction>,
+class OffchainTransaction : CachedHash, ProtobufCodec<ProtoOffchainTransaction>,
     MerkleTree.MerkleTreeData<ProtoOffchainTransaction>, Mockable {
+
 
     var eon: Int = 0
     var from: BlockAddress? = null
@@ -49,8 +50,8 @@ class OffchainTransaction : Hashable, ProtobufCodec<ProtoOffchainTransaction>,
         this.sign = tx.sign
     }
 
-    override fun hash(): Hash {
-        return Hash.of(this.marshalSignData().build().toByteArray())
+    override fun hashData(): ByteArray {
+        return this.marshalSignData().build().toByteArray()
     }
 
     private fun marshalSignData(): ProtoOffchainTransaction.Builder {

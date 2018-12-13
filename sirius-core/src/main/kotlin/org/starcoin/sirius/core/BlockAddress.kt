@@ -4,7 +4,6 @@ package org.starcoin.sirius.core
 import com.google.common.base.Preconditions
 import com.google.protobuf.ByteString
 import kotlinx.serialization.*
-import kotlinx.serialization.internal.StringDescriptor
 import org.apache.commons.lang3.RandomUtils
 import org.starcoin.sirius.util.HashUtil
 import org.starcoin.sirius.util.KeyPairUtil
@@ -27,7 +26,7 @@ import java.util.*
  * @author Tim
  */
 @Serializable
-class BlockAddress private constructor(val address: ByteArray) : Hashable {
+class BlockAddress private constructor(val address: ByteArray) : CachedHash() {
 
     init {
         Preconditions.checkArgument(address.size == LENGTH, "expect address length:$LENGTH")
@@ -61,8 +60,8 @@ class BlockAddress private constructor(val address: ByteArray) : Hashable {
         return Utils.HEX.encode(this.address)
     }
 
-    override fun hash(): Hash {
-        return Hash.of(this.address)
+    override fun hashData(): ByteArray {
+        return this.address
     }
 
     @Serializer(forClass = BlockAddress::class)
