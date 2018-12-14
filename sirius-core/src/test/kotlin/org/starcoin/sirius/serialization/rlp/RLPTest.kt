@@ -24,6 +24,9 @@ data class Data(val boolean: Boolean, val byte: Byte, val int: Int, val long: Lo
     }
 }
 
+@Serializable
+data class NamedData(val name: String, val data: Data)
+
 @ImplicitReflectionSerializer
 class RLPTest {
 
@@ -33,7 +36,7 @@ class RLPTest {
 
         var rlpList = RLPList(mutableListOf())
         val output = RLPOutput(rlpList)
-        output.encode(Data.serializer(), data)
+        output.encode(data)
 
         Assert.assertTrue(rlpList.element.isNotEmpty())
 
@@ -48,6 +51,29 @@ class RLPTest {
     }
 
     @Test
+    fun testObjectNest() {
+        val data = Data.random()
+        val namedData = NamedData("test", data)
+        var rlpList = RLPList(mutableListOf())
+        val output = RLPOutput(rlpList)
+        output.encode(namedData)
+
+        Assert.assertTrue(rlpList.element.isNotEmpty())
+
+        var bytes = rlpList.encode()
+        var rlpList1 = bytes.decodeRLP() as RLPList
+
+        Assert.assertEquals(rlpList.element.size, rlpList1.element.size)
+
+        val input = RLPInput(rlpList1.element.iterator())
+        val namedData1 = input.decode(NamedData.serializer())
+        Assert.assertEquals(namedData, namedData1)
+    }
+
+    /**
+     * for https://github.com/walleth/kethereum/issues/49
+     */
+    @Test
     fun testIntRLP() {
         val int = 1838383984
         val rlp = int.toRLP()
@@ -56,12 +82,4 @@ class RLPTest {
         Assert.assertEquals(int, int1)
     }
 
-    @Test
-    fun testIntRLP2() {
-        val int = 1838383984
-        val rlp = int.toRLP()
-        println(rlp.bytes.size)
-        val int1 = rlp.toIntFromRLP()
-        Assert.assertEquals(int, int1)
-    }
 }
