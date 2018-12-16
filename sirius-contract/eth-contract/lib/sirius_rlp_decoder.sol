@@ -1,6 +1,6 @@
 pragma solidity ^0.5.1;
 
-library RLP {
+library RLPDecoder {
 
     uint constant DATA_SHORT_START = 0x80;
     uint constant DATA_LONG_START = 0xB8;
@@ -9,7 +9,6 @@ library RLP {
 
     uint constant DATA_LONG_OFFSET = 0xB7;
     uint constant LIST_LONG_OFFSET = 0xF7;
-
 
     struct RLPItem {
         uint _unsafe_memPtr;    // Pointer to the RLP-encoded bytes.

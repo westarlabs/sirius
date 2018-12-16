@@ -1,7 +1,5 @@
 pragma solidity ^0.5.1;
 
-import "./sirius_pb.sol";
-
 library WithdrawalLib {
 
     using SafeMath for uint;
