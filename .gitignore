@@ -7,5 +7,6 @@ target/
 build
 out
 *.DS_Store
-sirius-wallet/database/
-sirius-wallet/logs
+*/database/
+*/logs
+
