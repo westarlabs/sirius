@@ -12,6 +12,7 @@ buildscript {
 
     repositories {
         jcenter()
+        mavenCentral()
         maven { url "https://dl.bintray.com/kotlin/kotlin-eap" }
     }
 
@@ -53,8 +54,8 @@ subprojects {
     sourceCompatibility = 1.8
 
     repositories {
-        mavenCentral()
         jcenter()
+        mavenCentral()
         maven { url "https://dl.bintray.com/kotlin/kotlin-eap" }
         maven { url "https://dl.bintray.com/ethereum/maven/" }
         maven { url "https://kotlin.bintray.com/kotlinx" }
