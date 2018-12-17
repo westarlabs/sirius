@@ -4,7 +4,7 @@ import org.starcoin.proto.Starcoin
 import org.starcoin.sirius.core.*
 import java.security.KeyPair
 
-class HubStatus(){
+class HubStatus {
 
     var allotment: Long = 0
 
