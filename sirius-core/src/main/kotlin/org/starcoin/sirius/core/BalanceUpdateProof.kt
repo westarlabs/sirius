@@ -16,7 +16,7 @@ class BalanceUpdateProof : ProtobufCodec<Starcoin.ProtoBalanceUpdateProof> {
         this.unmarshalProto(proto)
     }
 
-    constructor(update: Update, provePath: AugmentedMerklePath) {
+    constructor(update: Update?, provePath: AugmentedMerklePath?) {
         this.update = update
         this.provePath = provePath
     }

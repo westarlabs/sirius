@@ -1,32 +1,25 @@
 package org.starcoin.sirius.wallet.core
 
 import org.starcoin.sirius.core.*
-import java.util.*
+import kotlin.properties.Delegates
 
 class EonStatus() {
 
-    var eon: Eon? = null
+    var eon: Eon by Delegates.notNull()
 
     var path: AugmentedMerklePath? = null
 
-    var transactionHistory: List<OffchainTransaction>
+    var transactionHistory: MutableList<OffchainTransaction> = mutableListOf()
 
-    var updateHistory: List<Update>
+    var updateHistory: MutableList<Update> = mutableListOf()
 
-    var transactionMap: Map<String, OffchainTransaction>
+    var transactionMap: MutableMap<String, OffchainTransaction> = mutableMapOf()
 
-    var confirmedTransactions: List<ChainTransaction>
+    var confirmedTransactions: MutableList<ChainTransaction> = mutableListOf()
 
     var deposit: Long = 0
 
     var allotment: Long = 0
-
-    init {
-        this.transactionHistory = ArrayList<OffchainTransaction>()
-        this.updateHistory = ArrayList<Update>()
-        this.transactionMap = HashMap<String, OffchainTransaction>()
-        this.confirmedTransactions = ArrayList<ChainTransaction>()
-    }
 
     constructor(eon: Eon, allotment: Long) : this() {
         this.eon = eon

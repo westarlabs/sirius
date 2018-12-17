@@ -41,7 +41,9 @@ class WithdrawalStatus : ProtobufCodec<ProtoWithdrawalStatus> {
         INIT(ProtoWithdrawalStatusType.WITHDRAWAL_STATUS_INIT),
         CANCEL(ProtoWithdrawalStatusType.WITHDRAWAL_STATUS_CANCEL),
         PASSED(ProtoWithdrawalStatusType.WITHDRAWAL_STATUS_PASSED),
-        CONFIRMED(ProtoWithdrawalStatusType.WITHDRAWAL_STATUS_CONFIRMED);
+        CONFIRMED(ProtoWithdrawalStatusType.WITHDRAWAL_STATUS_CONFIRMED),
+        CLIENTCONFIRMED(ProtoWithdrawalStatusType.WITHDRAWAL_STATUS_CLIENT_CONFIRMED);
+
 
         override fun toProto(): ProtoWithdrawalStatusType {
             return protoType
@@ -132,4 +134,16 @@ class WithdrawalStatus : ProtobufCodec<ProtoWithdrawalStatus> {
     override fun hashCode(): Int {
         return Objects.hash(withdrawal, type)
     }
+
+    fun clientConfirm(): Boolean {
+        if (this.type == WithdrawalStatusType.PASSED || isInit || this.type == WithdrawalStatusType.CONFIRMED) {
+            this.type = WithdrawalStatusType.CLIENTCONFIRMED
+            logger.warning("confirm succ")
+            return true
+        }
+
+        logger.warning("client confirm fail : " + if (this.type == null) "null" else this.type?.number)
+        return false
+    }
+
 }

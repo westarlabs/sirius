@@ -29,7 +29,7 @@ class BalanceUpdateChallenge : ProtobufCodec<Starcoin.ProtoBalanceUpdateChalleng
         this.unmarshalProto(proto)
     }
 
-    constructor(update: Update, provePath: AugmentedMerklePath, publicKey: PublicKey) {
+    constructor(update: Update?, provePath: AugmentedMerklePath?, publicKey: PublicKey) {
         val proof = BalanceUpdateProof(update, provePath)
         this.proof = proof
         this.publicKey = publicKey

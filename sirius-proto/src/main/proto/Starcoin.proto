@@ -60,6 +60,7 @@ enum ProtoWithdrawalStatusType {
     WITHDRAWAL_STATUS_CANCEL = 1;
     WITHDRAWAL_STATUS_PASSED = 2;
     WITHDRAWAL_STATUS_CONFIRMED = 3;
+    WITHDRAWAL_STATUS_CLIENT_CONFIRMED = 4;
 }
 
 message ProtoWithdrawalStatus {

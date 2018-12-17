@@ -14,6 +14,7 @@ import java.math.BigInteger
 import org.ethereum.util.blockchain.EtherUtil.Unit.ETHER
 import org.ethereum.util.blockchain.EtherUtil.convert
 import org.junit.Ignore
+import org.web3j.protocol.Web3j
 
 /**
  * Created by Anton Nashatyrev on 06.07.2016.
@@ -139,7 +140,7 @@ class StandaloneBlockchainTest {
         assert(convert(123, ETHER).compareTo(sb.getBlockchain().getRepository().getBalance(bob.getAddress())) > 0)
         assert(aliceInitBal.add(BigInteger.ONE) == sb.getBlockchain().getRepository().getBalance(alice.getAddress()))
     }
-    
+
 
     companion object {
 
