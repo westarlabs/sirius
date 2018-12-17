@@ -60,10 +60,10 @@ library NodeInfoLib {
         uint idx;
         while (it.hasNext()) {
             RLPDecoder.RLPItem memory r = it.next();
-            if (idx == 0) root.offset =;
-            else if (idx == 1) Log.log("testStruct:2:", r.toAddress());
-            else if (idx == 2) Log.log("testStruct:3:", r.toUint());
-            else if (idx == 3) Log.log("testStruct:4:", r.toAscii());
+//            if (idx == 0) root.offset =;
+//            else if (idx == 1) Log.log("testStruct:2:", r.toAddress());
+//            else if (idx == 2) Log.log("testStruct:3:", r.toUint());
+//            else if (idx == 3) Log.log("testStruct:4:", r.toAscii());
 
             idx++;
         }
@@ -98,10 +98,10 @@ library HubRootLib {
         uint idx;
         while (it.hasNext()) {
             RLPDecoder.RLPItem memory r = it.next();
-            if (idx == 0) root.offset =;
-            else if (idx == 1) Log.log("testStruct:2:", r.toAddress());
-            else if (idx == 2) Log.log("testStruct:3:", r.toUint());
-            else if (idx == 3) Log.log("testStruct:4:", r.toAscii());
+//            if (idx == 0) root.offset =;
+//            else if (idx == 1) Log.log("testStruct:2:", r.toAddress());
+//            else if (idx == 2) Log.log("testStruct:3:", r.toUint());
+//            else if (idx == 3) Log.log("testStruct:4:", r.toAscii());
 
             idx++;
         }
