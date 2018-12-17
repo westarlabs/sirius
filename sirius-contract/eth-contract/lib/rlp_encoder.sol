@@ -1,6 +1,13 @@
 pragma solidity ^0.5.1;
 
 library RLPEncoder {
+
+    function encodeByte(byte self) internal pure returns (bytes memory encoded) {
+        encoded = new bytes(1);
+        encoded[0] = self;
+        return encoded;
+    }
+
     /**
      * @dev RLP encodes a byte string.
      * @param self The byte string to encode.
@@ -92,7 +99,7 @@ library RLPEncoder {
      */
     function encodeBool(bool self) internal pure returns (bytes memory encoded) {
         encoded = new bytes(1);
-        encoded[0] = (self ? bytes1(0x01) : bytes1(0x80));
+        encoded[0] = (self ? bytes1(0x01) : bytes1(0x0));
         return encoded;
     }
 
