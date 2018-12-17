@@ -1,13 +1,15 @@
 package org.starcoin.sirius.protocol
 
+import org.starcoin.sirius.core.BlockAddress
 import org.starcoin.sirius.core.BlockInfo
 import org.starcoin.sirius.core.ChainTransaction
+import org.starcoin.sirius.core.Hash
 import java.math.BigInteger
 
 
 interface Chain {
 
-    fun findTransaction(hash: ByteArray): ChainTransaction?
+    fun findTransaction(hash: Hash): ChainTransaction?
 
     fun getBlock(height: BigInteger): BlockInfo?
 
@@ -15,5 +17,5 @@ interface Chain {
 
     fun watchTransaction(onNext: ((tx: ChainTransaction) -> Unit))
 
-    fun getBalance(address: ByteArray): BigInteger
+    fun getBalance(address: BlockAddress): BigInteger
 }
