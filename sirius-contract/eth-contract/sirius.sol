@@ -1,6 +1,7 @@
 pragma solidity ^0.5.1;
 
-import "./lib/sirius_lib.sol";
+import "./lib/model.sol";
+import "./lib/safe_math.sol";
 
 interface Sirius {
     function deposit() external payable;

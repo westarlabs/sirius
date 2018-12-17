@@ -1,5 +1,7 @@
 pragma solidity ^0.5.1;
 
+import "./safe_math.sol";
+
 library WithdrawalLib {
 
     using SafeMath for uint;
@@ -49,30 +51,5 @@ library HubRootLib {
         uint offset;
         uint allotment;
         uint eon;
-    }
-}
-
-library SafeMath {
-    function mul(uint256 a, uint256 b) public pure returns (uint256) {
-        uint256 c = a * b;
-        assert(a == 0 || c / a == b);
-        return c;
-    }
-
-    function div(uint256 a, uint256 b) public pure returns (uint256) {
-        assert(b > 0);
-        uint256 c = a / b;
-        return c;
-    }
-
-    function sub(uint256 a, uint256 b) public pure returns (uint256) {
-        assert(b <= a);
-        return a - b;
-    }
-
-    function add(uint256 a, uint256 b) public pure returns (uint256) {
-        uint256 c = a + b;
-        assert(c >= a);
-        return c;
     }
 }

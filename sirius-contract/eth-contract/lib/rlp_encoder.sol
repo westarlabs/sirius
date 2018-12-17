@@ -1,7 +1,6 @@
 pragma solidity ^0.5.1;
 
 library RLPEncoder {
-
     /**
      * @dev RLP encodes a byte string.
      * @param self The byte string to encode.
@@ -32,6 +31,15 @@ library RLPEncoder {
     function encodeList(bytes[] memory self) internal pure returns (bytes memory encoded) {
         bytes memory list = flatten(self);
         return concat(encodeLength(list.length, 192), list);
+    }
+
+    /**
+     * @dev RLP encodes a list of RLP encoded byte byte strings.
+     * @param self The list of RLP encoded byte strings.
+     * @return The RLP encoded list of items in bytes.
+     */
+    function encodeList(bytes memory self) internal pure returns (bytes memory encoded) {
+        return concat(encodeLength(self.length, 192), self);
     }
 
     /**
@@ -157,7 +165,7 @@ library RLPEncoder {
      * @param _src Source location.
      * @param _len Length of memory to copy.
      */
-    function memcpy(uint _dest, uint _src, uint _len) private pure {
+    function memcpy(uint _dest, uint _src, uint _len) internal pure {
         uint dest = _dest;
         uint src = _src;
         uint len = _len;
@@ -219,7 +227,7 @@ library RLPEncoder {
      * @param _postBytes Second byte string.
      * @return Both byte string combined.
      */
-    function concat(bytes memory _preBytes, bytes memory _postBytes) internal pure returns (bytes memory tempBytes) {
+    function concat(bytes memory _preBytes, bytes memory _postBytes) private pure returns (bytes memory tempBytes) {
 
         assembly {
             tempBytes := mload(0x40)
