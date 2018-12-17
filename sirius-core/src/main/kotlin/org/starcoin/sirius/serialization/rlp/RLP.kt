@@ -18,14 +18,14 @@ class RLP : AbstractSerialFormat(), BinaryFormat {
 
     override fun <T> dump(serializer: SerializationStrategy<T>, obj: T): ByteArray {
         val rlpList = RLPList(mutableListOf())
-        val dumper = RLPOutput(rlpList)
+        val dumper = RLPOutput(rlpList, true)
         dumper.encode(serializer, obj)
         return rlpList.encode()
     }
 
     override fun <T> load(deserializer: DeserializationStrategy<T>, bytes: ByteArray): T {
-        val rlpList = bytes.toRLP() as RLPList
-        val loader = RLPInput(rlpList.iterator())
+        val rlpList = bytes.decodeRLP() as RLPList
+        val loader = RLPInput(rlpList.iterator(), true)
         return loader.decode(deserializer)
     }
 

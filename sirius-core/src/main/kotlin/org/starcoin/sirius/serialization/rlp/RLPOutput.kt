@@ -3,13 +3,27 @@ package org.starcoin.sirius.serialization.rlp
 import kotlinx.serialization.*
 
 
-class RLPOutput(val out: RLPList) : ElementValueEncoder() {
+class RLPOutput internal constructor(private val out: RLPList, private val begin: Boolean) : ElementValueEncoder() {
+
     override fun beginCollection(
         desc: SerialDescriptor,
         collectionSize: Int,
         vararg typeParams: KSerializer<*>
     ): CompositeEncoder {
-        return super.beginCollection(desc, collectionSize, *typeParams).also {
+        return newEncoder()
+    }
+
+    override fun beginStructure(desc: SerialDescriptor, vararg typeParams: KSerializer<*>): CompositeEncoder {
+        return newEncoder()
+    }
+
+    fun newEncoder(): RLPOutput {
+        return if (begin) {
+            this
+        } else {
+            val rlpList = RLPList(mutableListOf())
+            out.add(rlpList)
+            RLPOutput(rlpList, false)
         }
     }
 

@@ -1,9 +1,6 @@
 package org.starcoin.sirius.serialization.rlp
 
-import kotlinx.serialization.ImplicitReflectionSerializer
-import kotlinx.serialization.Serializable
-import kotlinx.serialization.decode
-import kotlinx.serialization.encode
+import kotlinx.serialization.*
 import org.apache.commons.lang3.RandomStringUtils
 import org.apache.commons.lang3.RandomUtils
 import org.junit.Assert
@@ -35,7 +32,7 @@ class RLPTest {
         val data = Data.random()
 
         var rlpList = RLPList(mutableListOf())
-        val output = RLPOutput(rlpList)
+        val output = RLPOutput(rlpList, true)
         output.encode(data)
 
         Assert.assertTrue(rlpList.element.isNotEmpty())
@@ -45,29 +42,32 @@ class RLPTest {
 
         Assert.assertEquals(rlpList.element.size, rlpList1.element.size)
 
-        val input = RLPInput(rlpList1.element.iterator())
+        val input = RLPInput(rlpList1.element.iterator(), true)
         val data1 = input.decode(Data.serializer())
         Assert.assertEquals(data, data1)
     }
 
     @Test
     fun testObjectNest() {
-        val data = Data.random()
-        val namedData = NamedData("test", data)
-        var rlpList = RLPList(mutableListOf())
-        val output = RLPOutput(rlpList)
-        output.encode(namedData)
+        0.rangeTo(1000).forEach {
+            println(it)
+            val data = Data.random()
+            val namedData = NamedData("test", data)
+            var rlpList = RLPList(mutableListOf())
+            val output = RLPOutput(rlpList, true)
+            output.encode(namedData)
 
-        Assert.assertTrue(rlpList.element.isNotEmpty())
+            Assert.assertTrue(rlpList.element.isNotEmpty())
 
-        var bytes = rlpList.encode()
-        var rlpList1 = bytes.decodeRLP() as RLPList
+            var bytes = rlpList.encode()
+            var rlpList1 = bytes.decodeRLP() as RLPList
 
-        Assert.assertEquals(rlpList.element.size, rlpList1.element.size)
+            Assert.assertEquals(rlpList.element.size, rlpList1.element.size)
 
-        val input = RLPInput(rlpList1.element.iterator())
-        val namedData1 = input.decode(NamedData.serializer())
-        Assert.assertEquals(namedData, namedData1)
+            val input = RLPInput(rlpList1.element.iterator(), true)
+            val namedData1 = input.decode(NamedData.serializer())
+            Assert.assertEquals(namedData, namedData1)
+        }
     }
 
     /**
@@ -82,4 +82,20 @@ class RLPTest {
         Assert.assertEquals(int, int1)
     }
 
+//    @Test
+//    fun testLongRLP(){
+//        val long = 54408193066555392L
+//        val rlp = long.toRLP()
+//        val long1 = rlp.toLongFromRLP()
+//        Assert.assertEquals(long,long1)
+//    }
+
+    @Test
+    fun testRLP() {
+        val data = Data.random()
+        val namedData = NamedData("test", data)
+        val bytes = RLP.dump(namedData)
+        val namedData1 = RLP.load<NamedData>(bytes)
+        Assert.assertEquals(namedData, namedData1)
+    }
 }
