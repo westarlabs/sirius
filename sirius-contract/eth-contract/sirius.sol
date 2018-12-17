@@ -6,8 +6,7 @@ import "./lib/safe_math.sol";
 interface Sirius {
     function deposit() external payable;
 
-    //function commit(uint allotment, uint eon, bytes32 left, uint amount, bytes32 right) external;
-    function commit(bytes data) external;
+    function commit(bytes calldata data) external;
 }
 
 contract SiriusService is Sirius {
@@ -73,19 +72,16 @@ contract SiriusService is Sirius {
         emit DepositEvent(msg.sender, msg.value);
     }
 
-    //function commit(uint allotment, uint eon, bytes32 left, uint amount, bytes32 right) external recovery {
-    function commit(bytes data) external recovery {
+    function commit(bytes calldata data) external recovery {
+        HubRootLib.HubRoot memory root = HubRootLib.marshal(data);
         assert(!balances[0].hasRoot);
-        assert(balances[0].eon == eon);
-        assert(allotment >= 0);
-        uint tmp = SafeMath.add(balances[1].root.allotment, balances[1].depositMeta.total);
+        assert(root.eon > 0);
+        assert(balances[0].eon == root.eon);
+        assert(root.node.allotment >= 0);
+        uint tmp = SafeMath.add(balances[1].root.node.allotment, balances[1].depositMeta.total);
         uint allotmentTmp = SafeMath.sub(tmp, balances[1].withdrawalMeta.total);
-        assert(allotmentTmp >= 0 && allotmentTmp == allotment);
-        balances[0].root.node.left = left;
-        balances[0].root.node.amount = amount;
-        balances[0].root.node.right = right;
-        balances[0].root.allotment = allotment;
-        balances[0].root.eon = eon;
+        assert(allotmentTmp >= 0 && allotmentTmp == root.node.allotment);
+        balances[0].root = root;
         balances[0].hasRoot = true;
     }
 
