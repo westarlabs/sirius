@@ -9,4 +9,5 @@ out
 *.DS_Store
 */database/
 */logs
-
+*.ipr
+*.iws

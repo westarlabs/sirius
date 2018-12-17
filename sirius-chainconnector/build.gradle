@@ -1,0 +1,5 @@
+dependencies{
+    compile project(":sirius-core")
+    compile project(":sirius-proto")
+    compile ('org.web3j:core:4.0.0')
+}
