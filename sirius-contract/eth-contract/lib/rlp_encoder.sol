@@ -220,6 +220,26 @@ library RLPEncoder {
         return flattened;
     }
 
+    function append(bytes memory first, bytes memory second) internal pure returns (bytes memory appended) {
+        appended = new bytes(first.length + second.length);
+        uint flattenedPtr;
+        assembly { flattenedPtr := add(appended, 0x20) }
+
+        uint firstPtr;
+        assembly { firstPtr := add(first, 0x20)}
+
+        memcpy(flattenedPtr, firstPtr, first.length);
+        flattenedPtr += first.length;
+
+        uint secondPtr;
+        assembly { secondPtr := add(second, 0x20)}
+
+        memcpy(flattenedPtr, secondPtr, second.length);
+        flattenedPtr += second.length;
+
+        return appended;
+    }
+
     /**
      * @dev Concatenates two bytes.
      * @notice From: https://github.com/GNSPS/solidity-bytes-utils/blob/master/contracts/BytesLib.sol.

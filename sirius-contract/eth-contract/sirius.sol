@@ -6,7 +6,8 @@ import "./lib/safe_math.sol";
 interface Sirius {
     function deposit() external payable;
 
-    function commit(uint allotment, uint eon, bytes32 left, uint amount, bytes32 right) external;
+    //function commit(uint allotment, uint eon, bytes32 left, uint amount, bytes32 right) external;
+    function commit(bytes data) external;
 }
 
 contract SiriusService is Sirius {
@@ -72,7 +73,8 @@ contract SiriusService is Sirius {
         emit DepositEvent(msg.sender, msg.value);
     }
 
-    function commit(uint allotment, uint eon, bytes32 left, uint amount, bytes32 right) external recovery {
+    //function commit(uint allotment, uint eon, bytes32 left, uint amount, bytes32 right) external recovery {
+    function commit(bytes data) external recovery {
         assert(!balances[0].hasRoot);
         assert(balances[0].eon == eon);
         assert(allotment >= 0);
