@@ -11,9 +11,9 @@ import org.ethereum.net.server.Channel
 import org.starcoin.sirius.core.BlockAddress
 import org.starcoin.sirius.core.BlockInfo
 import org.starcoin.sirius.core.ChainTransaction
-import java.math.BigInteger
+import org.starcoin.sirius.core.Hash
 
-class InMemoryEthereumListener : EthereumListener {
+class  InMemoryEthereumListener : EthereumListener {
 
     val blocks : MutableList<BlockInfo> = mutableListOf();
 
@@ -46,7 +46,10 @@ class InMemoryEthereumListener : EthereumListener {
     }
 
     override fun onBlock(blockSummary: BlockSummary?) {
-        blockSummary?.block
+        val block=blockSummary?.blockInfo()
+        if(block!= null){
+            blocks.add(block)
+        }
     }
 
     override fun onPeerDisconnect(host: String?, port: Long) {
@@ -127,4 +130,7 @@ class InMemoryEthereumListener : EthereumListener {
         return blockInfo
     }
 
+    fun findTransaction(hash: Hash): ChainTransaction? {
+        return blocks.flatMap { it.getTransactions() }.first { it.equals(hash)}
+    }
 }
