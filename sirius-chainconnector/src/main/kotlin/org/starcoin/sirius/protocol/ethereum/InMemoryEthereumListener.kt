@@ -1,5 +1,6 @@
 package org.starcoin.sirius.protocol.ethereum
 
+import org.bouncycastle.util.BigIntegers
 import org.ethereum.core.*
 import org.ethereum.listener.EthereumListener
 import org.ethereum.net.eth.message.StatusMessage
@@ -10,6 +11,7 @@ import org.ethereum.net.server.Channel
 import org.starcoin.sirius.core.BlockAddress
 import org.starcoin.sirius.core.BlockInfo
 import org.starcoin.sirius.core.ChainTransaction
+import java.math.BigInteger
 
 class InMemoryEthereumListener : EthereumListener {
 
@@ -92,7 +94,7 @@ class InMemoryEthereumListener : EthereumListener {
             // Transaction timestamp
             0,  //timestamp
             // Transaction value
-            this.value as Long, // value
+            BigIntegers.fromUnsignedByteArray(this.value).toLong(), // value
             // Transaction data
             "",
             // FIXME: No argument in ethereum transaction
@@ -113,7 +115,7 @@ class InMemoryEthereumListener : EthereumListener {
                     // Transaction timestamp
                     0,  //timestamp
                     // Transaction value
-                    it.value as Long, // value
+                    BigIntegers.fromUnsignedByteArray(it.value).toLong(), // value
                     // Transaction data
                     "",
                     // FIXME: No argument in ethereum transaction
