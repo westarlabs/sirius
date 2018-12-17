@@ -92,7 +92,7 @@ class InMemoryEthereumListener : EthereumListener {
             // Transaction timestamp
             0,  //timestamp
             // Transaction value
-            this.value, // value
+            this.value as Long, // value
             // Transaction data
             "",
             // FIXME: No argument in ethereum transaction
