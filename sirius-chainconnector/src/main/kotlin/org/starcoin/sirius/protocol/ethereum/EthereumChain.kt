@@ -81,23 +81,7 @@ class EthereumChain constructor(httpUrl: String = defaultHttpUrl, socketPath: St
         val blockInfo = BlockInfo(this.number as Int)
         this.transactions.map { it ->
             val tx = it as Transaction
-            blockInfo.addTransaction(
-                ChainTransaction(
-                    // Transaction from block address
-                    BlockAddress.valueOf(tx.from),
-                    // Transaction to block address
-                    BlockAddress.valueOf(tx.to),
-                    // Transaction timestamp
-                    0,  //timestamp
-                    // Transaction value
-                    tx.value as Long, // value
-                    // Transaction data
-                    tx.input,
-                    // FIXME: No argument in ethereum transaction
-                    // Transaction argument
-                    ByteArray(0)
-                )
-            )
+            blockInfo.addTransaction(tx.chainTransaction())
         }
         return blockInfo
     }
