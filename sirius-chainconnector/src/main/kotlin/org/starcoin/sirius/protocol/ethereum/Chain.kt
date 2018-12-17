@@ -71,15 +71,11 @@ class EthereumChain constructor(httpUrl: String = defaultHttpUrl, socketPath: St
 
 
     override fun watchBlock(onNext: ((b: BlockInfo) -> Unit)) {
-        web3jSrv!!.blockFlowable(true).subscribe { block ->
-            onNext(castEthBlock(block.block))
-        }
+        web3jSrv!!.blockFlowable(true).subscribe { block -> onNext(block.block.blockInfo()) }
     }
 
     override fun watchTransaction(onNext: ((t: ChainTransaction) -> Unit)) {
-        web3jSrv!!.transactionFlowable().subscribe { tx ->
-            onNext(castEthTransaction(tx))
-        }
+        web3jSrv!!.transactionFlowable().subscribe { tx -> onNext(tx.chainTransaction()) }
     }
 
     override fun getBalance(address: ByteArray): BigInteger {
@@ -88,27 +84,27 @@ class EthereumChain constructor(httpUrl: String = defaultHttpUrl, socketPath: St
         return req.balance
     }
 
-    private fun castEthTransaction(tx: Transaction): ChainTransaction {
+    fun Transaction.chainTransaction(): ChainTransaction {
         return ChainTransaction(
             // Transaction from block address
-            BlockAddress.valueOf(tx.from),
+            BlockAddress.valueOf(this.from),
             // Transaction to block address
-            BlockAddress.valueOf(tx.to),
+            BlockAddress.valueOf(this.to),
             // Transaction timestamp
             0,  //timestamp
             // Transaction value
-            tx.value as Long, // value
+            this.value as Long, // value
             // Transaction data
-            tx.input,
+            this.input,
             // FIXME: No argument in ethereum transaction
             // Transaction argument
             ByteArray(0)
         )
     }
 
-    private fun castEthBlock(ethBlock: EthBlock.Block): BlockInfo {
-        val blockInfo = BlockInfo(ethBlock.number as Int)
-        ethBlock.transactions.map { it ->
+    fun EthBlock.Block.blockInfo(): BlockInfo {
+        val blockInfo = BlockInfo(this.number as Int)
+        this.transactions.map { it ->
             val tx = it as Transaction
             blockInfo.addTransaction(
                 ChainTransaction(

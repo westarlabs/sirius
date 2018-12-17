@@ -95,6 +95,10 @@ class BlockAddress private constructor(val address: ByteArray) : CachedHash() {
             return BlockAddress(Utils.HEX.decode(addressHex))
         }
 
+        fun valueOf(address:ByteArray):BlockAddress{
+            return BlockAddress(address)
+        }
+
         fun valueOf(address: ByteString): BlockAddress {
             Preconditions.checkNotNull(address, "address")
             Preconditions.checkArgument(!address.isEmpty, "address")

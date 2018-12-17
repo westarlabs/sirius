@@ -67,12 +67,14 @@ subprojects {
         compile "org.jetbrains.kotlin:kotlin-reflect"
         compile 'org.jetbrains.kotlinx:kotlinx-coroutines-core:1.0.1'
         compile "org.jetbrains.kotlinx:kotlinx-serialization-runtime:0.9.0"
+
+        compile group: 'org.ethereum', name: 'solcJ-all', version: '0.4.25'
+        compile group: 'org.ethereum', name: 'ethereumj-core', version: '1.9.1-RELEASE'
+
         //TODO move to subproject
         compile "com.github.walleth.kethereum:rlp:0.66"
         testCompile("junit:junit:4.12")
         testCompile("org.mockito:mockito-core:2.10.0")
-        testCompile group: 'org.ethereum', name: 'solcJ-all', version: '0.4.25'
-        testCompile group: 'org.ethereum', name: 'ethereumj-core', version: '1.9.1-RELEASE'
     }
 
     compileKotlin {
