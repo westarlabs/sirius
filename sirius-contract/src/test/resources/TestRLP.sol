@@ -1,45 +1,58 @@
 pragma solidity ^0.5.1;
 
-import "./RLP.sol";
+import "./lib/rlp_decoder.sol";
+import "./lib/rlp_encoder.sol";
 
 contract TestRLP {
 
-    using RLP for bytes;
-    using RLP for bytes[];
-    using RLP for RLP.RLPItem;
-    using RLP for RLP.Iterator;
+    using RLPDecoder for RLPDecoder.RLPItem;
+    using RLPDecoder for RLPDecoder.Iterator;
+    using RLPDecoder for bytes;
 
-    //    constructor () public{
-    //    }
+    event NewData(bool, byte, int, string);
 
     struct Data {
         bool boolValue;
-        byte byteValue;
         int intValue;
         string stringValue;
     }
 
     function decodeData(bytes memory dataBytes) internal pure returns (Data memory){
-        RLP.RLPItem[] memory rlpList = dataBytes.toRLPItem().toList();
+        RLPDecoder.RLPItem[] memory rlpList = dataBytes.toRLPItem().toList();
         return Data({
             boolValue : rlpList[0].toBool(),
-            byteValue : rlpList[1].toByte(),
-            intValue : rlpList[2].toInt(),
-            stringValue : rlpList[3].toAscii()
+            intValue : rlpList[1].toInt(),
+            stringValue : rlpList[2].toAscii()
             });
     }
 
     function encodeData(Data memory _data) internal pure returns (bytes memory){
-        return abi.encodePacked(_data.boolValue, _data.byteValue, _data.intValue, _data.stringValue);
+        bytes memory boolValue = RLPEncoder.encodeBool(_data.boolValue);
+        bytes memory intValue = RLPEncoder.encodeInt(_data.intValue);
+        bytes memory stringValue = RLPEncoder.encodeString(_data.stringValue);
+        bytes memory flattened = RLPEncoder.append(RLPEncoder.append(boolValue, intValue), stringValue);
+        bytes memory encoded = RLPEncoder.encodeList(flattened);
+        return encoded;
     }
 
     Data data;
 
     function set(bytes memory _data) public {
         data = decodeData(_data);
+        //emit NewData(data.boolValue, data.byteValue, data.intValue, data.stringValue);
     }
 
-    function hash() public view returns (bool, byte, int, string memory){
-        return (data.boolValue, data.byteValue, data.intValue, data.stringValue);
+    function get() public view returns (bytes memory){
+        return encodeData(data);
+    }
+
+    function echo(bytes memory _data) public view returns (bytes memory){
+        //return _data;
+        return encodeData(decodeData(_data));
+    }
+
+    //TODO solidity bug, byte always 0
+    function echoByte(byte b) public view returns (byte){
+        return b;
     }
 }
