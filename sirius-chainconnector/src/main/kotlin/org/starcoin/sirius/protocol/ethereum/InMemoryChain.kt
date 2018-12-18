@@ -7,6 +7,7 @@ import org.starcoin.sirius.core.ChainTransaction
 import org.starcoin.sirius.core.Hash
 import org.starcoin.sirius.protocol.Chain
 import java.math.BigInteger
+import java.security.KeyPair
 
 class InMemoryChain(autoGenblock :Boolean):Chain {
 
@@ -37,5 +38,8 @@ class InMemoryChain(autoGenblock :Boolean):Chain {
         return inMemoryEthereumListener.findTransaction(hash)
     }
 
+    override fun newTransaction(keyPaire:KeyPair,transaction: ChainTransaction) {
+        
+    }
 
 }

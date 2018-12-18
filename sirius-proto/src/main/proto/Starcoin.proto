@@ -321,6 +321,21 @@ message ProtoBlockAddress {
     bytes address = 1;
 }
 
+message QueryCurrentTransferDeliveryChallengesRequest {
+    ProtoBlockAddress addr = 1;
+}
+
+message QueryCurrentTransferDeliveryChallengesResponse {
+    repeated ProtoTransferDeliveryChallenge challenges = 1;
+}
+
+message ProtoTransferDeliveryChallenge {
+    ProtoUpdate update = 1;
+    ProtoOffchainTransaction transaction = 2;
+    ProtoMerklePath path = 3;
+    ChallengeStatus status = 4;
+}
+
 service HubService {
     rpc registerParticipant (RegisterParticipantRequest) returns (ProtoUpdate);
     rpc sendNewTransfer (ProtoIOU) returns (SuccResponse);

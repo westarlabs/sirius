@@ -5,6 +5,7 @@ import org.starcoin.sirius.core.BlockInfo
 import org.starcoin.sirius.core.ChainTransaction
 import org.starcoin.sirius.core.Hash
 import java.math.BigInteger
+import java.security.KeyPair
 
 
 interface Chain {
@@ -18,4 +19,7 @@ interface Chain {
     fun watchTransaction(onNext: ((tx: ChainTransaction) -> Unit))
 
     fun getBalance(address: BlockAddress): BigInteger
+
+    fun newTransaction(keyPair: KeyPair,transaction: ChainTransaction)
+
 }

@@ -12,10 +12,14 @@ import org.web3j.protocol.core.methods.response.Transaction
 import org.web3j.protocol.http.HttpService
 import org.web3j.protocol.ipc.UnixIpcService
 import java.math.BigInteger
+import java.security.KeyPair
 
 const val defaultHttpUrl = "http://127.0.0.1:8545"
 
 class EthereumChain constructor(httpUrl: String = defaultHttpUrl, socketPath: String?) : Chain {
+    override fun newTransaction(keyPire :KeyPair,transaction: ChainTransaction) {
+        TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
+    }
 
     private val web3jSrv: Web3j? =
         Web3j.build(if (socketPath != null) UnixIpcService(socketPath) else HttpService(httpUrl))
