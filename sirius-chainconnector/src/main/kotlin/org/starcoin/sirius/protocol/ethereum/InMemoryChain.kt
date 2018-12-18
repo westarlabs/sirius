@@ -6,6 +6,8 @@ import org.starcoin.sirius.core.BlockInfo
 import org.starcoin.sirius.core.ChainTransaction
 import org.starcoin.sirius.core.Hash
 import org.starcoin.sirius.protocol.Chain
+import org.starcoin.sirius.protocol.HubContract
+import org.starcoin.sirius.protocol.TransactionProgressListener
 import java.math.BigInteger
 import java.security.KeyPair
 
@@ -26,7 +28,7 @@ class InMemoryChain(autoGenblock :Boolean):Chain {
         }
     }
 
-    override fun watchTransaction(onNext: (tx: ChainTransaction) -> Unit) {
+    override fun watchTransactions(onNext: (tx: ChainTransaction) -> Unit) {
 
     }
 
@@ -42,4 +44,11 @@ class InMemoryChain(autoGenblock :Boolean):Chain {
 
     }
 
+    override fun watchTransaction(txHash: Hash, listener: TransactionProgressListener) {
+        TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
+    }
+
+    override fun getContract(): HubContract {
+        TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
+    }
 }
