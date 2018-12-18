@@ -13,19 +13,21 @@ import org.ethereum.solidity.compiler.SolidityCompiler
 import org.ethereum.util.blockchain.StandaloneBlockchain
 import org.junit.Assert
 import org.junit.Test
+import org.starcoin.sirius.core.BlockAddress
 import org.starcoin.sirius.serialization.rlp.RLP
 import java.io.File
 import java.net.URL
 
 
 @Serializable
-data class Data(val boolean: Boolean, val int: Int, val string: String) {
+data class Data(val boolean: Boolean, val int: Int, val string: String, val address: BlockAddress) {
     companion object {
         fun random(): Data {
             return Data(
                 RandomUtils.nextBoolean(),
                 RandomUtils.nextInt(),
-                RandomStringUtils.randomAlphabetic(RandomUtils.nextInt(10, 30))
+                RandomStringUtils.randomAlphabetic(RandomUtils.nextInt(10, 30)),
+                BlockAddress.random()
             )
         }
     }
