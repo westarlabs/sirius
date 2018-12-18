@@ -1,9 +1,11 @@
 package org.starcoin.sirius.serialization.rlp
 
 import kotlinx.serialization.*
+import org.starcoin.sirius.serialization.BinaryElementValueEncoder
 
 
-class RLPOutput internal constructor(private val out: RLPList, private val begin: Boolean) : ElementValueEncoder() {
+class RLPOutput internal constructor(private val out: RLPList, private val begin: Boolean) :
+    BinaryElementValueEncoder() {
 
     override fun beginCollection(
         desc: SerialDescriptor,
@@ -44,6 +46,7 @@ class RLPOutput internal constructor(private val out: RLPList, private val begin
             is Double -> out.add(value.toRLP())
             is Char -> out.add(value.toRLP())
             is String -> out.add(value.toRLP())
+            is ByteArray -> out.add(value.toRLP())
             else -> throw SerializationException("unsupported type ${value.javaClass}")
         }
     }
