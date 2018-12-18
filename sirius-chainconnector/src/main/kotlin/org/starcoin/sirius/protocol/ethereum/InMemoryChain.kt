@@ -39,7 +39,7 @@ class InMemoryChain(autoGenblock :Boolean):Chain {
     }
 
     override fun newTransaction(keyPaire:KeyPair,transaction: ChainTransaction) {
-        
+
     }
 
 }
