@@ -53,7 +53,7 @@ class EthereumChain constructor(httpUrl: String = defaultHttpUrl, socketPath: St
         web3jSrv!!.blockFlowable(true).subscribe { block -> onNext(block.block.blockInfo()) }
     }
 
-    override fun watchTransaction(onNext: ((t: ChainTransaction) -> Unit)) {
+    override fun watchTransactions(onNext: ((t: ChainTransaction) -> Unit)) {
         web3jSrv!!.transactionFlowable().subscribe { tx -> onNext(tx.chainTransaction()) }
     }
 
@@ -88,5 +88,13 @@ class EthereumChain constructor(httpUrl: String = defaultHttpUrl, socketPath: St
             blockInfo.addTransaction(tx.chainTransaction())
         }
         return blockInfo
+    }
+
+    override fun watchTransaction(txHash: Hash, listener: TransactionProgressListener) {
+        TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
+    }
+
+    override fun getContract(): HubContract {
+        TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
     }
 }

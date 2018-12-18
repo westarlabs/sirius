@@ -7,6 +7,10 @@ import org.starcoin.sirius.core.Hash
 import java.math.BigInteger
 import java.security.KeyPair
 
+//watch transaction process
+interface TransactionProgressListener {
+
+}
 
 interface Chain {
 
@@ -16,10 +20,13 @@ interface Chain {
 
     fun watchBlock(onNext: ((block: BlockInfo) -> Unit))
 
-    fun watchTransaction(onNext: ((tx: ChainTransaction) -> Unit))
+    fun watchTransactions(onNext: ((tx: ChainTransaction) -> Unit))
 
     fun getBalance(address: BlockAddress): BigInteger
 
     fun newTransaction(keyPair: KeyPair,transaction: ChainTransaction)
 
+    fun watchTransaction(txHash: Hash, listener: TransactionProgressListener)
+
+    fun getContract(): HubContract
 }
