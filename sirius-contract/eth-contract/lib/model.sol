@@ -47,8 +47,18 @@ library ChainHashLib {
 
     function marshal(bytes memory data) internal pure returns (ChainHash memory chainHash) {
         RLPDecoder.RLPItem memory rlp = RLPDecoder.toRLPItem(data);
-        bytes memory tmp = RLPDecoder.toData(rlp);
-        chainHash.hash = ByteUtilLib.bytesToBytes32(tmp);
+        RLPDecoder.Iterator memory it = RLPDecoder.iterator(rlp);
+        uint idx;
+        while (RLPDecoder.hasNext(it)) {
+            RLPDecoder.RLPItem memory r = RLPDecoder.next(it);
+            if (idx == 0) {
+                bytes memory tmp = RLPDecoder.toData(r);
+                chainHash.hash = ByteUtilLib.bytesToBytes32(tmp);
+            }
+
+            idx++;
+        }
+
         return chainHash;
     }
 
@@ -58,8 +68,7 @@ library ChainHashLib {
             bs[i] = self.hash[i];
         }
 
-        bytes memory middle = RLPEncoder.encodeBytes(bs);
-        return RLPEncoder.encodeBytes(middle);
+        return RLPEncoder.encodeList(RLPEncoder.encodeBytes(bs));
     }
 }
 
@@ -72,7 +81,6 @@ library NodeInfoLib {
 
     function marshal(bytes memory data) internal pure returns (NodeInfo memory node) {
         RLPDecoder.RLPItem memory rlp = RLPDecoder.toRLPItem(data);
-
         RLPDecoder.Iterator memory it = RLPDecoder.iterator(rlp);
         uint idx;
         while (RLPDecoder.hasNext(it)) {
@@ -89,12 +97,11 @@ library NodeInfoLib {
     }
 
     function unmarshal(NodeInfo memory node) internal pure returns (bytes memory) {
-        bytes memory left = ChainHashLib.unmarshal(node.left);
+        bytes memory left = RLPEncoder.encodeBytes(ChainHashLib.unmarshal(node.left));
         bytes memory amount = RLPEncoder.encodeUint(node.amount);
-        bytes memory right = ChainHashLib.unmarshal(node.right);
+        bytes memory right = RLPEncoder.encodeBytes(ChainHashLib.unmarshal(node.right));
 
-        bytes memory middle = RLPEncoder.append(RLPEncoder.append(left, amount), right);
-        return RLPEncoder.encodeBytes(middle);
+        return RLPEncoder.encodeList(RLPEncoder.append(RLPEncoder.append(left, amount), right));
     }
 }
 
@@ -102,18 +109,17 @@ library HubRootNodeLib {
     struct HubRootNode {
         uint offset;
         uint allotment;
-        NodeInfoLib.NodeInfo node;
+        NodeInfoLib.NodeInfo info;
     }
 
     function marshal(bytes memory data) internal pure returns (HubRootNode memory rootNode) {
         RLPDecoder.RLPItem memory rlp = RLPDecoder.toRLPItem(data);
-
         RLPDecoder.Iterator memory it = RLPDecoder.iterator(rlp);
         uint idx;
         while (RLPDecoder.hasNext(it)) {
             RLPDecoder.RLPItem memory r = RLPDecoder.next(it);
             if (idx == 0) rootNode.offset = RLPDecoder.toUint(r);
-            else if (idx == 1) rootNode.node = NodeInfoLib.marshal(RLPDecoder.toData(r));
+            else if (idx == 1) rootNode.info = NodeInfoLib.marshal(RLPDecoder.toData(r));
             else if (idx == 2) rootNode.allotment = RLPDecoder.toUint(r);
             else {}
 
@@ -125,11 +131,10 @@ library HubRootNodeLib {
 
     function unmarshal(HubRootNode memory rootNode) internal pure returns (bytes memory) {
         bytes memory offset = RLPEncoder.encodeUint(rootNode.offset);
-        bytes memory node = NodeInfoLib.unmarshal(rootNode.node);
+        bytes memory info = RLPEncoder.encodeBytes(NodeInfoLib.unmarshal(rootNode.info));
         bytes memory allotment = RLPEncoder.encodeUint(rootNode.allotment);
 
-        bytes memory middle = RLPEncoder.append(RLPEncoder.append(offset, node), allotment);
-        return RLPEncoder.encodeBytes(middle);
+        return RLPEncoder.encodeList(RLPEncoder.append(RLPEncoder.append(offset, info), allotment));
     }
 }
 
@@ -141,7 +146,6 @@ library HubRootLib {
 
     function marshal(bytes memory data) internal pure returns (HubRoot memory root) {
         RLPDecoder.RLPItem memory rlp = RLPDecoder.toRLPItem(data);
-
         RLPDecoder.Iterator memory it = RLPDecoder.iterator(rlp);
         uint idx;
         while (RLPDecoder.hasNext(it)) {
@@ -157,10 +161,9 @@ library HubRootLib {
     }
 
     function unmarshal(HubRoot memory root) internal pure returns (bytes memory) {
-        bytes memory node = HubRootNodeLib.unmarshal(root.node);
+        bytes memory node = RLPEncoder.encodeBytes(HubRootNodeLib.unmarshal(root.node));
         bytes memory eon = RLPEncoder.encodeUint(root.eon);
 
-        bytes memory middle = RLPEncoder.append(node, eon);
-        return RLPEncoder.encodeBytes(middle);
+        return RLPEncoder.encodeList(RLPEncoder.append(node, eon));
     }
 }

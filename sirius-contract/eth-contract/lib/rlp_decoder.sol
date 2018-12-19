@@ -395,7 +395,6 @@ library RLPDecoder {
             assembly {
                 let offset := mul(i, 0x20)
                 mstore(add(wOffset, offset), mload(add(rOffset, offset)))
-                i := add(i, 1)
             }
         }
 

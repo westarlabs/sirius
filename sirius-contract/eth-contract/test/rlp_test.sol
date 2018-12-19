@@ -2,10 +2,11 @@ pragma solidity ^0.5.1;
 
 import "../lib/rlp_decoder.sol";
 import "../lib/rlp_encoder.sol";
-import "../lib/log.sol";
+import "../lib/log_util.sol";
 
 interface rlp_test_interface {
     function testUint(uint data) external returns (uint);
+    function testUint2(uint data) external;
     function testString() external;
     function testStruct() external;
     function testMap(uint data) external;
@@ -66,6 +67,10 @@ contract rlp_test is rlp_test_interface {
         t1.c = t2;
 
         bytes memory flattened = RLPEncoder.append(RLPEncoder.append(RLPEncoder.append(ab, bb), db), eb);
+
+        // bytes memory flattened1 = RLPEncoder.encodeList(RLPEncoder.encodeBytes(RLPEncoder.append(db, eb)));
+        // bytes memory flattened = RLPEncoder.encodeBytes(RLPEncoder.append(RLPEncoder.append(ab, bb), flattened1));
+
         bytes memory encoded = RLPEncoder.encodeList(flattened);
 
         RLPDecoder.RLPItem memory rlp = RLPDecoder.toRLPItem(encoded);

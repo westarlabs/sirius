@@ -57,6 +57,7 @@ contract SiriusService is Sirius {
                     uint tmp2 = SafeMath.add(SafeMath.mul(blocksPerEon, newEon), SafeMath.div(blocksPerEon, 4));
                     if (tmp > tmp2) {
                         recoveryMode = true;
+                        //TODO: add event
                     }
                 }
             }
@@ -83,14 +84,16 @@ contract SiriusService is Sirius {
         assert(allotmentTmp >= 0 && allotmentTmp == root.node.allotment);
         balances[0].root = root;
         balances[0].hasRoot = true;
+        //TODO:add event
     }
 
     function checkBalances(BalanceLib.Balance memory latest) private {
         uint i = (balances.length - 1);
         for (; i >= 0; i--) {
-            if (i == 0)
+            if (i == 0) {
                 balances[i] = latest;
-            else if (balances[i - 1].hasRoot)
+                //TODO: add event
+            }else if (balances[i - 1].hasRoot)
                 balances[i] = balances[i - 1];
         }
     }
