@@ -19,6 +19,7 @@ import java.security.spec.PKCS8EncodedKeySpec
 import org.ethereum.crypto.ECKey.CURVE_SPEC
 import org.ethereum.crypto.jce.ECKeyFactory
 import org.ethereum.crypto.jce.SpongyCastleProvider
+import org.spongycastle.jcajce.provider.asymmetric.ec.BCECPrivateKey
 import org.spongycastle.jce.spec.ECPrivateKeySpec
 import org.spongycastle.jce.spec.ECPublicKeySpec
 
@@ -205,6 +206,11 @@ object KeyPairUtil {
     fun fromECKey(eckey: ECKey) : KeyPair{
         var privateKey=ECKeyFactory.getInstance(SpongyCastleProvider.getInstance()).generatePrivate(ECPrivateKeySpec(eckey.privKey!!, CURVE_SPEC));
         var publicKey=ECKeyFactory.getInstance(SpongyCastleProvider.getInstance()).generatePublic(ECPublicKeySpec(eckey.pubKeyPoint,CURVE_SPEC))
+
         return KeyPair(publicKey,privateKey)
+    }
+
+    fun getECKey(keyPair: KeyPair):ECKey{
+        return ECKey.fromPrivate((keyPair.private as BCECPrivateKey).d)
     }
 }

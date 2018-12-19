@@ -1,5 +1,6 @@
 package org.starcoin.sirius.protocol.ethereum
 
+import org.ethereum.crypto.ECKey
 import org.ethereum.util.blockchain.StandaloneBlockchain
 import org.starcoin.sirius.core.BlockAddress
 import org.starcoin.sirius.core.BlockInfo
@@ -8,6 +9,7 @@ import org.starcoin.sirius.protocol.Chain
 import org.starcoin.sirius.protocol.EthereumTransaction
 import org.starcoin.sirius.protocol.HubContract
 import org.starcoin.sirius.protocol.TransactionProgressListener
+import org.starcoin.sirius.util.KeyPairUtil
 import java.math.BigInteger
 import java.security.KeyPair
 
@@ -40,7 +42,8 @@ class InMemoryChain(autoGenblock :Boolean):Chain<EthereumTransaction,BlockInfo,H
         return inMemoryEthereumListener.findTransaction(hash)
     }
 
-    override fun newTransaction(keyPaire:KeyPair,transaction: EthereumTransaction) {
+    override fun newTransaction(keyPair:KeyPair,transaction: EthereumTransaction) {
+        transaction.ethTransaction.sign(KeyPairUtil.getECKey(keyPair))
         sb.submitTransaction(transaction.ethTransaction)
     }
 

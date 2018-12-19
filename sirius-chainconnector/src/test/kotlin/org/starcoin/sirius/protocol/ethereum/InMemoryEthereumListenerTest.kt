@@ -6,7 +6,6 @@ import org.junit.Test
 import org.starcoin.sirius.core.BlockAddress
 import org.starcoin.sirius.protocol.EthereumTransaction
 import org.starcoin.sirius.util.KeyPairUtil
-import java.security.KeyPair
 
 class InMemoryEthereumListenerTest {
 
@@ -31,5 +30,7 @@ class InMemoryEthereumListenerTest {
 
         var keyPair = KeyPairUtil.fromECKey(alice)
         chain.newTransaction(keyPair,transaction)
+
+        chain.sb.createBlock()
     }
 }

@@ -1,9 +1,11 @@
 package org.starcoin.sirius.util
 
 import org.apache.commons.lang3.RandomUtils
+import org.ethereum.crypto.ECKey
 import org.junit.Assert
 import org.junit.Assert.*
 import org.junit.Test
+import org.spongycastle.jcajce.provider.asymmetric.ec.BCECPrivateKey
 import java.io.File
 import java.nio.file.Files
 import java.nio.file.attribute.PosixFilePermissions
@@ -81,6 +83,19 @@ class KeyPairUtilTest {
         val bytes = KeyPairUtil.encodePrivateKey(kp.private)
         val privateKey = KeyPairUtil.recoverPrivateKey(bytes)
         Assert.assertArrayEquals(bytes, KeyPairUtil.encodePrivateKey(privateKey))
+    }
+
+    @Test
+    fun testfromECKey(){
+        var eckey = ECKey()
+
+        var keyPair=KeyPairUtil.fromECKey(eckey)
+
+        println(keyPair.private.javaClass)
+        println((keyPair.private as BCECPrivateKey).d)
+        var ecKey2=KeyPairUtil.getECKey(keyPair)
+
+        assertEquals(eckey,ecKey2)
     }
 
     companion object {
