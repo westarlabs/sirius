@@ -5,10 +5,11 @@ import kotlinx.serialization.ElementValueDecoder
 import kotlinx.serialization.KSerializer
 import kotlinx.serialization.SerialDescriptor
 import kotlinx.serialization.internal.EnumDescriptor
+import org.starcoin.sirius.serialization.BinaryElementValueDecoder
 
 
 class RLPInput internal constructor(private val input: Iterator<RLPType>, private val begin: Boolean) :
-    ElementValueDecoder() {
+    BinaryElementValueDecoder() {
 
     override fun beginStructure(desc: SerialDescriptor, vararg typeParams: KSerializer<*>): CompositeDecoder {
         return if (begin) {
@@ -64,5 +65,9 @@ class RLPInput internal constructor(private val input: Iterator<RLPType>, privat
     }
 
     override fun decodeUnit() {
+    }
+
+    override fun decodeByteArray(): ByteArray {
+        return nextElement().bytes
     }
 }

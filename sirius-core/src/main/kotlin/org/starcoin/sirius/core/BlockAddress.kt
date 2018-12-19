@@ -5,6 +5,8 @@ import com.google.common.base.Preconditions
 import com.google.protobuf.ByteString
 import kotlinx.serialization.*
 import org.apache.commons.lang3.RandomUtils
+import org.starcoin.sirius.serialization.BinaryElementValueDecoder
+import org.starcoin.sirius.serialization.BinaryElementValueEncoder
 import org.starcoin.sirius.util.HashUtil
 import org.starcoin.sirius.util.KeyPairUtil
 import org.starcoin.sirius.util.Utils
@@ -34,7 +36,7 @@ class BlockAddress private constructor(val address: ByteArray) : CachedHash() {
 
     fun toBytes(): ByteArray {
         // not changeable
-        return address.clone()
+        return address.copyOf()
     }
 
     fun toByteString(): ByteString {
@@ -72,12 +74,18 @@ class BlockAddress private constructor(val address: ByteArray) : CachedHash() {
             byteArrayOf(1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20)
         )
 
-        override fun serialize(output: Encoder, obj: BlockAddress) {
-            output.encodeString(obj.toString())
+        override fun deserialize(input: Decoder): BlockAddress {
+            return when (input) {
+                is BinaryElementValueDecoder -> valueOf(input.decodeByteArray())
+                else -> valueOf(input.decodeString())
+            }
         }
 
-        override fun deserialize(input: Decoder): BlockAddress {
-            return BlockAddress.valueOf(input.decodeString())
+        override fun serialize(output: Encoder, obj: BlockAddress) {
+            when (output) {
+                is BinaryElementValueEncoder -> output.encodeByteArray(obj.address)
+                else -> output.encodeString(obj.toString())
+            }
         }
 
         @Throws(IOException::class)
