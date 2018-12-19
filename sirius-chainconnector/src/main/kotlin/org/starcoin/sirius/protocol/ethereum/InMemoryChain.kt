@@ -1,6 +1,5 @@
 package org.starcoin.sirius.protocol.ethereum
 
-import org.ethereum.crypto.ECKey
 import org.ethereum.util.blockchain.StandaloneBlockchain
 import org.starcoin.sirius.core.BlockAddress
 import org.starcoin.sirius.core.BlockInfo

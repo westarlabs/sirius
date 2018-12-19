@@ -8,9 +8,13 @@ import org.starcoin.sirius.core.ChainTransaction
 import kotlin.properties.Delegates
 
 
-class EthereumTransaction: ChainTransaction {
+class EthereumTransaction : ChainTransaction {
 
-    var ethTransaction : Transaction by Delegates.notNull()
+    var ethTransaction: Transaction by Delegates.notNull()
+    var nonce: Long = 0
+    var gasPrice: Long = 0
+    var gasLimit: Long = 0
+    var data: ByteArray? = null
 
     constructor(
         from: BlockAddress,
@@ -19,8 +23,8 @@ class EthereumTransaction: ChainTransaction {
         gasPrice: Long,
         gasLimit: Long,
         amount: Long,
-        data:ByteArray?
-    ) :super(from, to, amount) {
+        data: ByteArray?
+    ) : super(from, to, amount) {
         ethTransaction = Transaction(
             BigIntegers.asUnsignedByteArray(nonce.toBigInteger()),
             BigIntegers.asUnsignedByteArray(gasPrice.toBigInteger()),
@@ -29,10 +33,16 @@ class EthereumTransaction: ChainTransaction {
             BigIntegers.asUnsignedByteArray(amount.toBigInteger()),
             data
         )
+        this.nonce = nonce
+        this.gasPrice = gasPrice
+        this.gasLimit = gasLimit
+        this.data = data
+        this.amount = amount
     }
 
-    constructor(transaction: Transaction){
+    constructor(transaction: Transaction) {
         ethTransaction = transaction
+        //FIXME: Init other properties
     }
 
 }
