@@ -6,12 +6,13 @@ import org.starcoin.sirius.core.BlockInfo
 import org.starcoin.sirius.core.ChainTransaction
 import org.starcoin.sirius.core.Hash
 import org.starcoin.sirius.protocol.Chain
+import org.starcoin.sirius.protocol.EthereumTransaction
 import org.starcoin.sirius.protocol.HubContract
 import org.starcoin.sirius.protocol.TransactionProgressListener
 import java.math.BigInteger
 import java.security.KeyPair
 
-class InMemoryChain(autoGenblock :Boolean):Chain {
+class InMemoryChain(autoGenblock :Boolean):Chain<EthereumTransaction,BlockInfo,HubContract> {
 
     val autoGenblock = autoGenblock
     val sb = StandaloneBlockchain()
@@ -28,7 +29,7 @@ class InMemoryChain(autoGenblock :Boolean):Chain {
         }
     }
 
-    override fun watchTransactions(onNext: (tx: ChainTransaction) -> Unit) {
+    override fun watchTransactions(onNext: (tx: EthereumTransaction) -> Unit) {
 
     }
 
@@ -36,11 +37,11 @@ class InMemoryChain(autoGenblock :Boolean):Chain {
         return sb.getBlockchain().getRepository().getBalance(address.address)
     }
 
-    override fun findTransaction(hash: Hash): ChainTransaction? {
+    override fun findTransaction(hash: Hash): EthereumTransaction? {
         return inMemoryEthereumListener.findTransaction(hash)
     }
 
-    override fun newTransaction(keyPaire:KeyPair,transaction: ChainTransaction) {
+    override fun newTransaction(keyPaire:KeyPair,transaction: EthereumTransaction) {
 
     }
 

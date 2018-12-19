@@ -12,21 +12,21 @@ interface TransactionProgressListener {
 
 }
 
-interface Chain {
+interface Chain <T:ChainTransaction,B:BlockInfo,C:HubContract>{
 
-    fun findTransaction(hash: Hash): ChainTransaction?
+    fun findTransaction(hash: Hash): T?
 
-    fun getBlock(height: BigInteger): BlockInfo?
+    fun getBlock(height: BigInteger): B?
 
-    fun watchBlock(onNext: ((block: BlockInfo) -> Unit))
+    fun watchBlock(onNext: ((block: B) -> Unit))
 
-    fun watchTransactions(onNext: ((tx: ChainTransaction) -> Unit))
+    fun watchTransactions(onNext: ((tx: T) -> Unit))
 
     fun getBalance(address: BlockAddress): BigInteger
 
-    fun newTransaction(keyPair: KeyPair,transaction: ChainTransaction)
+    fun newTransaction(keyPair: KeyPair,transaction: T)
 
     fun watchTransaction(txHash: Hash, listener: TransactionProgressListener)
 
-    fun getContract(): HubContract
+    fun getContract(): C
 }

@@ -19,6 +19,7 @@ import org.ethereum.util.RLPList
 import org.slf4j.LoggerFactory
 import org.spongycastle.util.BigIntegers
 import org.spongycastle.util.encoders.Hex
+import org.starcoin.sirius.core.ChainTransaction
 
 /**
  * A transaction (formally, T) is a single cryptographically
@@ -28,7 +29,7 @@ import org.spongycastle.util.encoders.Hex
  * There are two types of transactions: those which result in message calls
  * and those which result in the creation of new contracts.
  */
-open class EthereumTransaction {
+open class EthereumTransaction : ChainTransaction{
 
     /* SHA3 hash of the RLP encoded transaction */
     private var hash: ByteArray? = null
@@ -289,7 +290,7 @@ open class EthereumTransaction {
     }
 
     @Synchronized
-    fun verify() {
+    fun verifier() {
         rlpParse()
         validate()
     }

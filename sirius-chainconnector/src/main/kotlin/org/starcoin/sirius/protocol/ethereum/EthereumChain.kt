@@ -1,13 +1,13 @@
 package org.starcoin.sirius.protocol.ethereum
 
 import kotlinx.io.IOException
+import org.bouncycastle.util.BigIntegers
 import org.starcoin.sirius.core.*
 import org.starcoin.sirius.protocol.*
 import org.web3j.protocol.Web3j
 import org.web3j.protocol.core.DefaultBlockParameter
 import org.web3j.protocol.core.DefaultBlockParameterName
 import org.web3j.protocol.core.methods.response.EthBlock
-import org.web3j.protocol.core.methods.response.EthTransaction
 import org.web3j.protocol.core.methods.response.Transaction
 import org.web3j.protocol.http.HttpService
 import org.web3j.protocol.ipc.UnixIpcService
@@ -16,15 +16,15 @@ import java.security.KeyPair
 
 const val defaultHttpUrl = "http://127.0.0.1:8545"
 
-class EthereumChain constructor(httpUrl: String = defaultHttpUrl, socketPath: String?) : Chain {
-    override fun newTransaction(keyPire :KeyPair,transaction: ChainTransaction) {
+class EthereumChain constructor(httpUrl: String = defaultHttpUrl, socketPath: String?) : Chain<EthereumTransaction,BlockInfo,HubContract> {
+    override fun newTransaction(keyPire :KeyPair,transaction: EthereumTransaction) {
         TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
     }
 
     private val web3jSrv: Web3j? =
         Web3j.build(if (socketPath != null) UnixIpcService(socketPath) else HttpService(httpUrl))
 
-    override fun findTransaction(hash: Hash): ChainTransaction? {
+    override fun findTransaction(hash: Hash): EthereumTransaction? {
         val req = web3jSrv!!.ethGetTransactionByHash(hash.toString()).send()
         if (req.hasError()) throw IOException(req.error.message)
         val tx = req.transaction.orElse(null)
@@ -53,7 +53,7 @@ class EthereumChain constructor(httpUrl: String = defaultHttpUrl, socketPath: St
         web3jSrv!!.blockFlowable(true).subscribe { block -> onNext(block.block.blockInfo()) }
     }
 
-    override fun watchTransactions(onNext: ((t: ChainTransaction) -> Unit)) {
+    override fun watchTransactions(onNext: ((t: EthereumTransaction) -> Unit)) {
         web3jSrv!!.transactionFlowable().subscribe { tx -> onNext(tx.chainTransaction()) }
     }
 
@@ -63,18 +63,18 @@ class EthereumChain constructor(httpUrl: String = defaultHttpUrl, socketPath: St
         return req.balance
     }
 
-    fun Transaction.chainTransaction(): ChainTransaction {
-        return ChainTransaction(
+    fun Transaction.chainTransaction(): EthereumTransaction {
+        return EthereumTransaction(
             // Transaction from block address
-            BlockAddress.valueOf(this.from),
+            BlockAddress.valueOf(this.from).toBytes(),
             // Transaction to block address
-            BlockAddress.valueOf(this.to),
+            BlockAddress.valueOf(this.to).toBytes(),
             // Transaction timestamp
-            0,  //timestamp
+            BigIntegers.asUnsignedByteArray(System.currentTimeMillis().toBigInteger()),  //timestamp
             // Transaction value
-            this.value as Long, // value
+            BigIntegers.asUnsignedByteArray(this.value), // value
             // Transaction data
-            this.input,
+            ByteArray(0),
             // FIXME: No argument in ethereum transaction
             // Transaction argument
             ByteArray(0)

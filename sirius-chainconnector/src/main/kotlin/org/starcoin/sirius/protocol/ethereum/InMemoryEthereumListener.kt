@@ -12,6 +12,7 @@ import org.starcoin.sirius.core.BlockAddress
 import org.starcoin.sirius.core.BlockInfo
 import org.starcoin.sirius.core.ChainTransaction
 import org.starcoin.sirius.core.Hash
+import org.starcoin.sirius.protocol.EthereumTransaction
 
 class  InMemoryEthereumListener : EthereumListener {
 
@@ -130,7 +131,7 @@ class  InMemoryEthereumListener : EthereumListener {
         return blockInfo
     }
 
-    fun findTransaction(hash: Hash): ChainTransaction? {
-        return blocks.flatMap { it.getTransactions() }.first { it.equals(hash)}
+    fun findTransaction(hash: Hash): EthereumTransaction? {
+        return blocks.flatMap { it.getTransactions() }.first { it.equals(hash)} as EthereumTransaction
     }
 }
