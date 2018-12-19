@@ -3,7 +3,6 @@ package org.starcoin.sirius.protocol.ethereum
 import org.ethereum.util.blockchain.StandaloneBlockchain
 import org.starcoin.sirius.core.BlockAddress
 import org.starcoin.sirius.core.BlockInfo
-import org.starcoin.sirius.core.ChainTransaction
 import org.starcoin.sirius.core.Hash
 import org.starcoin.sirius.protocol.Chain
 import org.starcoin.sirius.protocol.EthereumTransaction

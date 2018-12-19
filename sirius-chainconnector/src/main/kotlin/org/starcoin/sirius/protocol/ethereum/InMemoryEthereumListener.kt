@@ -89,22 +89,8 @@ class  InMemoryEthereumListener : EthereumListener {
         TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
     }
 
-    fun Transaction.chainTransaction(): ChainTransaction {
-        return ChainTransaction(
-            // Transaction from block address
-            BlockAddress.valueOf(this.sender),
-            // Transaction to block address
-            BlockAddress.valueOf(this.receiveAddress),
-            // Transaction timestamp
-            0,  //timestamp
-            // Transaction value
-            BigIntegers.fromUnsignedByteArray(this.value).toLong(), // value
-            // Transaction data
-            "",
-            // FIXME: No argument in ethereum transaction
-            // Transaction argument
-            this.data
-        )
+    fun Transaction.chainTransaction(): EthereumTransaction {
+        return EthereumTransaction(this)
     }
 
     fun BlockSummary.blockInfo(): BlockInfo {
