@@ -10,7 +10,7 @@ import kotlin.properties.Delegates
 
 class EthereumTransaction: ChainTransaction {
 
-    private var ethTransaction : Transaction by Delegates.notNull()
+    var ethTransaction : Transaction by Delegates.notNull()
 
     constructor(
         from: BlockAddress,
@@ -19,7 +19,7 @@ class EthereumTransaction: ChainTransaction {
         gasPrice: Long,
         gasLimit: Long,
         amount: Long,
-        data:ByteArray
+        data:ByteArray?
     ) :super(from, to, amount) {
         ethTransaction = Transaction(
             BigIntegers.asUnsignedByteArray(nonce.toBigInteger()),

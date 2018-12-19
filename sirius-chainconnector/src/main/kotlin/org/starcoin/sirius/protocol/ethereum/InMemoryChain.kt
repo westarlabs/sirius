@@ -13,9 +13,9 @@ import java.security.KeyPair
 
 class InMemoryChain(autoGenblock :Boolean):Chain<EthereumTransaction,BlockInfo,HubContract> {
 
-    val autoGenblock = autoGenblock
+    private val autoGenblock = autoGenblock
     val sb = StandaloneBlockchain()
-    val inMemoryEthereumListener = InMemoryEthereumListener()
+    private val inMemoryEthereumListener = InMemoryEthereumListener()
 
     override fun getBlock(height: BigInteger): BlockInfo? {
         return inMemoryEthereumListener.blocks.get(height.toInt())
@@ -41,7 +41,7 @@ class InMemoryChain(autoGenblock :Boolean):Chain<EthereumTransaction,BlockInfo,H
     }
 
     override fun newTransaction(keyPaire:KeyPair,transaction: EthereumTransaction) {
-
+        sb.submitTransaction(transaction.ethTransaction)
     }
 
     override fun watchTransaction(txHash: Hash, listener: TransactionProgressListener) {
@@ -51,4 +51,5 @@ class InMemoryChain(autoGenblock :Boolean):Chain<EthereumTransaction,BlockInfo,H
     override fun getContract(): HubContract {
         TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
     }
+
 }
