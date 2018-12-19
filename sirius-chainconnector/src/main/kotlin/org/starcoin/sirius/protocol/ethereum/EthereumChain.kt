@@ -65,19 +65,13 @@ class EthereumChain constructor(httpUrl: String = defaultHttpUrl, socketPath: St
 
     fun Transaction.chainTransaction(): EthereumTransaction {
         return EthereumTransaction(
-            // Transaction from block address
-            BlockAddress.valueOf(this.from).toBytes(),
-            // Transaction to block address
-            BlockAddress.valueOf(this.to).toBytes(),
-            // Transaction timestamp
-            BigIntegers.asUnsignedByteArray(System.currentTimeMillis().toBigInteger()),  //timestamp
-            // Transaction value
-            BigIntegers.asUnsignedByteArray(this.value), // value
-            // Transaction data
-            ByteArray(0),
-            // FIXME: No argument in ethereum transaction
-            // Transaction argument
-            ByteArray(0)
+            BlockAddress.valueOf(this.from),
+            BlockAddress.valueOf(this.to),
+            System.currentTimeMillis(),  //timestamp
+            this.gasPrice.longValueExact(),
+            0,
+            this.value as Long,
+            this.input.toByteArray()
         )
     }
 
