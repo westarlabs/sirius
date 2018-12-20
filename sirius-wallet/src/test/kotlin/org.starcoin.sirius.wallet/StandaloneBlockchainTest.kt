@@ -100,8 +100,8 @@ class StandaloneBlockchainTest {
                         "  function f(uint a_) {a = a_;}" +
                         "}"))
         a.callFunction("f", "ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff")
-        val r = a.callConstFunction("a")[0] as BigInteger
-        println(r.toString(16))
+        val r = a.callConstFunction("a")
+        println(r.toString())
         Assert.assertEquals(BigInteger(Hex.decode("ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff")), r)
     }
 
