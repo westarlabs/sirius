@@ -31,7 +31,7 @@ class InMemoryChain(autoGenblock :Boolean):Chain<EthereumTransaction,BlockInfo,H
     }
 
     override fun getBalance(address: Address): BigInteger {
-        return sb.getBlockchain().getRepository().getBalance(address.address)
+        return sb.getBlockchain().getRepository().getBalance(address.toBytes())
     }
 
     override fun findTransaction(hash: Hash): EthereumTransaction? {

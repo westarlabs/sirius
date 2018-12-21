@@ -29,7 +29,7 @@ class EthereumTransaction : ChainTransaction {
             BigIntegers.asUnsignedByteArray(nonce.toBigInteger()),
             BigIntegers.asUnsignedByteArray(gasPrice.toBigInteger()),
             BigIntegers.asUnsignedByteArray(gasLimit.toBigInteger()),
-            to.address,
+            to.toBytes(),
             BigIntegers.asUnsignedByteArray(amount.toBigInteger()),
             data
         )

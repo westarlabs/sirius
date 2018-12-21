@@ -31,3 +31,7 @@ class ChannelManager {
         this.hubChannel = hubChannel
     }
 }
+
+fun InetAddressPort.toHttpURL():String{
+    return String.format("http://%s:%d",this.host,this.port)
+}

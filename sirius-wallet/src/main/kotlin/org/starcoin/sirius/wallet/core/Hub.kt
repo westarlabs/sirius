@@ -1,6 +1,7 @@
 package org.starcoin.sirius.wallet.core
 
 import org.starcoin.sirius.core.*
+import org.starcoin.sirius.protocol.ChainType
 import org.starcoin.sirius.wallet.core.store.Store
 import java.security.KeyPair
 import kotlin.properties.Delegates
@@ -50,6 +51,7 @@ class Hub {
         this.serverEventHandler = serverEventHandler
         this.keyPair = keyPair
         this.dataStore = eonStatusStore
+
 
         //val protoHubInfo = hubServiceBlockingStub.getHubInfo(Empty.newBuilder().build())
         //val hubInfo = HubInfo(protoHubInfo)
