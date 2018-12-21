@@ -29,4 +29,5 @@ interface Chain<T : ChainTransaction, B : BlockInfo, C : HubContract> {
     fun watchTransaction(txHash: Hash, listener: TransactionProgressListener)
 
     fun getContract(): C
+
 }
