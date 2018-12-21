@@ -1,6 +1,6 @@
 sourceSets {
-    main.resources.srcDirs += 'eth-contract'
-    main.resources.includes  += ['**/*.sol']
+//    main.resources.srcDirs += 'eth-contract'
+//    main.resources.includes  += ['**/*.sol']
 
     test.resources.srcDirs += 'eth-contract'
     test.resources.includes += ['**/*.sol', '*.conf']
