@@ -20,7 +20,7 @@ interface Chain<T : ChainTransaction, B : BlockInfo, C : HubContract> {
 
     fun findTransaction(hash: Hash): T?
 
-    fun getBlock(height: BigInteger): B?
+    fun getBlock(height: BigInteger = BigInteger.valueOf(-1)): B?
 
     fun watchBlock(onNext: ((block: B) -> Unit))
 

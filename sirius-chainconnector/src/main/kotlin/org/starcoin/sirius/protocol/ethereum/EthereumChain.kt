@@ -47,8 +47,10 @@ class EthereumChain constructor(httpUrl: String = defaultHttpUrl, socketPath: St
     }
 
     override fun getBlock(height: BigInteger): BlockInfo? {
+
         val blockReq = web3jSrv!!.ethGetBlockByNumber(
-            DefaultBlockParameter.valueOf(height),
+            if (height == BigInteger.valueOf(-1)) DefaultBlockParameterName.LATEST else
+                DefaultBlockParameter.valueOf(height),
             true
         ).send()
         if (blockReq.hasError()) throw IOException(blockReq.error.message)
