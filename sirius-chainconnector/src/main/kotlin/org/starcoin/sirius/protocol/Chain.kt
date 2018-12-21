@@ -12,6 +12,10 @@ interface TransactionProgressListener {
 
 }
 
+enum class ChainType{
+    ETH
+}
+
 interface Chain<T : ChainTransaction, B : BlockInfo, C : HubContract> {
 
     fun findTransaction(hash: Hash): T?
