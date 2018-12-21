@@ -9,24 +9,23 @@ import org.bouncycastle.util.io.pem.PemObject
 import org.bouncycastle.util.io.pem.PemReader
 import org.bouncycastle.util.io.pem.PemWriter
 import org.ethereum.crypto.ECKey
-
-import java.io.*
-import java.security.*
-import java.security.spec.ECGenParameterSpec
-import java.security.spec.InvalidKeySpecException
-import java.security.spec.PKCS8EncodedKeySpec
-
 import org.ethereum.crypto.ECKey.CURVE_SPEC
 import org.ethereum.crypto.jce.ECKeyFactory
 import org.ethereum.crypto.jce.SpongyCastleProvider
 import org.spongycastle.jcajce.provider.asymmetric.ec.BCECPrivateKey
 import org.spongycastle.jce.spec.ECPrivateKeySpec
 import org.spongycastle.jce.spec.ECPublicKeySpec
+import java.io.*
+import java.security.*
+import java.security.spec.ECGenParameterSpec
+import java.security.spec.InvalidKeySpecException
+import java.security.spec.PKCS8EncodedKeySpec
 
-
+@Deprecated("will change to internal")
 object KeyPairUtil {
 
     //just for junit test
+    //TODO use static config
     val TEST_KEYPAIR: KeyPair
         get() = generateKeyPair()
 
@@ -35,10 +34,14 @@ object KeyPairUtil {
     }
 
     fun generateKeyPair(): KeyPair {
+        return generateKeyPair(SecureRandom())
+    }
+
+    fun generateKeyPair(secureRandom: SecureRandom): KeyPair {
         try {
             val keyGen = KeyPairGenerator.getInstance("ECDSA", "BC")
             val ecSpec = ECGenParameterSpec("secp256k1")
-            keyGen.initialize(ecSpec, SecureRandom())
+            keyGen.initialize(ecSpec, secureRandom)
             return keyGen.generateKeyPair()
         } catch (e: NoSuchAlgorithmException) {
             throw RuntimeException(e)
@@ -179,7 +182,7 @@ object KeyPairUtil {
             val rdr = StringReader(String(keyBytes))
             val pr = PemReader(rdr)
             val po = pr.readPemObject()
-            val privateKey = KeyPairUtil.recoverPrivateKey(po.content)
+            val privateKey = recoverPrivateKey(po.content)
             pr.close()
             return privateKey
         } catch (e: IOException) {
@@ -203,14 +206,42 @@ object KeyPairUtil {
 
     }
 
-    fun fromECKey(eckey: ECKey) : KeyPair{
-        var privateKey=ECKeyFactory.getInstance(SpongyCastleProvider.getInstance()).generatePrivate(ECPrivateKeySpec(eckey.privKey!!, CURVE_SPEC));
-        var publicKey=ECKeyFactory.getInstance(SpongyCastleProvider.getInstance()).generatePublic(ECPublicKeySpec(eckey.pubKeyPoint,CURVE_SPEC))
+    fun fromECKey(eckey: ECKey): KeyPair {
+        var privateKey = ECKeyFactory.getInstance(SpongyCastleProvider.getInstance())
+            .generatePrivate(ECPrivateKeySpec(eckey.privKey!!, CURVE_SPEC));
+        var publicKey = ECKeyFactory.getInstance(SpongyCastleProvider.getInstance())
+            .generatePublic(ECPublicKeySpec(eckey.pubKeyPoint, CURVE_SPEC))
 
-        return KeyPair(publicKey,privateKey)
+        return KeyPair(publicKey, privateKey)
     }
 
-    fun getECKey(keyPair: KeyPair):ECKey{
+    fun getECKey(keyPair: KeyPair): ECKey {
         return ECKey.fromPrivate((keyPair.private as BCECPrivateKey).d)
+    }
+
+    fun encodeKeyPair(keyPair: KeyPair): ByteArray {
+        val privateKeyBytes = encodePrivateKey(keyPair.private)
+        val publicKeyBytes = encodePublicKey(keyPair.public)
+        val bytesOut = ByteArrayOutputStream(Int.SIZE_BYTES + privateKeyBytes.size + publicKeyBytes.size)
+        val out = DataOutputStream(bytesOut)
+
+        out.writeInt(privateKeyBytes.size)
+        out.write(privateKeyBytes)
+        out.write(publicKeyBytes)
+        return bytesOut.toByteArray()
+    }
+
+    fun decodeKeyPair(bytes: ByteArray): KeyPair {
+        val input = DataInputStream(ByteArrayInputStream(bytes))
+        val privateKeySize = input.readInt()
+        val privateKeyBytes = ByteArray(privateKeySize)
+        assert(privateKeySize == input.read(privateKeyBytes))
+        val publicKeySize = bytes.size - Int.SIZE_BYTES - privateKeySize
+        val publicKeyBytes = ByteArray(publicKeySize)
+        assert(publicKeySize == input.read(publicKeyBytes))
+        return KeyPair(
+            recoverPublicKey(publicKeyBytes),
+            recoverPrivateKey(privateKeyBytes)
+        )
     }
 }

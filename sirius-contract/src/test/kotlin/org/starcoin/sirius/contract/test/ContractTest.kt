@@ -24,6 +24,7 @@ data class Data(val boolean: Boolean, val int: Int, val string: String, val addr
     companion object {
         fun random(): Data {
             return Data(
+                //TODO test for true and false
                 RandomUtils.nextBoolean(),
                 RandomUtils.nextInt(),
                 RandomStringUtils.randomAlphabetic(RandomUtils.nextInt(10, 30)),
