@@ -106,7 +106,7 @@ class Hash private constructor(private val bytes: ByteBuffer) : Serializable, Co
          * @return a new instance
          * @throws IllegalArgumentException if the given array length is not exactly 32
          */
-        private fun wrap(rawHashBytes: ByteArray): Hash {
+        fun wrap(rawHashBytes: ByteArray): Hash {
             checkArgument(rawHashBytes.size == LENGTH, "unexpected hash length:" + rawHashBytes.size)
             val bytes = ByteBuffer.allocate(rawHashBytes.size).put(rawHashBytes)
             bytes.flip()
@@ -167,6 +167,10 @@ class Hash private constructor(private val bytes: ByteBuffer) : Serializable, Co
                 buffer.reset()
                 return wrap(hash(bytes))
             }
+        }
+
+        fun of(obj: SiriusObject): Hash {
+            TODO()
         }
 
         /**

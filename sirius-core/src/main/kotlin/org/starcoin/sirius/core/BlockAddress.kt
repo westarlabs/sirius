@@ -5,6 +5,7 @@ import com.google.common.base.Preconditions
 import com.google.protobuf.ByteString
 import kotlinx.serialization.*
 import org.apache.commons.lang3.RandomUtils
+import org.starcoin.sirius.crypto.CryptoService
 import org.starcoin.sirius.serialization.BinaryElementValueDecoder
 import org.starcoin.sirius.serialization.BinaryElementValueEncoder
 import org.starcoin.sirius.util.HashUtil
@@ -16,17 +17,6 @@ import java.io.InputStream
 import java.security.PublicKey
 import java.util.*
 
-/**
- * BlockMsg Address:
- *
- *
- * RIPEMD160(sha256(public key))
- *
- *
- * pubkey is 65 bytes ecdsa public key result is 20 bytes hash
- *
- * @author Tim
- */
 @Serializable
 class BlockAddress private constructor(val address: ByteArray) : CachedHash() {
 
@@ -70,9 +60,11 @@ class BlockAddress private constructor(val address: ByteArray) : CachedHash() {
     companion object : KSerializer<BlockAddress> {
 
         val LENGTH = 20
-        val DEFAULT_ADDRESS = BlockAddress(
-            byteArrayOf(1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20)
-        )
+
+        val DUMMY_ADDRESS:BlockAddress by lazy { CryptoService.INSTANCE.getDummyCryptoKey().getAddress() }
+
+        @Deprecated("")
+        val DEFAULT_ADDRESS = DUMMY_ADDRESS
 
         override fun deserialize(input: Decoder): BlockAddress {
             return when (input) {
