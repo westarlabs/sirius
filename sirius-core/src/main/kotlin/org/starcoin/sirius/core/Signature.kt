@@ -2,17 +2,15 @@ package org.starcoin.sirius.core
 
 import com.google.protobuf.ByteString
 import kotlinx.serialization.*
-import kotlinx.serialization.internal.StringDescriptor
 import org.starcoin.sirius.util.KeyPairUtil
 import org.starcoin.sirius.util.Utils
-
 import java.io.EOFException
 import java.io.IOException
 import java.io.InputStream
 import java.io.OutputStream
 import java.security.PrivateKey
 import java.security.PublicKey
-import java.util.Arrays
+import java.util.*
 
 @Serializable
 class Signature private constructor(private val sign: ByteArray) {
@@ -22,9 +20,6 @@ class Signature private constructor(private val sign: ByteArray) {
         return KeyPairUtil.verifySig(data, publicKey, this.sign)
     }
 
-    fun marshalSize(): Int {
-        return 1 + sign.size
-    }
 
     override fun equals(o: Any?): Boolean {
         if (this === o) {

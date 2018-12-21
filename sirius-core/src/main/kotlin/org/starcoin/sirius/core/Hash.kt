@@ -66,7 +66,7 @@ class Hash private constructor(private val bytes: ByteBuffer) : Serializable, Co
     }
 
     fun getBytes() = bytes.asReadOnlyBuffer()
-    fun toBytes() = this.getBytes()
+    fun toBytes() = bytes.array()
 
     fun toByteString() = ByteString.copyFrom(this.getBytes())
 
