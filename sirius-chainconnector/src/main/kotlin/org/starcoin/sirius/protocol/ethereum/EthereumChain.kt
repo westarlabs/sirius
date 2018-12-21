@@ -20,7 +20,7 @@ import java.security.KeyPair
 
 const val defaultHttpUrl = "http://127.0.0.1:8545"
 
-class EthereumChain constructor(httpUrl: String = defaultHttpUrl, socketPath: String?) :
+class EthereumChain constructor(httpUrl: String = defaultHttpUrl, socketPath: String? = null) :
     Chain<EthereumTransaction, BlockInfo, HubContract> {
     override fun newTransaction(keyPair: KeyPair, transaction: EthereumTransaction) {
         val rawtx = RawTransaction.createTransaction(
