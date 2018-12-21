@@ -103,7 +103,7 @@ class EthereumChain constructor(httpUrl: String = defaultHttpUrl, socketPath: St
         TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
     }
 
-    override fun getContract(): HubContract {
+    override fun getContract(parameter: QueryContractParameter): HubContract {
         TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
     }
 }

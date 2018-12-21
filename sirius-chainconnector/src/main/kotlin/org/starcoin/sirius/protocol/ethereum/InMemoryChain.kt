@@ -4,10 +4,7 @@ import org.ethereum.util.blockchain.StandaloneBlockchain
 import org.starcoin.sirius.core.BlockAddress
 import org.starcoin.sirius.core.BlockInfo
 import org.starcoin.sirius.core.Hash
-import org.starcoin.sirius.protocol.Chain
-import org.starcoin.sirius.protocol.EthereumTransaction
-import org.starcoin.sirius.protocol.HubContract
-import org.starcoin.sirius.protocol.TransactionProgressListener
+import org.starcoin.sirius.protocol.*
 import org.starcoin.sirius.util.KeyPairUtil
 import java.math.BigInteger
 import java.security.KeyPair
@@ -50,7 +47,7 @@ class InMemoryChain(autoGenblock :Boolean):Chain<EthereumTransaction,BlockInfo,H
         TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
     }
 
-    override fun getContract(): HubContract {
+    override fun getContract(parameter: QueryContractParameter): HubContract {
         TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
     }
 
