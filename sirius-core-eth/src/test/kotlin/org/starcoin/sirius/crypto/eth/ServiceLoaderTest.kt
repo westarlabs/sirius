@@ -8,7 +8,7 @@ class ServiceLoaderTest {
 
     @Test
     fun testServiceLoader() {
-        val cryptoService = CryptoService.createCryptoService()
+        val cryptoService = CryptoService.INSTANCE
         Assert.assertTrue(cryptoService is EthCryptoService)
     }
 }
