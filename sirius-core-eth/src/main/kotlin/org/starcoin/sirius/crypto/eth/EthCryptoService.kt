@@ -1,15 +1,36 @@
 package org.starcoin.sirius.crypto.eth
 
 import org.ethereum.crypto.ECKey
+import org.ethereum.crypto.jce.SpongyCastleProvider
+import org.ethereum.util.RLP
 import org.starcoin.sirius.core.Hash
 import org.starcoin.sirius.core.Signature
 import org.starcoin.sirius.core.SiriusObject
 import org.starcoin.sirius.crypto.CryptoKey
 import org.starcoin.sirius.crypto.CryptoService
 import org.starcoin.sirius.serialization.rlp.*
-import java.security.PublicKey
+import java.security.*
 
 object EthCryptoService : CryptoService {
+
+    val EMPTY_BYTE_ARRAY = ByteArray(0)
+    var EMPTY_DATA_HASH: Hash
+    var EMPTY_LIST_HASH: Hash
+
+    private var CRYPTO_PROVIDER: Provider
+
+    private var HASH_256_ALGORITHM_NAME: String
+    private var HASH_512_ALGORITHM_NAME: String
+
+    init {
+        Security.addProvider(SpongyCastleProvider.getInstance())
+        CRYPTO_PROVIDER = Security.getProvider("SC")
+        HASH_256_ALGORITHM_NAME = "ETH-KECCAK-256"
+        HASH_512_ALGORITHM_NAME = "ETH-KECCAK-512"
+        EMPTY_DATA_HASH = hash(EMPTY_BYTE_ARRAY)
+        EMPTY_LIST_HASH = hash(RLP.encodeList())
+    }
+
 
     override fun getDummyCryptoKey(): CryptoKey {
         return EthCryptoKey(ECKey.DUMMY)
@@ -32,11 +53,23 @@ object EthCryptoService : CryptoService {
     }
 
     override fun hash(bytes: ByteArray): Hash {
-        TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
+        return Hash.wrap(sha3(bytes))
     }
 
     override fun <T : SiriusObject> hash(obj: T): Hash {
-        TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
+        return hash(obj.toRLP())
+    }
+
+    fun sha3(input: ByteArray): ByteArray {
+        val digest: MessageDigest
+        try {
+            digest = MessageDigest.getInstance(HASH_256_ALGORITHM_NAME, CRYPTO_PROVIDER)
+            digest.update(input)
+            return digest.digest()
+        } catch (e: NoSuchAlgorithmException) {
+            throw RuntimeException(e)
+        }
+
     }
 }
 

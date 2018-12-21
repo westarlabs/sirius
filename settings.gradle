@@ -10,9 +10,10 @@ pluginManagement {
 rootProject.name = 'sirius'
 include 'sirius-proto'
 include 'sirius-core'
+include 'sirius-core-eth'
 include 'sirius-hub'
 include 'sirius-contract'
 include 'sirius-wallet'
 include 'sirius-chainconnector'
-include 'sirius-core-eth'
+
 

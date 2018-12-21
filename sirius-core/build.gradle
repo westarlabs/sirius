@@ -1,3 +1,16 @@
+configurations {
+    testOutput.extendsFrom (testCompile)
+}
+
+task jarTest (type: Jar, dependsOn: testClasses) {
+    from sourceSets.test.output
+    classifier = 'test'
+}
+
+artifacts {
+    testOutput jarTest
+}
+
 dependencies{
     compile project(":sirius-proto")
 

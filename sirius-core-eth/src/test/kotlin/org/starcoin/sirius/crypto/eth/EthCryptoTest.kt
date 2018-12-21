@@ -27,14 +27,12 @@ class EthCryptoTest {
         Assert.assertTrue(key.verify(bytes, sign1))
     }
 
-    @Ignore
     @Test
-    fun testECSignature(){
+    fun testSignatureToECDSASignature(){
         val key = ECKey()
         val bytes = RandomUtils.nextBytes(32)
         val sign = key.sign(bytes)
-        val signBytes = sign.toByteArray()
-        val sign1 = ECKey.ECDSASignature.decodeFromDER(signBytes)
+        val sign1 = sign.toSignature().toECDSASignature()
         Assert.assertEquals(sign, sign1)
     }
 

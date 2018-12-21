@@ -21,17 +21,30 @@ interface CryptoService {
 
     fun <T : SiriusObject> hash(obj: T): Hash
 
-    companion object {
-        val INSTANCE: CryptoService by lazy {
+    companion object : CryptoService {
+        val instance: CryptoService by lazy {
             val loaders = ServiceLoader
                 .load(CryptoServiceProvider::class.java).iterator()
             if (loaders.hasNext()) {
                 loaders.next().createService()
             } else {
-                //if can not find
+                //if can not find, use fallback
                 FallbackCryptoService
             }
-
         }
+
+        override fun getDummyCryptoKey() = instance.getDummyCryptoKey()
+
+
+        override fun generateCryptoKey() = instance.generateCryptoKey()
+
+        override fun loadCryptoKey(bytes: ByteArray) = instance.loadCryptoKey(bytes)
+
+        override fun verify(data: ByteArray, sign: Signature, publicKey: PublicKey) =
+            instance.verify(data, sign, publicKey)
+
+        override fun hash(bytes: ByteArray) = instance.hash(bytes)
+
+        override fun <T : SiriusObject> hash(obj: T) = instance.hash(obj)
     }
 }

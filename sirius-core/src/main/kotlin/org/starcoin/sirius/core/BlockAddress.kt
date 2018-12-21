@@ -61,7 +61,7 @@ class BlockAddress private constructor(val address: ByteArray) : CachedHash() {
 
         val LENGTH = 20
 
-        val DUMMY_ADDRESS:BlockAddress by lazy { CryptoService.INSTANCE.getDummyCryptoKey().getAddress() }
+        val DUMMY_ADDRESS:BlockAddress by lazy { CryptoService.getDummyCryptoKey().getAddress() }
 
         @Deprecated("")
         val DEFAULT_ADDRESS = DUMMY_ADDRESS
