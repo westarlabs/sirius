@@ -221,6 +221,15 @@ library RLPEncoder {
         data = encodeList(data);
     }
 
+    function object2byte(bytes[] memory datas) internal pure returns (bytes memory data) {
+        require(datas.length > 0);
+        for(uint i=0;i<datas.length;i++) {
+            data = ByteUtilLib.append(data, encodeBytes(datas[i]));
+        }
+
+        data = encodeList(data);
+    }
+
     /// @dev Return the RLP encoded bytes.
     /// @param self The RLPItem.
     /// @return The bytes.

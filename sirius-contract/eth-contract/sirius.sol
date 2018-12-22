@@ -74,7 +74,7 @@ contract SiriusService is Sirius {
     }
 
     function commit(bytes calldata data) external recovery {
-        HubRootLib.HubRoot memory root = HubRootLib.marshal(data);
+        HubRootLib.HubRoot memory root = HubRootLib.unmarshal(data);
         assert(!balances[0].hasRoot);
         assert(root.eon > 0);
         assert(balances[0].eon == root.eon);

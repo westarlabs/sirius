@@ -94,18 +94,6 @@ library NodeInfoLib {
 
         return RLPEncoder.encodeList(ByteUtilLib.append(ByteUtilLib.append(left, amount), right));
     }
-
-    function marshal2(NodeInfo memory node) internal pure returns (bytes memory) {
-        RLPLib.RLPItem[] memory items;
-        RLPLib.RLPItem memory left = RLPDecoder.toRLPItem(ByteUtilLib.bytes32ToBytes(node.left));
-        RLPLib.RLPItem memory amount = RLPDecoder.toRLPItem(ByteUtilLib.uint2byte(node.amount));
-        RLPLib.RLPItem memory right = RLPDecoder.toRLPItem(ByteUtilLib.bytes32ToBytes(node.right));
-        items[0] = left;
-        items[1] = amount;
-        items[2] = right;
-
-        return RLPEncoder.object2byte(items);
-    }
 }
 
 library HubRootNodeLib {

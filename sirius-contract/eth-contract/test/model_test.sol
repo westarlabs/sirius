@@ -43,6 +43,7 @@ contract test_all is test_all_interface {
     function node_info_test(uint amount) external {
         NodeInfoLib.NodeInfo memory nodeInfo = node_info_data(amount);
         bytes memory bs = NodeInfoLib.marshal(nodeInfo);
+        Log.log("c1", bs);
 
         NodeInfoLib.NodeInfo memory tmp = NodeInfoLib.unmarshal(bs);
         Log.log("a", tmp.left);

@@ -7,7 +7,6 @@ import "../lib/byte_util.sol";
 
 interface rlp_test_interface {
     function testUint(uint data) external returns (uint);
-    // function testUint2(uint data) external;
     function testString() external;
     function testStruct() external;
     function testMap(uint data) external;
