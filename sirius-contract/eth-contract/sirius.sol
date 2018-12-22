@@ -93,7 +93,7 @@ contract SiriusService is Sirius {
             if (i == 0) {
                 balances[i] = latest;
                 //TODO: add event
-            }else if (balances[i - 1].hasRoot)
+            } else if (balances[i - 1].hasRoot)
                 balances[i] = balances[i - 1];
         }
     }

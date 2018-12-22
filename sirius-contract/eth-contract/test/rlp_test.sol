@@ -3,18 +3,20 @@ pragma solidity ^0.5.1;
 import "../lib/rlp_decoder.sol";
 import "../lib/rlp_encoder.sol";
 import "../lib/log_util.sol";
+import "../lib/byte_util.sol";
 
 interface rlp_test_interface {
     function testUint(uint data) external returns (uint);
-    function testUint2(uint data) external;
+    // function testUint2(uint data) external;
     function testString() external;
     function testStruct() external;
     function testMap(uint data) external;
 }
 
 contract rlp_test is rlp_test_interface {
-    using RLPDecoder for RLPDecoder.RLPItem;
-    using RLPDecoder for RLPDecoder.Iterator;
+    using RLPLib for RLPLib.RLPItem;
+    using RLPLib for RLPLib.Iterator;
+    using RLPLib for bytes;
     using RLPDecoder for bytes;
 
     struct KV {
@@ -37,8 +39,8 @@ contract rlp_test is rlp_test_interface {
         Log.log("testUint:start:", data);
         bytes memory encoded = RLPEncoder.encodeUint(data);
         Log.log("testUint:2:", encoded);
-        RLPDecoder.RLPItem memory item = encoded.toRLPItem(true);
-        uint tmp = item.toUint();
+        RLPLib.RLPItem memory item = encoded.toRLPItem(true);
+        uint tmp = RLPDecoder.toUint(item);
         Log.log("testUint:encoded:", tmp);
         return (tmp);
     }
@@ -47,8 +49,8 @@ contract rlp_test is rlp_test_interface {
         string memory data = "abcd";
         Log.log("testString:start:", data);
         bytes memory encoded = RLPEncoder.encodeString(data);
-        RLPDecoder.RLPItem memory item = encoded.toRLPItem(true);
-        string memory tmp = item.toAscii();
+        RLPLib.RLPItem memory item = encoded.toRLPItem(true);
+        string memory tmp = RLPDecoder.toAscii(item);
         Log.log("testString:encoded:", tmp);
     }
 
@@ -66,23 +68,23 @@ contract rlp_test is rlp_test_interface {
         bytes memory bb = RLPEncoder.encodeAddress(t1.b);
         t1.c = t2;
 
-        bytes memory flattened = RLPEncoder.append(RLPEncoder.append(RLPEncoder.append(ab, bb), db), eb);
+        bytes memory flattened = ByteUtilLib.append(ByteUtilLib.append(ByteUtilLib.append(ab, bb), db), eb);
 
         // bytes memory flattened1 = RLPEncoder.encodeList(RLPEncoder.encodeBytes(RLPEncoder.append(db, eb)));
         // bytes memory flattened = RLPEncoder.encodeBytes(RLPEncoder.append(RLPEncoder.append(ab, bb), flattened1));
 
         bytes memory encoded = RLPEncoder.encodeList(flattened);
 
-        RLPDecoder.RLPItem memory rlp = RLPDecoder.toRLPItem(encoded);
+        RLPLib.RLPItem memory rlp = RLPDecoder.toRLPItem(encoded);
 
-        RLPDecoder.Iterator memory it = rlp.iterator();
+        RLPLib.Iterator memory it = RLPDecoder.iterator(rlp);
         uint idx;
-        while(it.hasNext()) {
-            RLPDecoder.RLPItem memory r = it.next();
-            if( idx == 0 ) Log.log("testStruct:1:", r.toUint());
-            else if ( idx == 1 ) Log.log("testStruct:2:", r.toAddress());
-            else if ( idx == 2 ) Log.log("testStruct:3:", r.toUint());
-            else if ( idx == 3 ) Log.log("testStruct:4:", r.toAscii());
+        while(RLPDecoder.hasNext(it)) {
+            RLPLib.RLPItem memory r = RLPDecoder.next(it);
+            if( idx == 0 ) Log.log("testStruct:1:", RLPDecoder.toUint(r));
+            else if ( idx == 1 ) Log.log("testStruct:2:", RLPDecoder.toAddress(r));
+            else if ( idx == 2 ) Log.log("testStruct:3:", RLPDecoder.toUint(r));
+            else if ( idx == 3 ) Log.log("testStruct:4:", RLPDecoder.toAscii(r));
 
             idx++;
         }
@@ -103,22 +105,22 @@ contract rlp_test is rlp_test_interface {
         bytes memory e2kb = RLPEncoder.encodeString(e2.key);
         bytes memory e2vb = RLPEncoder.encodeUint(e2.value);
 
-        bytes memory flattened = RLPEncoder.append(RLPEncoder.append(RLPEncoder.append(e1kb, e1vb), e2kb), e2vb);
+        bytes memory flattened = ByteUtilLib.append(ByteUtilLib.append(ByteUtilLib.append(e1kb, e1vb), e2kb), e2vb);
 
         bytes memory encoded = RLPEncoder.encodeList(flattened);
 
-        RLPDecoder.RLPItem memory rlp = RLPDecoder.toRLPItem(encoded);
+        RLPLib.RLPItem memory rlp = RLPDecoder.toRLPItem(encoded);
 
         uint i;
         uint listLen = RLPDecoder.items(rlp);
         Log.log("testMap:0:", listLen);
-        RLPDecoder.Iterator memory it = rlp.iterator();
-        while(it.hasNext() && i < listLen) {
-            RLPDecoder.RLPItem memory si = it.next();
+        RLPLib.Iterator memory it = RLPDecoder.iterator(rlp);
+        while(RLPDecoder.hasNext(it) && i < listLen) {
+            RLPLib.RLPItem memory r = RLPDecoder.next(it);
             if((i%2) == 0) {
-                Log.log("testMap:1:", si.toAscii());
+                Log.log("testMap:1:", RLPDecoder.toAscii(r));
             } else {
-                Log.log("testMap:1:", si.toUint());
+                Log.log("testMap:1:", RLPDecoder.toUint(r));
             }
             i++;
         }
