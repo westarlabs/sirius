@@ -21,6 +21,12 @@ interface Sirius {
     function closeTransferDeliveryChallenge(bytes calldata data) external;
 
     function recoverFunds(bytes calldata data) external;
+
+    function getLatestRoot() external returns (bytes memory);
+
+    function getCurrentEon() external returns (uint);
+
+    function isRecoveryMode() external returns (bool);
 }
 
 contract SiriusService is Sirius {
@@ -152,5 +158,17 @@ contract SiriusService is Sirius {
         AugmentedMerklePathLib.AugmentedMerklePath memory path = AugmentedMerklePathLib.unmarshal(data);
         path;
         //TODO
+    }
+
+    function getLatestRoot() external returns (bytes memory) {
+        //TODO
+    }
+
+    function getCurrentEon() external returns (uint) {
+        //TODO
+    }
+
+    function isRecoveryMode() external returns (bool) {
+        return recoveryMode;
     }
 }
