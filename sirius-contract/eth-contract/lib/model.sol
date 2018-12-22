@@ -194,15 +194,15 @@ library UpdateLib {
         RLPLib.RLPItem memory rlp = RLPDecoder.toRLPItem(data, true);
         RLPLib.Iterator memory it = RLPDecoder.iterator(rlp);
         uint idx;
-        while(RLPDecoder.hasNext(it)) {
+        while (RLPDecoder.hasNext(it)) {
             RLPLib.RLPItem memory r = RLPDecoder.next(it);
-            if(idx == 0) update.root = ByteUtilLib.bytesToBytes32(RLPLib.toData(r));
-            else if(idx == 1) update.sendAmount = RLPDecoder.toUint(r);
-            else if(idx == 2) update.receiveAmount = RLPDecoder.toUint(r);
-            else if(idx == 3) update.version = RLPDecoder.toUint(r);
-            else if(idx == 4) update.sign = SignatureLib.unmarshal(RLPLib.toData(r));
-            else if(idx == 5) update.hubSign = SignatureLib.unmarshal(RLPLib.toData(r));
-            else if(idx == 6) update.eon = RLPDecoder.toUint(r);
+            if (idx == 0) update.root = ByteUtilLib.bytesToBytes32(RLPLib.toData(r));
+            else if (idx == 1) update.sendAmount = RLPDecoder.toUint(r);
+            else if (idx == 2) update.receiveAmount = RLPDecoder.toUint(r);
+            else if (idx == 3) update.version = RLPDecoder.toUint(r);
+            else if (idx == 4) update.sign = SignatureLib.unmarshal(RLPLib.toData(r));
+            else if (idx == 5) update.hubSign = SignatureLib.unmarshal(RLPLib.toData(r));
+            else if (idx == 6) update.eon = RLPDecoder.toUint(r);
             else {}
         }
     }
@@ -216,7 +216,7 @@ library UpdateLib {
         bytes memory hubSign = RLPEncoder.encodeBytes(SignatureLib.marshal(update.hubSign));
         bytes memory eon = RLPEncoder.encodeUint(update.eon);
 
-        return RLPEncoder.encodeList(ByteUtilLib.append(ByteUtilLib.append(ByteUtilLib.append(ByteUtilLib.append(ByteUtilLib.append(ByteUtilLib.append(root, sendAmount), receiveAmount),version),sign),hubSign),eon));
+        return RLPEncoder.encodeList(ByteUtilLib.append(ByteUtilLib.append(ByteUtilLib.append(ByteUtilLib.append(ByteUtilLib.append(ByteUtilLib.append(root, sendAmount), receiveAmount), version), sign), hubSign), eon));
     }
 }
 
@@ -231,11 +231,11 @@ library AccountInfoLib {
         RLPLib.RLPItem memory rlp = RLPDecoder.toRLPItem(data, true);
         RLPLib.Iterator memory it = RLPDecoder.iterator(rlp);
         uint idx;
-        while(RLPDecoder.hasNext(it)) {
+        while (RLPDecoder.hasNext(it)) {
             RLPLib.RLPItem memory r = RLPDecoder.next(it);
-            if(idx == 0) accountInfo.addr = ByteUtilLib.bytesToBytes32(RLPLib.toData(r));
-            else if(idx == 1) accountInfo.allotment = RLPDecoder.toUint(r);
-            else if(idx == 2) accountInfo.update = UpdateLib.unmarshal(RLPLib.toData(r));
+            if (idx == 0) accountInfo.addr = ByteUtilLib.bytesToBytes32(RLPLib.toData(r));
+            else if (idx == 1) accountInfo.allotment = RLPDecoder.toUint(r);
+            else if (idx == 2) accountInfo.update = UpdateLib.unmarshal(RLPLib.toData(r));
             else {}
         }
     }
@@ -261,12 +261,12 @@ library AugmentedMerkleTreeNodeLib {
         RLPLib.RLPItem memory rlp = RLPDecoder.toRLPItem(data, true);
         RLPLib.Iterator memory it = RLPDecoder.iterator(rlp);
         uint idx;
-        while(RLPDecoder.hasNext(it)) {
+        while (RLPDecoder.hasNext(it)) {
             RLPLib.RLPItem memory r = RLPDecoder.next(it);
-            if(idx == 0) node.offset = RLPDecoder.toUint(r);
-            else if(idx == 1) node.node = NodeInfoLib.unmarshal(RLPLib.toData(r));
-            else if(idx == 2) node.account = AccountInfoLib.unmarshal(RLPLib.toData(r));
-            else if(idx == 3) node.allotment = RLPDecoder.toUint(r);
+            if (idx == 0) node.offset = RLPDecoder.toUint(r);
+            else if (idx == 1) node.node = NodeInfoLib.unmarshal(RLPLib.toData(r));
+            else if (idx == 2) node.account = AccountInfoLib.unmarshal(RLPLib.toData(r));
+            else if (idx == 3) node.allotment = RLPDecoder.toUint(r);
             else {}
         }
     }
@@ -292,13 +292,13 @@ library MerklePathDirectionLib {
         RLPLib.RLPItem memory rlp = RLPDecoder.toRLPItem(data, true);
         RLPLib.Iterator memory it = RLPDecoder.iterator(rlp);
         uint idx;
-        while(RLPDecoder.hasNext(it)) {
+        while (RLPDecoder.hasNext(it)) {
             RLPLib.RLPItem memory r = RLPDecoder.next(it);
-            if(idx == 0) {
+            if (idx == 0) {
                 uint tmp = RLPDecoder.toUint(r);
-                if(tmp == 1) {
+                if (tmp == 1) {
                     return MerklePathDirection.DIRECTION_LEFT;
-                } else if(tmp == 2) {
+                } else if (tmp == 2) {
                     return MerklePathDirection.DIRECTION_RIGTH;
                 }
             } else {}
@@ -311,9 +311,9 @@ library MerklePathDirectionLib {
 
     function marshal(MerklePathDirectionLib.MerklePathDirection dir) internal pure returns (bytes memory) {
         uint tmp;
-        if(dir == MerklePathDirection.DIRECTION_LEFT) {
+        if (dir == MerklePathDirection.DIRECTION_LEFT) {
             tmp = 1;
-        } else if(dir == MerklePathDirection.DIRECTION_RIGTH) {
+        } else if (dir == MerklePathDirection.DIRECTION_RIGTH) {
             tmp = 2;
         }
 
@@ -331,10 +331,10 @@ library AugmentedMerklePathNodeLib {
         RLPLib.RLPItem memory rlp = RLPDecoder.toRLPItem(data, true);
         RLPLib.Iterator memory it = RLPDecoder.iterator(rlp);
         uint idx;
-        while(RLPDecoder.hasNext(it)) {
+        while (RLPDecoder.hasNext(it)) {
             RLPLib.RLPItem memory r = RLPDecoder.next(it);
-            if(idx == 0) node.node = AugmentedMerkleTreeNodeLib.unmarshal(RLPLib.toData(r));
-            else if(idx == 1) node.dir = MerklePathDirectionLib.unmarshal(RLPLib.toData(r));
+            if (idx == 0) node.node = AugmentedMerkleTreeNodeLib.unmarshal(RLPLib.toData(r));
+            else if (idx == 1) node.dir = MerklePathDirectionLib.unmarshal(RLPLib.toData(r));
             else {}
         }
     }
@@ -349,7 +349,430 @@ library AugmentedMerklePathNodeLib {
 
 library AugmentedMerklePathLib {
     struct AugmentedMerklePath {
-        uint32 eon;
+        uint eon;
         AugmentedMerklePathNodeLib.AugmentedMerklePathNode[] nodes;
+    }
+
+    function unmarshal(bytes memory data) internal pure returns (AugmentedMerklePathLib.AugmentedMerklePath memory path) {
+        RLPLib.RLPItem memory rlp = RLPDecoder.toRLPItem(data, true);
+        RLPLib.Iterator memory it = RLPDecoder.iterator(rlp);
+        uint idx;
+        while (RLPDecoder.hasNext(it)) {
+            RLPLib.RLPItem memory r = RLPDecoder.next(it);
+            if (idx == 0) path.eon = RLPDecoder.toUint(r);
+            else if (idx == 1) {
+                uint len = RLPDecoder.items(r);
+                AugmentedMerklePathNodeLib.AugmentedMerklePathNode[] memory tmp = new AugmentedMerklePathNodeLib.AugmentedMerklePathNode[](len);
+                RLPLib.Iterator memory it2 = RLPDecoder.iterator(r);
+                uint i;
+                while (RLPDecoder.hasNext(it2)) {
+                    RLPLib.RLPItem memory t = RLPDecoder.next(it2);
+                    tmp[i] = AugmentedMerklePathNodeLib.unmarshal(RLPLib.toData(t));
+                    i++;
+                }
+                path.nodes = tmp;
+            } else {}
+        }
+    }
+
+    function marshal(AugmentedMerklePathLib.AugmentedMerklePath memory path) internal pure returns (bytes memory) {
+        bytes memory eon = RLPEncoder.encodeUint(path.eon);
+
+        bytes memory data;
+        AugmentedMerklePathNodeLib.AugmentedMerklePathNode[] memory nodes = path.nodes;
+        for (uint i = 0; i < nodes.length; i++) {
+            data = ByteUtilLib.append(data, AugmentedMerklePathNodeLib.marshal(nodes[i]));
+        }
+
+        data = RLPEncoder.encodeList(data);
+
+        return RLPEncoder.encodeList(ByteUtilLib.append(eon, data));
+    }
+}
+
+library InitiateWithdrawalRequestLib {
+    struct InitiateWithdrawalRequest {
+        address addr;
+        AugmentedMerklePathLib.AugmentedMerklePath path;
+        uint amount;
+    }
+
+    function marshal(InitiateWithdrawalRequestLib.InitiateWithdrawalRequest memory init) internal pure returns (bytes memory) {
+        bytes memory addr = RLPEncoder.encodeAddress(init.addr);
+        bytes memory path = AugmentedMerklePathLib.marshal(init.path);
+        bytes memory amount = RLPEncoder.encodeUint(init.amount);
+
+        return RLPEncoder.encodeList(ByteUtilLib.append(ByteUtilLib.append(addr, path), amount));
+    }
+
+    function unmarshal(bytes memory data) internal pure returns (InitiateWithdrawalRequestLib.InitiateWithdrawalRequest memory init) {
+        RLPLib.RLPItem memory rlp = RLPDecoder.toRLPItem(data, true);
+        RLPLib.Iterator memory it = RLPDecoder.iterator(rlp);
+        uint idx;
+        while (RLPDecoder.hasNext(it)) {
+            RLPLib.RLPItem memory r = RLPDecoder.next(it);
+            if (idx == 0) init.addr = RLPDecoder.toAddress(r);
+            else if (idx == 1) init.path = AugmentedMerklePathLib.unmarshal(RLPLib.toData(r));
+            else if (idx == 2) init.amount = RLPDecoder.toUint(r);
+            else {}
+        }
+    }
+}
+
+library ParticipantLib {
+    struct Participant {
+        bytes publicKey;
+    }
+
+    function unmarshal(bytes memory data) internal pure returns (ParticipantLib.Participant memory participant) {
+        RLPLib.RLPItem memory rlp = RLPDecoder.toRLPItem(data, true);
+        RLPLib.Iterator memory it = RLPDecoder.iterator(rlp);
+
+        uint idx;
+        while (RLPDecoder.hasNext(it)) {
+            RLPLib.RLPItem memory r = RLPDecoder.next(it);
+            if (idx == 0) participant.publicKey = RLPLib.toData(r);
+            else {}
+
+            idx++;
+        }
+    }
+
+    function marshal(ParticipantLib.Participant memory participant) internal pure returns (bytes memory) {
+        return RLPEncoder.encodeList(RLPEncoder.encodeBytes(participant.publicKey));
+    }
+}
+
+library CancelWithdrawalRequestLib {
+    struct CancelWithdrawalRequest {
+        ParticipantLib.Participant participant;
+        UpdateLib.Update update;
+        AugmentedMerklePathLib.AugmentedMerklePath merklePath;
+    }
+
+    function unmarshal(bytes memory data) internal pure returns (CancelWithdrawalRequestLib.CancelWithdrawalRequest memory cancel) {
+        RLPLib.RLPItem memory rlp = RLPDecoder.toRLPItem(data, true);
+        RLPLib.Iterator memory it = RLPDecoder.iterator(rlp);
+        uint idx;
+        while (RLPDecoder.hasNext(it)) {
+            RLPLib.RLPItem memory r = RLPDecoder.next(it);
+            if (idx == 0) cancel.participant = ParticipantLib.unmarshal(RLPLib.toData(r));
+            else if (idx == 1) cancel.update = UpdateLib.unmarshal(RLPLib.toData(r));
+            else if (idx == 2) cancel.merklePath = AugmentedMerklePathLib.unmarshal(RLPLib.toData(r));
+            else {}
+        }
+    }
+
+    function marshal(CancelWithdrawalRequestLib.CancelWithdrawalRequest memory cancel) internal pure returns (bytes memory) {
+        bytes memory participant = ParticipantLib.marshal(cancel.participant);
+        bytes memory update = UpdateLib.marshal(cancel.update);
+        bytes memory merklePath = AugmentedMerklePathLib.marshal(cancel.merklePath);
+
+        return RLPEncoder.encodeList(ByteUtilLib.append(ByteUtilLib.append(participant, update), merklePath));
+    }
+}
+
+library BalanceUpdateProofLib {
+    struct BalanceUpdateProof {
+        AugmentedMerklePathLib.AugmentedMerklePath path;
+        UpdateLib.Update update;
+    }
+
+    function marshal(BalanceUpdateProofLib.BalanceUpdateProof memory proof) internal pure returns (bytes memory) {
+        bytes memory path = AugmentedMerklePathLib.marshal(proof.path);
+        bytes memory update = UpdateLib.marshal(proof.update);
+
+        return RLPEncoder.encodeList(ByteUtilLib.append(path, update));
+    }
+
+    function unmarshal(bytes memory data) internal pure returns (BalanceUpdateProofLib.BalanceUpdateProof memory proof) {
+        RLPLib.RLPItem memory rlp = RLPDecoder.toRLPItem(data, true);
+        RLPLib.Iterator memory it = RLPDecoder.iterator(rlp);
+        uint idx;
+        while (RLPDecoder.hasNext(it)) {
+            RLPLib.RLPItem memory r = RLPDecoder.next(it);
+            if (idx == 0) proof.path = AugmentedMerklePathLib.unmarshal(RLPLib.toData(r));
+            else if (idx == 1) proof.update = UpdateLib.unmarshal(RLPLib.toData(r));
+            else {}
+        }
+    }
+}
+
+library BalanceUpdateChallengeLib {
+    struct BalanceUpdateChallenge {
+        BalanceUpdateProofLib.BalanceUpdateProof proof;
+        bytes publicKey;
+    }
+
+    function marshal(BalanceUpdateChallengeLib.BalanceUpdateChallenge memory challenge) internal pure returns (bytes memory) {
+        bytes memory proof = BalanceUpdateProofLib.marshal(challenge.proof);
+        bytes memory publicKey = RLPEncoder.encodeBytes(challenge.publicKey);
+
+        return RLPEncoder.encodeList(ByteUtilLib.append(proof, publicKey));
+    }
+
+    function unmarshal(bytes memory data) internal pure returns (BalanceUpdateChallengeLib.BalanceUpdateChallenge memory challenge) {
+        RLPLib.RLPItem memory rlp = RLPDecoder.toRLPItem(data, true);
+        RLPLib.Iterator memory it = RLPDecoder.iterator(rlp);
+        uint idx;
+        while (RLPDecoder.hasNext(it)) {
+            RLPLib.RLPItem memory r = RLPDecoder.next(it);
+            if (idx == 0) challenge.proof = BalanceUpdateProofLib.unmarshal(RLPLib.toData(r));
+            else if (idx == 1) challenge.publicKey = RLPLib.toData(r);
+            else {}
+        }
+    }
+}
+
+library ChallengeStatusLib {
+    enum ChallengeStatus {
+        OPEN,
+        CLOSE
+    }
+
+    function unmarshal(bytes memory data) internal pure returns (ChallengeStatusLib.ChallengeStatus status) {
+        RLPLib.RLPItem memory rlp = RLPDecoder.toRLPItem(data, true);
+        RLPLib.Iterator memory it = RLPDecoder.iterator(rlp);
+        uint idx;
+        while (RLPDecoder.hasNext(it)) {
+            RLPLib.RLPItem memory r = RLPDecoder.next(it);
+            if (idx == 0) {
+                uint tmp = RLPDecoder.toUint(r);
+                if (tmp == 0) {
+                    status = ChallengeStatusLib.ChallengeStatus.OPEN;
+                } else if (tmp == 1) {
+                    status = ChallengeStatusLib.ChallengeStatus.CLOSE;
+                }
+            } else {}
+
+            idx++;
+        }
+    }
+
+    function marshal(ChallengeStatusLib.ChallengeStatus dir) internal pure returns (bytes memory) {
+        uint tmp;
+        if (dir == ChallengeStatusLib.ChallengeStatus.OPEN) {
+            tmp = 0;
+        } else if (dir == ChallengeStatusLib.ChallengeStatus.CLOSE) {
+            tmp = 1;
+        }
+
+        return RLPEncoder.encodeList(RLPEncoder.encodeUint(tmp));
+    }
+}
+
+library BalanceUpdateChallengeStatusLib {
+    struct BalanceUpdateChallengeStatus {
+        BalanceUpdateChallengeLib.BalanceUpdateChallenge challenge;
+        ChallengeStatusLib.ChallengeStatus status;
+    }
+
+    function unmarshal(bytes memory data) internal pure returns (BalanceUpdateChallengeStatusLib.BalanceUpdateChallengeStatus memory challengeStatus) {
+        RLPLib.RLPItem memory rlp = RLPDecoder.toRLPItem(data, true);
+        RLPLib.Iterator memory it = RLPDecoder.iterator(rlp);
+        uint idx;
+        while (RLPDecoder.hasNext(it)) {
+            RLPLib.RLPItem memory r = RLPDecoder.next(it);
+            if (idx == 0) challengeStatus.challenge = BalanceUpdateChallengeLib.unmarshal(RLPLib.toData(r));
+            else if (idx == 1) challengeStatus.status = ChallengeStatusLib.unmarshal(RLPLib.toData(r));
+            else {}
+        }
+    }
+
+    function marshal(BalanceUpdateChallengeStatusLib.BalanceUpdateChallengeStatus memory challengeStatus) internal pure returns (bytes memory) {
+        bytes memory challenge = BalanceUpdateChallengeLib.marshal(challengeStatus.challenge);
+        bytes memory status = ChallengeStatusLib.marshal(challengeStatus.status);
+
+        return RLPEncoder.encodeList(ByteUtilLib.append(challenge, status));
+    }
+}
+
+library OffchainTransactionLib {
+    struct OffchainTransaction {
+        uint eon;
+        address fr;
+        address to;
+        uint amount;
+        uint timestamp;
+        SignatureLib.Signature sign;
+    }
+
+    function unmarshal(bytes memory data) internal pure returns (OffchainTransactionLib.OffchainTransaction memory off) {
+        RLPLib.RLPItem memory rlp = RLPDecoder.toRLPItem(data, true);
+        RLPLib.Iterator memory it = RLPDecoder.iterator(rlp);
+        uint idx;
+        while (RLPDecoder.hasNext(it)) {
+            RLPLib.RLPItem memory r = RLPDecoder.next(it);
+            if (idx == 0) off.eon = RLPDecoder.toUint(r);
+            else if (idx == 1) off.fr = RLPDecoder.toAddress(r);
+            else if (idx == 2) off.to = RLPDecoder.toAddress(r);
+            else if (idx == 3) off.amount = RLPDecoder.toUint(r);
+            else if (idx == 4) off.timestamp = RLPDecoder.toUint(r);
+            else if (idx == 5) off.sign = SignatureLib.unmarshal(RLPLib.toData(r));
+            else {}
+        }
+    }
+
+    function marshal(OffchainTransactionLib.OffchainTransaction memory off) internal pure returns (bytes memory) {
+        bytes memory eon = RLPEncoder.encodeUint(off.eon);
+        bytes memory fr = RLPEncoder.encodeAddress(off.fr);
+        bytes memory to = RLPEncoder.encodeAddress(off.to);
+        bytes memory amount = RLPEncoder.encodeUint(off.amount);
+        bytes memory timestamp = RLPEncoder.encodeUint(off.timestamp);
+        bytes memory sign = SignatureLib.marshal(off.sign);
+
+        return RLPEncoder.encodeList(ByteUtilLib.append(ByteUtilLib.append(ByteUtilLib.append(ByteUtilLib.append(ByteUtilLib.append(eon, fr), to), amount), timestamp), sign));
+    }
+}
+
+library MerkleTreeNodeLib {
+    struct MerkleTreeNode {
+        bytes32 hash;
+        OffchainTransactionLib.OffchainTransaction tran;
+    }
+
+    function unmarshal(bytes memory data) internal pure returns (MerkleTreeNodeLib.MerkleTreeNode memory node) {
+        RLPLib.RLPItem memory rlp = RLPDecoder.toRLPItem(data, true);
+        RLPLib.Iterator memory it = RLPDecoder.iterator(rlp);
+        uint idx;
+        while (RLPDecoder.hasNext(it)) {
+            RLPLib.RLPItem memory r = RLPDecoder.next(it);
+            if (idx == 0) node.hash = ByteUtilLib.bytesToBytes32(RLPLib.toData(r));
+            else if (idx == 1) node.tran = OffchainTransactionLib.unmarshal(RLPLib.toData(r));
+            else {}
+        }
+    }
+
+    function marshal(MerkleTreeNodeLib.MerkleTreeNode memory node) internal pure returns (bytes memory) {
+        bytes memory hash = RLPEncoder.encodeBytes(ByteUtilLib.bytes32ToBytes(node.hash));
+        bytes memory tran = OffchainTransactionLib.marshal(node.tran);
+
+        return RLPEncoder.encodeList(ByteUtilLib.append(hash, tran));
+    }
+}
+
+library MerklePathNodeLib {
+    struct MerklePathNode {
+        MerkleTreeNodeLib.MerkleTreeNode node;
+        MerklePathDirectionLib.MerklePathDirection dir;
+    }
+
+    function unmarshal(bytes memory data) internal pure returns (MerklePathNodeLib.MerklePathNode memory pathNode) {
+        RLPLib.RLPItem memory rlp = RLPDecoder.toRLPItem(data, true);
+        RLPLib.Iterator memory it = RLPDecoder.iterator(rlp);
+        uint idx;
+        while (RLPDecoder.hasNext(it)) {
+            RLPLib.RLPItem memory r = RLPDecoder.next(it);
+            if (idx == 0) pathNode.node = MerkleTreeNodeLib.unmarshal(RLPLib.toData(r));
+            else if (idx == 1) pathNode.dir = MerklePathDirectionLib.unmarshal(RLPLib.toData(r));
+            else {}
+        }
+    }
+
+    function marshal(MerklePathNodeLib.MerklePathNode memory pathNode) internal pure returns (bytes memory) {
+        bytes memory node = MerkleTreeNodeLib.marshal(pathNode.node);
+        bytes memory dir = MerklePathDirectionLib.marshal(pathNode.dir);
+
+        return RLPEncoder.encodeList(ByteUtilLib.append(node, dir));
+    }
+}
+
+library MerklePathLib {
+    struct MerklePath {
+        MerklePathNodeLib.MerklePathNode[] nodes;
+    }
+
+    function unmarshal(bytes memory data) internal pure returns (MerklePathLib.MerklePath memory path) {
+        RLPLib.RLPItem memory rlp = RLPDecoder.toRLPItem(data, true);
+        RLPLib.Iterator memory it = RLPDecoder.iterator(rlp);
+        uint idx;
+        while (RLPDecoder.hasNext(it)) {
+            RLPLib.RLPItem memory r = RLPDecoder.next(it);
+            if (idx == 0) {
+                uint len = RLPDecoder.items(r);
+                MerklePathNodeLib.MerklePathNode[] memory tmp = new MerklePathNodeLib.MerklePathNode[](len);
+                RLPLib.Iterator memory it2 = RLPDecoder.iterator(r);
+                uint i;
+                while (RLPDecoder.hasNext(it2)) {
+                    RLPLib.RLPItem memory t = RLPDecoder.next(it2);
+                    tmp[i] = MerklePathNodeLib.unmarshal(RLPLib.toData(t));
+                    i++;
+                }
+                path.nodes = tmp;
+            } else {}
+        }
+    }
+
+    function marshal(MerklePathLib.MerklePath memory path) internal pure returns (bytes memory) {
+        bytes memory data;
+        MerklePathNodeLib.MerklePathNode[] memory nodes = path.nodes;
+        for (uint i = 0; i < nodes.length; i++) {
+            data = ByteUtilLib.append(data, MerklePathNodeLib.marshal(nodes[i]));
+        }
+
+        data = RLPEncoder.encodeList(data);
+
+        return RLPEncoder.encodeList(data);
+    }
+}
+
+library OpenTransferDeliveryChallengeRequestLib {
+    struct OpenTransferDeliveryChallengeRequest {
+        OffchainTransactionLib.OffchainTransaction tran;
+        UpdateLib.Update update;
+        MerklePathLib.MerklePath path;
+    }
+
+    function unmarshal(bytes memory data) internal pure returns (OpenTransferDeliveryChallengeRequestLib.OpenTransferDeliveryChallengeRequest memory open) {
+        RLPLib.RLPItem memory rlp = RLPDecoder.toRLPItem(data, true);
+        RLPLib.Iterator memory it = RLPDecoder.iterator(rlp);
+        uint idx;
+        while (RLPDecoder.hasNext(it)) {
+            RLPLib.RLPItem memory r = RLPDecoder.next(it);
+            if (idx == 0) open.tran = OffchainTransactionLib.unmarshal(RLPLib.toData(r));
+            else if (idx == 1) open.update = UpdateLib.unmarshal(RLPLib.toData(r));
+            else if (idx == 2) open.path = MerklePathLib.unmarshal(RLPLib.toData(r));
+            else {}
+        }
+    }
+
+    function marshal(OpenTransferDeliveryChallengeRequestLib.OpenTransferDeliveryChallengeRequest memory open) internal pure returns (bytes memory) {
+        bytes memory tran = OffchainTransactionLib.marshal(open.tran);
+        bytes memory update = UpdateLib.marshal(open.update);
+        bytes memory path = MerklePathLib.marshal(open.path);
+
+        return RLPEncoder.encodeList(ByteUtilLib.append(ByteUtilLib.append(tran, update), path));
+    }
+}
+
+library CloseTransferDeliveryChallengeRequestLib {
+    struct CloseTransferDeliveryChallengeRequest {
+        AugmentedMerklePathLib.AugmentedMerklePath merklePath;
+        UpdateLib.Update update;
+        MerklePathLib.MerklePath path;
+        bytes32 fromPublicKey;
+    }
+
+    function unmarshal(bytes memory data) internal pure returns (CloseTransferDeliveryChallengeRequestLib.CloseTransferDeliveryChallengeRequest memory close) {
+        RLPLib.RLPItem memory rlp = RLPDecoder.toRLPItem(data, true);
+        RLPLib.Iterator memory it = RLPDecoder.iterator(rlp);
+        uint idx;
+        while (RLPDecoder.hasNext(it)) {
+            RLPLib.RLPItem memory r = RLPDecoder.next(it);
+            if (idx == 0) close.merklePath = AugmentedMerklePathLib.unmarshal(RLPLib.toData(r));
+            else if (idx == 1) close.update = UpdateLib.unmarshal(RLPLib.toData(r));
+            else if (idx == 2) close.path = MerklePathLib.unmarshal(RLPLib.toData(r));
+            else if (idx == 3) close.fromPublicKey = ByteUtilLib.bytesToBytes32(RLPLib.toData(r));
+            else {}
+        }
+    }
+
+    function marshal(CloseTransferDeliveryChallengeRequestLib.CloseTransferDeliveryChallengeRequest memory close) internal pure returns (bytes memory) {
+        bytes memory merklePath = AugmentedMerklePathLib.marshal(close.merklePath);
+        bytes memory update = UpdateLib.marshal(close.update);
+        bytes memory path = MerklePathLib.marshal(close.path);
+        bytes memory fromPublicKey = RLPEncoder.encodeBytes(ByteUtilLib.bytes32ToBytes(close.fromPublicKey));
+
+        return RLPEncoder.encodeList(ByteUtilLib.append(ByteUtilLib.append(ByteUtilLib.append(merklePath, update), path), fromPublicKey));
     }
 }

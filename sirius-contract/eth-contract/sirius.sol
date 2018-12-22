@@ -7,6 +7,20 @@ interface Sirius {
     function deposit() external payable;
 
     function commit(bytes calldata data) external;
+
+    function initiateWithdrawal(bytes calldata data) external;
+
+    function cancelWithdrawal(bytes calldata data) external;
+
+    function openBalanceUpdateChallenge(bytes calldata data) external;
+
+    function closeBalanceUpdateChallenge(bytes calldata data) external;
+
+    function openTransferDeliveryChallenge(bytes calldata data) external;
+
+    function closeTransferDeliveryChallenge(bytes calldata data) external;
+
+    function recoverFunds(bytes calldata data) external;
 }
 
 contract SiriusService is Sirius {
@@ -96,5 +110,47 @@ contract SiriusService is Sirius {
             } else if (balances[i - 1].hasRoot)
                 balances[i] = balances[i - 1];
         }
+    }
+
+    function initiateWithdrawal(bytes calldata data) external recovery {
+        InitiateWithdrawalRequestLib.InitiateWithdrawalRequest memory init = InitiateWithdrawalRequestLib.unmarshal(data);
+        init;
+        //TODO
+    }
+
+    function cancelWithdrawal(bytes calldata data) external recovery {
+        CancelWithdrawalRequestLib.CancelWithdrawalRequest memory cancel = CancelWithdrawalRequestLib.unmarshal(data);
+        cancel;
+        //TODO
+    }
+
+    function openBalanceUpdateChallenge(bytes calldata data) external {
+        BalanceUpdateChallengeLib.BalanceUpdateChallenge memory challenge = BalanceUpdateChallengeLib.unmarshal(data);
+        challenge;
+        //TODO
+    }
+
+    function closeBalanceUpdateChallenge(bytes calldata data) external {
+        BalanceUpdateProofLib.BalanceUpdateProof memory proof = BalanceUpdateProofLib.unmarshal(data);
+        proof;
+        //TODO
+    }
+
+    function openTransferDeliveryChallenge(bytes calldata data) external {
+        OpenTransferDeliveryChallengeRequestLib.OpenTransferDeliveryChallengeRequest memory open = OpenTransferDeliveryChallengeRequestLib.unmarshal(data);
+        open;
+        //TODO
+    }
+
+    function closeTransferDeliveryChallenge(bytes calldata data) external {
+        CloseTransferDeliveryChallengeRequestLib.CloseTransferDeliveryChallengeRequest memory close = CloseTransferDeliveryChallengeRequestLib.unmarshal(data);
+        close;
+        //TODO
+    }
+
+    function recoverFunds(bytes calldata data) external {
+        AugmentedMerklePathLib.AugmentedMerklePath memory path = AugmentedMerklePathLib.unmarshal(data);
+        path;
+        //TODO
     }
 }
