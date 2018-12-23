@@ -5,13 +5,68 @@ import "./rlp_encoder.sol";
 import "./safe_math.sol";
 import "./byte_util.sol";
 
+library WithdrawalStatusTypeLib {
+
+    enum WithdrawalStatusType {
+        INIT,
+        CANCEL,
+        CONFIRMED
+    }
+
+    function unmarshal(bytes memory data) internal pure returns (WithdrawalStatusTypeLib.WithdrawalStatusType stat) {
+        RLPLib.RLPItem memory rlp = RLPDecoder.toRLPItem(data, true);
+        RLPLib.Iterator memory it = RLPDecoder.iterator(rlp);
+        uint idx;
+        while(RLPDecoder.hasNext(it)) {
+            RLPLib.RLPItem memory r = RLPDecoder.next(it);
+            if(idx == 0) {
+                uint tmp = RLPDecoder.toUint(r);
+                if(tmp == 1) {
+                    return WithdrawalStatusTypeLib.WithdrawalStatusType.CANCEL;
+                } else if(tmp == 2) {
+                    return WithdrawalStatusTypeLib.WithdrawalStatusType.CONFIRMED;
+                }
+            } else {}
+
+            idx++;
+        }
+
+        return WithdrawalStatusTypeLib.WithdrawalStatusType.INIT;
+    }
+
+    function marshal(WithdrawalStatusTypeLib.WithdrawalStatusType stat) internal pure returns (bytes memory) {
+        uint tmp;
+        if(stat == WithdrawalStatusTypeLib.WithdrawalStatusType.CANCEL) {
+            tmp = 1;
+        } else if(stat == WithdrawalStatusTypeLib.WithdrawalStatusType.CONFIRMED) {
+            tmp = 2;
+        }
+
+        return RLPEncoder.encodeList(RLPEncoder.encodeUint(tmp));
+    }
+}
+
 library WithdrawalLib {
 
     using SafeMath for uint;
 
+    struct Withdrawal {
+        address addr;
+        InitiateWithdrawalRequestLib.WithdrawalInfo info;
+        WithdrawalStatusTypeLib.WithdrawalStatusType stat;
+        bool isVal;
+    }
+
     struct WithdrawalMeta {
         uint total;
-        mapping(address => uint) withdrawals;
+        address[] addrs;
+        mapping(address => Withdrawal) withdrawals;
+    }
+}
+
+library RecoveryMetaLib {
+    struct RecoveryMeta {
+        bool isVal;
     }
 }
 
@@ -19,14 +74,20 @@ library DepositLib {
 
     using SafeMath for uint;
 
+    struct Deposit {
+        bool hasVal;
+        address addr;
+        uint amount;
+    }
+
     struct DepositMeta {
         uint total;
         mapping(address => uint) deposits;
     }
 
     function add(DepositMeta storage self, address addr, uint amount) internal {
-        self.total = self.total.add(amount);
-        self.deposits[addr] = self.deposits[addr].add(amount);
+        self.deposits[addr] = SafeMath.add(self.deposits[addr], amount);
+        self.total = SafeMath.add(self.total, amount);
     }
 }
 
@@ -36,6 +97,8 @@ library BalanceLib {
         DepositLib.DepositMeta depositMeta;
         WithdrawalLib.WithdrawalMeta withdrawalMeta;
         HubRootLib.HubRoot root;
+        mapping(address => BalanceUpdateChallengeStatusLib.BalanceUpdateChallengeStatus) balanceChallenges;
+        mapping(string => TransferDeliveryChallengeLib.TransferDeliveryChallenge) transferChallenges;
         bool hasRoot;
     }
 }
@@ -153,6 +216,12 @@ library HubRootLib {
 
         return RLPEncoder.encodeList(ByteUtilLib.append(node, eon));
     }
+
+    function hubRoot2AugmentedMerkleTreeNode(HubRootLib.HubRoot memory root) internal pure returns (AugmentedMerkleTreeNodeLib.AugmentedMerkleTreeNode memory merkle) {
+        merkle.offset = root.node.offset;
+        merkle.allotment = root.node.allotment;
+        merkle.node = root.node.info;
+    }
 }
 
 library SignatureLib {
@@ -194,15 +263,15 @@ library UpdateLib {
         RLPLib.RLPItem memory rlp = RLPDecoder.toRLPItem(data, true);
         RLPLib.Iterator memory it = RLPDecoder.iterator(rlp);
         uint idx;
-        while (RLPDecoder.hasNext(it)) {
+        while(RLPDecoder.hasNext(it)) {
             RLPLib.RLPItem memory r = RLPDecoder.next(it);
-            if (idx == 0) update.root = ByteUtilLib.bytesToBytes32(RLPLib.toData(r));
-            else if (idx == 1) update.sendAmount = RLPDecoder.toUint(r);
-            else if (idx == 2) update.receiveAmount = RLPDecoder.toUint(r);
-            else if (idx == 3) update.version = RLPDecoder.toUint(r);
-            else if (idx == 4) update.sign = SignatureLib.unmarshal(RLPLib.toData(r));
-            else if (idx == 5) update.hubSign = SignatureLib.unmarshal(RLPLib.toData(r));
-            else if (idx == 6) update.eon = RLPDecoder.toUint(r);
+            if(idx == 0) update.root = ByteUtilLib.bytesToBytes32(RLPLib.toData(r));
+            else if(idx == 1) update.sendAmount = RLPDecoder.toUint(r);
+            else if(idx == 2) update.receiveAmount = RLPDecoder.toUint(r);
+            else if(idx == 3) update.version = RLPDecoder.toUint(r);
+            else if(idx == 4) update.sign = SignatureLib.unmarshal(RLPLib.toData(r));
+            else if(idx == 5) update.hubSign = SignatureLib.unmarshal(RLPLib.toData(r));
+            else if(idx == 6) update.eon = RLPDecoder.toUint(r);
             else {}
         }
     }
@@ -216,7 +285,20 @@ library UpdateLib {
         bytes memory hubSign = RLPEncoder.encodeBytes(SignatureLib.marshal(update.hubSign));
         bytes memory eon = RLPEncoder.encodeUint(update.eon);
 
-        return RLPEncoder.encodeList(ByteUtilLib.append(ByteUtilLib.append(ByteUtilLib.append(ByteUtilLib.append(ByteUtilLib.append(ByteUtilLib.append(root, sendAmount), receiveAmount), version), sign), hubSign), eon));
+        return RLPEncoder.encodeList(ByteUtilLib.append(ByteUtilLib.append(ByteUtilLib.append(ByteUtilLib.append(ByteUtilLib.append(ByteUtilLib.append(root, sendAmount), receiveAmount),version),sign),hubSign),eon));
+    }
+
+    function verifySig(ParticipantLib.Participant memory participant, UpdateLib.Update memory update) internal pure returns(bool flag) {
+        //TODO
+        participant;
+        update;
+        return true;
+    }
+
+    function verifyHubSig(UpdateLib.Update memory update, bytes memory hubPK) internal pure returns(bool flag) {
+        hubPK;
+        update;
+        return true;
     }
 }
 
@@ -231,11 +313,11 @@ library AccountInfoLib {
         RLPLib.RLPItem memory rlp = RLPDecoder.toRLPItem(data, true);
         RLPLib.Iterator memory it = RLPDecoder.iterator(rlp);
         uint idx;
-        while (RLPDecoder.hasNext(it)) {
+        while(RLPDecoder.hasNext(it)) {
             RLPLib.RLPItem memory r = RLPDecoder.next(it);
-            if (idx == 0) accountInfo.addr = ByteUtilLib.bytesToBytes32(RLPLib.toData(r));
-            else if (idx == 1) accountInfo.allotment = RLPDecoder.toUint(r);
-            else if (idx == 2) accountInfo.update = UpdateLib.unmarshal(RLPLib.toData(r));
+            if(idx == 0) accountInfo.addr = ByteUtilLib.bytesToBytes32(RLPLib.toData(r));
+            else if(idx == 1) accountInfo.allotment = RLPDecoder.toUint(r);
+            else if(idx == 2) accountInfo.update = UpdateLib.unmarshal(RLPLib.toData(r));
             else {}
         }
     }
@@ -261,12 +343,12 @@ library AugmentedMerkleTreeNodeLib {
         RLPLib.RLPItem memory rlp = RLPDecoder.toRLPItem(data, true);
         RLPLib.Iterator memory it = RLPDecoder.iterator(rlp);
         uint idx;
-        while (RLPDecoder.hasNext(it)) {
+        while(RLPDecoder.hasNext(it)) {
             RLPLib.RLPItem memory r = RLPDecoder.next(it);
-            if (idx == 0) node.offset = RLPDecoder.toUint(r);
-            else if (idx == 1) node.node = NodeInfoLib.unmarshal(RLPLib.toData(r));
-            else if (idx == 2) node.account = AccountInfoLib.unmarshal(RLPLib.toData(r));
-            else if (idx == 3) node.allotment = RLPDecoder.toUint(r);
+            if(idx == 0) node.offset = RLPDecoder.toUint(r);
+            else if(idx == 1) node.node = NodeInfoLib.unmarshal(RLPLib.toData(r));
+            else if(idx == 2) node.account = AccountInfoLib.unmarshal(RLPLib.toData(r));
+            else if(idx == 3) node.allotment = RLPDecoder.toUint(r);
             else {}
         }
     }
@@ -292,13 +374,13 @@ library MerklePathDirectionLib {
         RLPLib.RLPItem memory rlp = RLPDecoder.toRLPItem(data, true);
         RLPLib.Iterator memory it = RLPDecoder.iterator(rlp);
         uint idx;
-        while (RLPDecoder.hasNext(it)) {
+        while(RLPDecoder.hasNext(it)) {
             RLPLib.RLPItem memory r = RLPDecoder.next(it);
-            if (idx == 0) {
+            if(idx == 0) {
                 uint tmp = RLPDecoder.toUint(r);
-                if (tmp == 1) {
+                if(tmp == 1) {
                     return MerklePathDirection.DIRECTION_LEFT;
-                } else if (tmp == 2) {
+                } else if(tmp == 2) {
                     return MerklePathDirection.DIRECTION_RIGTH;
                 }
             } else {}
@@ -311,9 +393,9 @@ library MerklePathDirectionLib {
 
     function marshal(MerklePathDirectionLib.MerklePathDirection dir) internal pure returns (bytes memory) {
         uint tmp;
-        if (dir == MerklePathDirection.DIRECTION_LEFT) {
+        if(dir == MerklePathDirection.DIRECTION_LEFT) {
             tmp = 1;
-        } else if (dir == MerklePathDirection.DIRECTION_RIGTH) {
+        } else if(dir == MerklePathDirection.DIRECTION_RIGTH) {
             tmp = 2;
         }
 
@@ -331,10 +413,10 @@ library AugmentedMerklePathNodeLib {
         RLPLib.RLPItem memory rlp = RLPDecoder.toRLPItem(data, true);
         RLPLib.Iterator memory it = RLPDecoder.iterator(rlp);
         uint idx;
-        while (RLPDecoder.hasNext(it)) {
+        while(RLPDecoder.hasNext(it)) {
             RLPLib.RLPItem memory r = RLPDecoder.next(it);
-            if (idx == 0) node.node = AugmentedMerkleTreeNodeLib.unmarshal(RLPLib.toData(r));
-            else if (idx == 1) node.dir = MerklePathDirectionLib.unmarshal(RLPLib.toData(r));
+            if(idx == 0) node.node = AugmentedMerkleTreeNodeLib.unmarshal(RLPLib.toData(r));
+            else if(idx == 1) node.dir = MerklePathDirectionLib.unmarshal(RLPLib.toData(r));
             else {}
         }
     }
@@ -347,25 +429,41 @@ library AugmentedMerklePathNodeLib {
     }
 }
 
+library AugmentedMerkleTreeLib {
+    function verifyMembershipProof(AugmentedMerkleTreeNodeLib.AugmentedMerkleTreeNode memory root, AugmentedMerklePathLib.AugmentedMerklePath memory path) internal pure returns(bool flag) {
+        //TODO
+        root;
+        path;
+        return true;
+    }
+}
+
 library AugmentedMerklePathLib {
     struct AugmentedMerklePath {
         uint eon;
         AugmentedMerklePathNodeLib.AugmentedMerklePathNode[] nodes;
     }
 
+    function leafNode(AugmentedMerklePathLib.AugmentedMerklePath memory self) internal pure returns(AugmentedMerkleTreeNodeLib.AugmentedMerkleTreeNode memory leaf) {
+        uint idx = SafeMath.sub(self.nodes.length, 1);
+
+        AugmentedMerklePathNodeLib.AugmentedMerklePathNode memory node = self.nodes[idx];
+        leaf = node.node;
+    }
+
     function unmarshal(bytes memory data) internal pure returns (AugmentedMerklePathLib.AugmentedMerklePath memory path) {
         RLPLib.RLPItem memory rlp = RLPDecoder.toRLPItem(data, true);
         RLPLib.Iterator memory it = RLPDecoder.iterator(rlp);
         uint idx;
-        while (RLPDecoder.hasNext(it)) {
+        while(RLPDecoder.hasNext(it)) {
             RLPLib.RLPItem memory r = RLPDecoder.next(it);
-            if (idx == 0) path.eon = RLPDecoder.toUint(r);
-            else if (idx == 1) {
+            if(idx == 0) path.eon = RLPDecoder.toUint(r);
+            else if(idx == 1) {
                 uint len = RLPDecoder.items(r);
                 AugmentedMerklePathNodeLib.AugmentedMerklePathNode[] memory tmp = new AugmentedMerklePathNodeLib.AugmentedMerklePathNode[](len);
                 RLPLib.Iterator memory it2 = RLPDecoder.iterator(r);
                 uint i;
-                while (RLPDecoder.hasNext(it2)) {
+                while(RLPDecoder.hasNext(it2)) {
                     RLPLib.RLPItem memory t = RLPDecoder.next(it2);
                     tmp[i] = AugmentedMerklePathNodeLib.unmarshal(RLPLib.toData(t));
                     i++;
@@ -380,7 +478,7 @@ library AugmentedMerklePathLib {
 
         bytes memory data;
         AugmentedMerklePathNodeLib.AugmentedMerklePathNode[] memory nodes = path.nodes;
-        for (uint i = 0; i < nodes.length; i++) {
+        for(uint i=0;i<nodes.length;i++) {
             data = ByteUtilLib.append(data, AugmentedMerklePathNodeLib.marshal(nodes[i]));
         }
 
@@ -391,29 +489,26 @@ library AugmentedMerklePathLib {
 }
 
 library InitiateWithdrawalRequestLib {
-    struct InitiateWithdrawalRequest {
-        address addr;
+    struct WithdrawalInfo {
         AugmentedMerklePathLib.AugmentedMerklePath path;
         uint amount;
     }
 
-    function marshal(InitiateWithdrawalRequestLib.InitiateWithdrawalRequest memory init) internal pure returns (bytes memory) {
-        bytes memory addr = RLPEncoder.encodeAddress(init.addr);
+    function marshal(InitiateWithdrawalRequestLib.WithdrawalInfo memory init) internal pure returns (bytes memory) {
         bytes memory path = AugmentedMerklePathLib.marshal(init.path);
         bytes memory amount = RLPEncoder.encodeUint(init.amount);
 
-        return RLPEncoder.encodeList(ByteUtilLib.append(ByteUtilLib.append(addr, path), amount));
+        return RLPEncoder.encodeList(ByteUtilLib.append(path, amount));
     }
 
-    function unmarshal(bytes memory data) internal pure returns (InitiateWithdrawalRequestLib.InitiateWithdrawalRequest memory init) {
+    function unmarshal(bytes memory data) internal pure returns (InitiateWithdrawalRequestLib.WithdrawalInfo memory init) {
         RLPLib.RLPItem memory rlp = RLPDecoder.toRLPItem(data, true);
         RLPLib.Iterator memory it = RLPDecoder.iterator(rlp);
         uint idx;
-        while (RLPDecoder.hasNext(it)) {
+        while(RLPDecoder.hasNext(it)) {
             RLPLib.RLPItem memory r = RLPDecoder.next(it);
-            if (idx == 0) init.addr = RLPDecoder.toAddress(r);
-            else if (idx == 1) init.path = AugmentedMerklePathLib.unmarshal(RLPLib.toData(r));
-            else if (idx == 2) init.amount = RLPDecoder.toUint(r);
+            if(idx == 0) init.path = AugmentedMerklePathLib.unmarshal(RLPLib.toData(r));
+            else if(idx == 1) init.amount = RLPDecoder.toUint(r);
             else {}
         }
     }
@@ -421,7 +516,14 @@ library InitiateWithdrawalRequestLib {
 
 library ParticipantLib {
     struct Participant {
+        address addr;
         bytes publicKey;
+    }
+
+    function verifyParticipant(ParticipantLib.Participant memory participant) internal pure returns(bool flag){
+        //TODO
+        participant;//publicKey can comput addr
+        return true;
     }
 
     function unmarshal(bytes memory data) internal pure returns (ParticipantLib.Participant memory participant) {
@@ -431,7 +533,8 @@ library ParticipantLib {
         uint idx;
         while (RLPDecoder.hasNext(it)) {
             RLPLib.RLPItem memory r = RLPDecoder.next(it);
-            if (idx == 0) participant.publicKey = RLPLib.toData(r);
+            if (idx == 0) participant.addr = RLPDecoder.toAddress(r);
+            else if(idx == 1) participant.publicKey = RLPLib.toData(r);
             else {}
 
             idx++;
@@ -439,7 +542,8 @@ library ParticipantLib {
     }
 
     function marshal(ParticipantLib.Participant memory participant) internal pure returns (bytes memory) {
-        return RLPEncoder.encodeList(RLPEncoder.encodeBytes(participant.publicKey));
+        bytes memory addr = RLPEncoder.encodeAddress(participant.addr);
+        return RLPEncoder.encodeList(ByteUtilLib.append(addr, RLPEncoder.encodeBytes(participant.publicKey)));
     }
 }
 
@@ -454,11 +558,11 @@ library CancelWithdrawalRequestLib {
         RLPLib.RLPItem memory rlp = RLPDecoder.toRLPItem(data, true);
         RLPLib.Iterator memory it = RLPDecoder.iterator(rlp);
         uint idx;
-        while (RLPDecoder.hasNext(it)) {
+        while(RLPDecoder.hasNext(it)) {
             RLPLib.RLPItem memory r = RLPDecoder.next(it);
-            if (idx == 0) cancel.participant = ParticipantLib.unmarshal(RLPLib.toData(r));
-            else if (idx == 1) cancel.update = UpdateLib.unmarshal(RLPLib.toData(r));
-            else if (idx == 2) cancel.merklePath = AugmentedMerklePathLib.unmarshal(RLPLib.toData(r));
+            if(idx == 0) cancel.participant = ParticipantLib.unmarshal(RLPLib.toData(r));
+            else if(idx == 1) cancel.update = UpdateLib.unmarshal(RLPLib.toData(r));
+            else if(idx == 2) cancel.merklePath = AugmentedMerklePathLib.unmarshal(RLPLib.toData(r));
             else {}
         }
     }
@@ -474,25 +578,31 @@ library CancelWithdrawalRequestLib {
 
 library BalanceUpdateProofLib {
     struct BalanceUpdateProof {
+        bool hasPath;
         AugmentedMerklePathLib.AugmentedMerklePath path;
+        bool hasUp;
         UpdateLib.Update update;
     }
 
     function marshal(BalanceUpdateProofLib.BalanceUpdateProof memory proof) internal pure returns (bytes memory) {
+        bytes memory hasPath = RLPEncoder.encodeBool(proof.hasPath);
         bytes memory path = AugmentedMerklePathLib.marshal(proof.path);
+        bytes memory hasUp = RLPEncoder.encodeBool(proof.hasUp);
         bytes memory update = UpdateLib.marshal(proof.update);
 
-        return RLPEncoder.encodeList(ByteUtilLib.append(path, update));
+        return RLPEncoder.encodeList(ByteUtilLib.append(ByteUtilLib.append(ByteUtilLib.append(hasPath, path), hasUp), update));
     }
 
     function unmarshal(bytes memory data) internal pure returns (BalanceUpdateProofLib.BalanceUpdateProof memory proof) {
         RLPLib.RLPItem memory rlp = RLPDecoder.toRLPItem(data, true);
         RLPLib.Iterator memory it = RLPDecoder.iterator(rlp);
         uint idx;
-        while (RLPDecoder.hasNext(it)) {
+        while(RLPDecoder.hasNext(it)) {
             RLPLib.RLPItem memory r = RLPDecoder.next(it);
-            if (idx == 0) proof.path = AugmentedMerklePathLib.unmarshal(RLPLib.toData(r));
-            else if (idx == 1) proof.update = UpdateLib.unmarshal(RLPLib.toData(r));
+            if(idx == 0) proof.hasPath = RLPDecoder.toBool(r);
+            else if(idx == 1) proof.path = AugmentedMerklePathLib.unmarshal(RLPLib.toData(r));
+            else if(idx == 2) proof.hasUp = RLPDecoder.toBool(r);
+            else if(idx == 3) proof.update = UpdateLib.unmarshal(RLPLib.toData(r));
             else {}
         }
     }
@@ -515,10 +625,10 @@ library BalanceUpdateChallengeLib {
         RLPLib.RLPItem memory rlp = RLPDecoder.toRLPItem(data, true);
         RLPLib.Iterator memory it = RLPDecoder.iterator(rlp);
         uint idx;
-        while (RLPDecoder.hasNext(it)) {
+        while(RLPDecoder.hasNext(it)) {
             RLPLib.RLPItem memory r = RLPDecoder.next(it);
-            if (idx == 0) challenge.proof = BalanceUpdateProofLib.unmarshal(RLPLib.toData(r));
-            else if (idx == 1) challenge.publicKey = RLPLib.toData(r);
+            if(idx == 0) challenge.proof = BalanceUpdateProofLib.unmarshal(RLPLib.toData(r));
+            else if(idx == 1) challenge.publicKey = RLPLib.toData(r);
             else {}
         }
     }
@@ -534,13 +644,13 @@ library ChallengeStatusLib {
         RLPLib.RLPItem memory rlp = RLPDecoder.toRLPItem(data, true);
         RLPLib.Iterator memory it = RLPDecoder.iterator(rlp);
         uint idx;
-        while (RLPDecoder.hasNext(it)) {
+        while(RLPDecoder.hasNext(it)) {
             RLPLib.RLPItem memory r = RLPDecoder.next(it);
-            if (idx == 0) {
+            if(idx == 0) {
                 uint tmp = RLPDecoder.toUint(r);
-                if (tmp == 0) {
+                if(tmp == 0) {
                     status = ChallengeStatusLib.ChallengeStatus.OPEN;
-                } else if (tmp == 1) {
+                } else if(tmp == 1) {
                     status = ChallengeStatusLib.ChallengeStatus.CLOSE;
                 }
             } else {}
@@ -551,9 +661,9 @@ library ChallengeStatusLib {
 
     function marshal(ChallengeStatusLib.ChallengeStatus dir) internal pure returns (bytes memory) {
         uint tmp;
-        if (dir == ChallengeStatusLib.ChallengeStatus.OPEN) {
+        if(dir == ChallengeStatusLib.ChallengeStatus.OPEN) {
             tmp = 0;
-        } else if (dir == ChallengeStatusLib.ChallengeStatus.CLOSE) {
+        } else if(dir == ChallengeStatusLib.ChallengeStatus.CLOSE) {
             tmp = 1;
         }
 
@@ -565,18 +675,21 @@ library BalanceUpdateChallengeStatusLib {
     struct BalanceUpdateChallengeStatus {
         BalanceUpdateChallengeLib.BalanceUpdateChallenge challenge;
         ChallengeStatusLib.ChallengeStatus status;
+        bool isVal;
     }
 
     function unmarshal(bytes memory data) internal pure returns (BalanceUpdateChallengeStatusLib.BalanceUpdateChallengeStatus memory challengeStatus) {
         RLPLib.RLPItem memory rlp = RLPDecoder.toRLPItem(data, true);
         RLPLib.Iterator memory it = RLPDecoder.iterator(rlp);
         uint idx;
-        while (RLPDecoder.hasNext(it)) {
+        while(RLPDecoder.hasNext(it)) {
             RLPLib.RLPItem memory r = RLPDecoder.next(it);
-            if (idx == 0) challengeStatus.challenge = BalanceUpdateChallengeLib.unmarshal(RLPLib.toData(r));
-            else if (idx == 1) challengeStatus.status = ChallengeStatusLib.unmarshal(RLPLib.toData(r));
+            if(idx == 0) challengeStatus.challenge = BalanceUpdateChallengeLib.unmarshal(RLPLib.toData(r));
+            else if(idx == 1) challengeStatus.status = ChallengeStatusLib.unmarshal(RLPLib.toData(r));
             else {}
         }
+
+        challengeStatus.isVal = true;
     }
 
     function marshal(BalanceUpdateChallengeStatusLib.BalanceUpdateChallengeStatus memory challengeStatus) internal pure returns (bytes memory) {
@@ -601,14 +714,14 @@ library OffchainTransactionLib {
         RLPLib.RLPItem memory rlp = RLPDecoder.toRLPItem(data, true);
         RLPLib.Iterator memory it = RLPDecoder.iterator(rlp);
         uint idx;
-        while (RLPDecoder.hasNext(it)) {
+        while(RLPDecoder.hasNext(it)) {
             RLPLib.RLPItem memory r = RLPDecoder.next(it);
-            if (idx == 0) off.eon = RLPDecoder.toUint(r);
-            else if (idx == 1) off.fr = RLPDecoder.toAddress(r);
-            else if (idx == 2) off.to = RLPDecoder.toAddress(r);
-            else if (idx == 3) off.amount = RLPDecoder.toUint(r);
-            else if (idx == 4) off.timestamp = RLPDecoder.toUint(r);
-            else if (idx == 5) off.sign = SignatureLib.unmarshal(RLPLib.toData(r));
+            if(idx == 0) off.eon = RLPDecoder.toUint(r);
+            else if(idx == 1) off.fr = RLPDecoder.toAddress(r);
+            else if(idx == 2) off.to = RLPDecoder.toAddress(r);
+            else if(idx == 3) off.amount = RLPDecoder.toUint(r);
+            else if(idx == 4) off.timestamp = RLPDecoder.toUint(r);
+            else if(idx == 5) off.sign = SignatureLib.unmarshal(RLPLib.toData(r));
             else {}
         }
     }
@@ -623,6 +736,12 @@ library OffchainTransactionLib {
 
         return RLPEncoder.encodeList(ByteUtilLib.append(ByteUtilLib.append(ByteUtilLib.append(ByteUtilLib.append(ByteUtilLib.append(eon, fr), to), amount), timestamp), sign));
     }
+
+    function hash(OffchainTransactionLib.OffchainTransaction memory off) internal pure returns(string memory) {
+        //TODO
+        off;
+        return "";
+    }
 }
 
 library MerkleTreeNodeLib {
@@ -635,10 +754,10 @@ library MerkleTreeNodeLib {
         RLPLib.RLPItem memory rlp = RLPDecoder.toRLPItem(data, true);
         RLPLib.Iterator memory it = RLPDecoder.iterator(rlp);
         uint idx;
-        while (RLPDecoder.hasNext(it)) {
+        while(RLPDecoder.hasNext(it)) {
             RLPLib.RLPItem memory r = RLPDecoder.next(it);
-            if (idx == 0) node.hash = ByteUtilLib.bytesToBytes32(RLPLib.toData(r));
-            else if (idx == 1) node.tran = OffchainTransactionLib.unmarshal(RLPLib.toData(r));
+            if(idx == 0) node.hash = ByteUtilLib.bytesToBytes32(RLPLib.toData(r));
+            else if(idx == 1) node.tran = OffchainTransactionLib.unmarshal(RLPLib.toData(r));
             else {}
         }
     }
@@ -661,10 +780,10 @@ library MerklePathNodeLib {
         RLPLib.RLPItem memory rlp = RLPDecoder.toRLPItem(data, true);
         RLPLib.Iterator memory it = RLPDecoder.iterator(rlp);
         uint idx;
-        while (RLPDecoder.hasNext(it)) {
+        while(RLPDecoder.hasNext(it)) {
             RLPLib.RLPItem memory r = RLPDecoder.next(it);
-            if (idx == 0) pathNode.node = MerkleTreeNodeLib.unmarshal(RLPLib.toData(r));
-            else if (idx == 1) pathNode.dir = MerklePathDirectionLib.unmarshal(RLPLib.toData(r));
+            if(idx == 0) pathNode.node = MerkleTreeNodeLib.unmarshal(RLPLib.toData(r));
+            else if(idx == 1) pathNode.dir = MerklePathDirectionLib.unmarshal(RLPLib.toData(r));
             else {}
         }
     }
@@ -686,14 +805,14 @@ library MerklePathLib {
         RLPLib.RLPItem memory rlp = RLPDecoder.toRLPItem(data, true);
         RLPLib.Iterator memory it = RLPDecoder.iterator(rlp);
         uint idx;
-        while (RLPDecoder.hasNext(it)) {
+        while(RLPDecoder.hasNext(it)) {
             RLPLib.RLPItem memory r = RLPDecoder.next(it);
-            if (idx == 0) {
+            if(idx == 0) {
                 uint len = RLPDecoder.items(r);
                 MerklePathNodeLib.MerklePathNode[] memory tmp = new MerklePathNodeLib.MerklePathNode[](len);
                 RLPLib.Iterator memory it2 = RLPDecoder.iterator(r);
                 uint i;
-                while (RLPDecoder.hasNext(it2)) {
+                while(RLPDecoder.hasNext(it2)) {
                     RLPLib.RLPItem memory t = RLPDecoder.next(it2);
                     tmp[i] = MerklePathNodeLib.unmarshal(RLPLib.toData(t));
                     i++;
@@ -706,13 +825,27 @@ library MerklePathLib {
     function marshal(MerklePathLib.MerklePath memory path) internal pure returns (bytes memory) {
         bytes memory data;
         MerklePathNodeLib.MerklePathNode[] memory nodes = path.nodes;
-        for (uint i = 0; i < nodes.length; i++) {
+        for(uint i=0;i<nodes.length;i++) {
             data = ByteUtilLib.append(data, MerklePathNodeLib.marshal(nodes[i]));
         }
 
         data = RLPEncoder.encodeList(data);
 
         return RLPEncoder.encodeList(data);
+    }
+
+    function leafNode(MerklePathLib.MerklePath memory path) internal pure returns(MerklePathNodeLib.MerklePathNode memory) {
+        uint len = SafeMath.sub(path.nodes.length, 1);
+        return path.nodes[len];
+    }
+}
+
+library MerkleTreeLib {
+    function verifyMembershipProof(bytes32 root, MerklePathLib.MerklePath memory path) internal pure returns(bool flag) {
+        root;
+        path;
+        //TODO
+        return true;
     }
 }
 
@@ -727,11 +860,11 @@ library OpenTransferDeliveryChallengeRequestLib {
         RLPLib.RLPItem memory rlp = RLPDecoder.toRLPItem(data, true);
         RLPLib.Iterator memory it = RLPDecoder.iterator(rlp);
         uint idx;
-        while (RLPDecoder.hasNext(it)) {
+        while(RLPDecoder.hasNext(it)) {
             RLPLib.RLPItem memory r = RLPDecoder.next(it);
-            if (idx == 0) open.tran = OffchainTransactionLib.unmarshal(RLPLib.toData(r));
-            else if (idx == 1) open.update = UpdateLib.unmarshal(RLPLib.toData(r));
-            else if (idx == 2) open.path = MerklePathLib.unmarshal(RLPLib.toData(r));
+            if(idx == 0) open.tran = OffchainTransactionLib.unmarshal(RLPLib.toData(r));
+            else if(idx == 1) open.update = UpdateLib.unmarshal(RLPLib.toData(r));
+            else if(idx == 2) open.path = MerklePathLib.unmarshal(RLPLib.toData(r));
             else {}
         }
     }
@@ -750,19 +883,19 @@ library CloseTransferDeliveryChallengeRequestLib {
         AugmentedMerklePathLib.AugmentedMerklePath merklePath;
         UpdateLib.Update update;
         MerklePathLib.MerklePath path;
-        bytes32 fromPublicKey;
+        bytes fromPublicKey;
     }
 
     function unmarshal(bytes memory data) internal pure returns (CloseTransferDeliveryChallengeRequestLib.CloseTransferDeliveryChallengeRequest memory close) {
         RLPLib.RLPItem memory rlp = RLPDecoder.toRLPItem(data, true);
         RLPLib.Iterator memory it = RLPDecoder.iterator(rlp);
         uint idx;
-        while (RLPDecoder.hasNext(it)) {
+        while(RLPDecoder.hasNext(it)) {
             RLPLib.RLPItem memory r = RLPDecoder.next(it);
-            if (idx == 0) close.merklePath = AugmentedMerklePathLib.unmarshal(RLPLib.toData(r));
-            else if (idx == 1) close.update = UpdateLib.unmarshal(RLPLib.toData(r));
-            else if (idx == 2) close.path = MerklePathLib.unmarshal(RLPLib.toData(r));
-            else if (idx == 3) close.fromPublicKey = ByteUtilLib.bytesToBytes32(RLPLib.toData(r));
+            if(idx == 0) close.merklePath = AugmentedMerklePathLib.unmarshal(RLPLib.toData(r));
+            else if(idx == 1) close.update = UpdateLib.unmarshal(RLPLib.toData(r));
+            else if(idx == 2) close.path = MerklePathLib.unmarshal(RLPLib.toData(r));
+            else if(idx == 3) close.fromPublicKey = RLPLib.toData(r);
             else {}
         }
     }
@@ -771,8 +904,18 @@ library CloseTransferDeliveryChallengeRequestLib {
         bytes memory merklePath = AugmentedMerklePathLib.marshal(close.merklePath);
         bytes memory update = UpdateLib.marshal(close.update);
         bytes memory path = MerklePathLib.marshal(close.path);
-        bytes memory fromPublicKey = RLPEncoder.encodeBytes(ByteUtilLib.bytes32ToBytes(close.fromPublicKey));
+        bytes memory fromPublicKey = RLPEncoder.encodeBytes(close.fromPublicKey);
 
         return RLPEncoder.encodeList(ByteUtilLib.append(ByteUtilLib.append(ByteUtilLib.append(merklePath, update), path), fromPublicKey));
+    }
+}
+
+library TransferDeliveryChallengeLib {
+    struct TransferDeliveryChallenge {
+        OffchainTransactionLib.OffchainTransaction tran;
+        UpdateLib.Update update;
+        MerklePathLib.MerklePath path;
+        ChallengeStatusLib.ChallengeStatus stat;
+        bool isVal;
     }
 }
