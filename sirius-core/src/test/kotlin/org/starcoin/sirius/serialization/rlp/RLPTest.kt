@@ -99,10 +99,22 @@ class RLPTest {
     }
 
     @Test
-    fun testOptionalRLP() {
+    fun testOptionalObject() {
         val namedData = NamedData("test", null)
         val bytes = RLP.dump(namedData)
         val namedData1 = RLP.load<NamedData>(bytes)
         Assert.assertEquals(namedData, namedData1)
+    }
+
+    /**
+     *  RLP can not distinguish empty string and null string.
+     */
+    @Test
+    fun testOptionalString() {
+        val data = TestData.random()
+        data.optionalValue = ""
+        val bytes = RLP.dump(data)
+        val data1 = RLP.load<TestData>(bytes)
+        Assert.assertEquals(data, data1)
     }
 }

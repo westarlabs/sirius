@@ -16,10 +16,10 @@ data class TestData(
     @SerialId(3)
     var stringValue: String,
     @SerialId(4)
-    val bytesValue: ByteArrayWrapper,
+    var bytesValue: ByteArrayWrapper,
     @SerialId(5)
     @Optional
-    val optionalValue: String? = null
+    var optionalValue: String = ""
 ) : SiriusObject() {
 
     companion object {
@@ -42,8 +42,8 @@ data class TestData(
                     )
                 ),
                 when (RandomUtils.nextBoolean()) {
-                    true -> null
-                    false -> "not null"
+                    true -> ""
+                    false -> "not empty"
                 }
             )
         }
