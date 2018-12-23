@@ -46,7 +46,7 @@ class HubEvent<D : ProtobufCodec<*>> : ProtobufCodec<Starcoin.ProtoHubEvent> {
     }
 
     override fun unmarshalProto(proto: Starcoin.ProtoHubEvent) {
-        this.type = HubEventType.valueOf(proto.typeValue)
+        this.type = HubEventType.valueOf(proto.type.number)
         this.address = if (proto.address.isEmpty) null else BlockAddress.valueOf(proto.address)
         this.payload = if (proto.hasPayload()) this.type!!.parsePayload(proto.payload) else null
     }

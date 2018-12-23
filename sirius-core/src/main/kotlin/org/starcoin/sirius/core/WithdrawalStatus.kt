@@ -116,7 +116,7 @@ class WithdrawalStatus : ProtobufCodec<ProtoWithdrawalStatus> {
     }
 
     override fun unmarshalProto(proto: ProtoWithdrawalStatus) {
-        this.type = WithdrawalStatusType.valueOf(proto.typeValue)
+        this.type = WithdrawalStatusType.valueOf(proto.type.number)
         this.withdrawal = if (proto.hasWithdrawal()) Withdrawal(proto.withdrawal) else null
     }
 

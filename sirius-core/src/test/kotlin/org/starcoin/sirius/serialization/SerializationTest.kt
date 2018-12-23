@@ -27,18 +27,24 @@ class SerializationTest {
     @ImplicitReflectionSerializer
     @Test
     fun testProtoMessage(){
+        testForDefaultValue(false, "")
+        testForDefaultValue(true, "aaa")
+    }
+
+    fun testForDefaultValue(booleanValue:Boolean, stringValue:String){
         val data = TestData.random()
-        //TODO fixme
-        data.booleanValue = true
-        val bytes = ProtoBuf.dump(data)
+        data.booleanValue = booleanValue
+        data.stringValue = stringValue
+        val bytes = ProtoBuf.dump(TestData.serializer(),data)
 
         val protoData = Starcoin.TestData.parseFrom(bytes)
         val bytes1 = protoData.toByteArray()
         Assert.assertArrayEquals(bytes, bytes1)
 
-        val data1 = ProtoBuf.load<TestData>(bytes1)
+        val data1 = ProtoBuf.load(TestData.serializer(), bytes1)
         Assert.assertEquals(data, data1)
     }
+
 
 //    @Test
 //    fun testTransform() {

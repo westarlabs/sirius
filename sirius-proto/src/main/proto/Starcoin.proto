@@ -1,66 +1,66 @@
-syntax = "proto3";
+syntax = "proto2";
 import "google/protobuf/any.proto";
 import "google/protobuf/empty.proto";
 
 package org.starcoin.proto;
 
 message ProtoMsgPing {
-    uint64 nonce = 1;
+    required uint64 nonce = 1;
 }
 
 message ProtoMsgPong {
-    uint64 nonce = 1; //newNonce from MsgPing
+    required uint64 nonce = 1; //newNonce from MsgPing
 }
 
 //just for test
 message TestData{
-    bool booleanValue = 1;
-    uint32 intValue = 2;
-    bytes stringValue = 3;
-    bytes bytesValue = 4;
+    required bool booleanValue = 1;
+    required uint32 intValue = 2;
+    required bytes stringValue = 3;
+    required bytes bytesValue = 4;
 }
 
 message SuccResponse {
-    bool succ = 1;
+    required bool succ = 1;
 }
 
 message DepositRequest {
-    bytes address = 1;
-    uint64 amount = 2;
+    required bytes address = 1;
+    required uint64 amount = 2;
 }
 
 message ProtoOffchainTransaction {
-    uint32 eon = 1;
-    bytes from = 2;
-    bytes to = 3;
-    uint64 amount = 4;
-    uint64 timestamp = 5;
-    bytes sign = 6;
+    required uint32 eon = 1;
+    required bytes from = 2;
+    required bytes to = 3;
+    required uint64 amount = 4;
+    required uint64 timestamp = 5;
+    optional bytes sign = 6;
 }
 
 message ProtoAccountInfo {
-    bytes address = 1;
-    uint64 allotment = 2;
-    ProtoUpdate update = 3;
+    required bytes address = 1;
+    required uint64 allotment = 2;
+    optional ProtoUpdate update = 3;
 }
 
 message ProtoNodeInfo {
-    bytes left = 1;
-    uint64 offset = 2;
-    bytes right = 3;
+    required bytes left = 1;
+    required uint64 offset = 2;
+    required bytes right = 3;
 }
 
 message ProtoAugmentedMerkleTreeNode {
-    uint64 offset = 1;
-    ProtoNodeInfo node = 2;
-    ProtoAccountInfo account = 3;
-    uint64 allotment = 4;
+    required uint64 offset = 1;
+    optional ProtoNodeInfo node = 2;
+    optional ProtoAccountInfo account = 3;
+    required uint64 allotment = 4;
 }
 
 message InitiateWithdrawalRequest {
-    bytes address = 1;
-    ProtoAugmentedMerklePath path = 2;
-    uint64 amount = 3;
+    required bytes address = 1;
+    required ProtoAugmentedMerklePath path = 2;
+    required uint64 amount = 3;
 }
 
 enum ProtoWithdrawalStatusType {
@@ -72,8 +72,8 @@ enum ProtoWithdrawalStatusType {
 }
 
 message ProtoWithdrawalStatus {
-    ProtoWithdrawalStatusType type = 1;
-    InitiateWithdrawalRequest withdrawal = 2;
+    required ProtoWithdrawalStatusType type = 1;
+    required InitiateWithdrawalRequest withdrawal = 2;
 }
 
 enum ProtoMerklePathDirection {
@@ -83,119 +83,119 @@ enum ProtoMerklePathDirection {
 }
 
 message ProtoAugmentedMerklePathNode {
-    ProtoAugmentedMerkleTreeNode node = 1;
-    ProtoMerklePathDirection direction = 2;
+    required ProtoAugmentedMerkleTreeNode node = 1;
+    required ProtoMerklePathDirection direction = 2;
 }
 
 message ProtoAugmentedMerklePath {
-    uint32 eon = 1;
+    required uint32 eon = 1;
     repeated ProtoAugmentedMerklePathNode nodes = 2;
 }
 
 //Update
 message ProtoUpdate {
-    bytes root = 1;
-    uint64 sendAmount = 2;
-    uint64 receiveAmount = 3;
-    uint64 version = 4;
-    bytes sign = 5;
-    bytes hubSign = 6;
-    uint32 eon = 7;
+    optional bytes root = 1;
+    required uint64 sendAmount = 2;
+    required uint64 receiveAmount = 3;
+    required uint64 version = 4;
+    optional bytes sign = 5;
+    optional bytes hubSign = 6;
+    required uint32 eon = 7;
 }
 
 message ProtoParticipant {
-    bytes publicKey = 1;
+    required bytes publicKey = 1;
 }
 
 message ProtoParticipantGang {
-    ProtoParticipant participant = 1;
-    bytes privateKey = 2;
+    required ProtoParticipant participant = 1;
+    required bytes privateKey = 2;
 }
 
 message CancelWithdrawalRequest {
-    ProtoParticipant participant = 1;
-    ProtoUpdate update = 2;
-    ProtoAugmentedMerklePath path = 3;
+    required ProtoParticipant participant = 1;
+    required ProtoUpdate update = 2;
+    required ProtoAugmentedMerklePath path = 3;
 }
 
 message ProtoBalanceUpdateChallenge {
-    ProtoBalanceUpdateProof proof = 1;
-    bytes publicKey = 2;
+    required ProtoBalanceUpdateProof proof = 1;
+    required bytes publicKey = 2;
 }
 
 message ProtoBalanceUpdateProof {
-    ProtoAugmentedMerklePath path = 1;
-    ProtoUpdate update = 2;
+    required ProtoAugmentedMerklePath path = 1;
+    required ProtoUpdate update = 2;
 }
 
 message CloseBalanceUpdateChallengeRequest {
-    ProtoBalanceUpdateProof proof = 1;
+    required ProtoBalanceUpdateProof proof = 1;
 }
 
 message RegisterParticipantRequest {
-    ProtoParticipant participant = 1;
-    ProtoUpdate update = 2;
+    required ProtoParticipant participant = 1;
+    required ProtoUpdate update = 2;
 }
 
 message QueryHubCommitRequest {
-    uint32 eon = 1;
+    required uint32 eon = 1;
 }
 
 message ProtoHubRoot {
-    ProtoAugmentedMerkleTreeNode root = 1;
-    uint32 eon = 2;
+    required ProtoAugmentedMerkleTreeNode root = 1;
+    required uint32 eon = 2;
 }
 
 message CreateHubRequest {
     //hub address
-    bytes address = 1;
-    bytes publicKey = 2;
+    required bytes address = 1;
+    required bytes publicKey = 2;
 }
 
 message ProtoHubInfo {
-    bool ready = 1;
-    uint32 eon = 2;
-    ProtoAugmentedMerkleTreeNode root = 3;
-    bytes publicKey = 4;
-    uint32 blocksPerEon = 5;
+    required bool ready = 1;
+    required uint32 eon = 2;
+    required ProtoAugmentedMerkleTreeNode root = 3;
+    required bytes publicKey = 4;
+    required uint32 blocksPerEon = 5;
 }
 
 message ProtoBlockInfo {
-    uint32 height = 1;
+    required uint32 height = 1;
     repeated ProtoChainTransaction transactions = 2;
 }
 
 message ProtoReceipt {
-    bool success = 1;
-    string error = 2;
-    bytes data = 3;
+    required bool success = 1;
+    optional string error = 2;
+    optional bytes data = 3;
 }
 
 message ProtoChainTransaction {
-    bytes from = 1;
-    bytes to = 2;
-    uint64 amount = 3;
-    uint64 timestamp = 4;
-    string action = 5;
-    bytes arguments = 6;
-    ProtoReceipt receipt = 7;
-    bytes publicKey = 8;
-    bytes sign = 9;
+    required bytes from = 1;
+    required bytes to = 2;
+    required uint64 amount = 3;
+    required uint64 timestamp = 4;
+    optional string action = 5;
+    optional bytes arguments = 6;
+    optional ProtoReceipt receipt = 7;
+    optional bytes publicKey = 8;
+    optional bytes sign = 9;
 }
 
 message ProtoBlockListRequest {
-    bytes from = 1;
-    bytes to = 2;
+    required bytes from = 1;
+    required bytes to = 2;
 }
 
 message ProtoMerkleTreeNode {
-    bytes hash = 1;
-    google.protobuf.Any data = 2;
+    required bytes hash = 1;
+    required google.protobuf.Any data = 2;
 }
 
 message ProtoMerklePathNode {
-    ProtoMerkleTreeNode node = 1;
-    ProtoMerklePathDirection direction = 2;
+    required ProtoMerkleTreeNode node = 1;
+    required ProtoMerklePathDirection direction = 2;
 }
 
 message ProtoMerklePath {
@@ -203,21 +203,21 @@ message ProtoMerklePath {
 }
 
 message OpenTransferDeliveryChallengeRequest {
-    ProtoUpdate update = 1;
-    ProtoOffchainTransaction transaction = 2;
-    ProtoMerklePath path = 3;
+    required ProtoUpdate update = 1;
+    required ProtoOffchainTransaction transaction = 2;
+    required ProtoMerklePath path = 3;
 }
 
 message CloseTransferDeliveryChallengeRequest {
-    ProtoAugmentedMerklePath balancePath = 1;
-    ProtoUpdate update = 2;
-    ProtoMerklePath transPath = 3;
-    bytes toUserPublicKey = 4;
+    required ProtoAugmentedMerklePath balancePath = 1;
+    required ProtoUpdate update = 2;
+    required ProtoMerklePath transPath = 3;
+    required bytes toUserPublicKey = 4;
 }
 
 message RecoverFundsRequest {
-    ProtoAugmentedMerklePath path = 1;
-    bytes address = 2;
+    required ProtoAugmentedMerklePath path = 1;
+    required bytes address = 2;
 }
 
 message GetBlocksResponse {
@@ -225,7 +225,7 @@ message GetBlocksResponse {
 }
 
 message GetBlockResponse {
-    ProtoBlockInfo block = 1;
+    required ProtoBlockInfo block = 1;
 }
 
 enum Order {
@@ -234,23 +234,23 @@ enum Order {
 }
 
 message GetBlocksRequest {
-    uint32 height = 1;
-    uint32 count = 2;
-    Order order = 3;
+    required uint32 height = 1;
+    required uint32 count = 2;
+    required Order order = 3;
 }
 
 message SyncTransactionsRequest {
-    uint32 height = 1;
-    bytes addr = 2;
+    required uint32 height = 1;
+    required bytes addr = 2;
 }
 
 message SyncTransactionsResponse {
-    uint32 height = 1;
+    required uint32 height = 1;
     repeated ProtoChainTransaction transactions = 2;
 }
 
 message QueryBalanceUpdateChallengesRequest {
-    bytes addr = 1;
+    required bytes addr = 1;
 }
 
 message QueryBalanceUpdateChallengesResponse {
@@ -263,36 +263,36 @@ enum ChallengeStatus {
 }
 
 message BalanceUpdateChallengeStatus {
-    ProtoBalanceUpdateChallenge challenge = 1;
-    ChallengeStatus status = 2;
+    required ProtoBalanceUpdateChallenge challenge = 1;
+    required ChallengeStatus status = 2;
 }
 
 message ProtoHubAccount {
-    bytes address = 1;
-    ProtoUpdate update = 2;
-    uint64 allotment = 3;
-    uint64 deposit = 4;
-    uint64 withdraw = 5;
+    required bytes address = 1;
+    required ProtoUpdate update = 2;
+    required uint64 allotment = 3;
+    required uint64 deposit = 4;
+    required uint64 withdraw = 5;
     repeated ProtoOffchainTransaction transactions = 6;
-    bytes publicKey = 7;
+    required bytes publicKey = 7;
 }
 
 message ChainBalanceResponse {
-    uint64 amount = 1;
+    required uint64 amount = 1;
 }
 
 message GetBlockRequest {
-    uint32 height = 1;
+    required uint32 height = 1;
 }
 
 message QueryWithdrawalStatusRequest {
-    uint32 eon = 1;
-    bytes addr = 2;
+    required uint32 eon = 1;
+    required bytes addr = 2;
 }
 
 message ProtoIOU {
-    ProtoOffchainTransaction transaction = 1;
-    ProtoUpdate update = 2;
+    required ProtoOffchainTransaction transaction = 1;
+    required ProtoUpdate update = 2;
 }
 
 enum ProtoHubEventType {
@@ -304,14 +304,14 @@ enum ProtoHubEventType {
 }
 
 message ProtoHubEvent {
-    ProtoHubEventType type = 1;
-    bytes address = 2;
-    google.protobuf.Any payload = 3;
+    required ProtoHubEventType type = 1;
+    required bytes address = 2;
+    required google.protobuf.Any payload = 3;
 }
 
 message BlockAddressAndEon {
-    bytes address = 1;
-    int32 eon = 2;
+    required bytes address = 1;
+    required int32 eon = 2;
 }
 
 enum ProtoHubMaliciousFlag {
@@ -326,11 +326,11 @@ message ProtoHubMaliciousFlags {
 }
 
 message ProtoBlockAddress {
-    bytes address = 1;
+    required bytes address = 1;
 }
 
 message QueryCurrentTransferDeliveryChallengesRequest {
-    ProtoBlockAddress addr = 1;
+    required ProtoBlockAddress addr = 1;
 }
 
 message QueryCurrentTransferDeliveryChallengesResponse {
@@ -338,10 +338,10 @@ message QueryCurrentTransferDeliveryChallengesResponse {
 }
 
 message ProtoTransferDeliveryChallenge {
-    ProtoUpdate update = 1;
-    ProtoOffchainTransaction transaction = 2;
-    ProtoMerklePath path = 3;
-    ChallengeStatus status = 4;
+    required ProtoUpdate update = 1;
+    required ProtoOffchainTransaction transaction = 2;
+    required ProtoMerklePath path = 3;
+    required ChallengeStatus status = 4;
 }
 
 service HubService {
