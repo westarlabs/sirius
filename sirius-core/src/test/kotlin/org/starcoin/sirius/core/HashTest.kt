@@ -1,15 +1,11 @@
 package org.starcoin.sirius.core
 
 import com.google.protobuf.InvalidProtocolBufferException
-import java.io.IOException
-import java.nio.ByteBuffer
-import java.nio.ReadOnlyBufferException
 import org.apache.commons.lang3.RandomStringUtils
 import org.apache.commons.lang3.RandomUtils
 import org.junit.Assert
 import org.junit.Test
-import org.starcoin.sirius.io.ByteBufferInputStream
-import org.starcoin.sirius.io.ByteBufferOutputStream
+import java.nio.ByteBuffer
 
 class HashTest {
 
@@ -22,49 +18,20 @@ class HashTest {
         Assert.assertEquals(chainHash, chainHash1)
         Assert.assertEquals(chainHash.toString(), chainHash1.toString())
 
-        val hash = ByteArray(Hash.LENGTH)
-        val hash1 = ByteArray(Hash.LENGTH)
-        val hash2 = ByteArray(Hash.LENGTH)
-
-        chainHash.getBytes().get(hash)
-        chainHash1.getBytes().get(hash1)
+        val hash = chainHash.getBytes()
+        val hash1 = chainHash1.getBytes()
         // repeat read
-        chainHash1.getBytes().get(hash2)
+        val hash2 = chainHash1.getBytes()
+
 
         Assert.assertArrayEquals(hash, hash1)
         Assert.assertArrayEquals(hash1, hash2)
 
-        Assert.assertEquals(chainHash.getBytes().remaining().toLong(), Hash.LENGTH.toLong())
+        Assert.assertEquals(chainHash.size, Hash.LENGTH)
 
-        try {
-            chainHash.getBytes().putInt(0)
-            Assert.fail()
-        } catch (e: ReadOnlyBufferException) {
-        }
-
-    }
-
-    @Test
-    @Throws(IOException::class)
-    fun testChainHashReadWrite() {
-        val bytes = RandomStringUtils.randomAlphabetic(RandomUtils.nextInt(1, 1000)).toByteArray()
-        val bytes1 = RandomStringUtils.randomAlphabetic(RandomUtils.nextInt(1, 1000)).toByteArray()
-        val chainHash = Hash.of(bytes)
-        val chainHash1 = Hash.of(bytes1)
-
-        val buf = ByteBuffer.allocate(Hash.LENGTH * 2)
-        val out = ByteBufferOutputStream(buf)
-
-        chainHash.writeTo(out)
-        chainHash1.writeTo(out)
-        buf.flip()
-
-        val `in` = ByteBufferInputStream(buf)
-        val chainHashN = Hash.readFrom(`in`)
-        val chainHashN1 = Hash.readFrom(`in`)
-
-        Assert.assertEquals(chainHash, chainHashN)
-        Assert.assertEquals(chainHash1, chainHashN1)
+        //not change
+        chainHash.getBytes().fill(0)
+        Assert.assertEquals(Hash.of(bytes), chainHash)
     }
 
     @Test
@@ -76,9 +43,9 @@ class HashTest {
 
         Assert.assertEquals(bytes.size.toLong(), buf.remaining().toLong())
 
-        val hash = Hash.hash(bytes)
-        val hash2 = Hash.hash(buf)
-        Assert.assertArrayEquals(hash, hash2)
+        val hash = Hash.of(bytes)
+        val hash2 = Hash.of(buf)
+        Assert.assertEquals(hash, hash2)
     }
 
     @Test
@@ -123,28 +90,19 @@ class HashTest {
     }
 
     @Test
-    @Throws(InvalidProtocolBufferException::class)
-    fun testToBytes() {
-        val hash = Hash.random()
-        val buffer = hash.getBytes()
-        val bytes = ByteArray(buffer.remaining())
-        buffer.get(bytes)
-        Assert.assertEquals(0, buffer.remaining().toLong())
-
-        val protoChainHash = hash.toByteString()
-        val hash1 = Hash.wrap(protoChainHash)
-        Assert.assertEquals(hash, hash1)
-    }
-
-    @Test
     fun testCombine() {
         val hash = Hash.random()
         val hash1 = Hash.random()
         val hash2 = Hash.combine(hash, hash1)
         Assert.assertNotNull(hash2)
 
-        Assert.assertEquals(Hash.LENGTH.toLong(), hash.getBytes().remaining().toLong())
-        Assert.assertEquals(Hash.LENGTH.toLong(), hash1.getBytes().remaining().toLong())
-        Assert.assertEquals(Hash.LENGTH.toLong(), hash2.getBytes().remaining().toLong())
+        val hash3 = Hash.combine(hash, null)
+        val hash4 = Hash.combine(null, hash1)
+
+        Assert.assertEquals(Hash.LENGTH, hash.size)
+        Assert.assertEquals(Hash.LENGTH, hash1.size)
+        Assert.assertEquals(Hash.LENGTH, hash2.size)
+        Assert.assertEquals(Hash.LENGTH, hash3.size)
+        Assert.assertEquals(Hash.LENGTH, hash4.size)
     }
 }

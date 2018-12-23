@@ -10,12 +10,6 @@ data class TestObject(val name: String, val age: Int) : SiriusObject()
 class SiriusObjectTest {
 
     @Test
-    fun testSiriusObjectPrintln(){
-        val obj = TestObject("test", 10)
-        obj.printClass()
-    }
-
-    @Test
     fun testSiriusObject() {
         val obj = TestObject("test", 10)
         val rlpBytes = obj.toRLP()

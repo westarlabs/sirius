@@ -16,10 +16,6 @@ abstract class SiriusObject : Hashable {
         return id
     }
 
-    fun printClass() {
-        println(this.javaClass.name)
-    }
-
     @UseExperimental(ImplicitReflectionSerializer::class)
     fun toRLP(): ByteArray {
         return RLP.dump(RLP.plain.context.getOrDefault(this::class) as KSerializer<SiriusObject>, this)

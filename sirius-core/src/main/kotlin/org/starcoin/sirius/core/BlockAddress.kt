@@ -6,8 +6,8 @@ import com.google.protobuf.ByteString
 import kotlinx.serialization.*
 import org.apache.commons.lang3.RandomUtils
 import org.starcoin.sirius.crypto.CryptoService
-import org.starcoin.sirius.serialization.BinaryElementValueDecoder
-import org.starcoin.sirius.serialization.BinaryElementValueEncoder
+import org.starcoin.sirius.serialization.BinaryDecoder
+import org.starcoin.sirius.serialization.BinaryEncoder
 import org.starcoin.sirius.util.HashUtil
 import org.starcoin.sirius.util.KeyPairUtil
 import org.starcoin.sirius.util.Utils
@@ -68,14 +68,14 @@ class BlockAddress private constructor(val address: ByteArray) : CachedHash() {
 
         override fun deserialize(input: Decoder): BlockAddress {
             return when (input) {
-                is BinaryElementValueDecoder -> valueOf(input.decodeByteArray())
+                is BinaryDecoder -> valueOf(input.decodeByteArray())
                 else -> valueOf(input.decodeString())
             }
         }
 
         override fun serialize(output: Encoder, obj: BlockAddress) {
             when (output) {
-                is BinaryElementValueEncoder -> output.encodeByteArray(obj.address)
+                is BinaryEncoder -> output.encodeByteArray(obj.address)
                 else -> output.encodeString(obj.toString())
             }
         }

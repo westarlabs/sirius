@@ -5,16 +5,18 @@ import com.google.common.base.Preconditions.checkArgument
 import com.google.common.io.ByteStreams
 import com.google.common.primitives.Ints
 import com.google.protobuf.ByteString
-import com.google.protobuf.UnsafeByteOperations
+import kotlinx.serialization.*
 import org.apache.commons.lang3.RandomUtils
-import org.starcoin.proto.Starcoin
+import org.starcoin.sirius.crypto.CryptoService
+import org.starcoin.sirius.serialization.BinaryDecoder
+import org.starcoin.sirius.serialization.BinaryEncoder
 import org.starcoin.sirius.util.HashUtil
 import org.starcoin.sirius.util.Utils
-import java.io.*
+import java.io.File
+import java.io.FileInputStream
+import java.io.IOException
 import java.math.BigInteger
 import java.nio.ByteBuffer
-import java.security.MessageDigest
-import java.security.NoSuchAlgorithmException
 import java.util.*
 import kotlin.experimental.and
 
@@ -24,19 +26,11 @@ import kotlin.experimental.and
  * used as keys in a map. It also checks that the length is correct and provides a bit more type
  * safety. It is a final unmodifiable object.
  */
-class Hash private constructor(private val bytes: ByteBuffer) : Serializable, Comparable<Hash> {
+@Serializable
+class Hash private constructor(private val bytes: ByteArray) : Comparable<Hash> {
 
-    override fun equals(o: Any?): Boolean {
-        if (this === o) {
-            return true
-        }
-        if (o !is Hash) {
-            return false
-        }
-        val chainHash = o as Hash?
-        // TODO ensure
-        return this.compareTo(chainHash!!) == 0
-    }
+    val size: Int
+        get() = bytes.size
 
     /**
      * Returns the last four bytes of the wrapped hash. This should be unique enough to be a suitable
@@ -46,34 +40,34 @@ class Hash private constructor(private val bytes: ByteBuffer) : Serializable, Co
     override fun hashCode(): Int {
         // Use the last 4 bytes, not the first 4 which are often zeros.
         return Ints.fromBytes(
-            bytes.get(LENGTH - 4), bytes.get(LENGTH - 3), bytes.get(LENGTH - 2), bytes.get(LENGTH - 1)
+            bytes[LENGTH - 4], bytes[LENGTH - 3], bytes[LENGTH - 2], bytes[LENGTH - 1]
         )
     }
 
     override fun toString(): String {
-        return Utils.HEX.encode(bytes.array())
+        return Utils.HEX.encode(bytes)
     }
 
     fun toMD5Hex(): String {
-        return HashUtil.md5Hex(bytes.array())
+        return HashUtil.md5Hex(bytes)
     }
 
     /**
      * Returns the bytes interpreted as a positive integer.
      */
     fun toBigInteger(): BigInteger {
-        return BigInteger(1, bytes.array())
+        return BigInteger(1, bytes)
     }
 
-    fun getBytes() = bytes.asReadOnlyBuffer()
-    fun toBytes() = bytes.array()
+    fun getBytes() = bytes.copyOf()
+    fun toBytes() = this.getBytes()
 
-    fun toByteString() = ByteString.copyFrom(this.getBytes())
+    fun toByteString() = ByteString.copyFrom(this.bytes)
 
     override fun compareTo(other: Hash): Int {
         for (i in LENGTH - 1 downTo 0) {
-            val thisByte = this.bytes.get(i) and 0xff.toByte()
-            val otherByte = other.bytes.get(i) and 0xff.toByte()
+            val thisByte = this.bytes[i] and 0xff.toByte()
+            val otherByte = other.bytes[i] and 0xff.toByte()
             if (thisByte > otherByte) {
                 return 1
             }
@@ -84,20 +78,36 @@ class Hash private constructor(private val bytes: ByteBuffer) : Serializable, Co
         return 0
     }
 
-    /**
-     * Write hash bytes to out
-     */
-    @Throws(IOException::class)
-    fun writeTo(out: OutputStream) {
-        out.write(this.bytes.array())
+    override fun equals(other: Any?): Boolean {
+        if (this === other) return true
+        if (other !is Hash) return false
+
+        if (!bytes.contentEquals(other.bytes)) return false
+
+        return true
     }
 
-    companion object {
+    @Serializer(forClass = Hash::class)
+    companion object : KSerializer<Hash> {
 
         val LENGTH = 32 // bytes
         val CHECKSUM_LENGTH = 4 // bytes
 
         val ZERO_HASH = wrap(ByteArray(LENGTH))
+
+        override fun deserialize(input: Decoder): Hash {
+            return when (input) {
+                is BinaryDecoder -> Hash.wrap(input.decodeByteArray())
+                else -> Hash.wrap(input.decodeString())
+            }
+        }
+
+        override fun serialize(output: Encoder, obj: Hash) {
+            when (output) {
+                is BinaryEncoder -> output.encodeByteArray(obj.bytes)
+                else -> output.encodeString(obj.toString())
+            }
+        }
 
         /**
          * Creates a new instance that wraps the given hash value. Keep private for unmodifiable object.
@@ -108,9 +118,7 @@ class Hash private constructor(private val bytes: ByteBuffer) : Serializable, Co
          */
         fun wrap(rawHashBytes: ByteArray): Hash {
             checkArgument(rawHashBytes.size == LENGTH, "unexpected hash length:" + rawHashBytes.size)
-            val bytes = ByteBuffer.allocate(rawHashBytes.size).put(rawHashBytes)
-            bytes.flip()
-            return Hash(bytes)
+            return Hash(rawHashBytes)
         }
 
         /**
@@ -134,15 +142,15 @@ class Hash private constructor(private val bytes: ByteBuffer) : Serializable, Co
          */
         fun combine(left: Hash?, right: Hash?): Hash {
             Preconditions.checkArgument(left != null || right != null, "left and right both null.")
-            val leftLength = left?.bytes?.capacity() ?: 0
-            val rightLength = right?.bytes?.capacity() ?: 0
-            val bb = ByteBuffer.allocate(leftLength + rightLength)
+            val leftLength = left?.bytes?.size ?: 0
+            val rightLength = right?.bytes?.size ?: 0
+            val bb = ByteArray(leftLength + rightLength)
             // ByteBuffer.put(buf) affect the argument buf's position, so use asReadOnlyBuffer
             if (left != null) {
-                bb.put(left.bytes.asReadOnlyBuffer())
+                System.arraycopy(left.bytes, 0, bb, 0, left.bytes.size)
             }
             if (right != null) {
-                bb.put(right.bytes.asReadOnlyBuffer())
+                System.arraycopy(right.bytes, 0, bb, left?.bytes?.size ?: 0, right.bytes.size)
             }
             return of(bb)
         }
@@ -154,23 +162,23 @@ class Hash private constructor(private val bytes: ByteBuffer) : Serializable, Co
          * @return a new instance containing the calculated (one-time) hash
          */
         fun of(contents: ByteArray): Hash {
-            return wrap(hash(contents))
+            return hash(contents)
         }
 
         fun of(buffer: ByteBuffer): Hash {
             if (buffer.hasArray()) {
-                return wrap(hash(buffer.array()))
+                return hash(buffer.array())
             } else {
                 buffer.mark()
                 val bytes = ByteArray(buffer.remaining())
                 buffer.get(bytes)
                 buffer.reset()
-                return wrap(hash(bytes))
+                return hash(bytes)
             }
         }
 
         fun of(obj: SiriusObject): Hash {
-            TODO()
+            return CryptoService.hash(obj)
         }
 
         /**
@@ -194,70 +202,22 @@ class Hash private constructor(private val bytes: ByteBuffer) : Serializable, Co
             }
         }
 
-        /**
-         * Returns a new SHA-256 MessageDigest instance.
-         *
-         *
-         * This is a convenience method which wraps the checked exception that can never occur with a
-         * RuntimeException.
-         *
-         * @return a new SHA-256 MessageDigest instance
-         */
-        fun newDigest(): MessageDigest {
-            try {
-                return MessageDigest.getInstance("SHA-256")
-            } catch (e: NoSuchAlgorithmException) {
-                throw RuntimeException(e) // Can't happen.
-            }
-
-        }
-
-        /**
-         * Calculates the SHA-256 hash of the given byte range.
-         *
-         * @param input  the array containing the bytes to hash
-         * @param offset the offset within the array of the bytes to hash
-         * @param length the number of bytes to hash
-         * @return the hash (in big-endian order)
-         */
-        @JvmOverloads
-        fun hash(input: ByteArray, offset: Int = 0, length: Int = input.size): ByteArray {
-            val digest = newDigest()
-            digest.update(input, offset, length)
-            return digest.digest()
-        }
-
-        fun hash(input: ByteBuffer): ByteArray {
-            val digest = newDigest()
-            digest.update(input)
-            return digest.digest()
+        private fun hash(input: ByteArray): Hash {
+            return CryptoService.hash(input)
         }
 
         /**
          * @see .checksum
          */
         fun checksum(input: ByteBuffer): ByteArray {
-            return Arrays.copyOfRange(hash(input), 0, 4)
+            return Arrays.copyOfRange(of(input).bytes, 0, 4)
         }
 
         /**
          * Calculates checksum, SHA-256 hash of the given bytes and return first 4 byte.
          */
         fun checksum(input: ByteArray): ByteArray {
-            return Arrays.copyOfRange(hash(input), 0, CHECKSUM_LENGTH)
-        }
-
-        /**
-         * Read bytes and create ChainHash object.
-         */
-        @Throws(IOException::class)
-        fun readFrom(`in`: InputStream): Hash {
-            val bytes = ByteArray(Hash.LENGTH)
-            val len = `in`.read(bytes)
-            if (len != LENGTH) {
-                throw EOFException("unexpected enf of stream to parse Sha256Hash")
-            }
-            return Hash.wrap(bytes)
+            return Arrays.copyOfRange(hash(input).bytes, 0, CHECKSUM_LENGTH)
         }
 
         fun random(): Hash {
