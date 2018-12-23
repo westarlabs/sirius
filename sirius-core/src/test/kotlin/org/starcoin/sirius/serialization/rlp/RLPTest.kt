@@ -4,10 +4,8 @@ import kotlinx.serialization.*
 import kotlinx.serialization.json.JSON
 import org.junit.Assert
 import org.junit.Test
+import org.starcoin.sirius.serialization.NamedData
 import org.starcoin.sirius.serialization.TestData
-
-@Serializable
-data class NamedData(val name: String, val data: TestData)
 
 @ImplicitReflectionSerializer
 class RLPTest {
@@ -27,7 +25,7 @@ class RLPTest {
 
         Assert.assertEquals(rlpList.element.size, rlpList1.element.size)
 
-        val input = RLPInput(rlpList1.element.iterator(), true)
+        val input = RLPInput(rlpList1.element.listIterator(), true)
         val data1 = input.decode(TestData.serializer())
         Assert.assertEquals(data, data1)
     }
@@ -66,7 +64,7 @@ class RLPTest {
 
         Assert.assertEquals(rlpList.element.size, rlpList1.element.size)
 
-        val input = RLPInput(rlpList1.element.iterator(), true)
+        val input = RLPInput(rlpList1.listIterator(), true)
         val namedData1 = input.decode(NamedData.serializer())
         Assert.assertEquals(namedData, namedData1)
     }
@@ -95,6 +93,14 @@ class RLPTest {
     fun testRLP() {
         val data = TestData.random()
         val namedData = NamedData("test", data)
+        val bytes = RLP.dump(namedData)
+        val namedData1 = RLP.load<NamedData>(bytes)
+        Assert.assertEquals(namedData, namedData1)
+    }
+
+    @Test
+    fun testOptionalRLP() {
+        val namedData = NamedData("test", null)
         val bytes = RLP.dump(namedData)
         val namedData1 = RLP.load<NamedData>(bytes)
         Assert.assertEquals(namedData, namedData1)

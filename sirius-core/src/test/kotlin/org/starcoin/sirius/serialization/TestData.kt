@@ -1,5 +1,6 @@
 package org.starcoin.sirius.serialization
 
+import kotlinx.serialization.Optional
 import kotlinx.serialization.SerialId
 import kotlinx.serialization.Serializable
 import org.apache.commons.lang3.RandomStringUtils
@@ -15,7 +16,10 @@ data class TestData(
     @SerialId(3)
     var stringValue: String,
     @SerialId(4)
-    val bytesValue: ByteArrayWrapper
+    val bytesValue: ByteArrayWrapper,
+    @SerialId(5)
+    @Optional
+    val optionalValue: String? = null
 ) : SiriusObject() {
 
     companion object {
@@ -36,7 +40,11 @@ data class TestData(
                             100
                         )
                     )
-                )
+                ),
+                when (RandomUtils.nextBoolean()) {
+                    true -> null
+                    false -> "not null"
+                }
             )
         }
     }

@@ -25,7 +25,7 @@ class RLP : AbstractSerialFormat(), BinaryFormat {
 
     override fun <T> load(deserializer: DeserializationStrategy<T>, bytes: ByteArray): T {
         val rlpList = bytes.decodeRLP() as RLPList
-        val loader = RLPInput(rlpList.iterator(), true)
+        val loader = RLPInput(rlpList.listIterator(), true)
         return loader.decode(deserializer)
     }
 

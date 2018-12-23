@@ -1,6 +1,9 @@
 package org.starcoin.sirius.serialization.rlp
 
-import kotlinx.serialization.*
+import kotlinx.serialization.CompositeEncoder
+import kotlinx.serialization.KSerializer
+import kotlinx.serialization.SerialDescriptor
+import kotlinx.serialization.SerializationException
 import org.starcoin.sirius.serialization.BinaryElementValueEncoder
 
 
@@ -33,7 +36,9 @@ class RLPOutput internal constructor(private val out: RLPList, private val begin
         return true
     }
 
-    override fun encodeNull() = throw SerializationException("null is not supported")
+    override fun encodeNull() {
+        out.add(EMPTY_ELEMENT)
+    }
 
     override fun encodeValue(value: Any) {
         when (value) {

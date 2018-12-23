@@ -83,3 +83,6 @@ data class RLPList(val element: MutableList<RLPType>) : RLPType(), MutableList<R
 }
 
 class IllegalRLPException(msg: String) : IllegalArgumentException(msg)
+
+internal val EMPTY_LIST = RLPList()
+internal val EMPTY_ELEMENT = RLPElement(ByteArray(0))

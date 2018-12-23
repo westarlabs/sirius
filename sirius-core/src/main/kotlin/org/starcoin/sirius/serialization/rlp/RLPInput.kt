@@ -1,14 +1,13 @@
 package org.starcoin.sirius.serialization.rlp
 
 import kotlinx.serialization.CompositeDecoder
-import kotlinx.serialization.ElementValueDecoder
 import kotlinx.serialization.KSerializer
 import kotlinx.serialization.SerialDescriptor
 import kotlinx.serialization.internal.EnumDescriptor
 import org.starcoin.sirius.serialization.BinaryElementValueDecoder
 
 
-class RLPInput internal constructor(private val input: Iterator<RLPType>, private val begin: Boolean) :
+class RLPInput internal constructor(private val input: ListIterator<RLPType>, private val begin: Boolean) :
     BinaryElementValueDecoder() {
 
     override fun beginStructure(desc: SerialDescriptor, vararg typeParams: KSerializer<*>): CompositeDecoder {
@@ -16,7 +15,7 @@ class RLPInput internal constructor(private val input: Iterator<RLPType>, privat
             this
         } else {
             val rlpList = input.next() as RLPList
-            return RLPInput(rlpList.iterator(), false)
+            return RLPInput(rlpList.listIterator(), false)
         }
     }
 
@@ -69,5 +68,24 @@ class RLPInput internal constructor(private val input: Iterator<RLPType>, privat
 
     override fun decodeByteArray(): ByteArray {
         return nextElement().bytes
+    }
+
+    override fun decodeNotNullMark(): Boolean {
+        return if (input.hasNext()) {
+            val element = input.next() as RLPElement
+            input.previous()
+            when (element) {
+                EMPTY_ELEMENT -> return false
+                else -> true
+            }
+        } else {
+            false
+        }
+    }
+
+
+    override fun decodeNull(): Nothing? {
+        nextElement()
+        return null
     }
 }

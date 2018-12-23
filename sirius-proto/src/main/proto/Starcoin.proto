@@ -18,6 +18,7 @@ message TestData{
     required uint32 intValue = 2;
     required bytes stringValue = 3;
     required bytes bytesValue = 4;
+    optional bytes optionalValue = 5;
 }
 
 message SuccResponse {

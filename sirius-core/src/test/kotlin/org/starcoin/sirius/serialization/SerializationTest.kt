@@ -6,6 +6,7 @@ import org.junit.Assert
 import org.junit.Test
 import org.starcoin.proto.Starcoin
 import org.starcoin.sirius.serialization.protobuf.ProtoBuf
+import org.starcoin.sirius.serialization.rlp.RLP
 
 
 class SerializationTest {
@@ -14,14 +15,19 @@ class SerializationTest {
     @Test
     fun testDataClass() {
         val data = TestData.random()
-        val bytes = ProtoBuf.dump(data)
-        val data1 = ProtoBuf.load<TestData>(bytes)
-        Assert.assertEquals(data, data1)
 
         val json = JSON.stringify(data)
         println(json)
-        val data2 = JSON.parse<TestData>(json);
+        val data1 = JSON.parse<TestData>(json)
+        Assert.assertEquals(data, data1)
+
+        val bytes = ProtoBuf.dump(data)
+        val data2 = ProtoBuf.load<TestData>(bytes)
         Assert.assertEquals(data, data2)
+
+        val rlp = RLP.dump(data)
+        val data3 = RLP.load<TestData>(rlp)
+        Assert.assertEquals(data, data3)
     }
 
     @ImplicitReflectionSerializer
@@ -45,6 +51,24 @@ class SerializationTest {
         Assert.assertEquals(data, data1)
     }
 
+    @ImplicitReflectionSerializer
+    @Test
+    fun testOptionalObject() {
+        val namedData = NamedData("test", null)
+
+        val json = JSON.stringify(namedData)
+        println(json)
+        val namedData1 = JSON.parse<NamedData>(json)
+        Assert.assertEquals(namedData, namedData1)
+
+        val pb = ProtoBuf.dump(namedData)
+        val namedData2 = ProtoBuf.load<NamedData>(pb)
+        Assert.assertEquals(namedData, namedData2)
+
+        val rlp = RLP.dump(namedData)
+        val namedData3 = RLP.load<NamedData>(rlp)
+        Assert.assertEquals(namedData, namedData3)
+    }
 
 //    @Test
 //    fun testTransform() {

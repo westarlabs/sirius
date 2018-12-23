@@ -61,6 +61,10 @@ class ProtoBuf : AbstractSerialFormat(), BinaryFormat {
         override fun encodeByteArray(byteArray: ByteArray) {
             encoder.writeObject(byteArray, currentTag.first)
         }
+
+        override fun encodeTaggedNull(tag: ProtoDesc) {
+            //Do nothing
+        }
     }
 
     internal open inner class ObjectWriter(
