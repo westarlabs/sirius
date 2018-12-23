@@ -1,6 +1,6 @@
 package org.starcoin.sirius.crypto
 
-import org.starcoin.sirius.core.BlockAddress
+import org.starcoin.sirius.core.Address
 import org.starcoin.sirius.core.Hash
 import org.starcoin.sirius.core.Signature
 import org.starcoin.sirius.core.SiriusObject
@@ -16,7 +16,7 @@ interface CryptoService {
 
     fun loadCryptoKey(bytes: ByteArray): CryptoKey
 
-    fun getAddress(publicKey: PublicKey): BlockAddress
+    fun getAddress(publicKey: PublicKey): Address
 
     fun verify(data: ByteArray, sign: Signature, publicKey: PublicKey): Boolean
 

@@ -3,7 +3,7 @@ package org.starcoin.sirius.protocol
 
 import org.ethereum.core.Transaction
 import org.spongycastle.util.BigIntegers
-import org.starcoin.sirius.core.BlockAddress
+import org.starcoin.sirius.core.Address
 import org.starcoin.sirius.core.ChainTransaction
 import kotlin.properties.Delegates
 
@@ -17,8 +17,8 @@ class EthereumTransaction : ChainTransaction {
     var data: ByteArray? = null
 
     constructor(
-        from: BlockAddress,
-        to: BlockAddress,
+        from: Address,
+        to: Address,
         nonce: Long,
         gasPrice: Long,
         gasLimit: Long,

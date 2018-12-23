@@ -14,7 +14,7 @@ class AccountInformation : ProtobufCodec<Starcoin.ProtoAccountInfo> {
 
     constructor() {}
 
-    constructor(address: BlockAddress, allotment: Long, update: Update?) {
+    constructor(address: Address, allotment: Long, update: Update?) {
         this.address = Hash.of(address.toBytes())
         this.allotment = allotment
         this.update = update
@@ -61,7 +61,7 @@ class AccountInformation : ProtobufCodec<Starcoin.ProtoAccountInfo> {
 
     companion object {
 
-        val EMPTY_ACCOUNT = AccountInformation(BlockAddress.DEFAULT_ADDRESS, 0, null)
+        val EMPTY_ACCOUNT = AccountInformation(Address.DEFAULT_ADDRESS, 0, null)
 
         fun generateAccountInformation(proto: Starcoin.ProtoAccountInfo?): AccountInformation? {
             if (proto == null) {

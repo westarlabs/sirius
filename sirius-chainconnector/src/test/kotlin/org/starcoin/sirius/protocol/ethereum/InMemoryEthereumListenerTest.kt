@@ -3,7 +3,7 @@ package org.starcoin.sirius.protocol.ethereum
 import org.ethereum.crypto.ECKey
 import org.ethereum.util.blockchain.EtherUtil
 import org.junit.Test
-import org.starcoin.sirius.core.BlockAddress
+import org.starcoin.sirius.core.Address
 import org.starcoin.sirius.protocol.EthereumTransaction
 import org.starcoin.sirius.util.KeyPairUtil
 
@@ -20,8 +20,8 @@ class InMemoryEthereumListenerTest {
         chain.sb.withAccountBalance(alice.getAddress(), EtherUtil.convert(199, EtherUtil.Unit.ETHER))
 
         var transaction = EthereumTransaction(
-            BlockAddress.wrap(alice.address),
-            BlockAddress.wrap(bob.address),
+            Address.wrap(alice.address),
+            Address.wrap(bob.address),
             0,
             0,0,
             1,

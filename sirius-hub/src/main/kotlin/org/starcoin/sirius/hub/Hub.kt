@@ -32,11 +32,11 @@ interface Hub {
 
     fun registerParticipant(participant: Participant, initUpdate: Update): Update
 
-    fun deposit(participant: BlockAddress, amount: Long)
+    fun deposit(participant: Address, amount: Long)
 
-    fun getHubAccount(address: BlockAddress): HubAccount?
+    fun getHubAccount(address: Address): HubAccount?
 
-    fun getHubAccount(eon: Int, address: BlockAddress): HubAccount?
+    fun getHubAccount(eon: Int, address: Address): HubAccount?
 
     // TODO
     @Deprecated("")
@@ -46,15 +46,15 @@ interface Hub {
 
     fun receiveNewTransfer(receiverIOU: IOU)
 
-    fun queryNewTransfer(blockAddress: BlockAddress): OffchainTransaction?
+    fun queryNewTransfer(blockAddress: Address): OffchainTransaction?
 
-    fun getProof(blockAddress: BlockAddress): AugmentedMerklePath?
+    fun getProof(blockAddress: Address): AugmentedMerklePath?
 
-    fun getProof(eon: Int, blockAddress: BlockAddress): AugmentedMerklePath?
+    fun getProof(eon: Int, blockAddress: Address): AugmentedMerklePath?
 
     fun currentEon(): Eon?
 
-    fun watch(address: BlockAddress): BlockingQueue<HubEvent<ProtobufCodec<*>>> {
+    fun watch(address: Address): BlockingQueue<HubEvent<ProtobufCodec<*>>> {
         return this.watchByFilter { event -> event.isPublicEvent || event.address == address }
     }
 

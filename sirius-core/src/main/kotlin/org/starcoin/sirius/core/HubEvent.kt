@@ -9,7 +9,7 @@ class HubEvent<D : ProtobufCodec<*>> : ProtobufCodec<Starcoin.ProtoHubEvent> {
 
     var type: HubEventType? = null
         private set
-    var address: BlockAddress? = null
+    var address: Address? = null
         private set
     var payload: D? = null
         private set
@@ -23,7 +23,7 @@ class HubEvent<D : ProtobufCodec<*>> : ProtobufCodec<Starcoin.ProtoHubEvent> {
         this.unmarshalProto(proto)
     }
 
-    constructor(type: HubEventType, address: BlockAddress, payload: D) {
+    constructor(type: HubEventType, address: Address, payload: D) {
         this.type = type
         this.address = address
         this.payload = payload
@@ -47,7 +47,7 @@ class HubEvent<D : ProtobufCodec<*>> : ProtobufCodec<Starcoin.ProtoHubEvent> {
 
     override fun unmarshalProto(proto: Starcoin.ProtoHubEvent) {
         this.type = HubEventType.valueOf(proto.type.number)
-        this.address = if (proto.address.isEmpty) null else BlockAddress.wrap(proto.address)
+        this.address = if (proto.address.isEmpty) null else Address.wrap(proto.address)
         this.payload = if (proto.hasPayload()) this.type!!.parsePayload(proto.payload) else null
     }
 

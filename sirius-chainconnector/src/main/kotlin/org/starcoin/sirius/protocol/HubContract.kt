@@ -9,9 +9,9 @@ interface HubContract {
     fun queryHubInfo(): HubInfo
     fun queryLeastHubCommit(): AugmentedMerkleTree.AugmentedMerkleTreeNode
     fun queryHubCommit(eon: Int): AugmentedMerkleTree.AugmentedMerkleTreeNode
-    fun queryCurrentBalanceUpdateChallenge(address: BlockAddress): BalanceUpdateChallenge
-    fun queryCurrentTransferDeliveryChallenge(address: BlockAddress): TransferDeliveryChallenge
-    fun queryWithdrawalStatus(address: BlockAddress): WithdrawalStatus
+    fun queryCurrentBalanceUpdateChallenge(address: Address): BalanceUpdateChallenge
+    fun queryCurrentTransferDeliveryChallenge(address: Address): TransferDeliveryChallenge
+    fun queryWithdrawalStatus(address: Address): WithdrawalStatus
 
     fun initiateWithdrawal(request: InitiateWithdrawal): Hash
     fun cancelWithdrawal(request: CancelWithdrawal): Hash

@@ -93,7 +93,7 @@ class HubTest {
         var update: Update? = null
         var hubAccount: HubAccount? = null
 
-        val address: BlockAddress
+        val address: Address
             get() = this.p.address!!
 
         val isRegister: Boolean
@@ -256,7 +256,7 @@ class HubTest {
         to.update = updates[1]
     }
 
-    private fun withdraw(address: BlockAddress, amount: Long) {
+    private fun withdraw(address: Address, amount: Long) {
         this.txs.add(
             ChainTransaction(
                 address,

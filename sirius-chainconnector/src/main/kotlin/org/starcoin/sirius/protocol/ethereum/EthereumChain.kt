@@ -1,7 +1,7 @@
 package org.starcoin.sirius.protocol.ethereum
 
 import kotlinx.io.IOException
-import org.starcoin.sirius.core.BlockAddress
+import org.starcoin.sirius.core.Address
 import org.starcoin.sirius.core.BlockInfo
 import org.starcoin.sirius.core.Hash
 import org.starcoin.sirius.protocol.*
@@ -76,7 +76,7 @@ class EthereumChain constructor(httpUrl: String = defaultHttpUrl, socketPath: St
         web3jSrv!!.transactionFlowable().subscribe { tx -> onNext(tx.chainTransaction()) }
     }
 
-    override fun getBalance(address: BlockAddress): BigInteger {
+    override fun getBalance(address: Address): BigInteger {
         val req = web3jSrv!!.ethGetBalance(address.toString(), DefaultBlockParameterName.LATEST).send()
         if (req.hasError()) throw IOException(req.error.message)
         return req.balance
@@ -84,8 +84,8 @@ class EthereumChain constructor(httpUrl: String = defaultHttpUrl, socketPath: St
 
     fun Transaction.chainTransaction(): EthereumTransaction {
         return EthereumTransaction(
-            BlockAddress.wrap(this.from),
-            BlockAddress.wrap(this.to),
+            Address.wrap(this.from),
+            Address.wrap(this.to),
             System.currentTimeMillis(),  //timestamp
             this.gasPrice.longValueExact(),
             0,

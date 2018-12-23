@@ -9,7 +9,7 @@ import java.util.*
 
 class Participant : ProtobufCodec<Starcoin.ProtoParticipant> {
 
-    var address: BlockAddress? = null
+    var address: Address? = null
         private set
     var publicKey: PublicKey? = null
         private set
@@ -21,7 +21,7 @@ class Participant : ProtobufCodec<Starcoin.ProtoParticipant> {
     }
 
     constructor(publicKey: PublicKey) {
-        this.address = BlockAddress.getAddress(publicKey)
+        this.address = Address.getAddress(publicKey)
         this.publicKey = publicKey
     }
 
@@ -35,7 +35,7 @@ class Participant : ProtobufCodec<Starcoin.ProtoParticipant> {
     override fun unmarshalProto(proto: Starcoin.ProtoParticipant) {
         if (!proto.publicKey.isEmpty) {
             this.publicKey = KeyPairUtil.recoverPublicKey(proto.publicKey.toByteArray())
-            this.address = BlockAddress.getAddress(this.publicKey!!)
+            this.address = Address.getAddress(this.publicKey!!)
         }
     }
 

@@ -13,8 +13,8 @@ import java.util.*
 
 open class ChainTransaction : ProtobufCodec<Starcoin.ProtoChainTransaction>, CachedHash, Mockable {
 
-    var from: BlockAddress? = null
-    var to: BlockAddress? = null
+    var from: Address? = null
+    var to: Address? = null
     var timestamp: Long = 0
     var amount: Long = 0
 
@@ -28,14 +28,14 @@ open class ChainTransaction : ProtobufCodec<Starcoin.ProtoChainTransaction>, Cac
 
     constructor() {}
 
-    constructor(from: BlockAddress, to: BlockAddress, timestamp: Long, amount: Long) {
+    constructor(from: Address, to: Address, timestamp: Long, amount: Long) {
         this.from = from
         this.to = to
         this.timestamp = timestamp
         this.amount = amount
     }
 
-    constructor(from: BlockAddress, to: BlockAddress, amount: Long) {
+    constructor(from: Address, to: Address, amount: Long) {
         this.from = from
         this.to = to
         this.timestamp = System.currentTimeMillis()
@@ -43,8 +43,8 @@ open class ChainTransaction : ProtobufCodec<Starcoin.ProtoChainTransaction>, Cac
     }
 
     constructor(
-        from: BlockAddress,
-        to: BlockAddress,
+        from: Address,
+        to: Address,
         timestamp: Long,
         amount: Long,
         action: String,
@@ -53,7 +53,7 @@ open class ChainTransaction : ProtobufCodec<Starcoin.ProtoChainTransaction>, Cac
     }
 
     constructor(
-        from: BlockAddress, to: BlockAddress, action: String, arguments: GeneratedMessageV3
+        from: Address, to: Address, action: String, arguments: GeneratedMessageV3
     ) {
         this.from = from
         this.to = to
@@ -64,8 +64,8 @@ open class ChainTransaction : ProtobufCodec<Starcoin.ProtoChainTransaction>, Cac
     }
 
     constructor(
-        from: BlockAddress,
-        to: BlockAddress,
+        from: Address,
+        to: Address,
         timestamp: Long,
         amount: Long,
         action: String,
@@ -127,8 +127,8 @@ open class ChainTransaction : ProtobufCodec<Starcoin.ProtoChainTransaction>, Cac
     override fun unmarshalProto(proto: Starcoin.ProtoChainTransaction) {
         this.amount = proto.amount
         this.timestamp = proto.timestamp
-        this.from = BlockAddress.wrap(proto.from)
-        this.to = BlockAddress.wrap(proto.to)
+        this.from = Address.wrap(proto.from)
+        this.to = Address.wrap(proto.to)
         // protobuf string default value is empty string.
         this.action = if (proto.action.isEmpty()) null else proto.action
         // protobuf bytestring default value is empty bytes.
@@ -163,8 +163,8 @@ open class ChainTransaction : ProtobufCodec<Starcoin.ProtoChainTransaction>, Cac
 
     override fun mock(context: MockContext) {
         val keyPair = context.getOrDefault("keyPair", KeyPairUtil.generateKeyPair())
-        this.from = BlockAddress.getAddress(keyPair.public)
-        this.to = BlockAddress.random()
+        this.from = Address.getAddress(keyPair.public)
+        this.to = Address.random()
         this.amount = RandomUtils.nextLong()
         this.timestamp = System.currentTimeMillis()
     }

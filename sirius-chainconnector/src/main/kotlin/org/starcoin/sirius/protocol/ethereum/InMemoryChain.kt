@@ -1,7 +1,7 @@
 package org.starcoin.sirius.protocol.ethereum
 
 import org.ethereum.util.blockchain.StandaloneBlockchain
-import org.starcoin.sirius.core.BlockAddress
+import org.starcoin.sirius.core.Address
 import org.starcoin.sirius.core.BlockInfo
 import org.starcoin.sirius.core.Hash
 import org.starcoin.sirius.protocol.*
@@ -30,7 +30,7 @@ class InMemoryChain(autoGenblock :Boolean):Chain<EthereumTransaction,BlockInfo,H
 
     }
 
-    override fun getBalance(address: BlockAddress): BigInteger {
+    override fun getBalance(address: Address): BigInteger {
         return sb.getBlockchain().getRepository().getBalance(address.address)
     }
 

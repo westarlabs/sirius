@@ -47,7 +47,7 @@ class Update : ProtobufCodec<Starcoin.ProtoUpdate>, Mockable {
         this.root = root
     }
 
-    constructor(eon: Int, version: Long, address: BlockAddress, txs: List<OffchainTransaction>) {
+    constructor(eon: Int, version: Long, address: Address, txs: List<OffchainTransaction>) {
         this.eon = eon
         this.version = version
         val tree = MerkleTree(txs)

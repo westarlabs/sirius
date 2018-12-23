@@ -5,7 +5,7 @@ import java.util.*
 
 class Withdrawal : ProtobufCodec<InitiateWithdrawalRequest> {
 
-    var address: BlockAddress? = null
+    var address: Address? = null
         private set
     var path: AugmentedMerklePath? = null
         private set
@@ -16,7 +16,7 @@ class Withdrawal : ProtobufCodec<InitiateWithdrawalRequest> {
         this.unmarshalProto(proto)
     }
 
-    constructor(address: BlockAddress, path: AugmentedMerklePath, amount: Long) {
+    constructor(address: Address, path: AugmentedMerklePath, amount: Long) {
         this.address = address
         this.path = path
         this.amount = amount
@@ -31,7 +31,7 @@ class Withdrawal : ProtobufCodec<InitiateWithdrawalRequest> {
     }
 
     override fun unmarshalProto(proto: InitiateWithdrawalRequest) {
-        this.address = BlockAddress.wrap(proto.address)
+        this.address = Address.wrap(proto.address)
         this.path = AugmentedMerklePath(proto.path)
         this.amount = proto.amount
     }

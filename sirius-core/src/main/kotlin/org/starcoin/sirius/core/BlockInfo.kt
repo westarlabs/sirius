@@ -56,7 +56,7 @@ class BlockInfo : ProtobufCodec<ProtoBlockInfo>, CachedHash {
             .collect(Collectors.toList())
     }
 
-    fun filterTxByTo(to: BlockAddress): List<ChainTransaction> {
+    fun filterTxByTo(to: Address): List<ChainTransaction> {
         return this.transactions!!
             .stream()
             .filter { tx -> tx.isSuccess && tx.to == to }

@@ -16,8 +16,8 @@ class OffchainTransaction : CachedHash, ProtobufCodec<ProtoOffchainTransaction>,
 
 
     var eon: Int = 0
-    var from: BlockAddress? = null
-    var to: BlockAddress? = null
+    var from: Address? = null
+    var to: Address? = null
     var timestamp: Long = 0
     var amount: Long = 0
 
@@ -28,7 +28,7 @@ class OffchainTransaction : CachedHash, ProtobufCodec<ProtoOffchainTransaction>,
         this.timestamp = System.currentTimeMillis()
     }
 
-    constructor(eon: Int, from: BlockAddress, to: BlockAddress, amount: Long) {
+    constructor(eon: Int, from: Address, to: Address, amount: Long) {
         this.eon = eon
         this.from = from
         this.to = to
@@ -72,8 +72,8 @@ class OffchainTransaction : CachedHash, ProtobufCodec<ProtoOffchainTransaction>,
 
     override fun unmarshalProto(proto: ProtoOffchainTransaction) {
         this.eon = proto.eon
-        this.from = BlockAddress.wrap(proto.from)
-        this.to = BlockAddress.wrap(proto.to)
+        this.from = Address.wrap(proto.from)
+        this.to = Address.wrap(proto.to)
         this.amount = proto.amount
         this.timestamp = proto.timestamp
         this.sign = if (proto.sign.isEmpty) null else Signature.wrap(proto.sign)
@@ -100,8 +100,8 @@ class OffchainTransaction : CachedHash, ProtobufCodec<ProtoOffchainTransaction>,
 
     override fun mock(context: MockContext) {
         val keyPair = context.getOrDefault("keyPair", KeyPairUtil.generateKeyPair())
-        this.from = BlockAddress.getAddress(keyPair.public)
-        this.to = BlockAddress.random()
+        this.from = Address.getAddress(keyPair.public)
+        this.to = Address.random()
         this.amount = RandomUtils.nextLong()
         this.timestamp = System.currentTimeMillis()
     }
@@ -117,7 +117,7 @@ class OffchainTransaction : CachedHash, ProtobufCodec<ProtoOffchainTransaction>,
         if (publicKey == null) {
             return false
         }
-        return if (this.from != BlockAddress.getAddress(publicKey)) {
+        return if (this.from != Address.getAddress(publicKey)) {
             false
         } else this.sign!!.verify(this.marshalSignData().build().toByteArray(), publicKey)
     }

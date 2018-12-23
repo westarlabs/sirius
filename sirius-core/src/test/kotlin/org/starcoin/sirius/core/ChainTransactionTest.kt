@@ -12,8 +12,8 @@ class ChainTransactionTest {
     @Test
     @Throws(InvalidProtocolBufferException::class)
     fun testChainTransaction() {
-        val from = BlockAddress.random()
-        val to = BlockAddress.random()
+        val from = Address.random()
+        val to = Address.random()
 
         val arguments = Starcoin.DepositRequest.newBuilder().setAddress(from.toByteString()).setAmount(100).build()
         val tx = ChainTransaction(from, to, System.currentTimeMillis(), 0, "test", arguments)

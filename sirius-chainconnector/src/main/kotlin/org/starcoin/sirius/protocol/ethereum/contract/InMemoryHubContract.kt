@@ -16,15 +16,15 @@ class InMemoryHubContract : HubContract{
         TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
     }
 
-    override fun queryCurrentBalanceUpdateChallenge(address: BlockAddress): BalanceUpdateChallenge {
+    override fun queryCurrentBalanceUpdateChallenge(address: Address): BalanceUpdateChallenge {
         TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
     }
 
-    override fun queryCurrentTransferDeliveryChallenge(address: BlockAddress): TransferDeliveryChallenge {
+    override fun queryCurrentTransferDeliveryChallenge(address: Address): TransferDeliveryChallenge {
         TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
     }
 
-    override fun queryWithdrawalStatus(address: BlockAddress): WithdrawalStatus {
+    override fun queryWithdrawalStatus(address: Address): WithdrawalStatus {
         TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
     }
 

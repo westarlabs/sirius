@@ -3,9 +3,9 @@ package org.starcoin.sirius.core
 import org.starcoin.proto.Starcoin.DepositRequest
 import java.util.*
 
-class Deposit(address: BlockAddress, amount: Long) : ProtobufCodec<DepositRequest> {
+class Deposit(address: Address, amount: Long) : ProtobufCodec<DepositRequest> {
 
-    var address: BlockAddress = address
+    var address: Address = address
         private set
     var amount: Long = amount
         private set
@@ -18,7 +18,7 @@ class Deposit(address: BlockAddress, amount: Long) : ProtobufCodec<DepositReques
     }
 
     override fun unmarshalProto(proto: DepositRequest) {
-        this.address = BlockAddress.wrap(proto.address)
+        this.address = Address.wrap(proto.address)
         this.amount = proto.amount
     }
 

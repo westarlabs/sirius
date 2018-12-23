@@ -193,7 +193,7 @@ class AugmentedMerkleTree {
         return findTreeNode(this.root) { node -> node.hash() == nodeHash }
     }
 
-    fun findAccountInfomation(blockAddress: BlockAddress): Optional<AccountInformation> {
+    fun findAccountInfomation(blockAddress: Address): Optional<AccountInformation> {
         val treeNode = this.findLeafNode(blockAddress)
         return if (treeNode.isPresent) {
             Optional.of(treeNode.get().account!!)
@@ -202,7 +202,7 @@ class AugmentedMerkleTree {
         }
     }
 
-    fun findLeafNode(blockAddress: BlockAddress): Optional<AugmentedMerkleTreeNode> {
+    fun findLeafNode(blockAddress: Address): Optional<AugmentedMerkleTreeNode> {
         return this.findLeafNode(Hash.of(blockAddress.toBytes()))
     }
 
@@ -249,7 +249,7 @@ class AugmentedMerkleTree {
         return path
     }
 
-    fun getMembershipProof(blockAddress: BlockAddress): AugmentedMerklePath {
+    fun getMembershipProof(blockAddress: Address): AugmentedMerklePath {
         //TODO !!
         return this.getMembershipProof(Hash.of(blockAddress.toBytes()))!!
     }
@@ -345,7 +345,7 @@ class AugmentedMerkleTree {
                 val receive = RandomUtils.nextInt(0, 10000)
                 val send = RandomUtils.nextInt(0, allotment + receive)
                 val a = AccountInformation(
-                    BlockAddress.random(),
+                    Address.random(),
                     allotment.toLong(),
                     Update(eon, 0, send.toLong(), receive.toLong(), Hash.random())
                 )

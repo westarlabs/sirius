@@ -20,7 +20,7 @@ class AugmentedMerkleTreeTest {
 
         for (i in 0 until count) {
             val a = AccountInformation(
-                BlockAddress.random(), 5, Update(eon, 0, 5, 10, Hash.random())
+                Address.random(), 5, Update(eon, 0, 5, 10, Hash.random())
             )
             accountInformationList.add(a)
         }
@@ -64,7 +64,7 @@ class AugmentedMerkleTreeTest {
     @Throws(InvalidProtocolBufferException::class)
     fun testSingleNode() {
         val eon = 0
-        val address = BlockAddress.random()
+        val address = Address.random()
         val a = AccountInformation(address, 0, Update(eon, 0, 0, 0, null))
         val tree = AugmentedMerkleTree(eon, Lists.newArrayList(a))
         val path = tree.getMembershipProof(address)

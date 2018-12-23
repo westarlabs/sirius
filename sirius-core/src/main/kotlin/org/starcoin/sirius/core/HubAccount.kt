@@ -9,7 +9,7 @@ import java.util.*
 
 class HubAccount : ProtobufCodec<ProtoHubAccount> {
 
-    var address: BlockAddress? = null
+    var address: Address? = null
         private set
     var allotment: Long = 0
         private set
@@ -36,7 +36,7 @@ class HubAccount : ProtobufCodec<ProtoHubAccount> {
         this.unmarshalProto(hubAccount)
     }
 
-    constructor(address: BlockAddress, allotment: Long, update: Update, publicKey: PublicKey) {
+    constructor(address: Address, allotment: Long, update: Update, publicKey: PublicKey) {
         this.address = address
         this.allotment = allotment
         this.update = update
@@ -124,7 +124,7 @@ class HubAccount : ProtobufCodec<ProtoHubAccount> {
     }
 
     override fun unmarshalProto(proto: ProtoHubAccount) {
-        this.address = BlockAddress.wrap(proto.address)
+        this.address = Address.wrap(proto.address)
         this.update = Update(proto.update)
         this.allotment = proto.allotment
         this.deposit = proto.deposit

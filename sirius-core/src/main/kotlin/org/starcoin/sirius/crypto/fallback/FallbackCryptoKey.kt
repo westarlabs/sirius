@@ -1,6 +1,6 @@
 package org.starcoin.sirius.crypto.fallback
 
-import org.starcoin.sirius.core.BlockAddress
+import org.starcoin.sirius.core.Address
 import org.starcoin.sirius.core.Hash
 import org.starcoin.sirius.core.Signature
 import org.starcoin.sirius.crypto.CryptoKey
@@ -26,8 +26,8 @@ internal class FallbackCryptoKey(private val keyPairArg: KeyPair) : CryptoKey {
         return Signature.wrap(KeyPairUtil.signData(bytes, this.keyPairArg.private))
     }
 
-    override fun getAddress(): BlockAddress {
-        return BlockAddress.wrap(
+    override fun getAddress(): Address {
+        return Address.wrap(
             HashUtil.hash160(
                 HashUtil.sha256(
                     KeyPairUtil.encodePublicKey(

@@ -12,7 +12,7 @@ import org.starcoin.sirius.util.Utils
 import java.security.PublicKey
 
 @Serializable
-class BlockAddress private constructor(private val bytes: ByteArray) : CachedHash() {
+class Address private constructor(private val bytes: ByteArray) : CachedHash() {
 
     init {
         Preconditions.checkArgument(bytes.size == LENGTH, "expect address length:$LENGTH")
@@ -34,7 +34,7 @@ class BlockAddress private constructor(private val bytes: ByteArray) : CachedHas
 
     override fun equals(other: Any?): Boolean {
         if (this === other) return true
-        if (other !is BlockAddress) return false
+        if (other !is Address) return false
 
         if (!bytes.contentEquals(other.bytes)) return false
 
@@ -45,50 +45,50 @@ class BlockAddress private constructor(private val bytes: ByteArray) : CachedHas
         return bytes.contentHashCode()
     }
 
-    @Serializer(forClass = BlockAddress::class)
-    companion object : KSerializer<BlockAddress> {
+    @Serializer(forClass = Address::class)
+    companion object : KSerializer<Address> {
 
         val LENGTH = 20
 
-        val DUMMY_ADDRESS:BlockAddress by lazy { CryptoService.getDummyCryptoKey().getAddress() }
+        val DUMMY_ADDRESS:Address by lazy { CryptoService.getDummyCryptoKey().getAddress() }
 
         @Deprecated("use DUMMY_ADDRESS")
         val DEFAULT_ADDRESS = DUMMY_ADDRESS
 
-        override fun deserialize(input: Decoder): BlockAddress {
+        override fun deserialize(input: Decoder): Address {
             return when (input) {
                 is BinaryDecoder -> wrap(input.decodeByteArray())
                 else -> wrap(input.decodeString())
             }
         }
 
-        override fun serialize(output: Encoder, obj: BlockAddress) {
+        override fun serialize(output: Encoder, obj: Address) {
             when (output) {
                 is BinaryEncoder -> output.encodeByteArray(obj.bytes)
                 else -> output.encodeString(obj.toString())
             }
         }
 
-        fun wrap(addressHex: String): BlockAddress {
+        fun wrap(addressHex: String): Address {
             Preconditions.checkNotNull(addressHex, "addressHex")
-            return BlockAddress(Utils.HEX.decode(addressHex))
+            return Address(Utils.HEX.decode(addressHex))
         }
 
-        fun wrap(address: ByteArray): BlockAddress {
-            return BlockAddress(address)
+        fun wrap(address: ByteArray): Address {
+            return Address(address)
         }
 
-        fun wrap(address: ByteString): BlockAddress {
+        fun wrap(address: ByteString): Address {
             Preconditions.checkNotNull(address, "address")
             Preconditions.checkArgument(!address.isEmpty, "address")
-            return BlockAddress(address.toByteArray())
+            return Address(address.toByteArray())
         }
 
-        fun random(): BlockAddress {
-            return BlockAddress(RandomUtils.nextBytes(LENGTH))
+        fun random(): Address {
+            return Address(RandomUtils.nextBytes(LENGTH))
         }
 
-        fun getAddress(publicKey: PublicKey): BlockAddress {
+        fun getAddress(publicKey: PublicKey): Address {
             return CryptoService.getAddress(publicKey)
         }
     }

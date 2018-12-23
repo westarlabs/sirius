@@ -1,7 +1,7 @@
 package org.starcoin.sirius.crypto.fallback
 
 import org.bouncycastle.jce.provider.BouncyCastleProvider
-import org.starcoin.sirius.core.BlockAddress
+import org.starcoin.sirius.core.Address
 import org.starcoin.sirius.core.Hash
 import org.starcoin.sirius.core.Signature
 import org.starcoin.sirius.core.SiriusObject
@@ -35,8 +35,8 @@ object FallbackCryptoService : CryptoService {
         return FallbackCryptoKey(KeyPairUtil.decodeKeyPair(bytes))
     }
 
-    override fun getAddress(publicKey: PublicKey): BlockAddress {
-        return BlockAddress.wrap(HashUtil.hash160(HashUtil.sha256(KeyPairUtil.encodePublicKey(publicKey, true))))
+    override fun getAddress(publicKey: PublicKey): Address {
+        return Address.wrap(HashUtil.hash160(HashUtil.sha256(KeyPairUtil.encodePublicKey(publicKey, true))))
     }
 
     override fun verify(

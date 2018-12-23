@@ -12,8 +12,8 @@ class EonState @JvmOverloads constructor(val eon: Int, val previous: EonState? =
         private set
     var currentEpoch: Epoch? = null
         private set
-    private val senderIOUs: MutableMap<BlockAddress, IOU>
-    private val receiverIOUs: MutableMap<BlockAddress, IOU>
+    private val senderIOUs: MutableMap<Address, IOU>
+    private val receiverIOUs: MutableMap<Address, IOU>
 
     init {
         this.accounts = ArrayList()
@@ -33,7 +33,7 @@ class EonState @JvmOverloads constructor(val eon: Int, val previous: EonState? =
         setEpoch(Eon.Epoch.FIRST)
     }
 
-    fun getAccount(address: BlockAddress): Optional<HubAccount> {
+    fun getAccount(address: Address): Optional<HubAccount> {
         return this.getAccount { hubAccount -> hubAccount.address == address }
     }
 
@@ -60,11 +60,11 @@ class EonState @JvmOverloads constructor(val eon: Int, val previous: EonState? =
         this.receiverIOUs[iou.transaction!!.to!!] = iou
     }
 
-    fun getIOUByFrom(blockAddress: BlockAddress): IOU?? {
+    fun getIOUByFrom(blockAddress: Address): IOU?? {
         return this.senderIOUs[blockAddress]
     }
 
-    fun getIOUByTo(blockAddress: BlockAddress): IOU? {
+    fun getIOUByTo(blockAddress: Address): IOU? {
         return this.receiverIOUs[blockAddress]
     }
 

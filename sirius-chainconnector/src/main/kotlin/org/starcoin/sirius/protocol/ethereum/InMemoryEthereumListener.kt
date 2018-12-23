@@ -8,7 +8,7 @@ import org.ethereum.net.message.Message
 import org.ethereum.net.p2p.HelloMessage
 import org.ethereum.net.rlpx.Node
 import org.ethereum.net.server.Channel
-import org.starcoin.sirius.core.BlockAddress
+import org.starcoin.sirius.core.Address
 import org.starcoin.sirius.core.BlockInfo
 import org.starcoin.sirius.core.ChainTransaction
 import org.starcoin.sirius.core.Hash
@@ -99,9 +99,9 @@ class  InMemoryEthereumListener : EthereumListener {
             blockInfo.addTransaction(
                 ChainTransaction(
                     // Transaction from block address
-                    BlockAddress.wrap(it.sender),
+                    Address.wrap(it.sender),
                     // Transaction to block address
-                    BlockAddress.wrap(it.receiveAddress),
+                    Address.wrap(it.receiveAddress),
                     // Transaction timestamp
                     0,  //timestamp
                     // Transaction value

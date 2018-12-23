@@ -1,6 +1,6 @@
 package org.starcoin.sirius.protocol
 
-import org.starcoin.sirius.core.BlockAddress
+import org.starcoin.sirius.core.Address
 import org.starcoin.sirius.core.BlockInfo
 import org.starcoin.sirius.core.ChainTransaction
 import org.starcoin.sirius.core.Hash
@@ -26,7 +26,7 @@ interface Chain<T : ChainTransaction, B : BlockInfo, C : HubContract> {
 
     fun watchTransactions(onNext: ((tx: T) -> Unit))
 
-    fun getBalance(address: BlockAddress): BigInteger
+    fun getBalance(address: Address): BigInteger
 
     fun newTransaction(keyPair: KeyPair, transaction: T)
 

@@ -15,8 +15,8 @@ class OffchainTransactionTest {
     @Test
     @Throws(InvalidProtocolBufferException::class)
     fun testOffchainTransaction() {
-        val from = BlockAddress.random()
-        val to = BlockAddress.random()
+        val from = Address.random()
+        val to = Address.random()
 
         val tx = OffchainTransaction(0, from, to, RandomUtils.nextLong())
 
@@ -33,8 +33,8 @@ class OffchainTransactionTest {
     @Test
     fun testOffchainTransactionSerializable() {
         try {
-            val from = BlockAddress.random()
-            val to = BlockAddress.random()
+            val from = Address.random()
+            val to = Address.random()
 
             val tx = OffchainTransaction(0, from, to, RandomUtils.nextLong())
 

@@ -7,9 +7,9 @@ import kotlin.properties.Delegates
 
 class Hub {
 
-    var contractAddress: BlockAddress  by Delegates.notNull()
+    var contractAddress: Address  by Delegates.notNull()
 
-    var walletAddress: BlockAddress  by Delegates.notNull()
+    var walletAddress: Address  by Delegates.notNull()
 
     var currentEon: Eon  by Delegates.notNull();
 
@@ -23,7 +23,7 @@ class Hub {
 
     var keyPair: KeyPair by Delegates.notNull()
 
-    var hubAddr: BlockAddress by Delegates.notNull()
+    var hubAddr: Address by Delegates.notNull()
 
     var hubAccount: HubAccount? = null
 
@@ -37,8 +37,8 @@ class Hub {
     var alreadWatch = false
 
     constructor(
-        contractAddress: BlockAddress,
-        walletAddr: BlockAddress,
+        contractAddress: Address,
+        walletAddr: Address,
         channelManager: ChannelManager,
         keyPair: KeyPair,
         serverEventHandler: ServerEventHandler,
@@ -120,7 +120,7 @@ class Hub {
     fun sync() {
     }
 
-    fun newTransfer( addr:BlockAddress,  value:Int,  keyPair:KeyPair) :OffchainTransaction?{
+    fun newTransfer(addr:Address, value:Int, keyPair:KeyPair) :OffchainTransaction?{
         return null
     }
 

@@ -28,7 +28,7 @@ class WithdrawalStatus : ProtobufCodec<ProtoWithdrawalStatus> {
     val withdrawalAmount: Long
         get() = this.withdrawal!!.amount
 
-    val address: BlockAddress?
+    val address: Address?
         get() = this.withdrawal!!.address
 
     val status: Int
