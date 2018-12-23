@@ -25,7 +25,7 @@ class Wallet {
     ) {
         this.name = name
         this.keyPair = keypair
-        this.address = BlockAddress.genBlockAddressFromPublicKey(keyPair.public)
+        this.address = BlockAddress.getAddress(keyPair.public)
     }
 
     companion object {

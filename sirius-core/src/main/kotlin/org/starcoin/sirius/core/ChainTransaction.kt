@@ -127,8 +127,8 @@ open class ChainTransaction : ProtobufCodec<Starcoin.ProtoChainTransaction>, Cac
     override fun unmarshalProto(proto: Starcoin.ProtoChainTransaction) {
         this.amount = proto.amount
         this.timestamp = proto.timestamp
-        this.from = BlockAddress.valueOf(proto.from)
-        this.to = BlockAddress.valueOf(proto.to)
+        this.from = BlockAddress.wrap(proto.from)
+        this.to = BlockAddress.wrap(proto.to)
         // protobuf string default value is empty string.
         this.action = if (proto.action.isEmpty()) null else proto.action
         // protobuf bytestring default value is empty bytes.
@@ -163,7 +163,7 @@ open class ChainTransaction : ProtobufCodec<Starcoin.ProtoChainTransaction>, Cac
 
     override fun mock(context: MockContext) {
         val keyPair = context.getOrDefault("keyPair", KeyPairUtil.generateKeyPair())
-        this.from = BlockAddress.genBlockAddressFromPublicKey(keyPair.public)
+        this.from = BlockAddress.getAddress(keyPair.public)
         this.to = BlockAddress.random()
         this.amount = RandomUtils.nextLong()
         this.timestamp = System.currentTimeMillis()

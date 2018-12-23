@@ -79,7 +79,7 @@ class HubImpl(
 
     init {
         this.eventBus = EventBus()
-        this.hubAddress = BlockAddress.genBlockAddressFromPublicKey(this.hubKeyPair.public)
+        this.hubAddress = BlockAddress.getAddress(this.hubKeyPair.public)
         this.strategy = MaliciousStrategy()
     }
 
@@ -359,7 +359,7 @@ class HubImpl(
     }
 
     private fun processBalanceUpdateChallenge(challenge: Starcoin.ProtoBalanceUpdateChallenge) {
-        val address = BlockAddress.genBlockAddressFromPublicKey(
+        val address = BlockAddress.getAddress(
             KeyPairUtil.recoverPublicKey(challenge.publicKey.toByteArray())
         )
         val proofPath = this.eonState!!.state!!.getMembershipProof(address)

@@ -120,7 +120,7 @@ class Update : ProtobufCodec<Starcoin.ProtoUpdate>, Mockable {
         }
         return if (this.sign == null) {
             false
-        } else this.sign!!.verify(publicKey, this.marshalSginData().build().toByteArray())
+        } else this.sign!!.verify(this.marshalSginData().build().toByteArray(), publicKey)
     }
 
     fun verifyHubSig(publicKey: PublicKey?): Boolean {
@@ -129,7 +129,7 @@ class Update : ProtobufCodec<Starcoin.ProtoUpdate>, Mockable {
         }
         return if (this.hubSign == null) {
             false
-        } else this.hubSign!!.verify(publicKey, this.marshalSginData().build().toByteArray())
+        } else this.hubSign!!.verify(this.marshalSginData().build().toByteArray(), publicKey)
     }
 
     fun sign(privateKey: PrivateKey) {

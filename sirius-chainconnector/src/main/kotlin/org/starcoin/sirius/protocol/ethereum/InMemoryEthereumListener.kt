@@ -99,9 +99,9 @@ class  InMemoryEthereumListener : EthereumListener {
             blockInfo.addTransaction(
                 ChainTransaction(
                     // Transaction from block address
-                    BlockAddress.valueOf(it.sender),
+                    BlockAddress.wrap(it.sender),
                     // Transaction to block address
-                    BlockAddress.valueOf(it.receiveAddress),
+                    BlockAddress.wrap(it.receiveAddress),
                     // Transaction timestamp
                     0,  //timestamp
                     // Transaction value

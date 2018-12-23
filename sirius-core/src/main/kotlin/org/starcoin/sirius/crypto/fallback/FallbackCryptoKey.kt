@@ -27,7 +27,7 @@ internal class FallbackCryptoKey(private val keyPairArg: KeyPair) : CryptoKey {
     }
 
     override fun getAddress(): BlockAddress {
-        return BlockAddress.valueOf(
+        return BlockAddress.wrap(
             HashUtil.hash160(
                 HashUtil.sha256(
                     KeyPairUtil.encodePublicKey(

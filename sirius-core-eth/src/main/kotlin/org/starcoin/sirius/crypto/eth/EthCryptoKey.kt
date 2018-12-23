@@ -37,7 +37,7 @@ class EthCryptoKey internal constructor(private val ecKey: ECKey) : CryptoKey {
         return this.ecKey.verify(data, sign.toECDSASignature())
     }
 
-    override fun getAddress() = BlockAddress.valueOf(ecKey.address)
+    override fun getAddress() = BlockAddress.wrap(ecKey.address)
 
     override fun toBytes(): ByteArray {
         return ecKey.privKeyBytes!!

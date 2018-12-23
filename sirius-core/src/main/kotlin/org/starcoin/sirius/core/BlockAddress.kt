@@ -8,52 +8,41 @@ import org.apache.commons.lang3.RandomUtils
 import org.starcoin.sirius.crypto.CryptoService
 import org.starcoin.sirius.serialization.BinaryDecoder
 import org.starcoin.sirius.serialization.BinaryEncoder
-import org.starcoin.sirius.util.HashUtil
-import org.starcoin.sirius.util.KeyPairUtil
 import org.starcoin.sirius.util.Utils
-import java.io.EOFException
-import java.io.IOException
-import java.io.InputStream
 import java.security.PublicKey
-import java.util.*
 
 @Serializable
-class BlockAddress private constructor(val address: ByteArray) : CachedHash() {
+class BlockAddress private constructor(private val bytes: ByteArray) : CachedHash() {
 
     init {
-        Preconditions.checkArgument(address.size == LENGTH, "expect address length:$LENGTH")
+        Preconditions.checkArgument(bytes.size == LENGTH, "expect address length:$LENGTH")
     }
 
-    fun toBytes(): ByteArray {
-        // not changeable
-        return address.copyOf()
-    }
+    fun toBytes() = bytes.copyOf()
 
     fun toByteString(): ByteString {
-        return ByteString.copyFrom(this.address)
-    }
-
-    override fun equals(o: Any?): Boolean {
-        if (this === o) {
-            return true
-        }
-        if (o == null || javaClass != o.javaClass) {
-            return false
-        }
-        val that = o as BlockAddress
-        return Arrays.equals(address, that.address)
-    }
-
-    override fun hashCode(): Int {
-        return Arrays.hashCode(address)
+        return ByteString.copyFrom(this.bytes)
     }
 
     override fun toString(): String {
-        return Utils.HEX.encode(this.address)
+        return Utils.HEX.encode(this.bytes)
     }
 
     override fun hashData(): ByteArray {
-        return this.address
+        return this.bytes
+    }
+
+    override fun equals(other: Any?): Boolean {
+        if (this === other) return true
+        if (other !is BlockAddress) return false
+
+        if (!bytes.contentEquals(other.bytes)) return false
+
+        return true
+    }
+
+    override fun hashCode(): Int {
+        return bytes.contentHashCode()
     }
 
     @Serializer(forClass = BlockAddress::class)
@@ -63,43 +52,33 @@ class BlockAddress private constructor(val address: ByteArray) : CachedHash() {
 
         val DUMMY_ADDRESS:BlockAddress by lazy { CryptoService.getDummyCryptoKey().getAddress() }
 
-        @Deprecated("")
+        @Deprecated("use DUMMY_ADDRESS")
         val DEFAULT_ADDRESS = DUMMY_ADDRESS
 
         override fun deserialize(input: Decoder): BlockAddress {
             return when (input) {
-                is BinaryDecoder -> valueOf(input.decodeByteArray())
-                else -> valueOf(input.decodeString())
+                is BinaryDecoder -> wrap(input.decodeByteArray())
+                else -> wrap(input.decodeString())
             }
         }
 
         override fun serialize(output: Encoder, obj: BlockAddress) {
             when (output) {
-                is BinaryEncoder -> output.encodeByteArray(obj.address)
+                is BinaryEncoder -> output.encodeByteArray(obj.bytes)
                 else -> output.encodeString(obj.toString())
             }
         }
 
-        @Throws(IOException::class)
-        fun readFrom(`in`: InputStream): BlockAddress {
-            val ad = ByteArray(LENGTH)
-            val len = `in`.read(ad)
-            Preconditions.checkArgument(
-                len == LENGTH, EOFException(BlockAddress::class.java.name + " expect more data")
-            )
-            return BlockAddress(ad)
-        }
-
-        fun valueOf(addressHex: String): BlockAddress {
+        fun wrap(addressHex: String): BlockAddress {
             Preconditions.checkNotNull(addressHex, "addressHex")
             return BlockAddress(Utils.HEX.decode(addressHex))
         }
 
-        fun valueOf(address:ByteArray):BlockAddress{
+        fun wrap(address: ByteArray): BlockAddress {
             return BlockAddress(address)
         }
 
-        fun valueOf(address: ByteString): BlockAddress {
+        fun wrap(address: ByteString): BlockAddress {
             Preconditions.checkNotNull(address, "address")
             Preconditions.checkArgument(!address.isEmpty, "address")
             return BlockAddress(address.toByteArray())
@@ -109,8 +88,8 @@ class BlockAddress private constructor(val address: ByteArray) : CachedHash() {
             return BlockAddress(RandomUtils.nextBytes(LENGTH))
         }
 
-        fun genBlockAddressFromPublicKey(publicKey: PublicKey): BlockAddress {
-            return BlockAddress(HashUtil.hash160(HashUtil.sha256(KeyPairUtil.encodePublicKey(publicKey, true))))
+        fun getAddress(publicKey: PublicKey): BlockAddress {
+            return CryptoService.getAddress(publicKey)
         }
     }
 }

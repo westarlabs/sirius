@@ -1,7 +1,9 @@
 package org.starcoin.sirius.protocol.ethereum
 
 import kotlinx.io.IOException
-import org.starcoin.sirius.core.*
+import org.starcoin.sirius.core.BlockAddress
+import org.starcoin.sirius.core.BlockInfo
+import org.starcoin.sirius.core.Hash
 import org.starcoin.sirius.protocol.*
 import org.starcoin.sirius.util.KeyPairUtil
 import org.web3j.crypto.Credentials
@@ -82,8 +84,8 @@ class EthereumChain constructor(httpUrl: String = defaultHttpUrl, socketPath: St
 
     fun Transaction.chainTransaction(): EthereumTransaction {
         return EthereumTransaction(
-            BlockAddress.valueOf(this.from),
-            BlockAddress.valueOf(this.to),
+            BlockAddress.wrap(this.from),
+            BlockAddress.wrap(this.to),
             System.currentTimeMillis(),  //timestamp
             this.gasPrice.longValueExact(),
             0,

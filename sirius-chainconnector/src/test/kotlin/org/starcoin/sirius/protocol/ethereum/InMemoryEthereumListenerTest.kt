@@ -20,8 +20,8 @@ class InMemoryEthereumListenerTest {
         chain.sb.withAccountBalance(alice.getAddress(), EtherUtil.convert(199, EtherUtil.Unit.ETHER))
 
         var transaction = EthereumTransaction(
-            BlockAddress.valueOf(alice.address),
-            BlockAddress.valueOf(bob.address),
+            BlockAddress.wrap(alice.address),
+            BlockAddress.wrap(bob.address),
             0,
             0,0,
             1,

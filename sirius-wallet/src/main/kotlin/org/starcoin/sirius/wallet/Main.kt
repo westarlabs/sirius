@@ -50,7 +50,7 @@ fun main(args : Array<String>) {
         while (reader.readLine().let {line=it;it!=null}) {
             val list = ArgumentCompleter.WhitespaceArgumentDelimiter().delimit(line, line.length)
 
-            cmd.registerConverter(BlockAddress::class.java!!,  BlockAddress.Companion::valueOf)
+            cmd.registerConverter(BlockAddress::class.java!!, BlockAddress.Companion::wrap)
                 .parseWithHandlers(
                     CommandLine.RunLast(),
                     object : CommandLine.DefaultExceptionHandler<List<Any>>() {

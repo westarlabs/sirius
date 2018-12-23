@@ -124,7 +124,7 @@ class HubAccount : ProtobufCodec<ProtoHubAccount> {
     }
 
     override fun unmarshalProto(proto: ProtoHubAccount) {
-        this.address = BlockAddress.valueOf(proto.address)
+        this.address = BlockAddress.wrap(proto.address)
         this.update = Update(proto.update)
         this.allotment = proto.allotment
         this.deposit = proto.deposit

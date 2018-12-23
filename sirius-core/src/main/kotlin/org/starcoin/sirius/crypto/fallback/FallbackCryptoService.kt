@@ -1,11 +1,13 @@
 package org.starcoin.sirius.crypto.fallback
 
 import org.bouncycastle.jce.provider.BouncyCastleProvider
+import org.starcoin.sirius.core.BlockAddress
 import org.starcoin.sirius.core.Hash
 import org.starcoin.sirius.core.Signature
 import org.starcoin.sirius.core.SiriusObject
 import org.starcoin.sirius.crypto.CryptoKey
 import org.starcoin.sirius.crypto.CryptoService
+import org.starcoin.sirius.util.HashUtil
 import org.starcoin.sirius.util.KeyPairUtil
 import java.security.MessageDigest
 import java.security.NoSuchAlgorithmException
@@ -31,6 +33,10 @@ object FallbackCryptoService : CryptoService {
 
     override fun loadCryptoKey(bytes: ByteArray): CryptoKey {
         return FallbackCryptoKey(KeyPairUtil.decodeKeyPair(bytes))
+    }
+
+    override fun getAddress(publicKey: PublicKey): BlockAddress {
+        return BlockAddress.wrap(HashUtil.hash160(HashUtil.sha256(KeyPairUtil.encodePublicKey(publicKey, true))))
     }
 
     override fun verify(

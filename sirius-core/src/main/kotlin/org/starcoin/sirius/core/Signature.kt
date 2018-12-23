@@ -2,71 +2,62 @@ package org.starcoin.sirius.core
 
 import com.google.protobuf.ByteString
 import kotlinx.serialization.*
+import org.starcoin.sirius.crypto.CryptoService
+import org.starcoin.sirius.serialization.BinaryDecoder
+import org.starcoin.sirius.serialization.BinaryEncoder
 import org.starcoin.sirius.util.KeyPairUtil
 import org.starcoin.sirius.util.Utils
-import java.io.EOFException
-import java.io.IOException
-import java.io.InputStream
-import java.io.OutputStream
 import java.security.PrivateKey
 import java.security.PublicKey
-import java.util.*
 
 @Serializable
-class Signature private constructor(private val sign: ByteArray) {
+class Signature private constructor(private val bytes: ByteArray) {
 
-
-    fun verify(publicKey: PublicKey, data: ByteArray): Boolean {
-        return KeyPairUtil.verifySig(data, publicKey, this.sign)
-    }
-
-
-    override fun equals(o: Any?): Boolean {
-        if (this === o) {
-            return true
-        }
-        if (o !is Signature) {
-            return false
-        }
-        val signature = o as Signature?
-        return Arrays.equals(sign, signature!!.sign)
-    }
-
-    override fun hashCode(): Int {
-        return Arrays.hashCode(sign)
+    fun verify(data: ByteArray, publicKey: PublicKey): Boolean {
+        return CryptoService.verify(data, this, publicKey)
     }
 
     override fun toString(): String {
-        return Utils.HEX.encode(this.sign)
+        return Utils.HEX.encode(this.bytes)
     }
 
-    fun toBytes(): ByteArray {
-        return this.sign.clone()
+    fun toBytes() = this.bytes.copyOf()
+
+    fun toByteString(): ByteString = ByteString.copyFrom(this.bytes)
+
+    override fun equals(other: Any?): Boolean {
+        if (this === other) return true
+        if (other !is Signature) return false
+
+        if (!bytes.contentEquals(other.bytes)) return false
+
+        return true
     }
 
-    fun toByteString(): ByteString = ByteString.copyFrom(this.sign)
-
-    /**
-     * Write sign bytes to out
-     */
-    @Throws(IOException::class)
-    fun writeTo(out: OutputStream) {
-        out.write(this.sign.size)
-        out.write(this.sign)
+    override fun hashCode(): Int {
+        return bytes.contentHashCode()
     }
 
     @Serializer(forClass = Signature::class)
     companion object : KSerializer<Signature> {
 
-        override fun serialize(output: Encoder, obj: Signature) {
-            output.encodeString(obj.toString())
-        }
-
         override fun deserialize(input: Decoder): Signature {
-            return Signature.valueOf(input.decodeString())
+            return when (input) {
+                is BinaryDecoder -> wrap(input.decodeByteArray())
+                else -> this.wrap(input.decodeString())
+            }
         }
 
-        val COINBASE_SIGNATURE = Signature.wrap(byteArrayOf(0))
+        override fun serialize(output: Encoder, obj: Signature) {
+            when (output) {
+                is BinaryEncoder -> output.encodeByteArray(obj.bytes)
+                else -> output.encodeString(obj.toString())
+            }
+        }
+
+        fun wrap(hexString: String): Signature {
+            return wrap(Utils.HEX.decode(hexString))
+        }
 
         fun wrap(sign: ByteArray): Signature {
             return Signature(sign)
@@ -76,29 +67,10 @@ class Signature private constructor(private val sign: ByteArray) {
             return Signature(byteString.toByteArray())
         }
 
-
         fun of(privateKey: PrivateKey, data: ByteArray): Signature {
             return Signature(KeyPairUtil.signData(data, privateKey))
         }
 
-        fun valueOf(signString: String): Signature {
-            return wrap(Utils.HEX.decode(signString))
-        }
-
-        /**
-         * Read bytes and create Signature object.
-         */
-        @Throws(IOException::class)
-        fun readFrom(`in`: InputStream): Signature {
-            val len = `in`.read()
-            val bytes = ByteArray(len)
-            val rLen = `in`.read(bytes)
-            if (len != rLen) {
-                throw EOFException("unexpected enf of stream to parse Signature")
-            }
-            return Signature.wrap(bytes)
-        }
     }
-
 
 }

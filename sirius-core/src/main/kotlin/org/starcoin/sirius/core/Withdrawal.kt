@@ -1,8 +1,7 @@
 package org.starcoin.sirius.core
 
 import org.starcoin.proto.Starcoin.InitiateWithdrawalRequest
-
-import java.util.Objects
+import java.util.*
 
 class Withdrawal : ProtobufCodec<InitiateWithdrawalRequest> {
 
@@ -32,7 +31,7 @@ class Withdrawal : ProtobufCodec<InitiateWithdrawalRequest> {
     }
 
     override fun unmarshalProto(proto: InitiateWithdrawalRequest) {
-        this.address = BlockAddress.valueOf(proto.address)
+        this.address = BlockAddress.wrap(proto.address)
         this.path = AugmentedMerklePath(proto.path)
         this.amount = proto.amount
     }

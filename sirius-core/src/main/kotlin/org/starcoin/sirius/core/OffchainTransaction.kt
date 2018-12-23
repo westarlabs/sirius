@@ -6,10 +6,9 @@ import kotlinx.serialization.Serializable
 import org.apache.commons.lang3.RandomUtils
 import org.starcoin.proto.Starcoin.ProtoOffchainTransaction
 import org.starcoin.sirius.util.KeyPairUtil
-
 import java.security.PrivateKey
 import java.security.PublicKey
-import java.util.Objects
+import java.util.*
 
 @Serializable
 class OffchainTransaction : CachedHash, ProtobufCodec<ProtoOffchainTransaction>,
@@ -73,8 +72,8 @@ class OffchainTransaction : CachedHash, ProtobufCodec<ProtoOffchainTransaction>,
 
     override fun unmarshalProto(proto: ProtoOffchainTransaction) {
         this.eon = proto.eon
-        this.from = BlockAddress.valueOf(proto.from)
-        this.to = BlockAddress.valueOf(proto.to)
+        this.from = BlockAddress.wrap(proto.from)
+        this.to = BlockAddress.wrap(proto.to)
         this.amount = proto.amount
         this.timestamp = proto.timestamp
         this.sign = if (proto.sign.isEmpty) null else Signature.wrap(proto.sign)
@@ -101,7 +100,7 @@ class OffchainTransaction : CachedHash, ProtobufCodec<ProtoOffchainTransaction>,
 
     override fun mock(context: MockContext) {
         val keyPair = context.getOrDefault("keyPair", KeyPairUtil.generateKeyPair())
-        this.from = BlockAddress.genBlockAddressFromPublicKey(keyPair.public)
+        this.from = BlockAddress.getAddress(keyPair.public)
         this.to = BlockAddress.random()
         this.amount = RandomUtils.nextLong()
         this.timestamp = System.currentTimeMillis()
@@ -118,9 +117,9 @@ class OffchainTransaction : CachedHash, ProtobufCodec<ProtoOffchainTransaction>,
         if (publicKey == null) {
             return false
         }
-        return if (this.from != BlockAddress.genBlockAddressFromPublicKey(publicKey)) {
+        return if (this.from != BlockAddress.getAddress(publicKey)) {
             false
-        } else this.sign!!.verify(publicKey, this.marshalSignData().build().toByteArray())
+        } else this.sign!!.verify(this.marshalSignData().build().toByteArray(), publicKey)
     }
 
     companion object {

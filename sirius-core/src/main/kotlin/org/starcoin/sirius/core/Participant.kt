@@ -4,9 +4,8 @@ import com.google.protobuf.ByteString
 import org.starcoin.proto.Starcoin
 import org.starcoin.proto.Starcoin.ProtoParticipant
 import org.starcoin.sirius.util.KeyPairUtil
-
 import java.security.PublicKey
-import java.util.Objects
+import java.util.*
 
 class Participant : ProtobufCodec<Starcoin.ProtoParticipant> {
 
@@ -22,7 +21,7 @@ class Participant : ProtobufCodec<Starcoin.ProtoParticipant> {
     }
 
     constructor(publicKey: PublicKey) {
-        this.address = BlockAddress.genBlockAddressFromPublicKey(publicKey)
+        this.address = BlockAddress.getAddress(publicKey)
         this.publicKey = publicKey
     }
 
@@ -36,7 +35,7 @@ class Participant : ProtobufCodec<Starcoin.ProtoParticipant> {
     override fun unmarshalProto(proto: Starcoin.ProtoParticipant) {
         if (!proto.publicKey.isEmpty) {
             this.publicKey = KeyPairUtil.recoverPublicKey(proto.publicKey.toByteArray())
-            this.address = BlockAddress.genBlockAddressFromPublicKey(this.publicKey!!)
+            this.address = BlockAddress.getAddress(this.publicKey!!)
         }
     }
 
