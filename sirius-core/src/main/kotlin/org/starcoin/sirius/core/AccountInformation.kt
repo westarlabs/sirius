@@ -39,7 +39,7 @@ class AccountInformation : ProtobufCodec<Starcoin.ProtoAccountInfo> {
     override fun unmarshalProto(proto: Starcoin.ProtoAccountInfo) {
         this.address = Hash.wrap(proto.address)
         this.allotment = proto.allotment
-        this.update = if (proto.hasUpdate()) Update(proto.update) else null
+        this.update = if (proto.hasUpdate()) Update.unmarshalProto(proto.update) else null
     }
 
     override fun equals(o: Any?): Boolean {

@@ -68,7 +68,7 @@ class HubAccount : ProtobufCodec<ProtoHubAccount> {
     private fun checkUpdate(newTx: OffchainTransaction, newUpdate: Update) {
         val sendTxs = ArrayList(this.transactions)
         sendTxs.add(newTx)
-        val prepareUpdate = Update(newUpdate.eon, newUpdate.version, this.address!!, sendTxs)
+        val prepareUpdate = Update.newUpdate(newUpdate.eon, newUpdate.version, this.address!!, sendTxs)
 
         Preconditions.checkArgument(
             newUpdate.root == prepareUpdate.root,
@@ -109,7 +109,7 @@ class HubAccount : ProtobufCodec<ProtoHubAccount> {
 
     fun toNextEon(eon: Int): HubAccount {
         val allotment = this.calculateNewAllotment()
-        return HubAccount(address!!, allotment, Update(eon, 0, 0, 0, null), publicKey!!)
+        return HubAccount(address!!, allotment, Update(eon, 0, 0, 0), publicKey!!)
     }
 
     override fun marshalProto(): ProtoHubAccount {
@@ -125,7 +125,7 @@ class HubAccount : ProtobufCodec<ProtoHubAccount> {
 
     override fun unmarshalProto(proto: ProtoHubAccount) {
         this.address = Address.wrap(proto.address)
-        this.update = Update(proto.update)
+        this.update = Update.unmarshalProto(proto.update)
         this.allotment = proto.allotment
         this.deposit = proto.deposit
         this.withdraw = proto.withdraw

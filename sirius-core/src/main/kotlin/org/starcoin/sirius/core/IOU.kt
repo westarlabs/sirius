@@ -26,6 +26,6 @@ class IOU : ProtobufCodec<ProtoIOU> {
 
     override fun unmarshalProto(proto: ProtoIOU) {
         this.transaction = OffchainTransaction(proto.transaction)
-        this.update = Update(proto.update)
+        this.update = Update.unmarshalProto(proto.update)
     }
 }

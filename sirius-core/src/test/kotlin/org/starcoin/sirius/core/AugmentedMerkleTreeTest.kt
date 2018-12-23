@@ -65,7 +65,7 @@ class AugmentedMerkleTreeTest {
     fun testSingleNode() {
         val eon = 0
         val address = Address.random()
-        val a = AccountInformation(address, 0, Update(eon, 0, 0, 0, null))
+        val a = AccountInformation(address, 0, Update(eon, 0, 0, 0))
         val tree = AugmentedMerkleTree(eon, Lists.newArrayList(a))
         val path = tree.getMembershipProof(address)
         Assert.assertTrue(AugmentedMerkleTree.verifyMembershipProof(tree.root!!, path))

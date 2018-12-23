@@ -93,8 +93,8 @@ class Hash private constructor(internal val bytes: ByteArray) : Comparable<Hash>
         val CHECKSUM_LENGTH = 4 // bytes
 
         val ZERO_HASH = wrap(ByteArray(LENGTH))
-        val EMPTY_LIST_HASH = lazy { CryptoService.getEmptyListHash() }
-        val EMPTY_DADA_HASH = lazy { CryptoService.getEmptyDataHash() }
+        val EMPTY_LIST_HASH by lazy { CryptoService.getEmptyListHash() }
+        val EMPTY_DADA_HASH by lazy { CryptoService.getEmptyDataHash() }
 
         override fun deserialize(input: Decoder): Hash {
             return when (input) {

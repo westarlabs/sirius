@@ -12,6 +12,9 @@ import java.security.PublicKey
 @Serializable
 class Signature private constructor(internal val bytes: ByteArray) {
 
+    val size: Int
+        get() = bytes.size
+
     fun verify(data: ByteArray, publicKey: PublicKey): Boolean {
         return CryptoService.verify(data, this, publicKey)
     }
@@ -37,6 +40,8 @@ class Signature private constructor(internal val bytes: ByteArray) {
         return bytes.contentHashCode()
     }
 
+    fun isZero() = bytes.all { it == 0.toByte() }
+
     @Serializer(forClass = Signature::class)
     companion object : KSerializer<Signature> {
 
@@ -53,6 +58,8 @@ class Signature private constructor(internal val bytes: ByteArray) {
                 else -> output.encodeString(obj.toString())
             }
         }
+
+        val ZERO_SIGN = wrap(ByteArray(4))
 
         fun wrap(hexString: String): Signature {
             return wrap(Utils.HEX.decode(hexString))
