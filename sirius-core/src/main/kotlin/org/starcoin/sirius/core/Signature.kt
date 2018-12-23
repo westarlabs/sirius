@@ -5,13 +5,12 @@ import kotlinx.serialization.*
 import org.starcoin.sirius.crypto.CryptoService
 import org.starcoin.sirius.serialization.BinaryDecoder
 import org.starcoin.sirius.serialization.BinaryEncoder
-import org.starcoin.sirius.util.KeyPairUtil
 import org.starcoin.sirius.util.Utils
 import java.security.PrivateKey
 import java.security.PublicKey
 
 @Serializable
-class Signature private constructor(private val bytes: ByteArray) {
+class Signature private constructor(internal val bytes: ByteArray) {
 
     fun verify(data: ByteArray, publicKey: PublicKey): Boolean {
         return CryptoService.verify(data, this, publicKey)
@@ -67,8 +66,12 @@ class Signature private constructor(private val bytes: ByteArray) {
             return Signature(byteString.toByteArray())
         }
 
-        fun of(privateKey: PrivateKey, data: ByteArray): Signature {
-            return Signature(KeyPairUtil.signData(data, privateKey))
+        fun of(data: ByteArray, privateKey: PrivateKey): Signature {
+            return CryptoService.sign(data, privateKey)
+        }
+
+        fun ofDummyKey(data: ByteArray): Signature {
+            return CryptoService.getDummyCryptoKey().sign(data)
         }
 
     }

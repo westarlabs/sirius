@@ -134,11 +134,11 @@ class Update : ProtobufCodec<Starcoin.ProtoUpdate>, Mockable {
 
     fun sign(privateKey: PrivateKey) {
         // TODO optimize resuse bytebuffer
-        this.sign = Signature.of(privateKey, this.marshalSginData().build().toByteArray())
+        this.sign = Signature.of(this.marshalSginData().build().toByteArray(), privateKey)
     }
 
     fun signHub(hubPrivateKey: PrivateKey) {
-        this.hubSign = Signature.of(hubPrivateKey, this.marshalSginData().build().toByteArray())
+        this.hubSign = Signature.of(this.marshalSginData().build().toByteArray(), hubPrivateKey)
     }
 
     override fun hashCode(): Int {

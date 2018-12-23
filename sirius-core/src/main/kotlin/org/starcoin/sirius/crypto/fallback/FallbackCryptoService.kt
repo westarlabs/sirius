@@ -9,15 +9,15 @@ import org.starcoin.sirius.crypto.CryptoKey
 import org.starcoin.sirius.crypto.CryptoService
 import org.starcoin.sirius.util.HashUtil
 import org.starcoin.sirius.util.KeyPairUtil
-import java.security.MessageDigest
-import java.security.NoSuchAlgorithmException
-import java.security.PublicKey
-import java.security.Security
+import java.security.*
 
 /**
  * just for can not find CryptServiceProvider
  */
 object FallbackCryptoService : CryptoService {
+
+    val EMPTY_BYTE_ARRAY = ByteArray(0)
+    val EMPTY_HASH = hash(EMPTY_BYTE_ARRAY)
 
     init {
         Security.addProvider(BouncyCastleProvider())
@@ -39,6 +39,10 @@ object FallbackCryptoService : CryptoService {
         return Address.wrap(HashUtil.hash160(HashUtil.sha256(KeyPairUtil.encodePublicKey(publicKey, true))))
     }
 
+    override fun sign(data: ByteArray, privateKey: PrivateKey): Signature {
+        return Signature.wrap(KeyPairUtil.signData(data, privateKey))
+    }
+
     override fun verify(
         data: ByteArray,
         sign: Signature,
@@ -47,15 +51,29 @@ object FallbackCryptoService : CryptoService {
         return KeyPairUtil.verifySig(data, publicKey, sign.toBytes())
     }
 
+    override fun sign(data: Hash, privateKey: PrivateKey): Signature {
+        return this.sign(data.bytes, privateKey)
+    }
+
+    override fun verify(data: Hash, sign: Signature, publicKey: PublicKey): Boolean {
+        return this.verify(data.bytes, sign, publicKey)
+    }
+
     override fun hash(bytes: ByteArray): Hash {
         return Hash.wrap(doHash(bytes))
     }
 
     override fun <T : SiriusObject> hash(obj: T): Hash {
-        //TODO use rlp binary?
-        return hash(obj.toRLP())
+        return hash(obj.toProtobuf())
     }
 
+    override fun getEmptyDataHash(): Hash {
+        return EMPTY_HASH
+    }
+
+    override fun getEmptyListHash(): Hash {
+        return EMPTY_HASH
+    }
 
     /**
      * Returns a new SHA-256 MessageDigest instance.

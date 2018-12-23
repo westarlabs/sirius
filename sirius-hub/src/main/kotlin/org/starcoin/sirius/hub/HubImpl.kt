@@ -26,7 +26,7 @@ class HubImpl(
 
     private var eonState: EonState? = null
 
-    private val hubAddress: BlockAddress
+    private val hubAddress: Address
 
     private val logger = Logger.getLogger(Hub::class.java!!.name)
 
@@ -79,7 +79,7 @@ class HubImpl(
 
     init {
         this.eventBus = EventBus()
-        this.hubAddress = BlockAddress.getAddress(this.hubKeyPair.public)
+        this.hubAddress = Address.getAddress(this.hubKeyPair.public)
         this.strategy = MaliciousStrategy()
     }
 
@@ -116,16 +116,16 @@ class HubImpl(
         return initUpdate
     }
 
-    override fun deposit(participant: BlockAddress, amount: Long) {
+    override fun deposit(participant: Address, amount: Long) {
         val account = this.eonState!!.getAccount(participant)
         account.get().addDeposit(amount)
     }
 
-    override fun getHubAccount(address: BlockAddress): HubAccount? {
+    override fun getHubAccount(address: Address): HubAccount? {
         return this.getHubAccount(this.eonState!!.eon, address)
     }
 
-    override fun getHubAccount(eon: Int, address: BlockAddress): HubAccount? {
+    override fun getHubAccount(eon: Int, address: Address): HubAccount? {
         this.checkReady()
         return this.getEonState(eon)!!.getAccount(address).orElse(null)
     }
@@ -232,7 +232,7 @@ class HubImpl(
         this.eonState!!.removeIOU(receiverIOU)
     }
 
-    override fun queryNewTransfer(blockAddress: BlockAddress): OffchainTransaction? {
+    override fun queryNewTransfer(blockAddress: Address): OffchainTransaction? {
         val iou = this.eonState!!.getIOUByTo(blockAddress)
         return if (iou == null) null else iou.transaction!!
     }
@@ -259,11 +259,11 @@ class HubImpl(
         )
     }
 
-    override fun getProof(blockAddress: BlockAddress): AugmentedMerklePath? {
+    override fun getProof(blockAddress: Address): AugmentedMerklePath? {
         return this.getProof(this.eonState!!.eon, blockAddress)
     }
 
-    override fun getProof(eon: Int, blockAddress: BlockAddress): AugmentedMerklePath? {
+    override fun getProof(eon: Int, blockAddress: Address): AugmentedMerklePath? {
         this.checkReady()
         val eonState = this.getEonState(eon) ?: return null
         return eonState!!.state!!.getMembershipProof(blockAddress)
@@ -283,7 +283,7 @@ class HubImpl(
         this.eventBus.register(listener)
     }
 
-    override fun watch(address: BlockAddress): BlockingQueue<HubEvent<ProtobufCodec<*>>> {
+    override fun watch(address: Address): BlockingQueue<HubEvent<ProtobufCodec<*>>> {
         val blockingQueue = ArrayBlockingQueue<HubEvent<ProtobufCodec<*>>>(5, false)
         this.watch(Hub.HubEventListener { event ->
             if (event.isPublicEvent || event.address == address) {
@@ -359,7 +359,7 @@ class HubImpl(
     }
 
     private fun processBalanceUpdateChallenge(challenge: Starcoin.ProtoBalanceUpdateChallenge) {
-        val address = BlockAddress.getAddress(
+        val address = Address.getAddress(
             KeyPairUtil.recoverPublicKey(challenge.publicKey.toByteArray())
         )
         val proofPath = this.eonState!!.state!!.getMembershipProof(address)

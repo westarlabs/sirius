@@ -107,7 +107,7 @@ class OffchainTransaction : CachedHash, ProtobufCodec<ProtoOffchainTransaction>,
     }
 
     fun sign(privateKey: PrivateKey) {
-        this.sign = Signature.of(privateKey, this.marshalSignData().build().toByteArray())
+        this.sign = Signature.of(this.marshalSignData().build().toByteArray(), privateKey)
     }
 
     fun verify(publicKey: PublicKey?): Boolean {

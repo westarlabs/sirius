@@ -18,10 +18,10 @@ class HashTest {
         Assert.assertEquals(chainHash, chainHash1)
         Assert.assertEquals(chainHash.toString(), chainHash1.toString())
 
-        val hash = chainHash.getBytes()
-        val hash1 = chainHash1.getBytes()
+        val hash = chainHash.toBytes()
+        val hash1 = chainHash1.toBytes()
         // repeat read
-        val hash2 = chainHash1.getBytes()
+        val hash2 = chainHash1.toBytes()
 
 
         Assert.assertArrayEquals(hash, hash1)
@@ -30,7 +30,7 @@ class HashTest {
         Assert.assertEquals(chainHash.size, Hash.LENGTH)
 
         //not change
-        chainHash.getBytes().fill(0)
+        chainHash.toBytes().fill(0)
         Assert.assertEquals(Hash.of(bytes), chainHash)
     }
 

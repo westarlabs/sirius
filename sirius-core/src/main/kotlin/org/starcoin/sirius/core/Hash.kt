@@ -27,7 +27,7 @@ import kotlin.experimental.and
  * safety. It is a final unmodifiable object.
  */
 @Serializable
-class Hash private constructor(private val bytes: ByteArray) : Comparable<Hash> {
+class Hash private constructor(internal val bytes: ByteArray) : Comparable<Hash> {
 
     val size: Int
         get() = bytes.size
@@ -59,8 +59,7 @@ class Hash private constructor(private val bytes: ByteArray) : Comparable<Hash> 
         return BigInteger(1, bytes)
     }
 
-    fun getBytes() = bytes.copyOf()
-    fun toBytes() = this.getBytes()
+    fun toBytes() = bytes.copyOf()
 
     fun toByteString() = ByteString.copyFrom(this.bytes)
 
@@ -94,6 +93,8 @@ class Hash private constructor(private val bytes: ByteArray) : Comparable<Hash> 
         val CHECKSUM_LENGTH = 4 // bytes
 
         val ZERO_HASH = wrap(ByteArray(LENGTH))
+        val EMPTY_LIST_HASH = lazy { CryptoService.getEmptyListHash() }
+        val EMPTY_DADA_HASH = lazy { CryptoService.getEmptyDataHash() }
 
         override fun deserialize(input: Decoder): Hash {
             return when (input) {

@@ -18,6 +18,10 @@ internal class FallbackCryptoKey(private val keyPairArg: KeyPair) : CryptoKey {
         return KeyPairUtil.verifySig(data, keyPairArg.public, sign.toBytes())
     }
 
+    override fun verify(data: Hash, sign: Signature): Boolean {
+        return this.verify(data.bytes, sign)
+    }
+
     override fun getKeyPair(): KeyPair {
         return this.keyPairArg
     }

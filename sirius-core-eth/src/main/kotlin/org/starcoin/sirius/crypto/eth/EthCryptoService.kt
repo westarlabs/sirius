@@ -3,6 +3,7 @@ package org.starcoin.sirius.crypto.eth
 import org.ethereum.crypto.ECKey
 import org.ethereum.crypto.jce.SpongyCastleProvider
 import org.ethereum.util.RLP
+import org.starcoin.sirius.core.Address
 import org.starcoin.sirius.core.Hash
 import org.starcoin.sirius.core.Signature
 import org.starcoin.sirius.core.SiriusObject
@@ -44,6 +45,10 @@ object EthCryptoService : CryptoService {
         return EthCryptoKey()
     }
 
+    override fun sign(data: ByteArray, privateKey: PrivateKey): Signature {
+        return EthCryptoKey(privateKey).sign(data)
+    }
+
     override fun verify(
         data: ByteArray,
         sign: Signature,
@@ -52,12 +57,32 @@ object EthCryptoService : CryptoService {
         return ECKey.verify(data, sign.toECDSASignature(), publicKey.encoded)
     }
 
+    override fun sign(data: Hash, privateKey: PrivateKey): Signature {
+        return this.sign(data.toBytes(), privateKey)
+    }
+
+    override fun verify(data: Hash, sign: Signature, publicKey: PublicKey): Boolean {
+        return this.verify(data.toBytes(), sign, publicKey)
+    }
+
     override fun hash(bytes: ByteArray): Hash {
         return Hash.wrap(sha3(bytes))
     }
 
     override fun <T : SiriusObject> hash(obj: T): Hash {
         return hash(obj.toRLP())
+    }
+
+    override fun getAddress(publicKey: PublicKey): Address {
+        return Address.wrap(ECKey.computeAddress(publicKey.encoded))
+    }
+
+    override fun getEmptyDataHash(): Hash {
+        return EMPTY_DATA_HASH
+    }
+
+    override fun getEmptyListHash(): Hash {
+        return EMPTY_LIST_HASH
     }
 
     fun sha3(input: ByteArray): ByteArray {

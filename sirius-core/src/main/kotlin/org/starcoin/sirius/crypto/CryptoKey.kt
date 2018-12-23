@@ -14,6 +14,8 @@ interface CryptoKey {
 
     fun verify(data: ByteArray, sign: Signature): Boolean
 
+    fun verify(data: Hash, sign: Signature): Boolean
+
     fun getAddress(): Address
 
     fun toBytes(): ByteArray
