@@ -43,16 +43,20 @@ object FallbackCryptoService : CryptoService {
         return Signature.wrap(KeyPairUtil.signData(data, privateKey))
     }
 
+    override fun sign(data: Hash, privateKey: PrivateKey): Signature {
+        return this.sign(data.bytes, privateKey)
+    }
+
+    override fun sign(data: SiriusObject, privateKey: PrivateKey): Signature {
+        return this.sign(data.toProtobuf(), privateKey)
+    }
+
     override fun verify(
         data: ByteArray,
         sign: Signature,
         publicKey: PublicKey
     ): Boolean {
         return KeyPairUtil.verifySig(data, publicKey, sign.toBytes())
-    }
-
-    override fun sign(data: Hash, privateKey: PrivateKey): Signature {
-        return this.sign(data.bytes, privateKey)
     }
 
     override fun verify(data: Hash, sign: Signature, publicKey: PublicKey): Boolean {

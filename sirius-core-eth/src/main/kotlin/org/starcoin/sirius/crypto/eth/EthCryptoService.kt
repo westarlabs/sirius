@@ -49,16 +49,20 @@ object EthCryptoService : CryptoService {
         return EthCryptoKey(privateKey).sign(data)
     }
 
+    override fun sign(data: Hash, privateKey: PrivateKey): Signature {
+        return this.sign(data.toBytes(), privateKey)
+    }
+
+    override fun sign(data: SiriusObject, privateKey: PrivateKey): Signature {
+        return this.sign(data.hash(), privateKey)
+    }
+
     override fun verify(
         data: ByteArray,
         sign: Signature,
         publicKey: PublicKey
     ): Boolean {
         return ECKey.verify(data, sign.toECDSASignature(), publicKey.encoded)
-    }
-
-    override fun sign(data: Hash, privateKey: PrivateKey): Signature {
-        return this.sign(data.toBytes(), privateKey)
     }
 
     override fun verify(data: Hash, sign: Signature, publicKey: PublicKey): Boolean {

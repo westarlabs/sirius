@@ -8,6 +8,7 @@ import org.spongycastle.jce.spec.ECPublicKeySpec
 import org.starcoin.sirius.core.Address
 import org.starcoin.sirius.core.Hash
 import org.starcoin.sirius.core.Signature
+import org.starcoin.sirius.core.SiriusObject
 import org.starcoin.sirius.crypto.CryptoKey
 import java.security.KeyPair
 import java.security.PrivateKey
@@ -40,6 +41,10 @@ class EthCryptoKey internal constructor(private val ecKey: ECKey) : CryptoKey {
     ).toSignature()
 
     override fun sign(data: Hash) = sign(data.toBytes())
+
+    override fun sign(data: SiriusObject): Signature {
+        return sign(data.hash())
+    }
 
     override fun verify(data: ByteArray, sign: Signature): Boolean {
         return this.ecKey.verify(data, sign.toECDSASignature())

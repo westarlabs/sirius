@@ -3,7 +3,6 @@ package org.starcoin.sirius.crypto.eth
 import org.apache.commons.lang3.RandomUtils
 import org.ethereum.crypto.ECKey
 import org.junit.Assert
-import org.junit.Ignore
 import org.junit.Test
 
 class EthCryptoTest {
@@ -14,7 +13,7 @@ class EthCryptoTest {
 
         val bytes = RandomUtils.nextBytes(32)
         val sign = key.sign(bytes)
-
+        println(sign.size)
         val keyBytes = key.toBytes()
 
         val key1 = EthCryptoKey(keyBytes)
