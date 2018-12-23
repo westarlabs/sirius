@@ -2,82 +2,19 @@ package org.starcoin.sirius.serialization.rlp
 
 import kotlinx.serialization.*
 import kotlinx.serialization.json.JSON
-import org.apache.commons.lang3.RandomStringUtils
-import org.apache.commons.lang3.RandomUtils
 import org.junit.Assert
 import org.junit.Test
-import org.starcoin.sirius.serialization.BinaryElementValueDecoder
-import org.starcoin.sirius.serialization.BinaryElementValueEncoder
-import org.starcoin.sirius.util.Utils
+import org.starcoin.sirius.serialization.TestData
 
 @Serializable
-data class ByteArrayWrapper(val byteArray: ByteArray) {
-    override fun equals(other: Any?): Boolean {
-        if (this === other) return true
-        if (other !is ByteArrayWrapper) return false
-
-        if (!byteArray.contentEquals(other.byteArray)) return false
-
-        return true
-    }
-
-    override fun hashCode(): Int {
-        return byteArray.contentHashCode()
-    }
-
-    @Serializer(forClass = ByteArrayWrapper::class)
-    companion object : KSerializer<ByteArrayWrapper> {
-
-        override fun deserialize(input: Decoder): ByteArrayWrapper {
-            return when (input) {
-                is BinaryElementValueDecoder -> ByteArrayWrapper(input.decodeByteArray())
-                else -> ByteArrayWrapper(Utils.HEX.decode(input.decodeString()))
-            }
-        }
-
-        override fun serialize(output: Encoder, obj: ByteArrayWrapper) {
-            when (output) {
-                is BinaryElementValueEncoder -> output.encodeByteArray(obj.byteArray)
-                else -> output.encodeString(Utils.HEX.encode(obj.byteArray))
-            }
-        }
-    }
-}
-
-@Serializable
-data class Data(
-    val boolean: Boolean,
-    val byte: Byte,
-    val int: Int,
-    val long: Long,
-    val string: String,
-    val byteArray: ByteArrayWrapper
-) {
-
-    companion object {
-        fun random(): Data {
-            return Data(
-                RandomUtils.nextBoolean(),
-                RandomUtils.nextInt(0, Byte.MAX_VALUE.toInt()).toByte(),
-                RandomUtils.nextInt(),
-                RandomUtils.nextLong(),
-                RandomStringUtils.randomAlphabetic(RandomUtils.nextInt(10, 30)),
-                ByteArrayWrapper(RandomUtils.nextBytes(RandomUtils.nextInt(10, 100)))
-            )
-        }
-    }
-
-}
-
-@Serializable
-data class NamedData(val name: String, val data: Data)
+data class NamedData(val name: String, val data: TestData)
 
 @ImplicitReflectionSerializer
 class RLPTest {
 
     @Test
     fun testRLPInputOutput() {
-        val data = Data.random()
+        val data = TestData.random()
 
         var rlpList = RLPList(mutableListOf())
         val output = RLPOutput(rlpList, true)
@@ -91,7 +28,7 @@ class RLPTest {
         Assert.assertEquals(rlpList.element.size, rlpList1.element.size)
 
         val input = RLPInput(rlpList1.element.iterator(), true)
-        val data1 = input.decode(Data.serializer())
+        val data1 = input.decode(TestData.serializer())
         Assert.assertEquals(data, data1)
     }
 
@@ -106,7 +43,7 @@ class RLPTest {
 
     @Test
     fun testObjectNestJson() {
-        val data = Data.random()
+        val data = TestData.random()
         val namedData = NamedData("test", data)
         val jsonString = JSON.stringify(namedData)
         //println(jsonString)
@@ -116,7 +53,7 @@ class RLPTest {
 
     @Test
     fun testObjectNest() {
-        val data = Data.random()
+        val data = TestData.random()
         val namedData = NamedData("test", data)
         var rlpList = RLPList(mutableListOf())
         val output = RLPOutput(rlpList, true)
@@ -156,7 +93,7 @@ class RLPTest {
 
     @Test
     fun testRLP() {
-        val data = Data.random()
+        val data = TestData.random()
         val namedData = NamedData("test", data)
         val bytes = RLP.dump(namedData)
         val namedData1 = RLP.load<NamedData>(bytes)

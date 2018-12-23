@@ -2,8 +2,8 @@ package org.starcoin.sirius.serialization
 
 import kotlinx.serialization.ElementValueDecoder
 
-abstract class BinaryElementValueDecoder : ElementValueDecoder() {
+abstract class BinaryElementValueDecoder : ElementValueDecoder(), BinaryDecoder {
 
-    open fun decodeByteArray() = this.decodeValue() as ByteArray
+    override fun decodeByteArray() = this.decodeValue() as ByteArray
 
 }

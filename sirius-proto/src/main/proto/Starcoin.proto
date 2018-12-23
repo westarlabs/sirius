@@ -12,6 +12,14 @@ message ProtoMsgPong {
     uint64 nonce = 1; //newNonce from MsgPing
 }
 
+//just for test
+message TestData{
+    bool booleanValue = 1;
+    uint32 intValue = 2;
+    bytes stringValue = 3;
+    bytes bytesValue = 4;
+}
+
 message SuccResponse {
     bool succ = 1;
 }

@@ -2,51 +2,10 @@ package org.starcoin.sirius.serialization
 
 import kotlinx.serialization.*
 import kotlinx.serialization.json.JSON
-import kotlinx.serialization.protobuf.ProtoBuf
 import org.junit.Assert
 import org.junit.Test
-import org.starcoin.sirius.util.Utils
-
-@Serializable
-data class Data(val name: String, val age: Int, val bytes: DataBytes)
-
-@Serializable
-data class DataBytes private constructor(val bytes: ByteArray) {
-
-
-    @Serializer(forClass = DataBytes::class)
-    companion object : KSerializer<DataBytes> {
-
-        override fun serialize(output: Encoder, obj: DataBytes) {
-            output.encodeString(Utils.HEX.encode(obj.bytes))
-        }
-
-        override fun deserialize(input: Decoder): DataBytes {
-            return DataBytes(Utils.HEX.decode(input.decodeString()))
-        }
-
-        fun valueOf(bytes: ByteArray): DataBytes {
-            return DataBytes(bytes)
-        }
-    }
-
-    override fun equals(other: Any?): Boolean {
-        if (this === other) return true
-        if (other !is DataBytes) return false
-
-        if (!bytes.contentEquals(other.bytes)) return false
-
-        return true
-    }
-
-    override fun hashCode(): Int {
-        return bytes.contentHashCode()
-    }
-
-    override fun toString(): String {
-        return Utils.HEX.encode(this.bytes)
-    }
-}
+import org.starcoin.proto.Starcoin
+import org.starcoin.sirius.serialization.protobuf.ProtoBuf
 
 
 class SerializationTest {
@@ -54,15 +13,31 @@ class SerializationTest {
     @ImplicitReflectionSerializer
     @Test
     fun testDataClass() {
-        val data = Data("aaa", 10, DataBytes.valueOf("bbb".toByteArray()))
+        val data = TestData.random()
         val bytes = ProtoBuf.dump(data)
-        val data1 = ProtoBuf.load<Data>(bytes)
+        val data1 = ProtoBuf.load<TestData>(bytes)
         Assert.assertEquals(data, data1)
 
         val json = JSON.stringify(data)
         println(json)
-        val data2 = JSON.parse<Data>(json);
+        val data2 = JSON.parse<TestData>(json);
         Assert.assertEquals(data, data2)
+    }
+
+    @ImplicitReflectionSerializer
+    @Test
+    fun testProtoMessage(){
+        val data = TestData.random()
+        //TODO fixme
+        data.booleanValue = true
+        val bytes = ProtoBuf.dump(data)
+
+        val protoData = Starcoin.TestData.parseFrom(bytes)
+        val bytes1 = protoData.toByteArray()
+        Assert.assertArrayEquals(bytes, bytes1)
+
+        val data1 = ProtoBuf.load<TestData>(bytes1)
+        Assert.assertEquals(data, data1)
     }
 
 //    @Test
