@@ -1,7 +1,7 @@
 package org.starcoin.sirius.wallet.core
 
 import org.starcoin.sirius.core.*
-import org.starcoin.sirius.protocol.ChainType
+import org.starcoin.sirius.crypto.CryptoKey
 import org.starcoin.sirius.wallet.core.store.Store
 import java.security.KeyPair
 import kotlin.properties.Delegates
@@ -20,9 +20,9 @@ class Hub {
 
     var channelManager: ChannelManager by Delegates.notNull()
 
-    var serverEventHandler: ServerEventHandler by Delegates.notNull()
+    var serverEventHandler: ServerEventHandler?
 
-    var keyPair: KeyPair by Delegates.notNull()
+    var keyPair: CryptoKey by Delegates.notNull()
 
     var hubAddr: Address by Delegates.notNull()
 
@@ -41,8 +41,8 @@ class Hub {
         contractAddress: Address,
         walletAddr: Address,
         channelManager: ChannelManager,
-        keyPair: KeyPair,
-        serverEventHandler: ServerEventHandler,
+        keyPair: CryptoKey,
+        serverEventHandler: ServerEventHandler?,
         eonStatusStore: Store<HubStatus>
     ) {
         this.contractAddress = contractAddress
@@ -92,10 +92,6 @@ class Hub {
     }
 
     @Synchronized
-    fun checkNewBlock(block: BlockInfo) {
-    }
-
-    @Synchronized
     private fun nextEon() {
     }
 
@@ -142,7 +138,8 @@ class Hub {
     }
 
     fun newTransferChallenge (
-     update:Update,  path:MerkleTree<OffchainTransaction>,  transaction:OffchainTransaction,  keyPair:KeyPair): ChainTransaction?{
+        update: Update, path: MerkleTree<OffchainTransaction>, transaction: OffchainTransaction, keyPair: KeyPair
+    ): ChainTransaction? {
         return null
     }
 

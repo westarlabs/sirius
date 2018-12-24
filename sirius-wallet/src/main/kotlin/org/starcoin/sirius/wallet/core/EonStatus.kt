@@ -11,7 +11,7 @@ class EonStatus() {
 
     var transactionHistory: MutableList<OffchainTransaction> = mutableListOf()
 
-    var updateHistory: MutableList<UpdateData> = mutableListOf()
+    var updateHistory: MutableList<Update> = mutableListOf()
 
     var transactionMap: MutableMap<String, OffchainTransaction> = mutableMapOf()
 

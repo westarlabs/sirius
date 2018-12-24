@@ -53,14 +53,14 @@ class HubStatus {
         this.depositingTransactions.remove(chainTransaction.hash())
     }
 
-    internal fun addUpdate(update: UpdateData) {
+    internal fun addUpdate(update: Update) {
         this.eonStatuses[currentEonStatusIndex].updateHistory.add(update)
     }
 
-    internal fun currentUpdate(eon: Eon): UpdateData {
+    internal fun currentUpdate(eon: Eon): Update {
         val updateList = this.eonStatuses[currentEonStatusIndex].updateHistory
         if (updateList.size == 0) {
-            return UpdateData(eon.id, 0, 0, 0, null)
+            return Update(eon.id, 0, 0, 0)
         } else {
             val index = this.eonStatuses[currentEonStatusIndex].updateHistory.size - 1
             return updateList[index]
@@ -147,7 +147,7 @@ class HubStatus {
         return lastIndex
     }
 
-    internal fun newChallenge(update: UpdateData, keyPair: KeyPair, lastIndex: Int): BalanceUpdateChallenge? {
+    internal fun newChallenge(update: Update, keyPair: KeyPair, lastIndex: Int): BalanceUpdateChallenge? {
         var challenge: BalanceUpdateChallenge? = null
         if (eonStatuses[lastIndex] != null && eonStatuses[lastIndex].path != null) {
             challenge = BalanceUpdateChallenge(null, eonStatuses[lastIndex].path, keyPair.public)
