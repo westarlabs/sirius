@@ -5,27 +5,16 @@ import "./lib/safe_math.sol";
 
 interface Sirius {
     function deposit() external payable;
-
     function commit(bytes calldata data) external;
-
     function initiateWithdrawal(bytes calldata data) external;
-
     function cancelWithdrawal(bytes calldata data) external;
-
     function openBalanceUpdateChallenge(bytes calldata data) external;
-
     function closeBalanceUpdateChallenge(bytes calldata data) external;
-
     function openTransferDeliveryChallenge(bytes calldata data) external;
-
     function closeTransferDeliveryChallenge(bytes calldata data) external;
-
     function recoverFunds(bytes calldata data) external;
-
     function getLatestRoot() external returns (bytes memory);
-
     function getCurrentEon() external returns (uint);
-
     function isRecoveryMode() external returns (bool);
 }
 
@@ -294,7 +283,7 @@ contract SiriusService is Sirius {
             uint allotment = SafeMath.sub(t1, t2);
             require(allotment == leaf.allotment);
 
-            //require(proof.update == account.update);//TODO
+            require(UpdateLib.equals(proof.update, account.update));
 
             stat.status == ChallengeStatusLib.ChallengeStatus.CLOSE;
             balances[0].balanceChallenges[addr] = stat;
@@ -312,9 +301,8 @@ contract SiriusService is Sirius {
         bool verifyFlag = MerkleTreeLib.verifyMembershipProof(open.update.root, open.path);
         require(verifyFlag);
 
-        //TODO
-        // MerklePathNodeLib.MerklePathNode memory leaf = MerklePathLib.leafNode(open.path);
-        // require(open.tran == leaf.node.tran);
+        MerklePathNodeLib.MerklePathNode memory leaf = MerklePathLib.leafNode(open.path);
+        require(OffchainTransactionLib.equals(open.tran, leaf.node.tran));
 
         TransferDeliveryChallengeLib.TransferDeliveryChallenge memory challenge;
         challenge.tran = open.tran;
@@ -323,8 +311,9 @@ contract SiriusService is Sirius {
         challenge.stat = ChallengeStatusLib.ChallengeStatus.OPEN;
         challenge.isVal = true;
 
-        // string memory hash = OffchainTransactionLib.hash(open.tran);
-        // balances[0].transferChallenges[hash] = challenge;//TODO:change path to bytes
+        // bytes32 hash = OffchainTransactionLib.hash(open.tran);
+        // string memory key = Base58Util.bytes32ToBase58(hash);
+        // balances[0].transferChallenges[key] = challenge;//TODO:change path to bytes
     }
 
     function closeTransferDeliveryChallenge(bytes calldata data) external recovery {
@@ -336,8 +325,9 @@ contract SiriusService is Sirius {
         require(proofFlag);
 
         MerklePathNodeLib.MerklePathNode memory leaf = MerklePathLib.leafNode(close.path);
-        string memory hash = OffchainTransactionLib.hash(leaf.node.tran);
-        TransferDeliveryChallengeLib.TransferDeliveryChallenge memory challenge = balances[0].transferChallenges[hash];
+        bytes32 hash = OffchainTransactionLib.hash(leaf.node.tran);
+        string memory key = Base58Util.bytes32ToBase58(hash);
+        TransferDeliveryChallengeLib.TransferDeliveryChallenge memory challenge = balances[0].transferChallenges[key];
         require(challenge.isVal);
 
         if(challenge.stat == ChallengeStatusLib.ChallengeStatus.OPEN) {
@@ -346,15 +336,14 @@ contract SiriusService is Sirius {
             bool signFlag = UpdateLib.verifySig(participant, close.update);
             require(signFlag);
 
-            //TODO
-            // AugmentedMerkleTreeNodeLib.AugmentedMerkleTreeNode memory leaf2 = AugmentedMerklePathLib.leafNode(close.merklePath);
-            // require(leaf2.account.update == close.update);
+            AugmentedMerkleTreeNodeLib.AugmentedMerkleTreeNode memory leaf2 = AugmentedMerklePathLib.leafNode(close.merklePath);
+            require(UpdateLib.equals(leaf2.account.update, close.update));
 
             bool verifyFlag = MerkleTreeLib.verifyMembershipProof(close.update.root, close.path);
             require(verifyFlag);
 
             challenge.stat = ChallengeStatusLib.ChallengeStatus.CLOSE;
-            // balances[0].transferChallenges[hash] = challenge;//TODO:change path to bytes
+            // balances[0].transferChallenges[key] = challenge;//TODO:change path to bytes
         }
     }
 

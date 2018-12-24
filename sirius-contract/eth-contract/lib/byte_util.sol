@@ -3,6 +3,18 @@ pragma solidity ^0.5.1;
 //byte operat lib
 library ByteUtilLib {
 
+    function equal(bytes memory one, bytes memory two) internal pure returns (bool) {
+        if (!(one.length == two.length)) {
+            return false;
+        }
+        for (uint i=0; i<one.length; i++) {
+            if (!(one[i] == two[i])) {
+	            return false;
+            }
+        }
+        return true;
+    }
+
     function bytesToBytes32(bytes memory b) internal pure returns (bytes32) {
         return bytesToBytes32(b, 0);
     }
@@ -258,5 +270,82 @@ library RLPLib {
         uint len;
         (rStartPos, len) = _decode(self);
         bts = ByteUtilLib._copyToBytes(rStartPos, len);
+    }
+}
+
+library Base58Util {
+
+    bytes constant ALPHABET = '123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz';
+
+    function base58String2Bytes(string memory base58String) internal pure returns (bytes memory) {
+        bytes memory content = bytes(base58String);
+        return toBase58(content, content.length);
+    }
+
+    function bytes32ToBase58(bytes32 data) internal pure returns(string memory) {
+        bytes memory tmp = ByteUtilLib.bytes32ToBytes(data);
+        return toString(toBase58(tmp, 32));
+    }
+
+    function toString(bytes memory bts) private pure returns(string memory) {
+        return string(bts);
+    }
+
+    function toBase58(bytes memory source, uint len) private pure returns (bytes memory) {
+        if (source.length == 0) return new bytes(0);
+        uint8[] memory digits = new uint8[](len * 2);
+        digits[0] = 0;
+        uint8 digitlength = 1;
+        for (uint i=0; i<source.length; ++i) {
+            uint carry = uint8(source[i]);
+            for (uint j=0; j<digitlength; ++j) {
+                carry += uint(digits[j]) * 256;
+                digits[j] = uint8(carry % 58);
+                carry = carry / 58;
+            }
+
+            while (carry > 0) {
+                digits[digitlength] = uint8(carry % 58);
+                digitlength++;
+                carry = carry / 58;
+            }
+        }
+        return toAlphabet(reverse(truncate(digits, digitlength)));
+    }
+
+    function truncate(uint8[] memory array, uint8 length)  private pure returns (uint8[] memory) {
+        uint8[] memory output = new uint8[](length);
+        for (uint i=0; i<length; i++) {
+            output[i] = array[i];
+        }
+        return output;
+    }
+
+    function reverse(uint8[] memory input) private pure returns (uint8[] memory) {
+        uint8[] memory output = new uint8[](input.length);
+        for (uint i=0; i<input.length; i++) {
+            output[i] = input[input.length-1-i];
+        }
+        return output;
+    }
+
+    function toAlphabet(uint8[] memory indices) private pure returns (bytes memory) {
+        bytes memory output = new bytes(indices.length);
+        for (uint i=0; i<indices.length; i++) {
+            output[i] = ALPHABET[indices[i]];
+        }
+        return output;
+    }
+
+    function concat(bytes memory byteArray, bytes memory byteArray2) private pure returns (bytes memory) {
+        bytes memory returnArray = new bytes(byteArray.length + byteArray2.length);
+        uint16 i = 0;
+        for (; i < byteArray.length; i++) {
+            returnArray[i] = byteArray[i];
+        }
+        for (i; i < (byteArray.length + byteArray2.length); i++) {
+            returnArray[i] = byteArray2[i - byteArray.length];
+        }
+        return returnArray;
     }
 }

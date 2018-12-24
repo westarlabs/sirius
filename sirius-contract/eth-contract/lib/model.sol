@@ -300,6 +300,14 @@ library UpdateLib {
         update;
         return true;
     }
+
+    function equals(UpdateLib.Update memory u1, UpdateLib.Update memory u2) internal pure returns (bool flag) {
+        bytes memory b1 = marshal(u1);
+        bytes memory b2 = marshal(u2);
+        bytes32 hash1 = keccak256(b1);
+        bytes32 hash2 = keccak256(b2);
+        return (hash1 == hash2);
+    }
 }
 
 library AccountInfoLib {
@@ -640,7 +648,7 @@ library ChallengeStatusLib {
         CLOSE
     }
 
-    function unmarshal(bytes memory data) internal pure returns (ChallengeStatusLib.ChallengeStatus status) {
+function unmarshal(bytes memory data) internal pure returns (ChallengeStatusLib.ChallengeStatus status) {
         RLPLib.RLPItem memory rlp = RLPDecoder.toRLPItem(data, true);
         RLPLib.Iterator memory it = RLPDecoder.iterator(rlp);
         uint idx;
@@ -737,10 +745,13 @@ library OffchainTransactionLib {
         return RLPEncoder.encodeList(ByteUtilLib.append(ByteUtilLib.append(ByteUtilLib.append(ByteUtilLib.append(ByteUtilLib.append(eon, fr), to), amount), timestamp), sign));
     }
 
-    function hash(OffchainTransactionLib.OffchainTransaction memory off) internal pure returns(string memory) {
-        //TODO
-        off;
-        return "";
+    function hash(OffchainTransaction memory self)  internal pure returns(bytes32) {
+        bytes memory bs = marshal(self);
+        return keccak256(bs);
+    }
+
+    function equals(OffchainTransaction memory tran1, OffchainTransaction memory tran2) internal pure returns(bool) {
+        return (hash(tran1) == hash(tran2));
     }
 }
 
@@ -772,8 +783,8 @@ library MerkleTreeNodeLib {
 
 library MerklePathNodeLib {
     struct MerklePathNode {
-        MerkleTreeNodeLib.MerkleTreeNode node;
-        MerklePathDirectionLib.MerklePathDirection dir;
+      MerkleTreeNodeLib.MerkleTreeNode node;
+      MerklePathDirectionLib.MerklePathDirection dir;
     }
 
     function unmarshal(bytes memory data) internal pure returns (MerklePathNodeLib.MerklePathNode memory pathNode) {

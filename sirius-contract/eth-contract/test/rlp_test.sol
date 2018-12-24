@@ -10,6 +10,7 @@ interface rlp_test_interface {
     function testString() external;
     function testStruct() external;
     function testMap(uint data) external;
+    function testBase58() external;
 }
 
 contract rlp_test is rlp_test_interface {
@@ -123,5 +124,15 @@ contract rlp_test is rlp_test_interface {
             }
             i++;
         }
+    }
+
+    function testBase58() external {
+        string memory str = "6a190eef45f589373a463AFb3B90493E696c45e2";
+        bytes memory tmp = Base58Util.base58String2Bytes(str);
+        Log.log("base58_1", tmp);
+        bytes32 tmp2 = ByteUtilLib.bytesToBytes32(tmp);
+        Log.log("base58_2", tmp2);
+        string memory tmp3 = Base58Util.bytes32ToBase58(tmp2);
+        Log.log("base58_3", tmp3);
     }
 }
