@@ -1,6 +1,7 @@
 package org.starcoin.sirius.wallet.core
 
 import org.starcoin.sirius.core.*
+import org.starcoin.sirius.crypto.CryptoKey
 import org.starcoin.sirius.protocol.ChainType
 import org.starcoin.sirius.wallet.core.store.Store
 import java.security.KeyPair
@@ -22,7 +23,7 @@ class Hub {
 
     var serverEventHandler: ServerEventHandler?
 
-    var keyPair: KeyPair by Delegates.notNull()
+    var keyPair: CryptoKey by Delegates.notNull()
 
     var hubAddr: Address by Delegates.notNull()
 
@@ -41,7 +42,7 @@ class Hub {
         contractAddress: Address,
         walletAddr: Address,
         channelManager: ChannelManager,
-        keyPair: KeyPair,
+        keyPair: CryptoKey,
         serverEventHandler: ServerEventHandler?,
         eonStatusStore: Store<HubStatus>
     ) {
@@ -162,6 +163,6 @@ class Hub {
     fun confirmDeposit(chainTransaction: ChainTransaction,height :Int){
         this.hubStatus.confirmDeposit(chainTransaction)
         hubStatus.height=height
-        dataStore.save(this.hubStatus)
+        //dataStore.save(this.hubStatus)
     }
 }
