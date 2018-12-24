@@ -3,6 +3,7 @@ package org.starcoin.sirius.core
 import com.google.protobuf.Any
 import com.google.protobuf.InvalidProtocolBufferException
 import com.google.protobuf.Message
+import org.starcoin.proto.Starcoin
 import org.starcoin.proto.Starcoin.*
 
 import java.lang.reflect.InvocationTargetException
@@ -22,7 +23,7 @@ enum class HubEventType(
         OffchainTransaction::class.java,
         ProtoOffchainTransaction::class.java
     ),
-    NEW_UPDATE(ProtoHubEventType.HUB_EVENT_NEW_UPDATE, Update::class.java, ProtoUpdate::class.java);
+    NEW_UPDATE(ProtoHubEventType.HUB_EVENT_NEW_UPDATE, UpdateData::class.java, Starcoin.UpdateData::class.java);
 
     override fun toProto(): ProtoHubEventType {
         return this.protoHubEventType
@@ -32,7 +33,7 @@ enum class HubEventType(
         get() = this.protoHubEventType.number
 
 
-    fun <D : ProtobufCodec<*>> parsePayload(any: Any): D? {
+    fun <D : SiriusObject> parsePayload(any: Any): D? {
         try {
             if (this.payloadClass == null || this.protoPayloadClass == null) {
                 return null

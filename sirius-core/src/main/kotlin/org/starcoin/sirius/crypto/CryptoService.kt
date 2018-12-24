@@ -17,6 +17,10 @@ interface CryptoService {
 
     fun loadCryptoKey(bytes: ByteArray): CryptoKey
 
+    fun loadPublicKey(bytes: ByteArray): PublicKey
+
+    fun encodePublicKey(publicKey: PublicKey): ByteArray
+
     fun getAddress(publicKey: PublicKey): Address
 
     fun sign(data: ByteArray, privateKey: PrivateKey): Signature
@@ -56,6 +60,10 @@ interface CryptoService {
         override fun generateCryptoKey() = instance.generateCryptoKey()
 
         override fun loadCryptoKey(bytes: ByteArray) = instance.loadCryptoKey(bytes)
+
+        override fun loadPublicKey(bytes: ByteArray) = instance.loadPublicKey(bytes)
+
+        override fun encodePublicKey(publicKey: PublicKey) = instance.encodePublicKey(publicKey)
 
         override fun getAddress(publicKey: PublicKey) = instance.getAddress(publicKey)
 

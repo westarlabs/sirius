@@ -1,70 +1,30 @@
 package org.starcoin.sirius.core
 
-import com.google.protobuf.ByteString
+import kotlinx.serialization.SerialId
+import kotlinx.serialization.Serializable
 import org.starcoin.proto.Starcoin
 import org.starcoin.proto.Starcoin.ProtoParticipant
-import org.starcoin.sirius.util.KeyPairUtil
+import org.starcoin.sirius.crypto.CryptoService
+import org.starcoin.sirius.serialization.ProtobufSchema
+import org.starcoin.sirius.serialization.PublicKeySerializer
 import java.security.PublicKey
-import java.util.*
 
-class Participant : ProtobufCodec<Starcoin.ProtoParticipant> {
+@Serializable
+@ProtobufSchema(Starcoin.ProtoParticipant::class)
+data class Participant(@Serializable(with = PublicKeySerializer::class) @SerialId(1) val publicKey: PublicKey) :
+    SiriusObject() {
 
-    var address: Address? = null
-        private set
-    var publicKey: PublicKey? = null
-        private set
+    val address: Address = Address.getAddress(publicKey)
 
-    constructor() {}
+    companion object : SiriusObjectCompanion<Participant, ProtoParticipant>(Participant::class) {
 
-    constructor(participant: ProtoParticipant) {
-        this.unmarshalProto(participant)
-    }
-
-    constructor(publicKey: PublicKey) {
-        this.address = Address.getAddress(publicKey)
-        this.publicKey = publicKey
-    }
-
-    override fun marshalProto(): Starcoin.ProtoParticipant {
-        val builder = Starcoin.ProtoParticipant.newBuilder()
-        if (this.publicKey != null)
-            builder.publicKey = ByteString.copyFrom(KeyPairUtil.encodePublicKey(this.publicKey!!))
-        return builder.build()
-    }
-
-    override fun unmarshalProto(proto: Starcoin.ProtoParticipant) {
-        if (!proto.publicKey.isEmpty) {
-            this.publicKey = KeyPairUtil.recoverPublicKey(proto.publicKey.toByteArray())
-            this.address = Address.getAddress(this.publicKey!!)
-        }
-    }
-
-    override fun equals(o: Any?): Boolean {
-        if (this === o) {
-            return true
-        }
-        if (o !is Participant) {
-            return false
-        }
-        val that = o as Participant?
-        return publicKey == that!!.publicKey
-    }
-
-    override fun hashCode(): Int {
-        return Objects.hash(address)
-    }
-
-    companion object {
-
-        fun generateParticipant(proto: Starcoin.ProtoParticipant): Participant {
-            val participant = Participant()
-            participant.unmarshalProto(proto)
-            return participant
+        override fun mock(): Participant {
+            return random()
         }
 
         fun random(): Participant {
-            val kp = KeyPairUtil.generateKeyPair()
-            return Participant(kp.public)
+            val kp = CryptoService.generateCryptoKey()
+            return Participant(kp.getKeyPair().public)
         }
     }
 }

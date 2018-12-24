@@ -35,6 +35,14 @@ object FallbackCryptoService : CryptoService {
         return FallbackCryptoKey(KeyPairUtil.decodeKeyPair(bytes))
     }
 
+    override fun loadPublicKey(bytes: ByteArray): PublicKey {
+        return KeyPairUtil.recoverPublicKey(bytes)
+    }
+
+    override fun encodePublicKey(publicKey: PublicKey): ByteArray {
+        return KeyPairUtil.encodePublicKey(publicKey)
+    }
+
     override fun getAddress(publicKey: PublicKey): Address {
         return Address.wrap(HashUtil.hash160(HashUtil.sha256(KeyPairUtil.encodePublicKey(publicKey, true))))
     }

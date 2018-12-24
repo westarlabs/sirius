@@ -20,7 +20,7 @@ class AugmentedMerkleTreeTest {
 
         for (i in 0 until count) {
             val a = AccountInformation(
-                Address.random(), 5, Update(eon, 0, 5, 10, Hash.random())
+                Address.random(), Update(eon, 0, 5, 10, Hash.random()), 5
             )
             accountInformationList.add(a)
         }
@@ -35,7 +35,7 @@ class AugmentedMerkleTreeTest {
     fun testMembershipProof() {
         val tree = generateRandomTree(RandomUtils.nextInt(10, 1000))
         val node = tree.randomLeafNode()
-        val path = tree.getMembershipProof(node.account!!.address)
+        val path = tree.getMembershipProof(node.account!!.addressHash)
         Assert.assertTrue(AugmentedMerkleTree.verifyMembershipProof(tree.root!!, path!!))
     }
 
@@ -65,7 +65,7 @@ class AugmentedMerkleTreeTest {
     fun testSingleNode() {
         val eon = 0
         val address = Address.random()
-        val a = AccountInformation(address, 0, Update(eon, 0, 0, 0))
+        val a = AccountInformation(address, Update(eon, 0, 0, 0), 0)
         val tree = AugmentedMerkleTree(eon, Lists.newArrayList(a))
         val path = tree.getMembershipProof(address)
         Assert.assertTrue(AugmentedMerkleTree.verifyMembershipProof(tree.root!!, path))

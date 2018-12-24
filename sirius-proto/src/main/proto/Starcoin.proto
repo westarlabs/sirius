@@ -30,19 +30,23 @@ message DepositRequest {
     required uint64 amount = 2;
 }
 
-message ProtoOffchainTransaction {
+message OffchainTransactionData{
     required uint32 eon = 1;
     required bytes from = 2;
     required bytes to = 3;
     required uint64 amount = 4;
     required uint64 timestamp = 5;
-    optional bytes sign = 6;
+}
+
+message ProtoOffchainTransaction {
+    required OffchainTransactionData data = 1;
+    required bytes sign = 2;
 }
 
 message ProtoAccountInfo {
-    required bytes address = 1;
+    required bytes addressHash = 1;
+    required Update update = 3;
     required uint64 allotment = 2;
-    optional ProtoUpdate update = 3;
 }
 
 message ProtoNodeInfo {
@@ -93,16 +97,22 @@ message ProtoAugmentedMerklePath {
     repeated ProtoAugmentedMerklePathNode nodes = 2;
 }
 
-//Update
-message ProtoUpdate {
-    optional bytes root = 1;
-    required uint64 sendAmount = 2;
-    required uint64 receiveAmount = 3;
-    required uint64 version = 4;
-    optional bytes sign = 5;
-    optional bytes hubSign = 6;
-    required uint32 eon = 7;
+//UpdateData
+message UpdateData {
+    required uint32 eon = 1;
+    required uint64 version = 2;
+    required uint64 sendAmount = 3;
+    required uint64 receiveAmount = 4;
+    required bytes root = 5;
 }
+
+//Update
+message Update {
+    required UpdateData update = 1;
+    required bytes sign = 2;
+    required bytes hubSign = 3;
+}
+
 
 message ProtoParticipant {
     required bytes publicKey = 1;
@@ -115,7 +125,7 @@ message ProtoParticipantGang {
 
 message CancelWithdrawalRequest {
     required ProtoParticipant participant = 1;
-    required ProtoUpdate update = 2;
+    required Update update = 2;
     required ProtoAugmentedMerklePath path = 3;
 }
 
@@ -126,7 +136,7 @@ message ProtoBalanceUpdateChallenge {
 
 message ProtoBalanceUpdateProof {
     required ProtoAugmentedMerklePath path = 1;
-    required ProtoUpdate update = 2;
+    required Update update = 2;
 }
 
 message CloseBalanceUpdateChallengeRequest {
@@ -135,7 +145,7 @@ message CloseBalanceUpdateChallengeRequest {
 
 message RegisterParticipantRequest {
     required ProtoParticipant participant = 1;
-    required ProtoUpdate update = 2;
+    required Update update = 2;
 }
 
 message QueryHubCommitRequest {
@@ -204,14 +214,14 @@ message ProtoMerklePath {
 }
 
 message OpenTransferDeliveryChallengeRequest {
-    required ProtoUpdate update = 1;
+    required Update update = 1;
     required ProtoOffchainTransaction transaction = 2;
     required ProtoMerklePath path = 3;
 }
 
 message CloseTransferDeliveryChallengeRequest {
     required ProtoAugmentedMerklePath balancePath = 1;
-    required ProtoUpdate update = 2;
+    required Update update = 2;
     required ProtoMerklePath transPath = 3;
     required bytes toUserPublicKey = 4;
 }
@@ -269,13 +279,12 @@ message BalanceUpdateChallengeStatus {
 }
 
 message ProtoHubAccount {
-    required bytes address = 1;
-    required ProtoUpdate update = 2;
+    required bytes publicKey = 1;
+    required Update update = 2;
     required uint64 allotment = 3;
     required uint64 deposit = 4;
     required uint64 withdraw = 5;
     repeated ProtoOffchainTransaction transactions = 6;
-    required bytes publicKey = 7;
 }
 
 message ChainBalanceResponse {
@@ -293,7 +302,7 @@ message QueryWithdrawalStatusRequest {
 
 message ProtoIOU {
     required ProtoOffchainTransaction transaction = 1;
-    required ProtoUpdate update = 2;
+    required Update update = 2;
 }
 
 enum ProtoHubEventType {
@@ -339,19 +348,19 @@ message QueryCurrentTransferDeliveryChallengesResponse {
 }
 
 message ProtoTransferDeliveryChallenge {
-    required ProtoUpdate update = 1;
+    required Update update = 1;
     required ProtoOffchainTransaction transaction = 2;
     required ProtoMerklePath path = 3;
     required ChallengeStatus status = 4;
 }
 
 service HubService {
-    rpc registerParticipant (RegisterParticipantRequest) returns (ProtoUpdate);
+    rpc registerParticipant (RegisterParticipantRequest) returns (Update);
     rpc sendNewTransfer (ProtoIOU) returns (SuccResponse);
     rpc queryNewTransfer (ProtoBlockAddress) returns (ProtoOffchainTransaction);
     rpc receiveNewTransfer (ProtoIOU) returns (SuccResponse);
-    rpc querySignedUpdate (ProtoBlockAddress) returns (ProtoUpdate);
-    rpc querySignedUpdateWithEon (BlockAddressAndEon) returns (ProtoUpdate);
+    rpc queryUpdate (ProtoBlockAddress) returns (Update);
+    rpc queryUpdateWithEon (BlockAddressAndEon) returns (Update);
     rpc getProof (ProtoBlockAddress) returns (ProtoAugmentedMerklePath);
     rpc getProofWithEon (BlockAddressAndEon) returns (ProtoAugmentedMerklePath);
     rpc getHubInfo (google.protobuf.Empty) returns (ProtoHubInfo);

@@ -1,7 +1,12 @@
 package org.starcoin.sirius.serialization
 
-import kotlinx.serialization.Optional
-import kotlinx.serialization.Serializable
+import kotlinx.serialization.*
 
 @Serializable
-data class NamedData(val name: String, @Optional val data: TestData? = null)
+data class NamedData(@SerialId(1) val name: String, @SerialId(2) @Optional val data: TestData? = null) {
+
+    @Serializer(forClass = NamedData::class)
+    companion object : KSerializer<NamedData> {
+
+    }
+}

@@ -2,14 +2,14 @@ package org.starcoin.sirius.core
 
 import org.starcoin.proto.Starcoin.ProtoWithdrawalStatus
 import org.starcoin.proto.Starcoin.ProtoWithdrawalStatusType
-
-import java.util.Objects
+import java.util.*
 import java.util.logging.Logger
 
+//TODO
 /**
  * Created by dqm on 2018/10/4.
  */
-class WithdrawalStatus : ProtobufCodec<ProtoWithdrawalStatus> {
+class WithdrawalStatus : SiriusObject {
 
     private val logger = Logger.getLogger(WithdrawalStatus::class.java.name)
 
@@ -108,14 +108,14 @@ class WithdrawalStatus : ProtobufCodec<ProtoWithdrawalStatus> {
         return false
     }
 
-    override fun marshalProto(): ProtoWithdrawalStatus {
+    fun marshalProto(): ProtoWithdrawalStatus {
         return ProtoWithdrawalStatus.newBuilder()
             .setWithdrawal(this.withdrawal!!.marshalProto())
             .setType(type!!.toProto())
             .build()
     }
 
-    override fun unmarshalProto(proto: ProtoWithdrawalStatus) {
+    fun unmarshalProto(proto: ProtoWithdrawalStatus) {
         this.type = WithdrawalStatusType.valueOf(proto.type.number)
         this.withdrawal = if (proto.hasWithdrawal()) Withdrawal(proto.withdrawal) else null
     }

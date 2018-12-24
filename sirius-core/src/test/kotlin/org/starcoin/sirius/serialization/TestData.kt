@@ -1,13 +1,14 @@
 package org.starcoin.sirius.serialization
 
-import kotlinx.serialization.Optional
-import kotlinx.serialization.SerialId
-import kotlinx.serialization.Serializable
+import kotlinx.serialization.*
 import org.apache.commons.lang3.RandomStringUtils
 import org.apache.commons.lang3.RandomUtils
+import org.starcoin.proto.Starcoin
 import org.starcoin.sirius.core.SiriusObject
+import org.starcoin.sirius.core.SiriusObjectCompanion
 
 @Serializable
+@ProtobufSchema(Starcoin.TestData::class)
 data class TestData(
     @SerialId(1)
     var booleanValue: Boolean,
@@ -22,7 +23,9 @@ data class TestData(
     var optionalValue: String = ""
 ) : SiriusObject() {
 
-    companion object {
+    @Serializer(forClass = TestData::class)
+    companion object : SiriusObjectCompanion<TestData, Starcoin.TestData>(TestData::class), KSerializer<TestData> {
+
         fun random(): TestData {
             return TestData(
                 RandomUtils.nextBoolean(),

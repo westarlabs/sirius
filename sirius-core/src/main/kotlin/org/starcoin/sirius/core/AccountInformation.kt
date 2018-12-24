@@ -1,75 +1,44 @@
 package org.starcoin.sirius.core
 
+import kotlinx.serialization.Serializable
 import org.starcoin.proto.Starcoin
-import java.util.*
+import org.starcoin.sirius.serialization.ProtobufSchema
 
-class AccountInformation : ProtobufCodec<Starcoin.ProtoAccountInfo> {
+//TODO rename to AccountInfo
+@Serializable
+@ProtobufSchema(Starcoin.ProtoAccountInfo::class)
+data class AccountInformation(val addressHash: Hash, var update: Update, var allotment: Long = 0) :
+    SiriusObject() {
 
-    // just keep hash of address
-    var address: Hash? = null
-        private set
-    var allotment: Long = 0
-        private set
-    var update: Update? = null
+    constructor(
+        address: Address,
+        update: Update,
+        allotment: Long
+    ) : this(address.hash(), update, allotment)
 
-    constructor() {}
+    companion object : SiriusObjectCompanion<AccountInformation, Starcoin.ProtoAccountInfo>(AccountInformation::class) {
+        //TODO ensure empty account
+        val EMPTY_ACCOUNT = AccountInformation(Address.DUMMY_ADDRESS, Update(UpdateData()), 0)
 
-    constructor(address: Address, allotment: Long, update: Update?) {
-        this.address = Hash.of(address.toBytes())
-        this.allotment = allotment
-        this.update = update
-    }
-
-    constructor(address: Hash, allotment: Long, update: Update?) {
-        this.address = address
-        this.allotment = allotment
-        this.update = update
-    }
-
-    override fun marshalProto(): Starcoin.ProtoAccountInfo {
-        val builder = Starcoin.ProtoAccountInfo.newBuilder()
-            .setAddress(this.address!!.toByteString())
-            .setAllotment(this.allotment)
-        if (this.update != null) {
-            builder.update = this.update!!.toProto()
+        @Deprecated("Please use parseFromProtoMessage")
+        fun generateAccountInformation(proto: Starcoin.ProtoAccountInfo): AccountInformation? {
+            return parseFromProtoMessage(proto)
         }
-        return builder.build()
-    }
 
-    override fun unmarshalProto(proto: Starcoin.ProtoAccountInfo) {
-        this.address = Hash.wrap(proto.address)
-        this.allotment = proto.allotment
-        this.update = if (proto.hasUpdate()) Update.unmarshalProto(proto.update) else null
-    }
-
-    override fun equals(o: Any?): Boolean {
-        if (this === o) {
-            return true
+        override fun mock(): AccountInformation {
+            return super.mock()
         }
-        if (o !is AccountInformation) {
-            return false
+
+        override fun parseFromProtoMessage(protoMessage: Starcoin.ProtoAccountInfo): AccountInformation {
+            return AccountInformation(
+                Hash.wrap(protoMessage.addressHash),
+                Update.parseFromProtoMessage(protoMessage.update),
+                protoMessage.allotment
+            )
         }
-        val that = o as AccountInformation?
-        return allotment == that!!.allotment &&
-                address == that.address &&
-                update == that.update
-    }
 
-    override fun hashCode(): Int {
-        return Objects.hash(address, allotment, update)
-    }
-
-    companion object {
-
-        val EMPTY_ACCOUNT = AccountInformation(Address.DEFAULT_ADDRESS, 0, null)
-
-        fun generateAccountInformation(proto: Starcoin.ProtoAccountInfo?): AccountInformation? {
-            if (proto == null) {
-                return null
-            }
-            val accountInformation = AccountInformation()
-            accountInformation.unmarshalProto(proto)
-            return accountInformation
+        override fun toProtoMessage(obj: AccountInformation): Starcoin.ProtoAccountInfo {
+            return super.toProtoMessage(obj)
         }
     }
 }

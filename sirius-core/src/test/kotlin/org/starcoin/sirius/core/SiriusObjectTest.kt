@@ -13,16 +13,16 @@ class SiriusObjectTest {
     fun testSiriusObject() {
         val obj = TestObject("test", 10)
         val rlpBytes = obj.toRLP()
-        val obj1 = SiriusObject.fromRLP<TestObject>(rlpBytes)
+        val obj1 = SiriusObject.parseFromRLP<TestObject>(rlpBytes)
         Assert.assertEquals(obj, obj1)
 
         val protobufBytes = obj.toProtobuf()
-        val obj2 = SiriusObject.fromProtobuf<TestObject>(protobufBytes)
+        val obj2 = SiriusObject.parseFromProtobuf<TestObject>(protobufBytes)
         Assert.assertEquals(obj, obj2)
 
         val json = obj.toJSON()
         println(json)
-        val obj3 = SiriusObject.fromJSON<TestObject>(json)
+        val obj3 = SiriusObject.parseFromJSON<TestObject>(json)
         Assert.assertEquals(obj, obj3)
     }
 }

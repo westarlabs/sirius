@@ -1,12 +1,9 @@
 package org.starcoin.sirius.core
 
 import org.apache.commons.lang3.RandomUtils
-import org.starcoin.sirius.core.MerklePath.Direction
 import org.starcoin.proto.Starcoin.ProtoAugmentedMerkleTreeNode
-
-import java.util.ArrayList
-import java.util.Objects
-import java.util.Optional
+import org.starcoin.sirius.core.MerklePath.Direction
+import java.util.*
 import java.util.stream.Collectors
 
 class AugmentedMerkleTree {
@@ -27,7 +24,7 @@ class AugmentedMerkleTree {
 
     // just for test.
     val randommProof: AugmentedMerklePath?
-        get() = this.getMembershipProof(this.randomLeafNode().account!!.address)
+        get() = this.getMembershipProof(this.randomLeafNode().account!!.addressHash)
 
     class AugmentedMerkleTreeNode : Hashable, ProtobufCodec<ProtoAugmentedMerkleTreeNode> {
 
@@ -209,7 +206,7 @@ class AugmentedMerkleTree {
     private fun findLeafNode(blockAddressHash: Hash?): Optional<AugmentedMerkleTreeNode> {
         return findTreeNode(
             this.root
-        ) { node -> node.isLeafNode && node.account!!.address == blockAddressHash }
+        ) { node -> node.isLeafNode && node.account!!.addressHash == blockAddressHash }
     }
 
     private fun findTreeNode(
@@ -346,8 +343,8 @@ class AugmentedMerkleTree {
                 val send = RandomUtils.nextInt(0, allotment + receive)
                 val a = AccountInformation(
                     Address.random(),
-                    allotment.toLong(),
-                    Update(eon, 0, send.toLong(), receive.toLong(), Hash.random())
+                    Update(UpdateData(eon, 0, send.toLong(), receive.toLong(), Hash.random())),
+                    allotment.toLong()
                 )
                 accountInformationList.add(a)
             }

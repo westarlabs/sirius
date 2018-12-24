@@ -32,6 +32,18 @@ class SerializationTest {
 
     @ImplicitReflectionSerializer
     @Test
+    fun testNamedData() {
+        val data = TestData.random()
+        println(data.toJSON())
+        val namedData = NamedData("test", data)
+        val json = JSON.stringify(NamedData.serializer(), namedData)
+        println(json)
+        val namedData1 = JSON.parse(NamedData.serializer(), json)
+        Assert.assertEquals(namedData, namedData1)
+    }
+
+    @ImplicitReflectionSerializer
+    @Test
     fun testProtoMessage(){
         testForDefaultValue(false, "")
         testForDefaultValue(true, "aaa")
@@ -68,6 +80,13 @@ class SerializationTest {
         val rlp = RLP.dump(namedData)
         val namedData3 = RLP.load<NamedData>(rlp)
         Assert.assertEquals(namedData, namedData3)
+    }
+
+    @Test
+    fun testProtobufSchema() {
+        val data = TestData.random()
+        val protoData = TestData.toProtoMessage(data)
+        Assert.assertArrayEquals(data.toProtobuf(), protoData.toByteArray())
     }
 
 //    @Test

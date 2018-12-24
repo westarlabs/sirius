@@ -19,6 +19,10 @@ class Signature private constructor(internal val bytes: ByteArray) {
         return CryptoService.verify(data, this, publicKey)
     }
 
+    fun verify(data: SiriusObject, publicKey: PublicKey): Boolean {
+        return CryptoService.verify(data, this, publicKey)
+    }
+
     override fun toString(): String {
         return Utils.HEX.encode(this.bytes)
     }
@@ -77,10 +81,21 @@ class Signature private constructor(internal val bytes: ByteArray) {
             return CryptoService.sign(data, privateKey)
         }
 
+        fun of(data: Hash, privateKey: PrivateKey): Signature {
+            return CryptoService.sign(data, privateKey)
+        }
+
+        fun of(data: SiriusObject, privateKey: PrivateKey): Signature {
+            return CryptoService.sign(data, privateKey)
+        }
+
         fun ofDummyKey(data: ByteArray): Signature {
             return CryptoService.getDummyCryptoKey().sign(data)
         }
 
+        fun random(): Signature {
+            return CryptoService.getDummyCryptoKey().sign(Hash.random())
+        }
     }
 
 }

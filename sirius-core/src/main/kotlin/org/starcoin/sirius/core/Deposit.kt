@@ -3,21 +3,21 @@ package org.starcoin.sirius.core
 import org.starcoin.proto.Starcoin.DepositRequest
 import java.util.*
 
-class Deposit(address: Address, amount: Long) : ProtobufCodec<DepositRequest> {
+class Deposit(address: Address, amount: Long) : SiriusObject() {
 
     var address: Address = address
         private set
     var amount: Long = amount
         private set
 
-    override fun marshalProto(): DepositRequest {
+    fun marshalProto(): DepositRequest {
         val builder = DepositRequest.newBuilder()
         builder.address = this.address.toByteString()
         builder.amount = this.amount
         return builder.build()
     }
 
-    override fun unmarshalProto(proto: DepositRequest) {
+    fun unmarshalProto(proto: DepositRequest) {
         this.address = Address.wrap(proto.address)
         this.amount = proto.amount
     }

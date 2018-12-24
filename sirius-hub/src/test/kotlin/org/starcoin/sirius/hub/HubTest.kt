@@ -104,7 +104,7 @@ class HubTest {
         }
 
         fun initUpdate(eon: Int): Update {
-            update = Update(eon, 0, 0, 0, null)
+            update = Update(eon, 0, 0, 0)
             update!!.sign(kp.private)
             return update!!
         }
@@ -242,13 +242,13 @@ class HubTest {
         val fromTxs = ArrayList(from.hubAccount!!.getTransactions())
         fromTxs.add(tx)
 
-        val fromUpdate = Update(eon, from.update!!.version + 1, from.address, fromTxs)
+        val fromUpdate = Update.newUpdate(eon, from.update!!.version + 1, from.address, fromTxs)
         fromUpdate.sign(from.kp.private)
 
         val toTxs = ArrayList(to.hubAccount!!.getTransactions())
         toTxs.add(tx)
 
-        val toUpdate = Update(eon, to.update!!.version + 1, to.address, toTxs)
+        val toUpdate = Update.newUpdate(eon, to.update!!.version + 1, to.address, toTxs)
         toUpdate.sign(to.kp.private)
 
         val updates = hub!!.transfer(tx, fromUpdate, toUpdate)

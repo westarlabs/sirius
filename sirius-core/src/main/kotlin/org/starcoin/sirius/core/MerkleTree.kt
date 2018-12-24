@@ -3,33 +3,32 @@ package org.starcoin.sirius.core
 import com.google.protobuf.Any
 import com.google.protobuf.GeneratedMessageV3
 import org.apache.commons.lang3.RandomUtils
-import org.starcoin.sirius.core.MerklePath.Direction
-import org.starcoin.sirius.core.MerkleTree.MerkleTreeData
 import org.starcoin.proto.Starcoin
 import org.starcoin.proto.Starcoin.ProtoMerkleTreeNode
-
+import org.starcoin.sirius.core.MerklePath.Direction
+import org.starcoin.sirius.core.MerkleTree.MerkleTreeData
 import java.util.*
 import java.util.stream.Collectors
 
-class MerkleTree<D : MerkleTreeData<*>> : Hashable {
+class MerkleTree<D : MerkleTreeData> : Hashable {
 
     private var root: MerkleTreeNode<*>? = null
 
-    interface MerkleTreeData<P : GeneratedMessageV3> : Hashable, ProtobufCodec<P> {
+    interface MerkleTreeData : Hashable {
         companion object {
 
             val PROTO_OUT_CLASS_NAME = Starcoin::class.java.simpleName
 
-            val implementsMap: MutableMap<Class<out GeneratedMessageV3>, Class<out MerkleTreeData<*>>> = HashMap()
+            val implementsMap: MutableMap<Class<out GeneratedMessageV3>, Class<out MerkleTreeData>> = HashMap()
 
             fun registerImplement(
-                implementClass: Class<out MerkleTreeData<*>>,
+                implementClass: Class<out MerkleTreeData>,
                 protobufClass: Class<out GeneratedMessageV3>
             ) {
                 implementsMap[protobufClass] = implementClass
             }
 
-            fun <D : MerkleTreeData<*>> unpark(any: Any): D? {
+            fun <D : MerkleTreeData> unpark(any: Any): D? {
                 if (any.value.isEmpty || any.typeUrl.isEmpty()) {
                     return null
                 }
@@ -53,7 +52,7 @@ class MerkleTree<D : MerkleTreeData<*>> : Hashable {
         }
     }
 
-    class MerkleTreeNode<D : MerkleTreeData<*>> : ProtobufCodec<ProtoMerkleTreeNode>, Hashable {
+    class MerkleTreeNode<D : MerkleTreeData> : ProtobufCodec<ProtoMerkleTreeNode>, Hashable {
 
         private var hash: Hash? = null
         var data: D? = null
@@ -132,7 +131,8 @@ class MerkleTree<D : MerkleTreeData<*>> : Hashable {
         override fun marshalProto(): ProtoMerkleTreeNode {
             val builder = ProtoMerkleTreeNode.newBuilder()
             if (this.data != null) {
-                builder.data = Any.pack(this.data!!.marshalProto())
+                //TODO
+                //builder.data = Any.pack(this.data.toProto())
             } else {
                 builder.hash = this.hash().toByteString()
             }

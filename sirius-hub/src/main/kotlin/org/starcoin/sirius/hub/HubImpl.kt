@@ -9,6 +9,8 @@ import org.starcoin.proto.Starcoin
 import org.starcoin.proto.Starcoin.*
 import org.starcoin.sirius.core.*
 import org.starcoin.sirius.core.AugmentedMerkleTree.AugmentedMerkleTreeNode
+import org.starcoin.sirius.core.Update
+import org.starcoin.sirius.core.UpdateData
 import org.starcoin.sirius.util.KeyPairUtil
 import java.security.KeyPair
 import java.util.*
@@ -70,7 +72,7 @@ class HubImpl(
         get() {
             if (gang == null) {
                 gang = ParticipantGang.random()
-                val update = Update(currentEon()!!.id)
+                val update = Update(UpdateData(currentEon()!!.id))
                 update.sign(gang!!.privateKey!!)
                 registerParticipant(gang!!.participant!!, update)
             }
@@ -111,7 +113,7 @@ class HubImpl(
             throw StatusRuntimeException(Status.ALREADY_EXISTS)
         }
         initUpdate.signHub(this.hubKeyPair.private)
-        val account = HubAccount(participant!!.address!!, 0, initUpdate, participant!!.publicKey!!)
+        val account = HubAccount(participant.publicKey, initUpdate, 0)
         this.eonState!!.addAccount(account)
         return initUpdate
     }
@@ -141,7 +143,7 @@ class HubImpl(
         val from = this.getHubAccount(transaction.from!!)!!
         this.checkBalance(from, transaction.amount)
         this.processOffchainTransaction(transaction, fromUpdate, toUpdate)
-        return arrayOf<Update>(fromUpdate, toUpdate)
+        return arrayOf(fromUpdate, toUpdate)
     }
 
     private fun processOffchainTransaction(
@@ -161,11 +163,11 @@ class HubImpl(
         )
         fromUpdate.signHub(this.hubKeyPair.private)
         toUpdate.signHub(this.hubKeyPair.private)
-        this.fireEvent(HubEvent(HubEventType.NEW_UPDATE, from.address!!, fromUpdate))
-        this.fireEvent(HubEvent(HubEventType.NEW_UPDATE, to.address!!, toUpdate))
+        this.fireEvent(HubEvent(HubEventType.NEW_UPDATE, from.address, fromUpdate))
+        this.fireEvent(HubEvent(HubEventType.NEW_UPDATE, to.address, toUpdate))
     }
 
-    private fun fireEvent(event: HubEvent<out ProtobufCodec<*>>) {
+    private fun fireEvent(event: HubEvent<out SiriusObject>) {
         try {
             logger.info("fireEvent:$event")
             this.eventBus.post(event)
@@ -283,8 +285,8 @@ class HubImpl(
         this.eventBus.register(listener)
     }
 
-    override fun watch(address: Address): BlockingQueue<HubEvent<ProtobufCodec<*>>> {
-        val blockingQueue = ArrayBlockingQueue<HubEvent<ProtobufCodec<*>>>(5, false)
+    override fun watch(address: Address): BlockingQueue<HubEvent<SiriusObject>> {
+        val blockingQueue = ArrayBlockingQueue<HubEvent<SiriusObject>>(5, false)
         this.watch(Hub.HubEventListener { event ->
             if (event.isPublicEvent || event.address == address) {
                 blockingQueue.offer(event)
@@ -293,8 +295,8 @@ class HubImpl(
         return blockingQueue
     }
 
-    override fun watchByFilter(predicate: (HubEvent<ProtobufCodec<*>>) -> Boolean): BlockingQueue<HubEvent<ProtobufCodec<*>>> {
-        val blockingQueue = ArrayBlockingQueue<HubEvent<ProtobufCodec<*>>>(5, false)
+    override fun watchByFilter(predicate: (HubEvent<SiriusObject>) -> Boolean): BlockingQueue<HubEvent<SiriusObject>> {
+        val blockingQueue = ArrayBlockingQueue<HubEvent<SiriusObject>>(5, false)
         this.watch(Hub.HubEventListener { event ->
             if (predicate(event)) {
                 blockingQueue.offer(event)
@@ -305,7 +307,7 @@ class HubImpl(
 
     private fun doCommit(): CompletableFuture<Receipt> {
         val hubRoot = HubRoot(this.eonState!!.state!!.root!!, this.eonState!!.eon)
-        logger.info("doCommit:" + hubRoot.toJson())
+        logger.info("doCommit:" + hubRoot.toJSON())
         val chainTransaction = ChainTransaction(
             this.hubAddress,
             Constants.CONTRACT_ADDRESS,
@@ -321,7 +323,7 @@ class HubImpl(
     }
 
     private fun processTransferDeliveryChallenge(challenge: OpenTransferDeliveryChallengeRequest) {
-        val tx = OffchainTransaction(challenge.transaction)
+        val tx = OffchainTransaction.parseFromProtoMessage(challenge.transaction)
 
         val to = tx.to!!
         val accountProof = this.eonState!!.state!!.getMembershipProof(to)
@@ -337,7 +339,7 @@ class HubImpl(
             val closeChallenge = CloseTransferDeliveryChallengeRequest.newBuilder()
                 .setBalancePath(accountProof.toProto())
                 .setTransPath(txProof.toProto())
-                .setUpdate(accountProof.leaf!!.account!!.update!!.toProto())
+                .setUpdate(accountProof.leaf!!.account!!.update!!.toProto() as Starcoin.Update)
                 .setToUserPublicKey(
                     ByteString.copyFrom(KeyPairUtil.encodePublicKey(previousAccount!!.publicKey!!))
                 )
@@ -388,8 +390,8 @@ class HubImpl(
                 if (!hubAccount.addWithdraw(amount)) {
                     // signed update (e) or update (e − 1), τ (e − 1)
                     val cancelWithdrawalBuilder = CancelWithdrawalRequest.newBuilder()
-                        .setParticipant(Participant(hubAccount.publicKey!!).toProto())
-                        .setUpdate(hubAccount.update!!.toProto())
+                        .setParticipant(Participant(hubAccount.publicKey!!).toProto() as ProtoParticipant)
+                        .setUpdate(hubAccount.update!!.toProto() as Starcoin.Update)
                     if (hubAccount.update!!.isSigned) {
                         val path = this.eonState!!.state!!.getMembershipProof(blockAddress)
                         cancelWithdrawalBuilder.setPath(path.toProto()).build()
@@ -492,7 +494,7 @@ class HubImpl(
         // default action is Deposit.
         if (tx.action == null) {
             val deposit = Deposit(tx.from!!, tx.amount!!)
-            logger.info("Deposit:" + deposit.toJson())
+            logger.info("Deposit:" + deposit.toJSON())
             this.processDeposit(deposit)
         } else if (tx.action == "InitiateWithdrawal") {
             val arguments = tx.getArguments(InitiateWithdrawalRequest::class.java)!!
@@ -560,7 +562,7 @@ class HubImpl(
         fun processOffchainTransaction(normalAction: () -> Unit, tx: OffchainTransaction) {
             // steal transaction, not real update account's tx.
             if (maliciousFlags.contains(Hub.MaliciousFlag.STEAL_TRANSACTION)) {
-                logger.info("steal transaction:" + tx.toJson())
+                logger.info("steal transaction:" + tx.toJSON())
                 // do nothing
             } else {
                 normalAction()
@@ -571,15 +573,20 @@ class HubImpl(
             if (maliciousFlags.contains(Hub.MaliciousFlag.STEAL_TRANSACTION_IOU)) {
                 logger.info("steal transaction iou from:" + sendIOU.transaction!!.from)
                 checkIOU(sendIOU, true)
-                val tx = OffchainTransaction(sendIOU.transaction!!)
                 val gang = orCreateParticipantGang
-                tx.to = gang!!.participant!!.address
+                val tx = OffchainTransaction(
+                    sendIOU.transaction.eon,
+                    sendIOU.transaction.from,
+                    gang!!.participant!!.address,
+                    sendIOU.transaction.amount
+                )
+
                 val from = getHubAccount(sendIOU.transaction!!.from!!)!!
 
                 val to = getHubAccount(gang.participant!!.address!!)!!
                 val sendTxs = ArrayList(to.getTransactions())
                 sendTxs.add(tx)
-                val toUpdate = Update(
+                val toUpdate = Update.newUpdate(
                     to.update!!.eon, to.update!!.version + 1, to.address!!, sendTxs
                 )
                 toUpdate.sign(gang.privateKey!!)

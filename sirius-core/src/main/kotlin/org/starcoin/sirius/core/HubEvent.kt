@@ -5,7 +5,7 @@ import com.google.protobuf.GeneratedMessageV3
 import org.starcoin.proto.Starcoin
 import java.util.*
 
-class HubEvent<D : ProtobufCodec<*>> : ProtobufCodec<Starcoin.ProtoHubEvent> {
+class HubEvent<D : SiriusObject> : ProtobufCodec<Starcoin.ProtoHubEvent> {
 
     var type: HubEventType? = null
         private set
@@ -74,6 +74,6 @@ class HubEvent<D : ProtobufCodec<*>> : ProtobufCodec<Starcoin.ProtoHubEvent> {
                 + " "
                 + (if (this.address == null) "" else this.address!!.toString())
                 + " "
-                + this.payload!!.toJson())
+                + this.payload?.toJSON())
     }
 }

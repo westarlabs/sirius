@@ -4,7 +4,7 @@ package org.starcoin.sirius.core
 import java.util.logging.Logger
 
 class TransferDeliveryChallenge(
-    var update: Update?,
+    var update: UpdateData?,
     var transaction: OffchainTransaction?,
     path: MerklePath<OffchainTransaction>
 ) {

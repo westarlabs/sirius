@@ -1,51 +1,50 @@
 package org.starcoin.sirius.core
 
 import com.google.common.base.Preconditions
-import com.google.protobuf.ByteString
+import kotlinx.serialization.SerialId
+import kotlinx.serialization.Serializable
+import kotlinx.serialization.Transient
+import org.apache.commons.lang3.RandomUtils
 import org.starcoin.proto.Starcoin.ProtoHubAccount
-import org.starcoin.sirius.util.KeyPairUtil
+import org.starcoin.sirius.crypto.CryptoService
+import org.starcoin.sirius.serialization.ProtobufSchema
+import org.starcoin.sirius.serialization.PublicKeySerializer
+import org.starcoin.sirius.serialization.toByteString
 import java.security.PublicKey
 import java.util.*
 
-class HubAccount : ProtobufCodec<ProtoHubAccount> {
-
-    var address: Address? = null
-        private set
-    var allotment: Long = 0
-        private set
-    var update: Update? = null
-        private set
-    var deposit: Long = 0
-        private set
-    var withdraw: Long = 0
-        private set
+@Serializable
+@ProtobufSchema(ProtoHubAccount::class)
+data class HubAccount(
+    @Serializable(with = PublicKeySerializer::class)
+    @SerialId(1)
+    val publicKey: PublicKey,
+    @SerialId(2)
+    var update: Update,
+    @SerialId(3)
+    var allotment: Long = 0,
+    @SerialId(4)
+    var deposit: Long = 0,
+    @SerialId(5)
+    var withdraw: Long = 0,
     private val transactions: MutableList<OffchainTransaction> = mutableListOf()
-    var publicKey: PublicKey? = null
-        private set
+) : SiriusObject() {
 
+    @Transient
+    val address = Address.getAddress(publicKey)
+
+    @Transient
     val balance: Long
         get() = ((this.allotment
                 + deposit
-                + update!!.receiveAmount)
+                + update.data!!.receiveAmount)
                 - this.withdraw
-                - update!!.sendAmount)
-
-    constructor() {}
-
-    constructor(hubAccount: ProtoHubAccount) {
-        this.unmarshalProto(hubAccount)
-    }
-
-    constructor(address: Address, allotment: Long, update: Update, publicKey: PublicKey) {
-        this.address = address
-        this.allotment = allotment
-        this.update = update
-        this.publicKey = publicKey
-    }
+                - update.data!!.sendAmount)
 
     fun appendTransaction(tx: OffchainTransaction, update: Update) {
         this.checkUpdate(tx, update)
         this.transactions.add(tx)
+        //TODO set update to val.
         this.update = update
     }
 
@@ -68,27 +67,25 @@ class HubAccount : ProtobufCodec<ProtoHubAccount> {
     private fun checkUpdate(newTx: OffchainTransaction, newUpdate: Update) {
         val sendTxs = ArrayList(this.transactions)
         sendTxs.add(newTx)
-        val prepareUpdate = Update.newUpdate(newUpdate.eon, newUpdate.version, this.address!!, sendTxs)
+        val prepareUpdate = UpdateData.newUpdate(newUpdate.data.eon, newUpdate.data.version, this.address!!, sendTxs)
 
         Preconditions.checkArgument(
-            newUpdate.root == prepareUpdate.root,
+            newUpdate.data.root == prepareUpdate.root,
             "check " + this.address + " update root hash fail, expect:" + prepareUpdate.root!!
-                .toMD5Hex() + ", but get " + newUpdate.root!!.toMD5Hex()
+                .toMD5Hex() + ", but get " + newUpdate.data.root.toMD5Hex()
         )
 
         Preconditions.checkArgument(
-            newUpdate.sendAmount == prepareUpdate.sendAmount, "sendAmount"
+            newUpdate.data.sendAmount == prepareUpdate.sendAmount, "sendAmount"
         )
         Preconditions.checkArgument(
-            newUpdate.receiveAmount == prepareUpdate.receiveAmount,
+            newUpdate.data.receiveAmount == prepareUpdate.receiveAmount,
             String.format(
                 "expect receiveAmount %s, but get %s",
-                prepareUpdate.receiveAmount, newUpdate.receiveAmount
+                prepareUpdate.receiveAmount, newUpdate.data.receiveAmount
             )
         )
-
-        Preconditions.checkState(this.update != null, "previousUpdate")
-        Preconditions.checkArgument(newUpdate.version > update!!.version)
+        Preconditions.checkArgument(newUpdate.data.version > update.data.version)
         Preconditions.checkArgument(checkBalance(), "has not enough balance.")
     }
 
@@ -98,7 +95,7 @@ class HubAccount : ProtobufCodec<ProtoHubAccount> {
 
     fun toNewAccountInformation(): AccountInformation {
         val allotment = this.calculateNewAllotment()
-        return AccountInformation(address!!, allotment, update)
+        return AccountInformation(address, update, allotment)
     }
 
     private fun calculateNewAllotment(): Long {
@@ -109,30 +106,38 @@ class HubAccount : ProtobufCodec<ProtoHubAccount> {
 
     fun toNextEon(eon: Int): HubAccount {
         val allotment = this.calculateNewAllotment()
-        return HubAccount(address!!, allotment, Update(eon, 0, 0, 0), publicKey!!)
+        return HubAccount(publicKey, Update(UpdateData(eon, 0, 0, 0)), allotment)
     }
 
-    override fun marshalProto(): ProtoHubAccount {
-        return ProtoHubAccount.newBuilder()
-            .setAddress(this.address!!.toByteString())
-            .setUpdate(this.update!!.toProto())
-            .setAllotment(this.allotment)
-            .setDeposit(this.deposit)
-            .setWithdraw(this.withdraw)
-            .setPublicKey(ByteString.copyFrom(KeyPairUtil.encodePublicKey(this.publicKey!!)))
-            .build()
-    }
+    companion object : SiriusObjectCompanion<HubAccount, ProtoHubAccount>(HubAccount::class) {
+        override fun mock(): HubAccount {
+            return HubAccount(
+                CryptoService.generateCryptoKey().getKeyPair().public,
+                Update.mock(),
+                RandomUtils.nextLong(),
+                RandomUtils.nextLong(),
+                RandomUtils.nextLong()
+            )
+        }
 
-    override fun unmarshalProto(proto: ProtoHubAccount) {
-        this.address = Address.wrap(proto.address)
-        this.update = Update.unmarshalProto(proto.update)
-        this.allotment = proto.allotment
-        this.deposit = proto.deposit
-        this.withdraw = proto.withdraw
-        this.publicKey = KeyPairUtil.recoverPublicKey(proto.publicKey.toByteArray())
-    }
+        override fun parseFromProtoMessage(protoMessage: ProtoHubAccount): HubAccount {
+            return HubAccount(
+                CryptoService.loadPublicKey(protoMessage.toByteArray()),
+                Update.parseFromProtoMessage(protoMessage.update),
+                protoMessage.allotment,
+                protoMessage.deposit,
+                protoMessage.withdraw
+            )
+        }
 
-    override fun toString(): String {
-        return this.toJson()
+        override fun toProtoMessage(obj: HubAccount): ProtoHubAccount {
+            return ProtoHubAccount.newBuilder()
+                .setPublicKey(obj.publicKey.toByteString())
+                .setUpdate(Update.toProtoMessage(obj.update))
+                .setAllotment(obj.allotment)
+                .setDeposit(obj.deposit)
+                .setWithdraw(obj.withdraw)
+                .build()
+        }
     }
 }

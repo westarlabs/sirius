@@ -1,6 +1,7 @@
 package org.starcoin.sirius.core
 
 import com.google.protobuf.ByteString
+import org.starcoin.proto.Starcoin
 import org.starcoin.proto.Starcoin.ProtoParticipantGang
 import org.starcoin.sirius.util.KeyPairUtil
 
@@ -23,13 +24,13 @@ class ParticipantGang : ProtobufCodec<ProtoParticipantGang> {
 
     override fun marshalProto(): ProtoParticipantGang {
         return ProtoParticipantGang.newBuilder()
-            .setParticipant(this.participant!!.toProto())
+            .setParticipant(this.participant!!.toProto() as Starcoin.ProtoParticipant)
             .setPrivateKey(ByteString.copyFrom(KeyPairUtil.encodePrivateKey(this.privateKey!!)))
             .build()
     }
 
     override fun unmarshalProto(proto: ProtoParticipantGang) {
-        this.participant = if (proto.hasParticipant()) Participant(proto.participant) else null
+        this.participant = if (proto.hasParticipant()) Participant.parseFromProtoMessage(proto.participant) else null
         this.privateKey = if (proto.privateKey.isEmpty)
             null
         else

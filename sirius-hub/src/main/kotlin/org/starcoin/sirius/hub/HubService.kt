@@ -76,11 +76,11 @@ class HubService(private val hubKeyPair: KeyPair, blocksPerEon: Int, connection:
         return hub.getProof(eon, blockAddress)
     }
 
-    fun watch(address: Address): BlockingQueue<HubEvent<ProtobufCodec<*>>> {
+    fun watch(address: Address): BlockingQueue<HubEvent<SiriusObject>> {
         return hub.watch(address)
     }
 
-    fun watch(predicate: (HubEvent<ProtobufCodec<*>>) -> Boolean): BlockingQueue<HubEvent<ProtobufCodec<*>>> {
+    fun watch(predicate: (HubEvent<SiriusObject>) -> Boolean): BlockingQueue<HubEvent<SiriusObject>> {
         return hub.watchByFilter(predicate)
     }
 

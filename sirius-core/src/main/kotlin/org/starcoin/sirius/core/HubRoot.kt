@@ -1,16 +1,13 @@
 package org.starcoin.sirius.core
 
 import org.apache.commons.lang3.RandomUtils
-import org.starcoin.sirius.core.AugmentedMerkleTree.AugmentedMerkleTreeNode
 import org.starcoin.proto.Starcoin
 import org.starcoin.proto.Starcoin.ProtoHubRoot
+import org.starcoin.sirius.core.AugmentedMerkleTree.AugmentedMerkleTreeNode
+import java.util.*
 
-import java.util.Objects
-
-/**
- * Created by dqm on 2018/9/28.
- */
-class HubRoot : ProtobufCodec<ProtoHubRoot>, Mockable {
+//TODO
+class HubRoot : SiriusObject {
 
     var node: NodeInformation? = null
         private set
@@ -35,7 +32,7 @@ class HubRoot : ProtobufCodec<ProtoHubRoot>, Mockable {
         this.offset = root.offset
     }
 
-    override fun marshalProto(): Starcoin.ProtoHubRoot {
+    fun marshalProto(): Starcoin.ProtoHubRoot {
         val builder = Starcoin.ProtoHubRoot.newBuilder()
         builder.eon = this.eon
 
@@ -46,7 +43,7 @@ class HubRoot : ProtobufCodec<ProtoHubRoot>, Mockable {
         return builder.build()
     }
 
-    override fun unmarshalProto(proto: Starcoin.ProtoHubRoot) {
+    fun unmarshalProto(proto: Starcoin.ProtoHubRoot) {
         this.eon = proto.eon
 
         if (proto.hasRoot()) {
@@ -58,7 +55,7 @@ class HubRoot : ProtobufCodec<ProtoHubRoot>, Mockable {
         }
     }
 
-    override fun mock(context: MockContext) {
+    fun mock(context: MockContext) {
         this.allotment = RandomUtils.nextInt().toLong()
         this.offset = RandomUtils.nextInt().toLong()
         this.eon = RandomUtils.nextInt()
@@ -89,9 +86,6 @@ class HubRoot : ProtobufCodec<ProtoHubRoot>, Mockable {
         } else null
     }
 
-    override fun toString(): String {
-        return this.toJson()
-    }
 
     companion object {
 

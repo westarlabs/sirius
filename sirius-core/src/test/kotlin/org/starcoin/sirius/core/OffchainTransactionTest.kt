@@ -22,8 +22,8 @@ class OffchainTransactionTest {
 
         val hash = tx.hash()
 
-        val bytes = tx.toProto().toByteArray()
-        val tx1 = OffchainTransaction(ProtoOffchainTransaction.parseFrom(bytes))
+        val bytes = tx.toProtobuf()
+        val tx1 = OffchainTransaction.parseFromProtobuf(bytes)
         Assert.assertEquals(tx, tx1)
 
         Assert.assertEquals(hash, tx1.hash())
@@ -72,12 +72,12 @@ class OffchainTransactionTest {
     @Throws(InvalidProtocolBufferException::class)
     fun testTxSign() {
         val keyPair = KeyPairUtil.generateKeyPair()
-        val tx = OffchainTransaction()
-        tx.mock(MockContext().put("keyPair", keyPair))
+        val tx = OffchainTransaction.mock()
+        //tx.mock(MockContext().put("keyPair", keyPair))
         tx.sign(keyPair.private)
         Assert.assertTrue(tx.verify(keyPair.public))
-        val tx1 = OffchainTransaction(
-            ProtoOffchainTransaction.parseFrom(tx.marshalProto().toByteString())
+        val tx1 = OffchainTransaction.parseFromProtoMessage(
+            ProtoOffchainTransaction.parseFrom(tx.toProtobuf())
         )
         Assert.assertEquals(tx, tx1)
         Assert.assertTrue(tx1.verify(keyPair.public))

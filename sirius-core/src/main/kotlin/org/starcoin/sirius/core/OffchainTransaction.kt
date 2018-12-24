@@ -1,139 +1,127 @@
 package org.starcoin.sirius.core
 
 
-import kotlinx.serialization.Optional
+import kotlinx.serialization.SerialId
 import kotlinx.serialization.Serializable
 import org.apache.commons.lang3.RandomUtils
+import org.starcoin.proto.Starcoin
 import org.starcoin.proto.Starcoin.ProtoOffchainTransaction
-import org.starcoin.sirius.util.KeyPairUtil
+import org.starcoin.sirius.crypto.CryptoService
+import org.starcoin.sirius.serialization.ProtobufSchema
 import java.security.PrivateKey
 import java.security.PublicKey
-import java.util.*
 
+//TODO ensure timestamp
 @Serializable
-class OffchainTransaction : CachedHash, ProtobufCodec<ProtoOffchainTransaction>,
-    MerkleTree.MerkleTreeData<ProtoOffchainTransaction>, Mockable {
+@ProtobufSchema(Starcoin.OffchainTransactionData::class)
+data class OffchainTransactionData(
+    @SerialId(1)
+    val eon: Int = 0,
+    @SerialId(2)
+    val from: Address,
+    @SerialId(3)
+    val to: Address,
+    @SerialId(4)
+    val amount: Long = 0,
+    @SerialId(5)
+    val timestamp: Long = System.currentTimeMillis()
+) : SiriusObject() {
 
-
-    var eon: Int = 0
-    var from: Address? = null
-    var to: Address? = null
-    var timestamp: Long = 0
-    var amount: Long = 0
-
-    @Optional
-    var sign: Signature? = null
-
-    constructor() {
-        this.timestamp = System.currentTimeMillis()
-    }
-
-    constructor(eon: Int, from: Address, to: Address, amount: Long) {
-        this.eon = eon
-        this.from = from
-        this.to = to
-        this.amount = amount
-        this.timestamp = System.currentTimeMillis()
-    }
-
-    constructor(transaction: ProtoOffchainTransaction) {
-        this.unmarshalProto(transaction)
-    }
-
-    constructor(tx: OffchainTransaction) {
-        this.eon = tx.eon
-        this.from = tx.from
-        this.to = tx.to
-        this.timestamp = tx.timestamp
-        this.amount = tx.amount
-        this.sign = tx.sign
-    }
-
-    override fun hashData(): ByteArray {
-        return this.marshalSignData().build().toByteArray()
-    }
-
-    private fun marshalSignData(): ProtoOffchainTransaction.Builder {
-        return ProtoOffchainTransaction.newBuilder()
-            .setEon(this.eon)
-            .setFrom(this.from!!.toByteString())
-            .setTo(this.to!!.toByteString())
-            .setAmount(this.amount)
-            .setTimestamp(this.timestamp)
-    }
-
-    override fun marshalProto(): ProtoOffchainTransaction {
-        val builder = this.marshalSignData()
-        if (this.sign != null) {
-            builder.sign = this.sign!!.toByteString()
+    companion object :
+        SiriusObjectCompanion<OffchainTransactionData, Starcoin.OffchainTransactionData>(OffchainTransactionData::class) {
+        override fun mock(): OffchainTransactionData {
+            return super.mock()
         }
-        return builder.build()
-    }
 
-    override fun unmarshalProto(proto: ProtoOffchainTransaction) {
-        this.eon = proto.eon
-        this.from = Address.wrap(proto.from)
-        this.to = Address.wrap(proto.to)
-        this.amount = proto.amount
-        this.timestamp = proto.timestamp
-        this.sign = if (proto.sign.isEmpty) null else Signature.wrap(proto.sign)
-    }
-
-    override fun equals(o: Any?): Boolean {
-        if (this === o) {
-            return true
-        }
-        if (o !is OffchainTransaction) {
-            return false
-        }
-        val that = o as OffchainTransaction?
-        return (eon == that!!.eon
-                && timestamp == that.timestamp
-                && amount == that.amount
-                && from == that.from
-                && to == that.to)
-    }
-
-    override fun hashCode(): Int {
-        return Objects.hash(eon, from, to, timestamp, amount)
-    }
-
-    override fun mock(context: MockContext) {
-        val keyPair = context.getOrDefault("keyPair", KeyPairUtil.generateKeyPair())
-        this.from = Address.getAddress(keyPair.public)
-        this.to = Address.random()
-        this.amount = RandomUtils.nextLong()
-        this.timestamp = System.currentTimeMillis()
-    }
-
-    fun sign(privateKey: PrivateKey) {
-        this.sign = Signature.of(this.marshalSignData().build().toByteArray(), privateKey)
-    }
-
-    fun verify(publicKey: PublicKey?): Boolean {
-        if (this.sign == null) {
-            return false
-        }
-        if (publicKey == null) {
-            return false
-        }
-        return if (this.from != Address.getAddress(publicKey)) {
-            false
-        } else this.sign!!.verify(this.marshalSignData().build().toByteArray(), publicKey)
-    }
-
-    companion object {
-
-        init {
-            MerkleTree.MerkleTreeData.registerImplement(
-                OffchainTransaction::class.java, ProtoOffchainTransaction::class.java
+        override fun parseFromProtoMessage(proto: Starcoin.OffchainTransactionData): OffchainTransactionData {
+            return OffchainTransactionData(
+                proto.eon,
+                Address.wrap(proto.from),
+                Address.wrap(proto.to),
+                proto.amount,
+                proto.timestamp
             )
         }
 
-        fun genarateHubTransaction(proto: ProtoOffchainTransaction): OffchainTransaction {
-            val transaction = OffchainTransaction()
-            transaction.unmarshalProto(proto)
-            return transaction
+        override fun toProtoMessage(obj: OffchainTransactionData): Starcoin.OffchainTransactionData {
+            return Starcoin.OffchainTransactionData.newBuilder()
+                .setEon(obj.eon)
+                .setFrom(obj.from.toByteString())
+                .setTo(obj.to.toByteString())
+                .setAmount(obj.amount)
+                .setTimestamp(obj.timestamp).build()
+        }
+    }
+}
+
+@Serializable
+@ProtobufSchema(ProtoOffchainTransaction::class)
+data class OffchainTransaction(@SerialId(1) var data: OffchainTransactionData, @SerialId(2) var sign: Signature = Signature.ZERO_SIGN) :
+    SiriusObject(), MerkleTree.MerkleTreeData {
+
+
+    constructor(eon: Int, from: Address, to: Address, amount: Long) : this(
+        OffchainTransactionData(
+            eon,
+            from,
+            to,
+            amount
+        )
+    )
+
+    @kotlinx.serialization.Transient
+    val eon: Int
+        get() = data.eon
+
+    @kotlinx.serialization.Transient
+    val from: Address
+        get() = data.from
+
+    @kotlinx.serialization.Transient
+    val to: Address
+        get() = data.to
+
+    @kotlinx.serialization.Transient
+    val amount: Long
+        get() = data.amount
+
+    @kotlinx.serialization.Transient
+    val timestamp: Long
+        get() = data.timestamp
+
+    fun sign(privateKey: PrivateKey) {
+        this.sign = Signature.of(this.data, privateKey)
+    }
+
+    fun verify(publicKey: PublicKey): Boolean {
+        return when {
+            this.data.from == Address.getAddress(publicKey) -> this.sign.verify(this.data, publicKey)
+            else -> false
+        }
+    }
+
+    companion object :
+        SiriusObjectCompanion<OffchainTransaction, ProtoOffchainTransaction>(OffchainTransaction::class) {
+
+        override fun mock(): OffchainTransaction {
+            return OffchainTransaction(
+                RandomUtils.nextInt(),
+                CryptoService.getDummyCryptoKey().getAddress(),
+                Address.random(),
+                RandomUtils.nextLong()
+            )
+        }
+
+        override fun parseFromProtoMessage(proto: ProtoOffchainTransaction): OffchainTransaction {
+            return OffchainTransaction(
+                OffchainTransactionData.parseFromProtoMessage(proto.data),
+                Signature.wrap(proto.sign)
+            )
+        }
+
+        override fun toProtoMessage(obj: OffchainTransaction): ProtoOffchainTransaction {
+            return ProtoOffchainTransaction.newBuilder().setData(OffchainTransactionData.toProtoMessage(obj.data))
+                .setSign(obj.sign.toByteString()).build()
         }
     }
 }

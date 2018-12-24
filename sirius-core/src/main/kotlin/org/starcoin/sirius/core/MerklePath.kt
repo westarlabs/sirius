@@ -1,18 +1,12 @@
 package org.starcoin.sirius.core
 
+import org.starcoin.proto.Starcoin.*
 import org.starcoin.sirius.core.MerkleTree.MerkleTreeData
 import org.starcoin.sirius.core.MerkleTree.MerkleTreeNode
-import org.starcoin.proto.Starcoin.ProtoMerklePath
-import org.starcoin.proto.Starcoin.ProtoMerklePathDirection
-import org.starcoin.proto.Starcoin.ProtoMerklePathNode
-
-import java.util.ArrayList
-import java.util.Collections
-import java.util.Objects
-import java.util.function.Function
+import java.util.*
 import java.util.stream.Collectors
 
-class MerklePath<D : MerkleTreeData<*>> : ProtobufCodec<ProtoMerklePath> {
+class MerklePath<D : MerkleTreeData> : ProtobufCodec<ProtoMerklePath> {
 
     internal var nodes: MutableList<MerklePathNode<D>>? = null
 
@@ -88,7 +82,7 @@ class MerklePath<D : MerkleTreeData<*>> : ProtobufCodec<ProtoMerklePath> {
         }
     }
 
-    class MerklePathNode<D : MerkleTreeData<*>> : ProtobufCodec<ProtoMerklePathNode> {
+    class MerklePathNode<D : MerkleTreeData> : ProtobufCodec<ProtoMerklePathNode> {
 
         var node: MerkleTreeNode<D>? = null
             private set
@@ -143,7 +137,7 @@ class MerklePath<D : MerkleTreeData<*>> : ProtobufCodec<ProtoMerklePath> {
 
     companion object {
 
-        fun <D : MerkleTreeData<*>> generateMerklePath(proto: ProtoMerklePath): MerklePath<*> {
+        fun <D : MerkleTreeData> generateMerklePath(proto: ProtoMerklePath): MerklePath<*> {
             val path = MerklePath<D>()
             path.unmarshalProto(proto)
             return path

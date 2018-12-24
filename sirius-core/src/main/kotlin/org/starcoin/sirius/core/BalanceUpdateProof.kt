@@ -1,8 +1,7 @@
 package org.starcoin.sirius.core
 
 import org.starcoin.proto.Starcoin
-
-import java.util.Objects
+import java.util.*
 
 class BalanceUpdateProof : ProtobufCodec<Starcoin.ProtoBalanceUpdateProof> {
 
@@ -23,7 +22,7 @@ class BalanceUpdateProof : ProtobufCodec<Starcoin.ProtoBalanceUpdateProof> {
 
     override fun marshalProto(): Starcoin.ProtoBalanceUpdateProof {
         val builder = Starcoin.ProtoBalanceUpdateProof.newBuilder()
-        if (this.update != null) builder.update = this.update!!.marshalProto()
+        if (this.update != null) builder.update = Update.toProtoMessage(this.update!!)
         if (this.provePath != null) builder.path = this.provePath!!.marshalProto()
 
         return builder.build()
@@ -31,9 +30,7 @@ class BalanceUpdateProof : ProtobufCodec<Starcoin.ProtoBalanceUpdateProof> {
 
     override fun unmarshalProto(proto: Starcoin.ProtoBalanceUpdateProof) {
         if (proto.hasUpdate()) {
-            val update = Update()
-            update.unmarshalProto(proto.update)
-            this.update = update
+            this.update = Update.parseFromProtoMessage(proto.update)
         }
 
         if (proto.hasPath()) {

@@ -1,31 +1,30 @@
 package org.starcoin.sirius.core
 
+import kotlinx.serialization.SerialId
+import kotlinx.serialization.Serializable
 import org.starcoin.proto.Starcoin.ProtoIOU
+import org.starcoin.sirius.serialization.ProtobufSchema
 
-class IOU : ProtobufCodec<ProtoIOU> {
+@Serializable
+@ProtobufSchema(ProtoIOU::class)
+data class IOU(@SerialId(1) val transaction: OffchainTransaction, @SerialId(2) val update: Update) :
+    SiriusObject() {
 
-    var transaction: OffchainTransaction? = null
+    companion object : SiriusObjectCompanion<IOU, ProtoIOU>(IOU::class) {
+        override fun mock(): IOU {
+            return IOU(OffchainTransaction.mock(), Update.mock())
+        }
 
-    var update: Update? = null
+        override fun parseFromProtoMessage(proto: ProtoIOU): IOU {
+            return IOU(
+                OffchainTransaction.parseFromProtoMessage(proto.transaction),
+                Update.parseFromProtoMessage(proto.update)
+            )
+        }
 
-    constructor() {}
-
-    constructor(transaction: OffchainTransaction, update: Update) {
-        this.transaction = transaction
-        this.update = update
-    }
-
-    constructor(protoIOU: ProtoIOU) {
-        this.unmarshalProto(protoIOU)
-    }
-
-    override fun marshalProto(): ProtoIOU {
-        return ProtoIOU.newBuilder().setTransaction(this.transaction!!.marshalProto())
-            .setUpdate(this.update!!.marshalProto()).build()
-    }
-
-    override fun unmarshalProto(proto: ProtoIOU) {
-        this.transaction = OffchainTransaction(proto.transaction)
-        this.update = Update.unmarshalProto(proto.update)
+        override fun toProtoMessage(obj: IOU): ProtoIOU {
+            return ProtoIOU.newBuilder().setTransaction(OffchainTransaction.toProtoMessage(obj.transaction))
+                .setUpdate(Update.toProtoMessage(obj.update)).build()
+        }
     }
 }

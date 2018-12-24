@@ -75,6 +75,7 @@ subprojects {
         compile "com.github.walleth.kethereum:rlp:0.66"
         testCompile("junit:junit:4.12")
         testCompile("org.mockito:mockito-core:2.10.0")
+        testCompile("org.reflections:reflections:0.9.11")
     }
 
     compileKotlin {
