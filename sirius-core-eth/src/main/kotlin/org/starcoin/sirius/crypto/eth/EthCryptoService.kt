@@ -69,6 +69,10 @@ object EthCryptoService : CryptoService {
         return this.verify(data.toBytes(), sign, publicKey)
     }
 
+    override fun verify(data: SiriusObject, sign: Signature, publicKey: PublicKey): Boolean {
+        return this.verify(data.hash(), sign, publicKey)
+    }
+
     override fun hash(bytes: ByteArray): Hash {
         return Hash.wrap(sha3(bytes))
     }

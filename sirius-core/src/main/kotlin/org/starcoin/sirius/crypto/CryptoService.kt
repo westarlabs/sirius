@@ -29,6 +29,8 @@ interface CryptoService {
 
     fun verify(data: Hash, sign: Signature, publicKey: PublicKey): Boolean
 
+    fun verify(data: SiriusObject, sign: Signature, publicKey: PublicKey): Boolean
+
     fun hash(bytes: ByteArray): Hash
 
     fun <T : SiriusObject> hash(obj: T): Hash
@@ -63,11 +65,13 @@ interface CryptoService {
 
         override fun sign(data: SiriusObject, privateKey: PrivateKey) = instance.sign(data, privateKey)
 
-
         override fun verify(data: ByteArray, sign: Signature, publicKey: PublicKey) =
             instance.verify(data, sign, publicKey)
 
         override fun verify(data: Hash, sign: Signature, publicKey: PublicKey) = instance.verify(data, sign, publicKey)
+
+        override fun verify(data: SiriusObject, sign: Signature, publicKey: PublicKey) =
+            instance.verify(data, sign, publicKey)
 
         override fun hash(bytes: ByteArray) = instance.hash(bytes)
 

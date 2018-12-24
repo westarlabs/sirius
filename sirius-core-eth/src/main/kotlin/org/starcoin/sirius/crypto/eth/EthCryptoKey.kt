@@ -54,6 +54,10 @@ class EthCryptoKey internal constructor(private val ecKey: ECKey) : CryptoKey {
         return this.verify(data.toBytes(), sign)
     }
 
+    override fun verify(data: SiriusObject, sign: Signature): Boolean {
+        return this.verify(data.hash(), sign)
+    }
+
     override fun getAddress() = Address.wrap(ecKey.address)
 
     override fun toBytes(): ByteArray {

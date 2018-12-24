@@ -63,6 +63,10 @@ object FallbackCryptoService : CryptoService {
         return this.verify(data.bytes, sign, publicKey)
     }
 
+    override fun verify(data: SiriusObject, sign: Signature, publicKey: PublicKey): Boolean {
+        return this.verify(data.toProtobuf(), sign, publicKey)
+    }
+
     override fun hash(bytes: ByteArray): Hash {
         return Hash.wrap(doHash(bytes))
     }

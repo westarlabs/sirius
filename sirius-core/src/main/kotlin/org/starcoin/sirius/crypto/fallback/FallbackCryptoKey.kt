@@ -21,6 +21,10 @@ internal class FallbackCryptoKey(private val keyPairArg: KeyPair) : CryptoKey {
         return this.verify(data.bytes, sign)
     }
 
+    override fun verify(data: SiriusObject, sign: Signature): Boolean {
+        return this.verify(data.toProtobuf(), sign)
+    }
+
     override fun getKeyPair(): KeyPair {
         return this.keyPairArg
     }
@@ -32,6 +36,7 @@ internal class FallbackCryptoKey(private val keyPairArg: KeyPair) : CryptoKey {
     }
 
     override fun sign(data: SiriusObject): Signature {
+        //TODO use hash?
         return this.sign(data.toProtobuf())
     }
 
