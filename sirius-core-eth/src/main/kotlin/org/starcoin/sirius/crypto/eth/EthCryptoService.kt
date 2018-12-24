@@ -1,8 +1,10 @@
 package org.starcoin.sirius.crypto.eth
 
 import org.ethereum.crypto.ECKey
+import org.ethereum.crypto.jce.ECKeyFactory
 import org.ethereum.crypto.jce.SpongyCastleProvider
 import org.ethereum.util.RLP
+import org.spongycastle.jce.spec.ECPublicKeySpec
 import org.starcoin.sirius.core.Address
 import org.starcoin.sirius.core.Hash
 import org.starcoin.sirius.core.Signature
@@ -43,6 +45,20 @@ object EthCryptoService : CryptoService {
 
     override fun generateCryptoKey(): CryptoKey {
         return EthCryptoKey()
+    }
+
+    override fun loadPublicKey(bytes: ByteArray): PublicKey {
+        return ECKeyFactory.getInstance(SpongyCastleProvider.getInstance()).generatePublic(
+            ECPublicKeySpec(
+                ECKey.fromPublicOnly(bytes).pubKeyPoint,
+                ECKey.CURVE_SPEC
+            )
+        )
+    }
+
+    override fun encodePublicKey(publicKey: PublicKey): ByteArray {
+        //TODO ensure
+        return publicKey.encoded
     }
 
     override fun sign(data: ByteArray, privateKey: PrivateKey): Signature {
