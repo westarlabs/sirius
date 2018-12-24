@@ -1,9 +1,13 @@
 package org.starcoin.sirius.protocol.ethereum.contract
 
+import org.ethereum.util.blockchain.SolidityContract
 import org.starcoin.sirius.core.*
 import org.starcoin.sirius.protocol.HubContract
 
-class InMemoryHubContract : HubContract{
+class InMemoryHubContract(contract: SolidityContract) : HubContract{
+
+    private var contract =contract;
+
     override fun queryHubInfo(): HubInfo {
         TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
     }
@@ -60,5 +64,8 @@ class InMemoryHubContract : HubContract{
         TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
     }
 
-
+    fun getCurrentEon():Int{
+        val eonObject=this.contract.callFunction("getCurrentEon")
+        return eonObject as Int
+    }
 }

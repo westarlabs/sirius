@@ -2,6 +2,7 @@ dependencies{
     compile project(":sirius-proto")
     compile project(":sirius-core")
     compile project(":sirius-chainconnector")
+    compile project(":sirius-core-eth")
     compile "info.picocli:picocli:3.6.1"
     compile group: 'jline', name: 'jline', version: '2.14.5'
     compile group: 'com.alibaba', name: 'fastjson', version: '1.2.35'

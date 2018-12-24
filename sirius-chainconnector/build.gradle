@@ -5,3 +5,10 @@ dependencies{
 
     compile ('org.web3j:core:4.0.0')
 }
+
+task copyAllPdfReportsForArchiving(type: Copy) {
+    from ("${project(':sirius-contract').projectDir}/eth-contract"){
+        include "**/*.sol"
+    }
+    into "out/test/resources"
+}
