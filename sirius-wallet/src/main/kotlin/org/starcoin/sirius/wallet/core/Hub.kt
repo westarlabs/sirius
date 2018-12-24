@@ -20,7 +20,7 @@ class Hub {
 
     var channelManager: ChannelManager by Delegates.notNull()
 
-    var serverEventHandler: ServerEventHandler by Delegates.notNull()
+    var serverEventHandler: ServerEventHandler?
 
     var keyPair: KeyPair by Delegates.notNull()
 
@@ -42,7 +42,7 @@ class Hub {
         walletAddr: Address,
         channelManager: ChannelManager,
         keyPair: KeyPair,
-        serverEventHandler: ServerEventHandler,
+        serverEventHandler: ServerEventHandler?,
         eonStatusStore: Store<HubStatus>
     ) {
         this.contractAddress = contractAddress
@@ -89,10 +89,6 @@ class Hub {
 
     @Synchronized
     private fun watchHubEnvent() {
-    }
-
-    @Synchronized
-    fun checkNewBlock(block: BlockInfo) {
     }
 
     @Synchronized
@@ -163,5 +159,9 @@ class Hub {
     private fun checkChallengeStatus() {
     }
 
-
+    fun confirmDeposit(chainTransaction: ChainTransaction,height :Int){
+        this.hubStatus.confirmDeposit(chainTransaction)
+        hubStatus.height=height
+        dataStore.save(this.hubStatus)
+    }
 }
