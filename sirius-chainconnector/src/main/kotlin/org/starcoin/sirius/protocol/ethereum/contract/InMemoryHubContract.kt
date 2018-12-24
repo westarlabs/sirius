@@ -1,8 +1,10 @@
 package org.starcoin.sirius.protocol.ethereum.contract
 
 import org.ethereum.util.blockchain.SolidityContract
+import org.ethereum.util.blockchain.StandaloneBlockchain
 import org.starcoin.sirius.core.*
 import org.starcoin.sirius.protocol.HubContract
+import java.math.BigInteger
 
 class InMemoryHubContract(contract: SolidityContract) : HubContract{
 
@@ -65,7 +67,7 @@ class InMemoryHubContract(contract: SolidityContract) : HubContract{
     }
 
     fun getCurrentEon():Int{
-        val eonObject=this.contract.callFunction("getCurrentEon")
-        return eonObject as Int
+        val eonObject=this.contract.callFunction("getCurrentEon") as StandaloneBlockchain.SolidityCallResultImpl
+        return (eonObject.returnValue as BigInteger).intValueExact()
     }
 }

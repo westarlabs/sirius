@@ -12,7 +12,7 @@ import java.security.KeyPair
 class InMemoryChain(autoGenblock :Boolean):Chain<EthereumTransaction,BlockInfo,HubContract> {
 
     private val autoGenblock = autoGenblock
-    val sb = StandaloneBlockchain()
+    val sb = StandaloneBlockchain().withAutoblock(autoGenblock)
     private val inMemoryEthereumListener = InMemoryEthereumListener()
 
     override fun getBlock(height: BigInteger): BlockInfo? {

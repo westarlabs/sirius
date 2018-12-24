@@ -20,7 +20,7 @@ class InMemoryHubContractTest {
         chain = InMemoryChain(true)
         val compiler = SolidityCompiler(SystemProperties.getDefault())
 
-        val solRResource= this.javaClass::class.java.getResource("/sirius.sol")
+        val solRResource= this.javaClass::class.java.getResource("/solidity/sirius.sol")
         val solUri = solRResource.toURI()
 
         val path = File(solUri).parentFile.absolutePath
@@ -38,6 +38,10 @@ class InMemoryHubContractTest {
         if (compileRes.isFailed()) throw RuntimeException("Compile result: " + compileRes.errors)
 
         val result = CompilationResult.parse(compileRes.output)
+
+        var con= result.getContract(contractName)
+        //println(con.bin)
+        con.bin=con.bin.replace("_","").replace("$","")
         contract = InMemoryHubContract(chain.sb.submitNewContract(result.getContract(contractName)))
 
     }

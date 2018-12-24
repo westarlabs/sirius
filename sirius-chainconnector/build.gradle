@@ -7,7 +7,7 @@ dependencies{
 }
 
 task copyAllPdfReportsForArchiving(type: Copy) {
-    from ("${project(':sirius-contract').projectDir}/eth-contract"){
+    from ("${project(':sirius-contract').projectDir}/src/main"){
         include "**/*.sol"
     }
     into "out/test/resources"
