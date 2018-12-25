@@ -222,7 +222,7 @@ class Hash private constructor(internal val bytes: ByteArray) : Comparable<Hash>
         }
 
         fun random(): Hash {
-            return Hash.of(RandomUtils.nextBytes(100))
+            return Hash.of(RandomUtils.nextBytes(LENGTH))
         }
     }
 }
