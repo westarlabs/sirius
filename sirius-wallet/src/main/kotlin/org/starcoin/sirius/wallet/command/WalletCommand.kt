@@ -9,7 +9,7 @@ import picocli.CommandLine
     description = arrayOf("manage wallet"),
     mixinStandardHelpOptions = true,
     subcommands = arrayOf())
-class WalletCommand(internal var wallet: Wallet<ChainTransaction>) : Runnable {
+class WalletCommand<T:ChainTransaction>(internal var wallet: Wallet<T>) : Runnable {
 
     @CommandLine.ParentCommand
     var cliCommands: CliCommands? = null

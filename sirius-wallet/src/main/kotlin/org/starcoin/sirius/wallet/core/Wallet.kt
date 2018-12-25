@@ -3,7 +3,6 @@ package org.starcoin.sirius.wallet.core
 import org.starcoin.sirius.core.Address
 import org.starcoin.sirius.core.BlockInfo
 import org.starcoin.sirius.core.ChainTransaction
-import org.starcoin.sirius.core.InetAddressPort
 import org.starcoin.sirius.crypto.CryptoKey
 import org.starcoin.sirius.protocol.Chain
 import org.starcoin.sirius.protocol.HubContract
