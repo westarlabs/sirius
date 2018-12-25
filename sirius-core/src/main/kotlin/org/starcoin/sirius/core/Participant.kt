@@ -2,6 +2,7 @@ package org.starcoin.sirius.core
 
 import kotlinx.serialization.SerialId
 import kotlinx.serialization.Serializable
+import kotlinx.serialization.Transient
 import org.starcoin.proto.Starcoin
 import org.starcoin.proto.Starcoin.ProtoParticipant
 import org.starcoin.sirius.crypto.CryptoService
@@ -14,6 +15,7 @@ import java.security.PublicKey
 data class Participant(@Serializable(with = PublicKeySerializer::class) @SerialId(1) val publicKey: PublicKey) :
     SiriusObject() {
 
+    @Transient
     val address: Address = Address.getAddress(publicKey)
 
     companion object : SiriusObjectCompanion<Participant, ProtoParticipant>(Participant::class) {

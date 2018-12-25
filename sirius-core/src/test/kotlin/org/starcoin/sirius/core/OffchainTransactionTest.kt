@@ -7,8 +7,7 @@ import kotlinx.serialization.protobuf.ProtoBuf
 import org.apache.commons.lang3.RandomUtils
 import org.junit.Assert
 import org.junit.Test
-import org.starcoin.proto.Starcoin.ProtoOffchainTransaction
-import org.starcoin.sirius.util.KeyPairUtil
+import org.starcoin.sirius.crypto.CryptoService
 
 class OffchainTransactionTest {
 
@@ -31,7 +30,7 @@ class OffchainTransactionTest {
 
     @ImplicitReflectionSerializer
     @Test
-    fun testOffchainTransactionSerializable() {
+    fun testOffchainTransactionSignatureAndHash() {
         try {
             val from = Address.random()
             val to = Address.random()
@@ -54,7 +53,7 @@ class OffchainTransactionTest {
             Assert.assertEquals(hash, tx2.hash())
 
             //add sign
-            tx.sign(KeyPairUtil.TEST_KEYPAIR.private)
+            tx.sign(CryptoService.getDummyCryptoKey())
 
             val bytes1 = ProtoBuf.dump(tx)
 
@@ -69,17 +68,13 @@ class OffchainTransactionTest {
     }
 
     @Test
-    @Throws(InvalidProtocolBufferException::class)
     fun testTxSign() {
-        val keyPair = KeyPairUtil.generateKeyPair()
+        val key = CryptoService.getDummyCryptoKey()
         val tx = OffchainTransaction.mock()
-        //tx.mock(MockContext().put("keyPair", keyPair))
-        tx.sign(keyPair.private)
-        Assert.assertTrue(tx.verify(keyPair.public))
-        val tx1 = OffchainTransaction.parseFromProtoMessage(
-            ProtoOffchainTransaction.parseFrom(tx.toProtobuf())
-        )
+        tx.sign(key)
+        Assert.assertTrue(tx.verify(key))
+        val tx1 = OffchainTransaction.parseFromProtobuf(tx.toProtobuf())
         Assert.assertEquals(tx, tx1)
-        Assert.assertTrue(tx1.verify(keyPair.public))
+        Assert.assertTrue(tx1.verify(key))
     }
 }

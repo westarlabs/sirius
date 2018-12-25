@@ -69,10 +69,8 @@ abstract class SiriusObject : Hashable {
 
 abstract class SiriusObjectCompanion<T : SiriusObject, P : GeneratedMessageV3>(val objClass: KClass<T>) {
 
-    open fun mock(): T {
-        TODO()
-        //implements auto mock create.
-    }
+    //TODO write a auto mock implements.
+    abstract fun mock(): T
 
     open fun parseFromProtoMessage(protoMessage: P): T {
         return parseFromProtobuf(protoMessage.toByteArray())

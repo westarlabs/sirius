@@ -4,6 +4,7 @@ import org.apache.commons.lang3.RandomUtils
 import org.junit.Assert
 import org.junit.Before
 import org.junit.Test
+import org.starcoin.sirius.core.Hash
 
 abstract class CryptoServiceTestBase {
 
@@ -30,5 +31,13 @@ abstract class CryptoServiceTestBase {
         val hash = CryptoService.hash(data)
         val hash1 = CryptoService.hash(data)
         Assert.assertEquals(hash, hash1)
+    }
+
+    @Test
+    fun testDummyKeySignature() {
+        val hash = Hash.random()
+        val key = CryptoService.getDummyCryptoKey()
+        val sign = key.sign(hash)
+        Assert.assertTrue(key.verify(hash, sign))
     }
 }

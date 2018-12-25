@@ -5,6 +5,7 @@ import kotlinx.serialization.SerialId
 import kotlinx.serialization.Serializable
 import org.apache.commons.lang3.RandomUtils
 import org.starcoin.proto.Starcoin.ProtoOffchainTransaction
+import org.starcoin.sirius.crypto.CryptoKey
 import org.starcoin.sirius.crypto.CryptoService
 import org.starcoin.sirius.serialization.ProtobufSchema
 import java.security.PrivateKey
@@ -49,12 +50,17 @@ data class OffchainTransaction(@SerialId(1) var data: OffchainTransactionData, @
         this.sign = Signature.of(this.data, privateKey)
     }
 
-    fun verify(publicKey: PublicKey): Boolean {
-        return when {
-            this.data.from == Address.getAddress(publicKey) -> this.sign.verify(this.data, publicKey)
-            else -> false
-        }
+    fun sign(key: CryptoKey) {
+        this.sign(key.getKeyPair().private)
     }
+
+    fun verify(publicKey: PublicKey): Boolean {
+        //TODO need verify address at hear?
+        //this.data.from == Address.getAddress(publicKey)
+        return this.sign.verify(this.data, publicKey)
+    }
+
+    fun verify(key: CryptoKey) = verify(key.getKeyPair().public)
 
     companion object :
         SiriusObjectCompanion<OffchainTransaction, ProtoOffchainTransaction>(OffchainTransaction::class) {

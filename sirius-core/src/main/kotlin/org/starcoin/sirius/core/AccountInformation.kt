@@ -1,13 +1,15 @@
 package org.starcoin.sirius.core
 
+import kotlinx.serialization.SerialId
 import kotlinx.serialization.Serializable
+import org.apache.commons.lang3.RandomUtils
 import org.starcoin.proto.Starcoin
 import org.starcoin.sirius.serialization.ProtobufSchema
 
 //TODO rename to AccountInfo
 @Serializable
 @ProtobufSchema(Starcoin.ProtoAccountInfo::class)
-data class AccountInformation(val addressHash: Hash, var update: Update, var allotment: Long = 0) :
+data class AccountInformation(@SerialId(1) val addressHash: Hash, @SerialId(2) var update: Update, @SerialId(3) var allotment: Long = 0) :
     SiriusObject() {
 
     constructor(
@@ -26,7 +28,7 @@ data class AccountInformation(val addressHash: Hash, var update: Update, var all
         }
 
         override fun mock(): AccountInformation {
-            return super.mock()
+            return AccountInformation(Hash.random(), Update.mock(), RandomUtils.nextLong())
         }
 
         override fun parseFromProtoMessage(protoMessage: Starcoin.ProtoAccountInfo): AccountInformation {
@@ -38,7 +40,8 @@ data class AccountInformation(val addressHash: Hash, var update: Update, var all
         }
 
         override fun toProtoMessage(obj: AccountInformation): Starcoin.ProtoAccountInfo {
-            return super.toProtoMessage(obj)
+            return Starcoin.ProtoAccountInfo.newBuilder().setAddressHash(obj.addressHash.toByteString())
+                .setUpdate(Update.toProtoMessage(obj.update)).setAllotment(obj.allotment).build()
         }
     }
 }

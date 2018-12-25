@@ -1,6 +1,7 @@
 package org.starcoin.sirius.core
 
 import com.google.common.base.Preconditions
+import kotlinx.serialization.Optional
 import kotlinx.serialization.SerialId
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.Transient
@@ -12,6 +13,7 @@ import org.starcoin.sirius.serialization.PublicKeySerializer
 import org.starcoin.sirius.serialization.toByteString
 import java.security.PublicKey
 import java.util.*
+import java.util.stream.Collectors
 
 @Serializable
 @ProtobufSchema(ProtoHubAccount::class)
@@ -27,6 +29,8 @@ data class HubAccount(
     var deposit: Long = 0,
     @SerialId(5)
     var withdraw: Long = 0,
+    @SerialId(6)
+    @Optional
     private val transactions: MutableList<OffchainTransaction> = mutableListOf()
 ) : SiriusObject() {
 
@@ -111,32 +115,46 @@ data class HubAccount(
 
     companion object : SiriusObjectCompanion<HubAccount, ProtoHubAccount>(HubAccount::class) {
         override fun mock(): HubAccount {
-            return HubAccount(
+            val hubAccount = HubAccount(
                 CryptoService.generateCryptoKey().getKeyPair().public,
                 Update.mock(),
                 RandomUtils.nextLong(),
                 RandomUtils.nextLong(),
                 RandomUtils.nextLong()
             )
+            if (RandomUtils.nextBoolean()) {
+                for (i in 1..RandomUtils.nextInt(2, 10)) {
+                    hubAccount.transactions.add(OffchainTransaction.mock())
+                }
+            }
+            return hubAccount
         }
 
         override fun parseFromProtoMessage(protoMessage: ProtoHubAccount): HubAccount {
             return HubAccount(
-                CryptoService.loadPublicKey(protoMessage.toByteArray()),
+                CryptoService.loadPublicKey(protoMessage.publicKey.toByteArray()),
                 Update.parseFromProtoMessage(protoMessage.update),
                 protoMessage.allotment,
                 protoMessage.deposit,
-                protoMessage.withdraw
+                protoMessage.withdraw,
+                protoMessage.transactionsList.stream().map { OffchainTransaction.parseFromProtoMessage(it) }.collect(
+                    Collectors.toList()
+                )
             )
         }
 
         override fun toProtoMessage(obj: HubAccount): ProtoHubAccount {
             return ProtoHubAccount.newBuilder()
-                .setPublicKey(obj.publicKey.toByteString())
+                .setPublicKey(CryptoService.encodePublicKey(obj.publicKey).toByteString())
                 .setUpdate(Update.toProtoMessage(obj.update))
                 .setAllotment(obj.allotment)
                 .setDeposit(obj.deposit)
                 .setWithdraw(obj.withdraw)
+                .addAllTransactions(
+                    obj.transactions.stream().map { OffchainTransaction.toProtoMessage(it) }.collect(
+                        Collectors.toList()
+                    )
+                )
                 .build()
         }
     }

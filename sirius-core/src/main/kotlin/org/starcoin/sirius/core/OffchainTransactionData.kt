@@ -2,6 +2,7 @@ package org.starcoin.sirius.core
 
 import kotlinx.serialization.SerialId
 import kotlinx.serialization.Serializable
+import org.apache.commons.lang3.RandomUtils
 import org.starcoin.proto.Starcoin
 import org.starcoin.sirius.serialization.ProtobufSchema
 
@@ -26,7 +27,13 @@ data class OffchainTransactionData(
             OffchainTransactionData::class
         ) {
         override fun mock(): OffchainTransactionData {
-            return super.mock()
+            return OffchainTransactionData(
+                RandomUtils.nextInt(),
+                Address.random(),
+                Address.random(),
+                RandomUtils.nextLong(),
+                RandomUtils.nextLong()
+            )
         }
 
         override fun parseFromProtoMessage(proto: Starcoin.OffchainTransactionData): OffchainTransactionData {
