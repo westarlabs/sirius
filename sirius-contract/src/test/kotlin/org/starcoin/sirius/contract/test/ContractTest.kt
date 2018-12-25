@@ -12,6 +12,7 @@ import org.ethereum.solidity.compiler.CompilationResult
 import org.ethereum.solidity.compiler.SolidityCompiler
 import org.ethereum.util.blockchain.StandaloneBlockchain
 import org.junit.Assert
+import org.junit.Ignore
 import org.junit.Test
 import org.starcoin.sirius.core.Address
 import org.starcoin.sirius.serialization.rlp.RLP

@@ -6,9 +6,14 @@ dependencies{
     compile ('org.web3j:core:4.0.0')
 }
 
-task copyAllPdfReportsForArchiving(type: Copy) {
+task copySolidity(type: Copy) {
+    delete "out/test/resources/solidity"
     from ("${project(':sirius-contract').projectDir}/src/main"){
         include "**/*.sol"
     }
     into "out/test/resources"
+}
+
+compileTestJava {
+    copySolidity.execute()
 }

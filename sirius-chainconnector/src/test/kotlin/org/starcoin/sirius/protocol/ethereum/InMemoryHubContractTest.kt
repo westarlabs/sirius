@@ -8,6 +8,7 @@ import org.junit.Before
 import org.junit.Test
 import org.starcoin.sirius.protocol.ethereum.contract.InMemoryHubContract
 import java.io.File
+import java.net.URL
 import kotlin.properties.Delegates
 
 class InMemoryHubContractTest {
@@ -15,12 +16,24 @@ class InMemoryHubContractTest {
     private var chain : InMemoryChain by Delegates.notNull()
     private var contract : InMemoryHubContract by Delegates.notNull()
 
+    fun loadResource(name:String): URL {
+        var resource = this.javaClass::class.java.getResource(name)
+        if(resource==null){
+            var path=File("./out/test/resources"+name)
+            //println(path.absolutePath)
+            resource=path.toURL()
+        }
+        //println(resource)
+        return resource
+    }
+
     @Before
     fun beforeTest(){
         chain = InMemoryChain(true)
         val compiler = SolidityCompiler(SystemProperties.getDefault())
 
-        val solRResource= this.javaClass::class.java.getResource("/solidity/sirius.sol")
+        val solRResource= loadResource("/solidity/sirius.sol")
+
         val solUri = solRResource.toURI()
 
         val path = File(solUri).parentFile.absolutePath
