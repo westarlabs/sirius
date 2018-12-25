@@ -8,6 +8,7 @@ import kotlinx.serialization.json.JSON
 import kotlinx.serialization.load
 import kotlinx.serialization.parse
 import kotlinx.serialization.protobuf.ProtoBuf
+import org.starcoin.sirius.lang.resetableLazy
 import org.starcoin.sirius.serialization.ProtobufSchema
 import org.starcoin.sirius.serialization.rlp.RLP
 import kotlin.reflect.KClass
@@ -17,12 +18,19 @@ import kotlin.reflect.full.staticFunctions
 //@Serializable
 abstract class SiriusObject : Hashable {
 
-    //TODO supported clear hash when property change.
     @kotlinx.serialization.Transient
-    val id: Hash by lazy { Hash.of(this) }
+    private val hashDelegate = resetableLazy { Hash.of(this) }
+
+    @kotlinx.serialization.Transient
+    val id: Hash by hashDelegate
 
     override fun hash(): Hash {
         return id
+    }
+
+    //Subclasses should call this fun when property change.
+    protected fun resetHash() {
+        hashDelegate.reset()
     }
 
     @UseExperimental(ImplicitReflectionSerializer::class)
