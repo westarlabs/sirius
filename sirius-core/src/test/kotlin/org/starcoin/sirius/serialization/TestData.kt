@@ -26,6 +26,10 @@ data class TestData(
     @Serializer(forClass = TestData::class)
     companion object : SiriusObjectCompanion<TestData, Starcoin.TestData>(TestData::class), KSerializer<TestData> {
 
+        override fun mock(): TestData {
+            return random()
+        }
+
         fun random(): TestData {
             return TestData(
                 RandomUtils.nextBoolean(),

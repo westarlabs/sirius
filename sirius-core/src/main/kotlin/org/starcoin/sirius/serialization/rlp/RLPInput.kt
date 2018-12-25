@@ -7,20 +7,23 @@ import kotlinx.serialization.internal.EnumDescriptor
 import org.starcoin.sirius.serialization.BinaryElementValueDecoder
 
 
-class RLPInput internal constructor(private val input: ListIterator<RLPType>, private val begin: Boolean) :
+class RLPInput internal constructor(private val input: RLPList, private var begin: Boolean) :
     BinaryElementValueDecoder() {
+
+    val iterator = input.listIterator()
 
     override fun beginStructure(desc: SerialDescriptor, vararg typeParams: KSerializer<*>): CompositeDecoder {
         return if (begin) {
+            begin = false
             this
         } else {
-            val rlpList = input.next() as RLPList
-            return RLPInput(rlpList.listIterator(), false)
+            val rlpList = iterator.next() as RLPList
+            return RLPInput(rlpList, false)
         }
     }
 
-    fun nextElement(): RLPElement {
-        return input.next() as RLPElement
+    private fun nextElement(): RLPElement {
+        return iterator.next() as RLPElement
     }
 
     override fun decodeBoolean(): Boolean {
@@ -70,22 +73,7 @@ class RLPInput internal constructor(private val input: ListIterator<RLPType>, pr
         return nextElement().bytes
     }
 
-    override fun decodeNotNullMark(): Boolean {
-        return if (input.hasNext()) {
-            val element = input.next() as RLPElement
-            input.previous()
-            when (element) {
-                EMPTY_ELEMENT -> return false
-                else -> true
-            }
-        } else {
-            false
-        }
-    }
-
-
-    override fun decodeNull(): Nothing? {
-        nextElement()
-        return null
+    override fun decodeCollectionSize(desc: SerialDescriptor): Int {
+        return input.size
     }
 }

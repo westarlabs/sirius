@@ -3,6 +3,7 @@ package org.starcoin.sirius.serialization
 import kotlinx.serialization.*
 import kotlinx.serialization.json.JSON
 import org.junit.Assert
+import org.junit.Ignore
 import org.junit.Test
 import org.starcoin.proto.Starcoin
 import org.starcoin.sirius.serialization.protobuf.ProtoBuf
@@ -63,7 +64,9 @@ class SerializationTest {
         Assert.assertEquals(data, data1)
     }
 
+    //TODO
     @ImplicitReflectionSerializer
+    @Ignore
     @Test
     fun testOptionalObject() {
         val namedData = NamedData("test", null)

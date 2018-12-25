@@ -7,7 +7,7 @@ import kotlinx.serialization.SerializationException
 import org.starcoin.sirius.serialization.BinaryElementValueEncoder
 
 
-class RLPOutput internal constructor(private val out: RLPList, private val begin: Boolean) :
+class RLPOutput internal constructor(private val out: RLPList, private var begin: Boolean) :
     BinaryElementValueEncoder() {
 
     override fun beginCollection(
@@ -15,18 +15,19 @@ class RLPOutput internal constructor(private val out: RLPList, private val begin
         collectionSize: Int,
         vararg typeParams: KSerializer<*>
     ): CompositeEncoder {
-        return newEncoder()
+        return newEncoder(collectionSize)
     }
 
     override fun beginStructure(desc: SerialDescriptor, vararg typeParams: KSerializer<*>): CompositeEncoder {
         return newEncoder()
     }
 
-    fun newEncoder(): RLPOutput {
+    private fun newEncoder(size: Int = -1): RLPOutput {
         return if (begin) {
+            begin = false
             this
         } else {
-            val rlpList = RLPList(mutableListOf())
+            val rlpList = RLPList(if (size < 0) mutableListOf() else ArrayList(size))
             out.add(rlpList)
             RLPOutput(rlpList, false)
         }
@@ -34,10 +35,6 @@ class RLPOutput internal constructor(private val out: RLPList, private val begin
 
     override fun encodeElement(desc: SerialDescriptor, index: Int): Boolean {
         return true
-    }
-
-    override fun encodeNull() {
-        out.add(EMPTY_ELEMENT)
     }
 
     override fun encodeValue(value: Any) {
