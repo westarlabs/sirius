@@ -95,6 +95,8 @@ data class Update(
     }
 
     companion object : SiriusObjectCompanion<Update, Starcoin.Update>(Update::class) {
+        var DUMMY_UPDATE = Update(UpdateData.DUMMY_UPDATE_DATA)
+
         override fun mock(): Update {
             return Update(UpdateData.mock(), Signature.random(), Signature.random())
         }

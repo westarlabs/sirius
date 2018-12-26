@@ -13,6 +13,9 @@ data class HubRoot(
     var eon: Long = 0
 ) : SiriusObject() {
     companion object : SiriusObjectCompanion<HubRoot, Starcoin.ProtoHubRoot>(HubRoot::class) {
+
+        var DUMMY_HUB_ROOT = HubRoot()
+
         override fun mock(): HubRoot {
             var node = NodeInformation.mock()
             return HubRoot(

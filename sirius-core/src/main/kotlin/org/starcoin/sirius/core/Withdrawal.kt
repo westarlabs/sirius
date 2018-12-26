@@ -1,59 +1,27 @@
 package org.starcoin.sirius.core
 
-import org.starcoin.proto.Starcoin.InitiateWithdrawalRequest
-import java.util.*
+import kotlinx.serialization.SerialId
+import kotlinx.serialization.Serializable
+import org.starcoin.proto.Starcoin
+import org.starcoin.sirius.serialization.ProtobufSchema
 
-class Withdrawal : ProtobufCodec<InitiateWithdrawalRequest> {
-
-    var address: Address? = null
-        private set
-    var path: AugmentedMerklePath? = null
-        private set
+@ProtobufSchema(Starcoin.InitiateWithdrawalRequest::class)
+@Serializable
+data class Withdrawal(
+    @SerialId(1)
+    var address: Address = Address.DUMMY_ADDRESS,
+    @SerialId(2)
+    var path: AugmentedMerklePath = AugmentedMerklePath(),
+    @SerialId(3)
     var amount: Long = 0
-        private set
+) : SiriusObject() {
 
-    constructor(proto: InitiateWithdrawalRequest) {
-        this.unmarshalProto(proto)
-    }
+    companion object : SiriusObjectCompanion<Withdrawal, Starcoin.InitiateWithdrawalRequest>(Withdrawal::class) {
 
-    constructor(address: Address, path: AugmentedMerklePath, amount: Long) {
-        this.address = address
-        this.path = path
-        this.amount = amount
-    }
+        var DUMMY_WITHDRAWAL = Withdrawal()
 
-    override fun marshalProto(): InitiateWithdrawalRequest {
-        return InitiateWithdrawalRequest.newBuilder()
-            .setPath(path!!.toProto())
-            .setAddress(this.address!!.toByteString())
-            .setAmount(amount)
-            .build()
-    }
-
-    override fun unmarshalProto(proto: InitiateWithdrawalRequest) {
-        this.address = Address.wrap(proto.address)
-        this.path = AugmentedMerklePath(proto.path)
-        this.amount = proto.amount
-    }
-
-    override fun equals(o: Any?): Boolean {
-        if (this === o) {
-            return true
+        override fun mock(): Withdrawal {
+            return Withdrawal(Address.DUMMY_ADDRESS, AugmentedMerklePath(), 0)
         }
-        if (o !is Withdrawal) {
-            return false
-        }
-        val that = o as Withdrawal?
-        return (amount == that!!.amount
-                && address == that.address
-                && path == that.path)
-    }
-
-    override fun hashCode(): Int {
-        return Objects.hash(address, path, amount)
-    }
-
-    override fun toString(): String {
-        return this.toJson()
     }
 }

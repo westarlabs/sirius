@@ -1,72 +1,23 @@
 package org.starcoin.sirius.core
 
+import kotlinx.serialization.SerialId
 import org.starcoin.proto.Starcoin
-import java.util.*
+import org.starcoin.sirius.serialization.ProtobufSchema
 
-class BalanceUpdateProof : ProtobufCodec<Starcoin.ProtoBalanceUpdateProof> {
+@ProtobufSchema(Starcoin.ProtoBalanceUpdateProof::class)
+data class BalanceUpdateProof(
+    @SerialId(1)
+    var update: Update = Update.DUMMY_UPDATE,
+    @SerialId(2)
+    var provePath: AugmentedMerklePath
+) : SiriusObject() {
+    companion object :
+        SiriusObjectCompanion<BalanceUpdateProof, Starcoin.ProtoBalanceUpdateChallenge>(BalanceUpdateProof::class) {
 
-    var update: Update? = null
+        var DUMMY_BALANCE_UPDATE_PROOF = BalanceUpdateProof(Update.DUMMY_UPDATE, AugmentedMerklePath())
 
-    var provePath: AugmentedMerklePath? = null
-
-    constructor() {}
-
-    constructor(proto: Starcoin.ProtoBalanceUpdateProof) {
-        this.unmarshalProto(proto)
-    }
-
-    constructor(update: Update?, provePath: AugmentedMerklePath?) {
-        this.update = update
-        this.provePath = provePath
-    }
-
-    override fun marshalProto(): Starcoin.ProtoBalanceUpdateProof {
-        val builder = Starcoin.ProtoBalanceUpdateProof.newBuilder()
-        if (this.update != null) builder.update = Update.toProtoMessage(this.update!!)
-        if (this.provePath != null) builder.path = this.provePath!!.marshalProto()
-
-        return builder.build()
-    }
-
-    override fun unmarshalProto(proto: Starcoin.ProtoBalanceUpdateProof) {
-        if (proto.hasUpdate()) {
-            this.update = Update.parseFromProtoMessage(proto.update)
-        }
-
-        if (proto.hasPath()) {
-            val merklePath = AugmentedMerklePath(proto.path)
-
-            this.provePath = merklePath
-        }
-    }
-
-    override fun equals(o: Any?): Boolean {
-        if (this === o) {
-            return true
-        }
-        if (o !is BalanceUpdateProof) {
-            return false
-        }
-        val proof = o as BalanceUpdateProof?
-        return this.update == proof!!.update && this.provePath == proof.provePath
-    }
-
-    override fun hashCode(): Int {
-        return Objects.hash(this.update, this.provePath)
-    }
-
-    override fun toString(): String {
-        return this.toJson()
-    }
-
-    companion object {
-
-        fun generateBalanceUpdateProof(
-            proto: Starcoin.ProtoBalanceUpdateProof
-        ): BalanceUpdateProof {
-            val proof = BalanceUpdateProof()
-            proof.unmarshalProto(proto)
-            return proof
+        override fun mock(): BalanceUpdateProof {
+            return BalanceUpdateProof(Update.mock(), AugmentedMerklePath())
         }
     }
 }

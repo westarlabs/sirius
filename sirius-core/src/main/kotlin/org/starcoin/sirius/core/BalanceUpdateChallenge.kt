@@ -1,123 +1,34 @@
 package org.starcoin.sirius.core
 
-import com.google.protobuf.ByteString
+import kotlinx.serialization.SerialId
+import kotlinx.serialization.Serializable
 import org.starcoin.proto.Starcoin
-import org.starcoin.sirius.util.KeyPairUtil
+import org.starcoin.sirius.crypto.CryptoService
+import org.starcoin.sirius.serialization.ProtobufSchema
 
 import java.security.PublicKey
-import java.util.Objects
-import java.util.logging.Logger
 
-class BalanceUpdateChallenge : ProtobufCodec<Starcoin.ProtoBalanceUpdateChallenge> {
+@ProtobufSchema(Starcoin.ProtoBalanceUpdateChallenge::class)
+@Serializable
+data class BalanceUpdateChallenge(
+    @SerialId(1)
+    var proof: BalanceUpdateProof = BalanceUpdateProof.DUMMY_BALANCE_UPDATE_PROOF,
+    @SerialId(2)
+    var publicKey: PublicKey = CryptoService.instance.loadPublicKey(ByteArray(32)),
+    @SerialId(3)
+    var status: WithdrawalStatus = WithdrawalStatus.DUMMY_WITHDRAWAL_STATUS
+) : SiriusObject() {
+    companion object :
+        SiriusObjectCompanion<BalanceUpdateChallenge, Starcoin.ProtoBalanceUpdateChallenge>(BalanceUpdateChallenge::class) {
 
-    var proof: BalanceUpdateProof? = null
+        var DUMMY_BALANCE_UPDATE_CHALLENGE = BalanceUpdateChallenge()
 
-    var publicKey: PublicKey? = null
-
-    private var status: ChallengeStatus? = null
-
-    private val logger = Logger.getLogger(BalanceUpdateChallenge::class.java.name)
-
-    val isClosed: Boolean
-        get() = synchronized(this) {
-            return this.status != null && this.status == ChallengeStatus.CLOSE
-        }
-
-    constructor() {}
-
-    constructor(proto: Starcoin.ProtoBalanceUpdateChallenge) {
-        this.unmarshalProto(proto)
-    }
-
-    constructor(update: Update?, provePath: AugmentedMerklePath?, publicKey: PublicKey) {
-        val proof = BalanceUpdateProof(update, provePath)
-        this.proof = proof
-        this.publicKey = publicKey
-    }
-
-    constructor(proof: BalanceUpdateProof, publicKey: PublicKey) {
-        this.proof = proof
-        this.publicKey = publicKey
-    }
-
-    fun closeChallenge(): Boolean {
-        synchronized(this) {
-            if (this.status != null && this.status == ChallengeStatus.OPEN) {
-                this.status = ChallengeStatus.CLOSE
-                logger.info("closeChallenge succ")
-                return true
-            }
-
-            logger.warning(
-                "closeChallenge err status : " + if (this.status == null) "null" else this.status
+        override fun mock(): BalanceUpdateChallenge {
+            return BalanceUpdateChallenge(
+                BalanceUpdateProof.mock(),
+                CryptoService.instance.loadPublicKey(ByteArray(32)),
+                WithdrawalStatus.mock()
             )
-            return false
-        }
-    }
-
-    fun openChallenge(): Boolean {
-        synchronized(this) {
-            if (this.status == null) {
-                this.status = ChallengeStatus.OPEN
-                logger.info("openChallenge succ")
-                return true
-            }
-
-            logger.warning(
-                "openChallenge err status : " + if (this.status == null) "null" else this.status
-            )
-            return false
-        }
-    }
-
-    override fun marshalProto(): Starcoin.ProtoBalanceUpdateChallenge {
-        val builder = Starcoin.ProtoBalanceUpdateChallenge.newBuilder()
-        if (this.proof != null) builder.proof = this.proof!!.marshalProto()
-        if (this.publicKey != null) {
-            builder.publicKey = ByteString.copyFrom(KeyPairUtil.encodePublicKey(this.publicKey!!))
-        }
-        return builder.build()
-    }
-
-    override fun unmarshalProto(proto: Starcoin.ProtoBalanceUpdateChallenge) {
-        if (proto.hasProof()) {
-            val proof = BalanceUpdateProof()
-            proof.unmarshalProto(proto.proof)
-            this.proof = proof
-        }
-
-        if (!proto.publicKey.isEmpty) {
-            this.publicKey = KeyPairUtil.recoverPublicKey(proto.publicKey.toByteArray())
-        }
-    }
-
-    override fun equals(o: Any?): Boolean {
-        if (this === o) {
-            return true
-        }
-        if (o !is BalanceUpdateChallenge) {
-            return false
-        }
-        val challenge = o as BalanceUpdateChallenge?
-        return this.proof == challenge!!.proof && this.publicKey == challenge.publicKey
-    }
-
-    override fun hashCode(): Int {
-        return Objects.hash(this.proof, this.publicKey)
-    }
-
-    override fun toString(): String {
-        return this.toJson()
-    }
-
-    companion object {
-
-        fun generateBalanceUpdateChallenge(
-            proto: Starcoin.ProtoBalanceUpdateChallenge
-        ): BalanceUpdateChallenge {
-            val challenge = BalanceUpdateChallenge()
-            challenge.unmarshalProto(proto)
-            return challenge
         }
     }
 }

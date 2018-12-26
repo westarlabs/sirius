@@ -25,6 +25,8 @@ data class UpdateData(
         UpdateData::class
     ) {
 
+        var DUMMY_UPDATE_DATA = UpdateData()
+
         override fun mock(): UpdateData {
             return UpdateData(
                 RandomUtils.nextInt(),
