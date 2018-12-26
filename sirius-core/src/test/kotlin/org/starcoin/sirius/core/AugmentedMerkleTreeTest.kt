@@ -1,12 +1,10 @@
 package org.starcoin.sirius.core
 
 import com.google.common.collect.Lists
-import com.google.protobuf.InvalidProtocolBufferException
 import org.apache.commons.lang3.RandomUtils
 import org.junit.Assert
 import org.junit.Test
-import org.starcoin.proto.Starcoin.ProtoAugmentedMerklePath
-import org.starcoin.proto.Starcoin.ProtoAugmentedMerkleTreeNode
+import org.starcoin.sirius.crypto.CryptoService
 import java.util.*
 
 class AugmentedMerkleTreeTest {
@@ -14,18 +12,18 @@ class AugmentedMerkleTreeTest {
     @Test
     fun testAugmentedMerkleTree() {
         val eon = 1
-        val accountInformationList = ArrayList<AccountInformation>()
+        val accounts = ArrayList<HubAccount>()
 
         val count = 4
 
         for (i in 0 until count) {
-            val a = AccountInformation(
-                Address.random(), Update(eon, 0, 5, 10, Hash.random()), 5
+            val a = HubAccount(
+                CryptoService.generateCryptoKey().getKeyPair().public, Update(eon, 0, 5, 10, Hash.random()), 5
             )
-            accountInformationList.add(a)
+            accounts.add(a)
         }
 
-        val tree = AugmentedMerkleTree(eon, accountInformationList)
+        val tree = AugmentedMerkleTree(eon, accounts)
         Assert.assertNotNull(tree.hash())
         Assert.assertEquals(0, tree.offset)
         Assert.assertEquals(5 * count.toLong(), tree.allotment)
@@ -33,15 +31,12 @@ class AugmentedMerkleTreeTest {
 
     @Test
     fun testMembershipProof() {
-        val tree = generateRandomTree(RandomUtils.nextInt(10, 1000))
-        val node = tree.randomLeafNode()
-        val path = tree.getMembershipProof(node.account!!.addressHash)
-        Assert.assertTrue(AugmentedMerkleTree.verifyMembershipProof(tree.root!!, path!!))
+        val tree = AugmentedMerkleTree.random(RandomUtils.nextInt(10, 1000))
+        val node = tree.randomLeafNode()!!
+        val path = tree.getMembershipProof((node.info as AMTLeafNodeInfo).addressHash)
+        Assert.assertTrue(AugmentedMerkleTree.verifyMembershipProof(tree.root, path))
     }
 
-    private fun generateRandomTree(count: Int): AugmentedMerkleTree {
-        return AugmentedMerkleTree.random(count)
-    }
 
     @Test
     fun testEmptyListHash() {
@@ -56,26 +51,25 @@ class AugmentedMerkleTreeTest {
         val tree0 = AugmentedMerkleTree(0, mutableListOf())
         val tree1 = AugmentedMerkleTree(0, mutableListOf())
         Assert.assertNotNull(tree0.root)
-        Assert.assertNotNull(tree0.root!!.information)
+        Assert.assertNotNull(tree0.root.info)
         Assert.assertEquals(tree0.root, tree1.root)
     }
 
     @Test
-    @Throws(InvalidProtocolBufferException::class)
     fun testSingleNode() {
         val eon = 0
-        val address = Address.random()
-        val a = AccountInformation(address, Update(eon, 0, 0, 0), 0)
+        val a = HubAccount.mock()
         val tree = AugmentedMerkleTree(eon, Lists.newArrayList(a))
-        val path = tree.getMembershipProof(address)
-        Assert.assertTrue(AugmentedMerkleTree.verifyMembershipProof(tree.root!!, path))
+        val proof = tree.getMembershipProof(a.address)!!
+        Assert.assertTrue(AugmentedMerkleTree.verifyMembershipProof(tree.root, proof))
 
         // test verify after marshal
-        val byteStringRoot = tree.root!!.toProto().toByteString()
-        val root = AugmentedMerkleTree.AugmentedMerkleTreeNode(ProtoAugmentedMerkleTreeNode.parseFrom(byteStringRoot))
-        Assert.assertEquals(tree.root, root)
-        val path1 = AugmentedMerklePath(ProtoAugmentedMerklePath.parseFrom(path.toProto().toByteString()))
-        Assert.assertEquals(path, path1)
-        Assert.assertTrue(AugmentedMerkleTree.verifyMembershipProof(root, path1))
+        val rootBytes = (tree.root.toAMTPathNode() as AMTPathInternalNode).toProtobuf()
+        val root = AMTPathInternalNode.parseFromProtobuf(rootBytes)
+        Assert.assertEquals(tree.root.toAMTPathNode(), root)
+
+        val proof1 = AMTProof.parseFromProtobuf(proof.toProtobuf())
+        Assert.assertEquals(proof, proof1)
+        Assert.assertTrue(AugmentedMerkleTree.verifyMembershipProof(root, proof1))
     }
 }
