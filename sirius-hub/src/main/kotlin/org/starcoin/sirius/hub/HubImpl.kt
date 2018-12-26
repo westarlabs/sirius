@@ -2,12 +2,13 @@ package org.starcoin.sirius.hub
 
 import com.google.common.base.Preconditions
 import com.google.common.eventbus.EventBus
-import com.google.protobuf.ByteString
 import io.grpc.Status
 import io.grpc.StatusRuntimeException
 import org.starcoin.proto.Starcoin
 import org.starcoin.proto.Starcoin.*
 import org.starcoin.sirius.core.*
+import org.starcoin.sirius.core.AMTreePathInternalNode
+import org.starcoin.sirius.core.AMTreeProof
 import org.starcoin.sirius.core.Update
 import org.starcoin.sirius.core.UpdateData
 import org.starcoin.sirius.util.KeyPairUtil
@@ -49,7 +50,7 @@ class HubImpl(
                 ready,
                 blocksPerEon,
                 eonState!!.eon,
-                stateRoot,
+                stateRoot.toAMTreePathNode() as AMTreePathInternalNode,
                 hubKeyPair.public
             )
         }
@@ -233,8 +234,8 @@ class HubImpl(
         this.eonState!!.removeIOU(receiverIOU)
     }
 
-    override fun queryNewTransfer(blockAddress: Address): OffchainTransaction? {
-        val iou = this.eonState!!.getIOUByTo(blockAddress)
+    override fun queryNewTransfer(address: Address): OffchainTransaction? {
+        val iou = this.eonState!!.getIOUByTo(address)
         return if (iou == null) null else iou.transaction!!
     }
 
@@ -260,14 +261,14 @@ class HubImpl(
         )
     }
 
-    override fun getProof(blockAddress: Address): Starcoin.AMTreePath? {
-        return this.getProof(this.eonState!!.eon, blockAddress)
+    override fun getProof(address: Address): AMTreeProof? {
+        return this.getProof(this.eonState!!.eon, address)
     }
 
-    override fun getProof(eon: Int, blockAddress: Address): Starcoin.AMTreePath? {
+    override fun getProof(eon: Int, address: Address): AMTreeProof? {
         this.checkReady()
         val eonState = this.getEonState(eon) ?: return null
-        return eonState!!.state!!.getMembershipProof(blockAddress)
+        return eonState!!.state!!.getMembershipProof(address)
     }
 
     override fun currentEon(): Eon? {
@@ -305,7 +306,8 @@ class HubImpl(
     }
 
     private fun doCommit(): CompletableFuture<Receipt> {
-        val hubRoot = HubRoot(this.eonState!!.state!!.root!!, this.eonState!!.eon)
+        val hubRoot =
+            HubRoot(this.eonState!!.state!!.root.toAMTreePathNode() as AMTreePathInternalNode, this.eonState!!.eon)
         logger.info("doCommit:" + hubRoot.toJSON())
         val chainTransaction = ChainTransaction(
             this.hubAddress,
@@ -336,12 +338,13 @@ class HubImpl(
         }
         if (txProof != null) {
             val closeChallenge = CloseTransferDeliveryChallengeRequest.newBuilder()
-                .setBalancePath(accountProof.toProto())
-                .setTransPath(txProof.toProto<ProtoMerklePath>())
-                .setUpdate(accountProof.leaf!!.account!!.update!!.toProto() as Starcoin.Update)
-                .setToUserPublicKey(
-                    ByteString.copyFrom(KeyPairUtil.encodePublicKey(previousAccount!!.publicKey!!))
-                )
+                //TODO
+//                .setBalancePath(accountProof?.path.toProto())
+//                .setTransPath(txProof.toProto<ProtoMerklePath>())
+//                .setUpdate(accountProof.leaf!!.account!!.update!!.toProto() as Starcoin.Update)
+//                .setToUserPublicKey(
+//                    ByteString.copyFrom(KeyPairUtil.encodePublicKey(previousAccount!!.publicKey!!))
+//                )
                 .build()
 
             val chainTransaction = ChainTransaction(
@@ -365,7 +368,8 @@ class HubImpl(
         )
         val proofPath = this.eonState!!.state!!.getMembershipProof(address)
 
-        val proof = BalanceUpdateProof(proofPath.leaf!!.account!!.update!!, proofPath)
+        //TODO
+        val proof = BalanceUpdateProof()//(proofPath.leaf!!.account!!.update!!, proofPath)
         val closeBalanceUpdateChallengeRequest = proof.toProto<Starcoin.ProtoBalanceUpdateProof>()
 
         val chainTransaction = ChainTransaction(
@@ -392,7 +396,8 @@ class HubImpl(
                         .setUpdate(hubAccount.update!!.toProto() as Starcoin.Update)
                     if (hubAccount.update!!.isSigned) {
                         val path = this.eonState!!.state!!.getMembershipProof(blockAddress)
-                        cancelWithdrawalBuilder.setPath(path.toProto()).build()
+                        //TODO
+                        //cancelWithdrawalBuilder.setPath(path.toProto()).build()
                     }
                     val chainTransaction = ChainTransaction(
                         this.hubAddress,
@@ -416,14 +421,14 @@ class HubImpl(
                                     + future.getNow(null))
                         )
 
-                        val withdrawalStatus = WithdrawalStatus(withdrawal)
+                        val withdrawalStatus = WithdrawalStatus(WithdrawalStatusType.INIT, withdrawal)
                         withdrawalStatus.cancel()
                         this.fireEvent(
                             HubEvent(HubEventType.WITHDRAWAL, blockAddress, withdrawalStatus)
                         )
                     }
                 } else {
-                    val withdrawalStatus = WithdrawalStatus(withdrawal)
+                    val withdrawalStatus = WithdrawalStatus(WithdrawalStatusType.INIT, withdrawal)
                     withdrawalStatus.pass()
                     this.fireEvent(HubEvent(HubEventType.WITHDRAWAL, blockAddress, withdrawalStatus))
                 }
@@ -476,7 +481,10 @@ class HubImpl(
                     this.fireEvent(
                         HubEvent(
                             HubEventType.NEW_HUB_ROOT,
-                            HubRoot(this.eonState!!.state!!.root!!, this.eonState!!.eon)
+                            HubRoot(
+                                this.eonState!!.state!!.root.toAMTreePathNode() as AMTreePathInternalNode,
+                                this.eonState!!.eon
+                            )
                         )
                     )
                 }
@@ -496,7 +504,8 @@ class HubImpl(
             this.processDeposit(deposit)
         } else if (tx.action == "InitiateWithdrawal") {
             val arguments = tx.getArguments(InitiateWithdrawalRequest::class.java)!!
-            val withdrawal = Withdrawal(arguments)
+            //TODO
+            val withdrawal = Withdrawal.parseFromProtoMessage(arguments)
             logger.info(tx.action + ":" + withdrawal.toString())
             this.processWithdrawal(withdrawal)
         } else if (tx.action == "OpenTransferDeliveryChallenge") {

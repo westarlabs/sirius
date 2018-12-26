@@ -45,11 +45,11 @@ interface Hub {
 
     fun receiveNewTransfer(receiverIOU: IOU)
 
-    fun queryNewTransfer(blockAddress: Address): OffchainTransaction?
+    fun queryNewTransfer(address: Address): OffchainTransaction?
 
-    fun getProof(blockAddress: Address): AMTreePath?
+    fun getProof(address: Address): AMTreeProof?
 
-    fun getProof(eon: Int, blockAddress: Address): AMTreePath?
+    fun getProof(eon: Int, address: Address): AMTreeProof?
 
     fun currentEon(): Eon?
 

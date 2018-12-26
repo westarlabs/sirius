@@ -265,7 +265,8 @@ class HubTest {
                 InitiateWithdrawalRequest.newBuilder()
                     .setAddress(address.toByteString())
                     .setAmount(amount)
-                    .setPath(hub!!.getProof(address)!!.toProto())
+                    //TODO
+                    //.setPath(hub!!.getProof(address)!!.toProto())
                     .build()
             )
         )

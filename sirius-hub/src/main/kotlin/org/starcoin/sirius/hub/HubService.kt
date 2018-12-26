@@ -67,11 +67,11 @@ class HubService(private val hubKeyPair: KeyPair, blocksPerEon: Int, connection:
         return hubAccount?.update
     }
 
-    fun getProof(blockAddress: Address): AMTreePath? {
+    fun getProof(blockAddress: Address): AMTreeProof? {
         return hub.getProof(blockAddress)
     }
 
-    fun getProof(eon: Int, blockAddress: Address): AMTreePath? {
+    fun getProof(eon: Int, blockAddress: Address): AMTreeProof? {
         return hub.getProof(eon, blockAddress)
     }
 

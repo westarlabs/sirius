@@ -4,7 +4,6 @@ import org.starcoin.sirius.core.*
 import org.starcoin.sirius.core.Eon.Epoch
 import java.util.*
 import java.util.concurrent.ConcurrentHashMap
-import java.util.stream.Collectors
 
 class EonState @JvmOverloads constructor(val eon: Int, val previous: EonState? = null) {
     private val accounts: MutableList<HubAccount>
@@ -19,12 +18,9 @@ class EonState @JvmOverloads constructor(val eon: Int, val previous: EonState? =
         this.accounts = ArrayList()
         if (this.previous != null) {
             this.previous.getAccounts().forEach { account -> addAccount(account.toNextEon(this.eon)) }
-            val accountInformations = this.previous
+            val accounts = this.previous
                 .getAccounts()
-                .stream()
-                .map { it.toNewAccountInformation() }
-                .collect(Collectors.toList<AccountInformation>())
-            this.state = AMTree(this.eon, accountInformations)
+            this.state = AMTree(this.eon, accounts)
         } else {
             this.state = AMTree(this.eon, ArrayList())
         }

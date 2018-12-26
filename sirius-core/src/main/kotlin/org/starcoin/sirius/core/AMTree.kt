@@ -54,6 +54,9 @@ data class AMTreeProof(@SerialId(1) val path: AMTreePath, @SerialId(2) val leaf:
     }
 }
 
+/**
+ * AugmentedMerkleTree
+ */
 class AMTree(
     val eon: Int,
     val root: AMTreeNode = AMTreeNode()
