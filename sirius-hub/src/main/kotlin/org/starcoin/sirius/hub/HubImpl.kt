@@ -8,7 +8,6 @@ import io.grpc.StatusRuntimeException
 import org.starcoin.proto.Starcoin
 import org.starcoin.proto.Starcoin.*
 import org.starcoin.sirius.core.*
-import org.starcoin.sirius.core.AugmentedMerkleTree.AugmentedMerkleTreeNode
 import org.starcoin.sirius.core.Update
 import org.starcoin.sirius.core.UpdateData
 import org.starcoin.sirius.util.KeyPairUtil
@@ -55,7 +54,7 @@ class HubImpl(
             )
         }
 
-    override val stateRoot: AugmentedMerkleTreeNode
+    override val stateRoot: AMTNode
         get() = this.eonState!!.state!!.root!!
 
     override var hubMaliciousFlag: EnumSet<Hub.MaliciousFlag>
@@ -261,11 +260,11 @@ class HubImpl(
         )
     }
 
-    override fun getProof(blockAddress: Address): AugmentedMerklePath? {
+    override fun getProof(blockAddress: Address): AMTPath? {
         return this.getProof(this.eonState!!.eon, blockAddress)
     }
 
-    override fun getProof(eon: Int, blockAddress: Address): AugmentedMerklePath? {
+    override fun getProof(eon: Int, blockAddress: Address): AMTPath? {
         this.checkReady()
         val eonState = this.getEonState(eon) ?: return null
         return eonState!!.state!!.getMembershipProof(blockAddress)

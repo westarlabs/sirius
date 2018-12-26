@@ -87,7 +87,7 @@ class HubStatus {
         return eonStatuses[getEonByIndex(lastIndex)].transactionMap[hash]
     }
 
-    internal fun currentEonPath(): AugmentedMerklePath? {
+    internal fun currentEonPath(): AMTPath? {
         val eonStatus = eonStatuses[currentEonStatusIndex]
         return eonStatus?.path
     }
@@ -119,7 +119,7 @@ class HubStatus {
         this.depositingTransactions[chainTransaction.hash()] = chainTransaction
     }
 
-    internal fun nextEon(eon: Eon, path: AugmentedMerklePath): Int {
+    internal fun nextEon(eon: Eon, path: AMTPath): Int {
         this.allotment += this.eonStatuses[currentEonStatusIndex]
             .confirmedTransactions
             .stream()

@@ -4,7 +4,6 @@ import com.google.common.eventbus.Subscribe
 import org.starcoin.proto.Starcoin.ProtoHubMaliciousFlag
 import org.starcoin.proto.Starcoin.ProtoHubMaliciousFlags
 import org.starcoin.sirius.core.*
-import org.starcoin.sirius.core.AugmentedMerkleTree.AugmentedMerkleTreeNode
 import java.util.*
 import java.util.concurrent.BlockingQueue
 import java.util.stream.Collectors
@@ -13,7 +12,7 @@ interface Hub {
 
     var hubMaliciousFlag: EnumSet<MaliciousFlag>
 
-    val stateRoot: AugmentedMerkleTreeNode
+    val stateRoot: AMTNode
 
     val hubInfo: HubInfo
 
@@ -48,9 +47,9 @@ interface Hub {
 
     fun queryNewTransfer(blockAddress: Address): OffchainTransaction?
 
-    fun getProof(blockAddress: Address): AugmentedMerklePath?
+    fun getProof(blockAddress: Address): AMTPath?
 
-    fun getProof(eon: Int, blockAddress: Address): AugmentedMerklePath?
+    fun getProof(eon: Int, blockAddress: Address): AMTPath?
 
     fun currentEon(): Eon?
 

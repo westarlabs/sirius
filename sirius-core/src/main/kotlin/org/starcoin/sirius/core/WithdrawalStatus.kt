@@ -2,30 +2,35 @@ package org.starcoin.sirius.core
 
 import kotlinx.serialization.SerialId
 import kotlinx.serialization.Serializable
+import kotlinx.serialization.Transient
 import org.starcoin.proto.Starcoin
 import org.starcoin.proto.Starcoin.ProtoWithdrawalStatusType
 import org.starcoin.sirius.serialization.ProtobufSchema
 
-@ProtobufSchema(Starcoin.InitiateWithdrawalRequest::class)
+@ProtobufSchema(Starcoin.ProtoWithdrawalStatus::class)
 @Serializable
 data class WithdrawalStatus(
     @SerialId(1)
-    var withdrawal: Withdrawal = Withdrawal.DUMMY_WITHDRAWAL,
+    var type: WithdrawalStatusType = WithdrawalStatusType.INIT,
     @SerialId(2)
-    var type: WithdrawalStatusType = WithdrawalStatusType.INIT
+    val withdrawal: Withdrawal = Withdrawal.DUMMY_WITHDRAWAL
 ) : SiriusObject() {
 
+    @Transient
     val withdrawalAmount: Long
-        get() = this.withdrawal!!.amount
+        get() = this.withdrawal.amount
 
+    @Transient
     val status: Int
-        get() = this.type!!.number
+        get() = this.type.number
 
+    @Transient
     val isInit: Boolean
         get() = this.type == WithdrawalStatusType.INIT
 
+    @Transient
     val eon: Int
-        get() = this.withdrawal!!.path!!.eon
+        get() = this.withdrawal.path.eon
 
     fun pass() {
         if (isInit) {
@@ -51,7 +56,7 @@ data class WithdrawalStatus(
         var DUMMY_WITHDRAWAL_STATUS = WithdrawalStatus()
 
         override fun mock(): WithdrawalStatus {
-            return WithdrawalStatus(Withdrawal.mock(), WithdrawalStatusType.INIT)
+            return WithdrawalStatus(WithdrawalStatusType.INIT, Withdrawal.mock())
         }
     }
 }

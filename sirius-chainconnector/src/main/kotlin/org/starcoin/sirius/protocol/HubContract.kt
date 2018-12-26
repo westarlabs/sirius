@@ -7,8 +7,8 @@ import org.starcoin.sirius.core.*
 interface HubContract {
 
     fun queryHubInfo(): HubInfo
-    fun queryLeastHubCommit(): AugmentedMerkleTree.AugmentedMerkleTreeNode
-    fun queryHubCommit(eon: Int): AugmentedMerkleTree.AugmentedMerkleTreeNode
+    fun queryLeastHubCommit(): AMTNode
+    fun queryHubCommit(eon: Int): AMTNode
     fun queryCurrentBalanceUpdateChallenge(address: Address): BalanceUpdateChallenge
     fun queryCurrentTransferDeliveryChallenge(address: Address): TransferDeliveryChallenge
     fun queryWithdrawalStatus(address: Address): WithdrawalStatus

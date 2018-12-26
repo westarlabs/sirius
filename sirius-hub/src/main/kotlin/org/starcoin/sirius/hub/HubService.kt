@@ -1,7 +1,6 @@
 package org.starcoin.sirius.hub
 
 import org.starcoin.sirius.core.*
-import org.starcoin.sirius.core.AugmentedMerkleTree.AugmentedMerkleTreeNode
 import org.starcoin.sirius.hub.Hub.MaliciousFlag
 import java.security.KeyPair
 import java.security.PublicKey
@@ -24,7 +23,7 @@ class HubService(private val hubKeyPair: KeyPair, blocksPerEon: Int, connection:
     val hubPublicKey: PublicKey
         get() = this.hubKeyPair.public
 
-    val stateRoot: AugmentedMerkleTreeNode
+    val stateRoot: AMTNode
         get() = this.hub.stateRoot
 
     val hubInfo: HubInfo
@@ -68,11 +67,11 @@ class HubService(private val hubKeyPair: KeyPair, blocksPerEon: Int, connection:
         return hubAccount?.update
     }
 
-    fun getProof(blockAddress: Address): AugmentedMerklePath? {
+    fun getProof(blockAddress: Address): AMTPath? {
         return hub.getProof(blockAddress)
     }
 
-    fun getProof(eon: Int, blockAddress: Address): AugmentedMerklePath? {
+    fun getProof(eon: Int, blockAddress: Address): AMTPath? {
         return hub.getProof(eon, blockAddress)
     }
 

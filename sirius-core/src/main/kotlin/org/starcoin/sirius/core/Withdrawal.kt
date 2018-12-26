@@ -11,23 +11,17 @@ data class Withdrawal(
     @SerialId(1)
     var address: Address = Address.DUMMY_ADDRESS,
     @SerialId(2)
-    var path: AugmentedMerklePath = AugmentedMerklePath(),
+    var path: AMTPath = AMTPath.DUMMY_PATH,
     @SerialId(3)
     var amount: Long = 0
 ) : SiriusObject() {
-
-    constructor(init: Starcoin.InitiateWithdrawalRequest) : this(
-        Address.wrap(init.address),
-        AugmentedMerklePath(init.path),
-        init.amount
-    )
 
     companion object : SiriusObjectCompanion<Withdrawal, Starcoin.InitiateWithdrawalRequest>(Withdrawal::class) {
 
         var DUMMY_WITHDRAWAL = Withdrawal()
 
         override fun mock(): Withdrawal {
-            return Withdrawal(Address.DUMMY_ADDRESS, AugmentedMerklePath(), 0)
+            return Withdrawal(Address.DUMMY_ADDRESS, AMTPath.DUMMY_PATH, 0)
         }
     }
 }

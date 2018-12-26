@@ -49,13 +49,13 @@ class MerkleTree(private val root: MerkleTreeNode) : Hashable {
         val node = this.findTreeNode(nodeHash) ?: return null
         val path = MerklePath(mutableListOf(MerklePathNode(node.hash(), node.direction)))
         var siblingNode: MerkleTreeNode = node.sibling ?: return null
-        path.append(siblingNode, siblingNode.direction)
+        path.append(siblingNode)
 
-        var parent = node.parent ?: return null
+        var parent = node.parent ?: return path
         while (parent.parent != null) {
-            siblingNode = parent.sibling ?: return null
-            path.append(siblingNode, siblingNode.direction)
-            parent = parent.parent ?: return null
+            siblingNode = parent.sibling ?: return path
+            path.append(siblingNode)
+            parent = parent.parent ?: return path
         }
         return path
     }

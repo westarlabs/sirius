@@ -5,6 +5,7 @@ import kotlinx.serialization.Serializable
 import org.starcoin.proto.Starcoin
 import org.starcoin.sirius.crypto.CryptoService
 import org.starcoin.sirius.serialization.ProtobufSchema
+import org.starcoin.sirius.serialization.PublicKeySerializer
 
 import java.security.PublicKey
 
@@ -12,9 +13,10 @@ import java.security.PublicKey
 @Serializable
 data class BalanceUpdateChallenge(
     @SerialId(1)
-    var proof: BalanceUpdateProof = BalanceUpdateProof.DUMMY_BALANCE_UPDATE_PROOF,
+    val proof: BalanceUpdateProof = BalanceUpdateProof.DUMMY_BALANCE_UPDATE_PROOF,
     @SerialId(2)
-    var publicKey: PublicKey = CryptoService.instance.loadPublicKey(ByteArray(32))
+    @Serializable(with = PublicKeySerializer::class)
+    val publicKey: PublicKey = CryptoService.getDummyCryptoKey().getKeyPair().public
 ) : SiriusObject() {
     companion object :
         SiriusObjectCompanion<BalanceUpdateChallenge, Starcoin.ProtoBalanceUpdateChallenge>(BalanceUpdateChallenge::class) {
@@ -24,7 +26,7 @@ data class BalanceUpdateChallenge(
         override fun mock(): BalanceUpdateChallenge {
             return BalanceUpdateChallenge(
                 BalanceUpdateProof.mock(),
-                CryptoService.instance.loadPublicKey(ByteArray(32))
+                CryptoService.getDummyCryptoKey().getKeyPair().public
             )
         }
     }

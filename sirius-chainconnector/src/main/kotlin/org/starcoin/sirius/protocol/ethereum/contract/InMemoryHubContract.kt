@@ -14,11 +14,11 @@ class InMemoryHubContract(contract: SolidityContract) : HubContract{
         TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
     }
 
-    override fun queryLeastHubCommit(): AugmentedMerkleTree.AugmentedMerkleTreeNode {
+    override fun queryLeastHubCommit(): AMTNode {
         TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
     }
 
-    override fun queryHubCommit(eon: Int): AugmentedMerkleTree.AugmentedMerkleTreeNode {
+    override fun queryHubCommit(eon: Int): AMTNode {
         TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
     }
 

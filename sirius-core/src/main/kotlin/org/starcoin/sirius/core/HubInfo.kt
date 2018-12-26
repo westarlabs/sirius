@@ -1,91 +1,40 @@
 package org.starcoin.sirius.core
 
-import com.google.protobuf.ByteString
-import org.starcoin.sirius.core.AugmentedMerkleTree.AugmentedMerkleTreeNode
+import kotlinx.serialization.SerialId
+import kotlinx.serialization.Serializable
+import org.apache.commons.lang3.RandomUtils
 import org.starcoin.proto.Starcoin.ProtoHubInfo
-import org.starcoin.sirius.util.KeyPairUtil
-
+import org.starcoin.sirius.crypto.CryptoService
+import org.starcoin.sirius.serialization.ProtobufSchema
+import org.starcoin.sirius.serialization.PublicKeySerializer
 import java.security.PublicKey
-import java.util.Objects
 
-class HubInfo : ProtobufCodec<ProtoHubInfo> {
+@ProtobufSchema(ProtoHubInfo::class)
+@Serializable
+data class HubInfo(
+    @SerialId(1)
+    val isReady: Boolean = false,
+    @SerialId(2)
+    val eon: Int = 0,
+    @SerialId(3)
+    val blocksPerEon: Int = 4,
+    @SerialId(4)
+    val root: AMTPathInternalNode = AMTPathInternalNode.DUMMY_NODE,
+    @SerialId(5)
+    @Serializable(with = PublicKeySerializer::class)
+    val publicKey: PublicKey = CryptoService.getDummyCryptoKey().getKeyPair().public
+) : SiriusObject() {
 
-    var isReady: Boolean = false
-        private set
-    var blocksPerEon: Int = 0
-        private set
-    var eon: Int = 0
-        private set
-    var root: AugmentedMerkleTreeNode? = null
-        private set
-    var publicKey: PublicKey? = null
-        private set
-
-
-    constructor() {}
-
-    constructor(ready: Boolean, blocksPerEon: Int) {
-        this.isReady = ready
-        this.blocksPerEon = blocksPerEon
-    }
-
-    constructor(
-        ready: Boolean, blocksPerEon: Int, eon: Int,
-        root: AugmentedMerkleTreeNode, publicKey: PublicKey
-    ) {
-        this.isReady = ready
-        this.blocksPerEon = blocksPerEon
-        this.eon = eon
-        this.root = root
-        this.publicKey = publicKey
-    }
-
-    constructor(proto: ProtoHubInfo) {
-        this.unmarshalProto(proto)
-    }
-
-    override fun marshalProto(): ProtoHubInfo {
-        val builder = ProtoHubInfo.newBuilder().setReady(isReady).setBlocksPerEon(blocksPerEon)
-        if (this.isReady) {
-            builder
-                .setEon(eon)
-                .setRoot(root!!.toProto()).publicKey =
-                    ByteString.copyFrom(KeyPairUtil.encodePublicKey(this.publicKey!!))
+    companion object : SiriusObjectCompanion<HubInfo, ProtoHubInfo>(HubInfo::class) {
+        override fun mock(): HubInfo {
+            return HubInfo(
+                RandomUtils.nextBoolean(),
+                RandomUtils.nextInt(10, 100) * 4,
+                RandomUtils.nextInt(),
+                AMTPathInternalNode.mock(),
+                CryptoService.generateCryptoKey().getKeyPair().public
+            )
         }
-        return builder.build()
-    }
 
-    override fun unmarshalProto(proto: ProtoHubInfo) {
-        this.isReady = proto.ready
-        this.eon = proto.eon
-        this.root = if (proto.hasRoot()) AugmentedMerkleTreeNode(proto.root) else null
-        this.publicKey = if (proto.publicKey.isEmpty)
-            null
-        else
-            KeyPairUtil.recoverPublicKey(proto.publicKey.toByteArray())
-        this.blocksPerEon = proto.blocksPerEon
-    }
-
-    override fun equals(o: Any?): Boolean {
-        if (this === o) {
-            return true
-        }
-        if (o !is HubInfo) {
-            return false
-        }
-        val hubInfo = o as HubInfo?
-        return (isReady == hubInfo!!.isReady
-                && eon == hubInfo.eon
-                && blocksPerEon == hubInfo.blocksPerEon
-                && root == hubInfo.root
-                && publicKey == hubInfo.publicKey)
-    }
-
-    override fun hashCode(): Int {
-        return Objects.hash(isReady, eon, root, publicKey, blocksPerEon)
-    }
-
-    override fun toString(): String {
-        return this.toJson()
     }
 }

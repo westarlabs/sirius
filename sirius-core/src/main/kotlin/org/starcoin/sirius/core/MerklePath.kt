@@ -17,8 +17,8 @@ data class MerklePath(@SerialId(1) private val nodes: MutableList<MerklePathNode
     val leafNode: MerklePathNode
         get() = nodes[0]
 
-    fun append(node: MerkleTreeNode, direction: Direction) {
-        this.nodes.add(MerklePathNode(node.hash(), direction))
+    fun append(node: MerkleTreeNode) {
+        this.nodes.add(MerklePathNode(node.hash(), node.direction))
     }
 
     fun append(nodeHash: Hash, direction: Direction) {

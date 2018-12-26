@@ -13,7 +13,7 @@ data class OpenTransferDeliveryChallengeRequest(
     @SerialId(2)
     var tran: OffchainTransaction = OffchainTransaction.DUMMY_OFFCHAIN_TRAN,
     @SerialId(3)
-    var path: AugmentedMerklePath = AugmentedMerklePath()
+    var path: AMTPath = AMTPath.DUMMY_PATH
 ) : SiriusObject() {
     companion object :
         SiriusObjectCompanion<OpenTransferDeliveryChallengeRequest, Starcoin.OpenTransferDeliveryChallengeRequest>(
@@ -26,7 +26,7 @@ data class OpenTransferDeliveryChallengeRequest(
             return OpenTransferDeliveryChallengeRequest(
                 Update.mock(),
                 OffchainTransaction.mock(),
-                AugmentedMerklePath()
+                AMTPath.mock()
             )
         }
     }

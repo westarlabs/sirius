@@ -6,7 +6,6 @@ import org.junit.Before
 import org.junit.Test
 import org.starcoin.proto.Starcoin.InitiateWithdrawalRequest
 import org.starcoin.sirius.core.*
-import org.starcoin.sirius.core.AugmentedMerkleTree.AugmentedMerkleTreeNode
 import org.starcoin.sirius.hub.Hub.MaliciousFlag
 import org.starcoin.sirius.util.KeyPairUtil
 import java.security.KeyPair
@@ -27,7 +26,7 @@ class HubTest {
 
     //internal var globalBalance: GlobalBalance
 
-    private var root: AugmentedMerkleTreeNode? = null
+    private var root: AMTNode? = null
 
     private var totalHubBalance = AtomicLong()
 

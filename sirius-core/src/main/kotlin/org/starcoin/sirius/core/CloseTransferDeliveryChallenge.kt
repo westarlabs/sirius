@@ -9,7 +9,7 @@ import org.starcoin.sirius.serialization.ProtobufSchema
 @Serializable
 data class CloseTransferDeliveryChallenge(
     @SerialId(1)
-    var merklePath: AugmentedMerklePath = AugmentedMerklePath(),
+    var merklePath: AMTPath = AMTPath.DUMMY_PATH,
     @SerialId(2)
     var update: Update = Update.DUMMY_UPDATE,
     @SerialId(3)
@@ -26,7 +26,7 @@ data class CloseTransferDeliveryChallenge(
 
         override fun mock(): CloseTransferDeliveryChallenge {
             return CloseTransferDeliveryChallenge(
-                AugmentedMerklePath(),
+                AMTPath.mock(),
                 Update.mock(),
                 MerklePath.mock(),
                 Participant.mock()
