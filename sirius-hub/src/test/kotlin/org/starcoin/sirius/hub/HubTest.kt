@@ -26,7 +26,7 @@ class HubTest {
 
     //internal var globalBalance: GlobalBalance
 
-    private var root: AMTNode? = null
+    private var root: AMTreeNode? = null
 
     private var totalHubBalance = AtomicLong()
 
@@ -330,7 +330,7 @@ class HubTest {
         Assert.assertEquals(proof, proof1)
 
         Assert.assertNotNull(proof)
-        Assert.assertTrue(AugmentedMerkleTree.verifyMembershipProof(root!!, proof))
+        Assert.assertTrue(AMTree.verifyMembershipProof(root!!, proof))
         account.hubAccount = hub!!.getHubAccount(account.address)
     }
 }

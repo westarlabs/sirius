@@ -12,7 +12,7 @@ interface Hub {
 
     var hubMaliciousFlag: EnumSet<MaliciousFlag>
 
-    val stateRoot: AMTNode
+    val stateRoot: AMTreeNode
 
     val hubInfo: HubInfo
 
@@ -47,9 +47,9 @@ interface Hub {
 
     fun queryNewTransfer(blockAddress: Address): OffchainTransaction?
 
-    fun getProof(blockAddress: Address): AMTPath?
+    fun getProof(blockAddress: Address): AMTreePath?
 
-    fun getProof(eon: Int, blockAddress: Address): AMTPath?
+    fun getProof(eon: Int, blockAddress: Address): AMTreePath?
 
     fun currentEon(): Eon?
 

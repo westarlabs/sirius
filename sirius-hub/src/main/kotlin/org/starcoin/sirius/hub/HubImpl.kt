@@ -54,7 +54,7 @@ class HubImpl(
             )
         }
 
-    override val stateRoot: AMTNode
+    override val stateRoot: AMTreeNode
         get() = this.eonState!!.state!!.root!!
 
     override var hubMaliciousFlag: EnumSet<Hub.MaliciousFlag>
@@ -260,11 +260,11 @@ class HubImpl(
         )
     }
 
-    override fun getProof(blockAddress: Address): AMTPath? {
+    override fun getProof(blockAddress: Address): Starcoin.AMTreePath? {
         return this.getProof(this.eonState!!.eon, blockAddress)
     }
 
-    override fun getProof(eon: Int, blockAddress: Address): AMTPath? {
+    override fun getProof(eon: Int, blockAddress: Address): Starcoin.AMTreePath? {
         this.checkReady()
         val eonState = this.getEonState(eon) ?: return null
         return eonState!!.state!!.getMembershipProof(blockAddress)

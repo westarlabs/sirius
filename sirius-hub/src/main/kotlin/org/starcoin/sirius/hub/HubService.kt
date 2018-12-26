@@ -23,7 +23,7 @@ class HubService(private val hubKeyPair: KeyPair, blocksPerEon: Int, connection:
     val hubPublicKey: PublicKey
         get() = this.hubKeyPair.public
 
-    val stateRoot: AMTNode
+    val stateRoot: AMTreeNode
         get() = this.hub.stateRoot
 
     val hubInfo: HubInfo
@@ -67,11 +67,11 @@ class HubService(private val hubKeyPair: KeyPair, blocksPerEon: Int, connection:
         return hubAccount?.update
     }
 
-    fun getProof(blockAddress: Address): AMTPath? {
+    fun getProof(blockAddress: Address): AMTreePath? {
         return hub.getProof(blockAddress)
     }
 
-    fun getProof(eon: Int, blockAddress: Address): AMTPath? {
+    fun getProof(eon: Int, blockAddress: Address): AMTreePath? {
         return hub.getProof(eon, blockAddress)
     }
 

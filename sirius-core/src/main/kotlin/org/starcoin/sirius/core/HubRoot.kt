@@ -10,7 +10,7 @@ import org.starcoin.sirius.serialization.ProtobufSchema
 @Serializable
 data class HubRoot(
     @SerialId(1)
-    val root: AMTPathInternalNode = AMTPathInternalNode.DUMMY_NODE,
+    val root: AMTreePathInternalNode = AMTreePathInternalNode.DUMMY_NODE,
     @SerialId(2)
     val eon: Int = 0
 ) : SiriusObject() {
@@ -21,7 +21,7 @@ data class HubRoot(
         override fun mock(): HubRoot {
             var node = NodeInformation.mock()
             return HubRoot(
-                AMTPathInternalNode.mock(), RandomUtils.nextInt()
+                AMTreePathInternalNode.mock(), RandomUtils.nextInt()
             )
         }
     }

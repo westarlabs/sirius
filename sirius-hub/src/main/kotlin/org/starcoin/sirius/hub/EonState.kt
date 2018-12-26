@@ -8,7 +8,7 @@ import java.util.stream.Collectors
 
 class EonState @JvmOverloads constructor(val eon: Int, val previous: EonState? = null) {
     private val accounts: MutableList<HubAccount>
-    var state: AugmentedMerkleTree? = null
+    var state: AMTree? = null
         private set
     var currentEpoch: Epoch? = null
         private set
@@ -24,9 +24,9 @@ class EonState @JvmOverloads constructor(val eon: Int, val previous: EonState? =
                 .stream()
                 .map { it.toNewAccountInformation() }
                 .collect(Collectors.toList<AccountInformation>())
-            this.state = AugmentedMerkleTree(this.eon, accountInformations)
+            this.state = AMTree(this.eon, accountInformations)
         } else {
-            this.state = AugmentedMerkleTree(this.eon, ArrayList())
+            this.state = AMTree(this.eon, ArrayList())
         }
         this.senderIOUs = ConcurrentHashMap()
         this.receiverIOUs = ConcurrentHashMap()

@@ -61,27 +61,20 @@ message ProtoNodeInfo {
     required bytes right = 3;
 }
 
-message ProtoAugmentedMerkleTreeNode {
-    required uint64 offset = 1;
-    optional ProtoNodeInfo node = 2;
-    optional ProtoAccountInfo account = 3;
-    required uint64 allotment = 4;
-}
-
-message AMTInternalNodeInfo{
+message AMTreeInternalNodeInfo{
     required bytes left = 1;
     required uint64 offset = 2;
     required bytes right = 3;
 }
 
-message AMTLeafNodeInfo{
+message AMTreeLeafNodeInfo{
     required bytes addressHash = 1;
     required Update update  = 2;
 }
 
 message InitiateWithdrawalRequest {
     required bytes address = 1;
-    required AMTPath path = 2;
+    required AMTreePath path = 2;
     required uint64 amount = 3;
 }
 
@@ -104,29 +97,29 @@ enum ProtoMerklePathDirection {
     DIRECTION_RIGTH = 2;
 }
 
-message AMTPathInternalNode {
-    required AMTInternalNodeInfo nodeInfo = 1;
+message AMTreePathInternalNode {
+    required AMTreeInternalNodeInfo nodeInfo = 1;
     required ProtoMerklePathDirection direction = 2;
     required uint64 offset = 3;
     required uint64 allotment = 4;
 }
 
-message AMTPathLeafNode {
-    required AMTLeafNodeInfo nodeInfo = 1;
+message AMTreePathLeafNode {
+    required AMTreeLeafNodeInfo nodeInfo = 1;
     required ProtoMerklePathDirection direction = 2;
     required uint64 offset = 3;
     required uint64 allotment = 4;
 }
 
-message AMTPath {
+message AMTreePath {
     required uint32 eon = 1;
-    required AMTPathLeafNode leaf = 2;
-    repeated AMTPathInternalNode nodes = 3;
+    required AMTreePathLeafNode leaf = 2;
+    repeated AMTreePathInternalNode nodes = 3;
 }
 
-message AMTProof {
-    required AMTPath path = 1;
-    required AMTPathLeafNode leaf = 2;
+message AMTreeProof {
+    required AMTreePath path = 1;
+    required AMTreePathLeafNode leaf = 2;
 }
 
 //UpdateData
@@ -158,7 +151,7 @@ message ProtoParticipantGang {
 message CancelWithdrawalRequest {
     required ProtoParticipant participant = 1;
     required Update update = 2;
-    required AMTPath path = 3;
+    required AMTreePath path = 3;
 }
 
 message ProtoBalanceUpdateChallenge {
@@ -168,7 +161,7 @@ message ProtoBalanceUpdateChallenge {
 
 message ProtoBalanceUpdateProof {
     required Update update = 1;
-    required AMTPath path = 2;
+    required AMTreePath path = 2;
 }
 
 message RegisterParticipantRequest {
@@ -181,7 +174,7 @@ message QueryHubCommitRequest {
 }
 
 message ProtoHubRoot {
-    required AMTPathInternalNode root = 1;
+    required AMTreePathInternalNode root = 1;
     required uint32 eon = 2;
 }
 
@@ -195,7 +188,7 @@ message ProtoHubInfo {
     required bool ready = 1;
     required uint32 eon = 2;
     required uint32 blocksPerEon = 3;
-    required AMTPathInternalNode root = 4;
+    required AMTreePathInternalNode root = 4;
     required bytes publicKey = 5;
 
 }
@@ -249,14 +242,14 @@ message OpenTransferDeliveryChallengeRequest {
 }
 
 message CloseTransferDeliveryChallengeRequest {
-    required AMTPath balancePath = 1;
+    required AMTreePath balancePath = 1;
     required Update update = 2;
     required ProtoMerklePath transPath = 3;
     required bytes toUserPublicKey = 4;
 }
 
 message RecoverFundsRequest {
-    required AMTPath path = 1;
+    required AMTreePath path = 1;
     required bytes address = 2;
 }
 
@@ -386,8 +379,8 @@ service HubService {
     rpc receiveNewTransfer (ProtoIOU) returns (SuccResponse);
     rpc queryUpdate (ProtoBlockAddress) returns (Update);
     rpc queryUpdateWithEon (BlockAddressAndEon) returns (Update);
-    rpc getProof (ProtoBlockAddress) returns (AMTPath);
-    rpc getProofWithEon (BlockAddressAndEon) returns (AMTPath);
+    rpc getProof (ProtoBlockAddress) returns (AMTreePath);
+    rpc getProofWithEon (BlockAddressAndEon) returns (AMTreePath);
     rpc getHubInfo (google.protobuf.Empty) returns (ProtoHubInfo);
     rpc watch (ProtoBlockAddress) returns (stream ProtoHubEvent);
     rpc watchHubRoot (google.protobuf.Empty) returns (stream ProtoHubRoot);

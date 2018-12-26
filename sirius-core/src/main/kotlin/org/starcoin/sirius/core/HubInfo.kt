@@ -19,7 +19,7 @@ data class HubInfo(
     @SerialId(3)
     val blocksPerEon: Int = 4,
     @SerialId(4)
-    val root: AMTPathInternalNode = AMTPathInternalNode.DUMMY_NODE,
+    val root: AMTreePathInternalNode = AMTreePathInternalNode.DUMMY_NODE,
     @SerialId(5)
     @Serializable(with = PublicKeySerializer::class)
     val publicKey: PublicKey = CryptoService.getDummyCryptoKey().getKeyPair().public
@@ -31,7 +31,7 @@ data class HubInfo(
                 RandomUtils.nextBoolean(),
                 RandomUtils.nextInt(10, 100) * 4,
                 RandomUtils.nextInt(),
-                AMTPathInternalNode.mock(),
+                AMTreePathInternalNode.mock(),
                 CryptoService.generateCryptoKey().getKeyPair().public
             )
         }

@@ -13,7 +13,7 @@ data class CancelWithdrawal(
     @SerialId(2)
     var update: Update = Update.DUMMY_UPDATE,
     @SerialId(3)
-    var path: AMTPath = AMTPath.DUMMY_PATH
+    var path: AMTreePath = AMTreePath.DUMMY_PATH
 ) : SiriusObject() {
     companion object :
         SiriusObjectCompanion<CancelWithdrawal, Starcoin.CancelWithdrawalRequest>(CancelWithdrawal::class) {
@@ -21,7 +21,7 @@ data class CancelWithdrawal(
         var DUMMY_CANCEL_WITHDRAWAL = CancelWithdrawal()
 
         override fun mock(): CancelWithdrawal {
-            return CancelWithdrawal(Participant.mock(), Update.mock(), AMTPath.mock())
+            return CancelWithdrawal(Participant.mock(), Update.mock(), AMTreePath.mock())
         }
     }
 }

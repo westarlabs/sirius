@@ -9,7 +9,7 @@ import org.starcoin.sirius.serialization.ProtobufSchema
 @Serializable
 data class RecoverFunds(
     @SerialId(1)
-    var path: AMTPath = AMTPath.DUMMY_PATH,
+    var path: AMTreePath = AMTreePath.DUMMY_PATH,
     @SerialId(2)
     var addr: Address = Address.DUMMY_ADDRESS
 ) : SiriusObject() {
@@ -18,7 +18,7 @@ data class RecoverFunds(
         var DUMMY_RECOVER_FUND = RecoverFunds()
 
         override fun mock(): RecoverFunds {
-            return RecoverFunds(AMTPath.mock(), Address.DUMMY_ADDRESS)
+            return RecoverFunds(AMTreePath.mock(), Address.DUMMY_ADDRESS)
         }
     }
 }
