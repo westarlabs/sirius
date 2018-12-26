@@ -12,13 +12,19 @@ message ProtoMsgPong {
     required uint64 nonce = 1; //newNonce from MsgPing
 }
 
+enum TestEnum {
+    TEST_ENUM_ZERO = 0;
+    TEST_ENUM_ONE = 1;
+}
+
 //just for test
-message TestData{
+message TestData {
     required bool booleanValue = 1;
     required uint32 intValue = 2;
-    required bytes stringValue = 3;
-    required bytes bytesValue = 4;
-    optional bytes optionalValue = 5;
+    required TestEnum enumValue = 3;
+    required bytes stringValue = 4;
+    required bytes bytesValue = 5;
+    optional bytes optionalValue = 6;
 }
 
 message SuccResponse {
