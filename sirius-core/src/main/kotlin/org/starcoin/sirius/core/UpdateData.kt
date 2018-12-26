@@ -2,9 +2,9 @@ package org.starcoin.sirius.core
 
 import kotlinx.serialization.SerialId
 import kotlinx.serialization.Serializable
-import org.apache.commons.lang3.RandomUtils
 import org.starcoin.proto.Starcoin
 import org.starcoin.sirius.serialization.ProtobufSchema
+import org.starcoin.sirius.util.MockUtils
 
 @Serializable
 @ProtobufSchema(Starcoin.UpdateData::class)
@@ -29,10 +29,10 @@ data class UpdateData(
 
         override fun mock(): UpdateData {
             return UpdateData(
-                RandomUtils.nextInt(),
-                RandomUtils.nextLong(),
-                RandomUtils.nextLong(),
-                RandomUtils.nextLong(),
+                MockUtils.nextInt(),
+                MockUtils.nextLong(),
+                MockUtils.nextLong(),
+                MockUtils.nextLong(),
                 Hash.random()
             )
         }

@@ -6,11 +6,11 @@ import com.google.common.io.ByteStreams
 import com.google.common.primitives.Ints
 import com.google.protobuf.ByteString
 import kotlinx.serialization.*
-import org.apache.commons.lang3.RandomUtils
 import org.starcoin.sirius.crypto.CryptoService
 import org.starcoin.sirius.serialization.BinaryDecoder
 import org.starcoin.sirius.serialization.BinaryEncoder
 import org.starcoin.sirius.util.HashUtil
+import org.starcoin.sirius.util.MockUtils
 import org.starcoin.sirius.util.Utils
 import java.io.File
 import java.io.FileInputStream
@@ -226,7 +226,7 @@ class Hash private constructor(internal val bytes: ByteArray) : Comparable<Hash>
         }
 
         fun random(): Hash {
-            return Hash.of(RandomUtils.nextBytes(LENGTH))
+            return Hash.of(MockUtils.nextBytes(LENGTH))
         }
     }
 }

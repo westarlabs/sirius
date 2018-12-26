@@ -3,11 +3,11 @@ package org.starcoin.sirius.core
 
 import kotlinx.serialization.SerialId
 import kotlinx.serialization.Serializable
-import org.apache.commons.lang3.RandomUtils
 import org.starcoin.proto.Starcoin.ProtoOffchainTransaction
 import org.starcoin.sirius.crypto.CryptoKey
 import org.starcoin.sirius.crypto.CryptoService
 import org.starcoin.sirius.serialization.ProtobufSchema
+import org.starcoin.sirius.util.MockUtils
 import java.security.PrivateKey
 import java.security.PublicKey
 
@@ -73,10 +73,10 @@ data class OffchainTransaction(@SerialId(1) val data: OffchainTransactionData, @
 
         override fun mock(): OffchainTransaction {
             return OffchainTransaction(
-                RandomUtils.nextInt(),
+                MockUtils.nextInt(),
                 CryptoService.getDummyCryptoKey().getAddress(),
                 Address.random(),
-                RandomUtils.nextLong()
+                MockUtils.nextLong()
             )
         }
 

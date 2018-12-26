@@ -5,12 +5,12 @@ import kotlinx.serialization.Optional
 import kotlinx.serialization.SerialId
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.Transient
-import org.apache.commons.lang3.RandomUtils
 import org.starcoin.proto.Starcoin.ProtoHubAccount
 import org.starcoin.sirius.crypto.CryptoService
 import org.starcoin.sirius.serialization.ProtobufSchema
 import org.starcoin.sirius.serialization.PublicKeySerializer
 import org.starcoin.sirius.serialization.toByteString
+import org.starcoin.sirius.util.MockUtils
 import java.security.PublicKey
 import java.util.*
 import java.util.stream.Collectors
@@ -33,6 +33,9 @@ data class HubAccount(
     @Optional
     private val transactions: MutableList<OffchainTransaction> = mutableListOf()
 ) : SiriusObject() {
+    init {
+        assert(checkBalance())
+    }
 
     @Transient
     val address = Address.getAddress(publicKey)
@@ -41,9 +44,9 @@ data class HubAccount(
     val balance: Long
         get() = ((this.allotment
                 + deposit
-                + update.data!!.receiveAmount)
+                + update.data.receiveAmount)
                 - this.withdraw
-                - update.data!!.sendAmount)
+                - update.data.sendAmount)
 
     fun appendTransaction(tx: OffchainTransaction, update: Update) {
         this.checkUpdate(tx, update)
@@ -97,12 +100,7 @@ data class HubAccount(
         return this.balance >= 0
     }
 
-    fun toNewAccountInformation(): AccountInformation {
-        val allotment = this.calculateNewAllotment()
-        return AccountInformation(address, update, allotment)
-    }
-
-    private fun calculateNewAllotment(): Long {
+    fun calculateNewAllotment(): Long {
         val allotment = this.balance
         assert(allotment >= 0)
         return allotment
@@ -115,15 +113,22 @@ data class HubAccount(
 
     companion object : SiriusObjectCompanion<HubAccount, ProtoHubAccount>(HubAccount::class) {
         override fun mock(): HubAccount {
+            val update = Update.mock()
+            val deposit = MockUtils.nextLong()
+            val withdraw = MockUtils.nextLong()
+            val allotment = MockUtils.nextLong(
+                Math.abs(update.receiveAmount + deposit - withdraw - update.sendAmount),
+                Long.MAX_VALUE / 2
+            )
             val hubAccount = HubAccount(
                 CryptoService.generateCryptoKey().getKeyPair().public,
-                Update.mock(),
-                RandomUtils.nextLong(),
-                RandomUtils.nextLong(),
-                RandomUtils.nextLong()
+                update,
+                allotment,
+                deposit,
+                withdraw
             )
-            if (RandomUtils.nextBoolean()) {
-                for (i in 1..RandomUtils.nextInt(2, 10)) {
+            if (MockUtils.nextBoolean()) {
+                for (i in 1..MockUtils.nextInt(2, 10)) {
                     hubAccount.transactions.add(OffchainTransaction.mock())
                 }
             }

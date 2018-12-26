@@ -3,10 +3,10 @@ package org.starcoin.sirius.core
 import com.google.protobuf.ByteString
 import com.google.protobuf.GeneratedMessageV3
 import io.grpc.MethodDescriptor.Marshaller
-import org.apache.commons.lang3.RandomUtils
 import org.starcoin.proto.Starcoin
 import org.starcoin.proto.Starcoin.ProtoChainTransaction
 import org.starcoin.sirius.util.KeyPairUtil
+import org.starcoin.sirius.util.MockUtils
 import java.io.ByteArrayInputStream
 import java.security.KeyPair
 import java.util.*
@@ -165,7 +165,7 @@ open class ChainTransaction : ProtobufCodec<Starcoin.ProtoChainTransaction>, Cac
         val keyPair = context.getOrDefault("keyPair", KeyPairUtil.generateKeyPair())
         this.from = Address.getAddress(keyPair.public)
         this.to = Address.random()
-        this.amount = RandomUtils.nextLong()
+        this.amount = MockUtils.nextLong()
         this.timestamp = System.currentTimeMillis()
     }
 

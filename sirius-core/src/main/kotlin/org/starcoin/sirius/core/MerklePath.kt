@@ -3,10 +3,10 @@ package org.starcoin.sirius.core
 import kotlinx.serialization.SerialId
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.Transient
-import org.apache.commons.lang3.RandomUtils
 import org.starcoin.proto.Starcoin
 import org.starcoin.proto.Starcoin.ProtoMerklePathDirection
 import org.starcoin.sirius.serialization.ProtobufSchema
+import org.starcoin.sirius.util.MockUtils
 
 @ProtobufSchema(Starcoin.ProtoMerklePath::class)
 @Serializable
@@ -51,7 +51,7 @@ data class MerklePath(@SerialId(1) private val nodes: MutableList<MerklePathNode
             }
 
             fun random(): Direction {
-                return Direction.values()[RandomUtils.nextInt(0, Direction.values().size)]
+                return Direction.values()[MockUtils.nextInt(0, Direction.values().size)]
             }
         }
     }
@@ -59,7 +59,7 @@ data class MerklePath(@SerialId(1) private val nodes: MutableList<MerklePathNode
     companion object : SiriusObjectCompanion<MerklePath, Starcoin.ProtoMerklePath>(MerklePath::class) {
         override fun mock(): MerklePath {
             val path = MerklePath()
-            for (i in 0..RandomUtils.nextInt(0, 10)) {
+            for (i in 0..MockUtils.nextInt(0, 10)) {
                 path.append(MerklePathNode.mock())
             }
             return path

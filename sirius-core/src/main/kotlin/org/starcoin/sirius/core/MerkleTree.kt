@@ -1,6 +1,6 @@
 package org.starcoin.sirius.core
 
-import org.apache.commons.lang3.RandomUtils
+import org.starcoin.sirius.util.MockUtils
 import java.util.stream.Collectors
 
 class MerkleTree(private val root: MerkleTreeNode) : Hashable {
@@ -171,7 +171,7 @@ class MerkleTreeNode(val data: Hashable?, val left: MerkleTreeNode?, var right: 
         if (this.isLeafNode) {
             return this
         }
-        return if (RandomUtils.nextBoolean()) {
+        return if (MockUtils.nextBoolean()) {
             this.left
         } else {
             this.right

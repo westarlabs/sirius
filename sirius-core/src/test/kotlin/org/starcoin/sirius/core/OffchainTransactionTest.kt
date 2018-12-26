@@ -1,11 +1,11 @@
 package org.starcoin.sirius.core
 
 import com.google.protobuf.InvalidProtocolBufferException
-import org.apache.commons.lang3.RandomUtils
 import org.junit.Assert
 import org.junit.Test
 import org.starcoin.sirius.core.SiriusObject.Companion.parseFromProtobuf
 import org.starcoin.sirius.crypto.CryptoService
+import org.starcoin.sirius.util.MockUtils
 
 class OffchainTransactionTest {
 
@@ -15,7 +15,7 @@ class OffchainTransactionTest {
         val from = Address.random()
         val to = Address.random()
 
-        val tx = OffchainTransaction(0, from, to, RandomUtils.nextLong())
+        val tx = OffchainTransaction(0, from, to, MockUtils.nextLong())
 
         val hash = tx.hash()
 
@@ -31,7 +31,7 @@ class OffchainTransactionTest {
         val from = Address.random()
         val to = Address.random()
 
-        val tx = OffchainTransaction(0, from, to, RandomUtils.nextLong())
+        val tx = OffchainTransaction(0, from, to, MockUtils.nextLong())
 
         val hash = tx.hash()
 

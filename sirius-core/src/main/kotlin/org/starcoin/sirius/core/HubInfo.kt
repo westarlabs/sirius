@@ -2,11 +2,11 @@ package org.starcoin.sirius.core
 
 import kotlinx.serialization.SerialId
 import kotlinx.serialization.Serializable
-import org.apache.commons.lang3.RandomUtils
 import org.starcoin.proto.Starcoin.ProtoHubInfo
 import org.starcoin.sirius.crypto.CryptoService
 import org.starcoin.sirius.serialization.ProtobufSchema
 import org.starcoin.sirius.serialization.PublicKeySerializer
+import org.starcoin.sirius.util.MockUtils
 import java.security.PublicKey
 
 @ProtobufSchema(ProtoHubInfo::class)
@@ -28,9 +28,9 @@ data class HubInfo(
     companion object : SiriusObjectCompanion<HubInfo, ProtoHubInfo>(HubInfo::class) {
         override fun mock(): HubInfo {
             return HubInfo(
-                RandomUtils.nextBoolean(),
-                RandomUtils.nextInt(10, 100) * 4,
-                RandomUtils.nextInt(),
+                MockUtils.nextBoolean(),
+                MockUtils.nextInt(10, 100) * 4,
+                MockUtils.nextInt(),
                 AMTreePathInternalNode.mock(),
                 CryptoService.generateCryptoKey().getKeyPair().public
             )

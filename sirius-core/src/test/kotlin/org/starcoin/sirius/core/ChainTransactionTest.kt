@@ -1,11 +1,11 @@
 package org.starcoin.sirius.core
 
 import com.google.protobuf.InvalidProtocolBufferException
-import org.apache.commons.lang3.RandomUtils
 import org.junit.Assert
 import org.junit.Test
 import org.starcoin.proto.Starcoin
 import org.starcoin.sirius.util.KeyPairUtil
+import org.starcoin.sirius.util.MockUtils
 
 class ChainTransactionTest {
 
@@ -17,7 +17,7 @@ class ChainTransactionTest {
 
         val arguments = Starcoin.DepositRequest.newBuilder().setAddress(from.toByteString()).setAmount(100).build()
         val tx = ChainTransaction(from, to, System.currentTimeMillis(), 0, "test", arguments)
-        val ping = Starcoin.ProtoMsgPing.newBuilder().setNonce(RandomUtils.nextInt().toLong()).build()
+        val ping = Starcoin.ProtoMsgPing.newBuilder().setNonce(MockUtils.nextInt().toLong()).build()
         tx.receipt = Receipt(true, ping)
         Assert.assertNotNull(tx.arguments)
         Assert.assertEquals(arguments, tx.getArguments(Starcoin.DepositRequest::class.java))
@@ -48,7 +48,7 @@ class ChainTransactionTest {
     fun testContractTx() {
         val p0kp = KeyPairUtil.generateKeyPair()
         val p0 = Participant(p0kp.public)
-        val amount = RandomUtils.nextLong()
+        val amount = MockUtils.nextLong()
         val tx = ChainTransaction(p0.address!!, Constants.CONTRACT_ADDRESS, amount)
         tx.sign(p0kp)
         Assert.assertTrue(tx.verify())

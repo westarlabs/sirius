@@ -2,9 +2,9 @@ package org.starcoin.sirius.core
 
 import kotlinx.serialization.SerialId
 import kotlinx.serialization.Serializable
-import org.apache.commons.lang3.RandomUtils
 import org.starcoin.proto.Starcoin
 import org.starcoin.sirius.serialization.ProtobufSchema
+import org.starcoin.sirius.util.MockUtils
 
 //TODO ensure timestamp
 @Serializable
@@ -31,11 +31,11 @@ data class OffchainTransactionData(
 
         override fun mock(): OffchainTransactionData {
             return OffchainTransactionData(
-                RandomUtils.nextInt(),
+                MockUtils.nextInt(),
                 Address.random(),
                 Address.random(),
-                RandomUtils.nextLong(),
-                RandomUtils.nextLong()
+                MockUtils.nextLong(),
+                MockUtils.nextLong()
             )
         }
 

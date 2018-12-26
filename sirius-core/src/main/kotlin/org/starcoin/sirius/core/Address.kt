@@ -4,10 +4,10 @@ package org.starcoin.sirius.core
 import com.google.common.base.Preconditions
 import com.google.protobuf.ByteString
 import kotlinx.serialization.*
-import org.apache.commons.lang3.RandomUtils
 import org.starcoin.sirius.crypto.CryptoService
 import org.starcoin.sirius.serialization.BinaryDecoder
 import org.starcoin.sirius.serialization.BinaryEncoder
+import org.starcoin.sirius.util.MockUtils
 import org.starcoin.sirius.util.Utils
 import java.security.PublicKey
 
@@ -85,7 +85,7 @@ class Address private constructor(private val bytes: ByteArray) : CachedHash() {
         }
 
         fun random(): Address {
-            return Address(RandomUtils.nextBytes(LENGTH))
+            return Address(MockUtils.nextBytes(LENGTH))
         }
 
         fun getAddress(publicKey: PublicKey): Address {

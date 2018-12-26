@@ -1,7 +1,7 @@
 package org.starcoin.sirius.core
 
-import org.apache.commons.lang3.RandomUtils
 import org.starcoin.proto.Starcoin.ProtoBlockInfo
+import org.starcoin.sirius.util.MockUtils
 import java.util.*
 import java.util.stream.Collectors
 
@@ -24,7 +24,7 @@ class BlockInfo : ProtobufCodec<ProtoBlockInfo>, CachedHash {
 
     override fun hashData(): ByteArray {
         //TODO
-        return RandomUtils.nextBytes(100)
+        return MockUtils.nextBytes(100)
     }
 
     fun addTransaction(tx: ChainTransaction) {

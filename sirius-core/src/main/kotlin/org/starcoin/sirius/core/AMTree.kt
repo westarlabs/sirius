@@ -2,9 +2,9 @@ package org.starcoin.sirius.core
 
 import kotlinx.serialization.SerialId
 import kotlinx.serialization.Serializable
-import org.apache.commons.lang3.RandomUtils
 import org.starcoin.proto.Starcoin
 import org.starcoin.sirius.serialization.ProtobufSchema
+import org.starcoin.sirius.util.MockUtils
 import java.util.*
 import java.util.stream.Collectors
 
@@ -24,7 +24,7 @@ data class AMTreeInternalNodeInfo(
         val DUMMY_NODE = AMTreeInternalNodeInfo(Hash.EMPTY_DADA_HASH, 0, Hash.EMPTY_DADA_HASH)
 
         override fun mock(): AMTreeInternalNodeInfo {
-            return AMTreeInternalNodeInfo(Hash.random(), RandomUtils.nextLong(), Hash.random())
+            return AMTreeInternalNodeInfo(Hash.random(), MockUtils.nextLong(), Hash.random())
         }
     }
 }
@@ -146,7 +146,7 @@ class AMTree(
     private fun randomChild(node: AMTreeNode): AMTreeNode? {
         return when {
             node.isLeafNode -> node
-            RandomUtils.nextBoolean() -> node.left
+            MockUtils.nextBoolean() -> node.left
             else -> node.right
         }
     }
@@ -163,7 +163,7 @@ class AMTree(
                     val node = AMTreeNode(
                         prev[0],
                         AMTreeLeafNodeInfo(account.address.hash(), account.update),
-                        account.allotment
+                        account.calculateNewAllotment()
                     )
                     prev[0] = node
                     node
@@ -257,7 +257,7 @@ class AMTree(
         }
 
         fun random(): AMTree {
-            return random(RandomUtils.nextInt(1, 100))
+            return random(MockUtils.nextInt(1, 100))
         }
 
         fun random(count: Int): AMTree {

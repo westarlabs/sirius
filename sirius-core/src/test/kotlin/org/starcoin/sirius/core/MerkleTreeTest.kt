@@ -2,9 +2,9 @@ package org.starcoin.sirius.core
 
 import com.google.common.collect.Lists
 import org.apache.commons.lang3.RandomStringUtils
-import org.apache.commons.lang3.RandomUtils
 import org.junit.Assert
 import org.junit.Test
+import org.starcoin.sirius.util.MockUtils
 import java.util.*
 
 class MerkleTreeTest {
@@ -19,13 +19,13 @@ class MerkleTreeTest {
     @Test
     fun testMerkleTree() {
 
-        val leaves = RandomUtils.nextInt(1, 100)
+        val leaves = MockUtils.nextInt(1, 100)
 
         val tests = ArrayList<Hashable>()
         val tests2 = ArrayList<Hashable>()
         for (i in 0 until leaves) {
             val `object` = HashObject(
-                RandomStringUtils.randomAlphabetic(RandomUtils.nextInt(10, 100)).toByteArray()
+                RandomStringUtils.randomAlphabetic(MockUtils.nextInt(10, 100)).toByteArray()
             )
             tests.add(`object`)
             tests2.add(`object`)
@@ -40,7 +40,7 @@ class MerkleTreeTest {
 
     @Test
     fun testMembershipProof() {
-        val tree = generateRandomTree(RandomUtils.nextInt(10, 1000))
+        val tree = generateRandomTree(MockUtils.nextInt(10, 1000))
         val node = tree.randomLeafNode()
         val path = tree.getMembershipProof(node?.hash())
         Assert.assertTrue(MerkleTree.verifyMembershipProof(tree.getRoot().hash(), path, node?.data))
@@ -48,7 +48,7 @@ class MerkleTreeTest {
 
     @Test
     fun testMembershipProofNull() {
-        val tree = generateRandomTree(RandomUtils.nextInt(10, 1000))
+        val tree = generateRandomTree(MockUtils.nextInt(10, 1000))
         val node = tree.randomLeafNode()
         val path = tree.getMembershipProof(node?.hash())
         Assert.assertFalse(MerkleTree.verifyMembershipProof(tree.getRoot().hash(), path, null))
@@ -62,7 +62,7 @@ class MerkleTreeTest {
 
         for (i in 0 until count) {
             val tx = OffchainTransaction(
-                eon, Address.random(), Address.random(), RandomUtils.nextLong()
+                eon, Address.random(), Address.random(), MockUtils.nextLong()
             )
             txs.add(tx)
         }
@@ -73,7 +73,7 @@ class MerkleTreeTest {
 //    @Test
 //    @Throws(InvalidProtocolBufferException::class)
 //    fun testCodec() {
-//        val tree = generateRandomTree(RandomUtils.nextInt(10, 1000))
+//        val tree = generateRandomTree(MockUtils.nextInt(10, 1000))
 //        val node = tree.randomLeafNode()
 //        val path = tree.getMembershipProof(node.hash())
 //        val bytes = path.toProto().toByteString()
@@ -86,7 +86,7 @@ class MerkleTreeTest {
     fun testSingleNode() {
         val eon = 0
         val tx = OffchainTransaction(
-            eon, Address.random(), Address.random(), RandomUtils.nextLong()
+            eon, Address.random(), Address.random(), MockUtils.nextLong()
         )
         val tree = MerkleTree(Lists.newArrayList(tx))
         val path = tree.getMembershipProof(tx.hash())

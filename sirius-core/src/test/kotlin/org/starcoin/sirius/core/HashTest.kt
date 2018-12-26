@@ -1,16 +1,16 @@
 package org.starcoin.sirius.core
 
 import org.apache.commons.lang3.RandomStringUtils
-import org.apache.commons.lang3.RandomUtils
 import org.junit.Assert
 import org.junit.Test
+import org.starcoin.sirius.util.MockUtils
 import java.nio.ByteBuffer
 
 class HashTest {
 
     @Test
     fun testChainHash() {
-        val bytes = RandomStringUtils.randomAlphabetic(RandomUtils.nextInt(1, 1000)).toByteArray()
+        val bytes = RandomStringUtils.randomAlphabetic(MockUtils.nextInt(1, 1000)).toByteArray()
         val chainHash = Hash.of(bytes)
         val chainHash1 = Hash.of(ByteBuffer.allocate(bytes.size).put(bytes))
 
@@ -35,7 +35,7 @@ class HashTest {
 
     @Test
     fun testHash() {
-        val bytes = RandomUtils.nextBytes(RandomUtils.nextInt(1, 1024))
+        val bytes = MockUtils.nextBytes(MockUtils.nextInt(1, 1024))
         val buf = ByteBuffer.allocate(bytes.size)
         buf.put(bytes)
         buf.flip()
@@ -49,7 +49,7 @@ class HashTest {
 
     @Test
     fun testChecksum() {
-        val bytes = RandomUtils.nextBytes(RandomUtils.nextInt(1, 1024))
+        val bytes = MockUtils.nextBytes(MockUtils.nextInt(1, 1024))
         val buf = ByteBuffer.allocate(bytes.size)
         buf.put(bytes)
         buf.flip()
@@ -79,8 +79,8 @@ class HashTest {
 
     @Test
     fun testByteBuffer() {
-        val rand = RandomUtils.nextInt(10, 1024)
-        val buffer = ByteBuffer.allocate(rand).put(RandomUtils.nextBytes(rand))
+        val rand = MockUtils.nextInt(10, 1024)
+        val buffer = ByteBuffer.allocate(rand).put(MockUtils.nextBytes(rand))
         val hash = Hash.of(buffer)
 
         val hash1 = Hash.wrap(hash.toByteString())

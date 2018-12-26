@@ -1,9 +1,9 @@
 package org.starcoin.sirius.core
 
 import com.google.common.base.Preconditions
+import org.starcoin.sirius.util.MockUtils
 import java.net.InetSocketAddress
-import java.util.Objects
-import org.apache.commons.lang3.RandomUtils
+import java.util.*
 
 class InetAddressPort(val host: String, val port: Int) {
 
@@ -42,7 +42,7 @@ class InetAddressPort(val host: String, val port: Int) {
 
         fun random(): InetAddressPort {
             return InetAddressPort(
-                "127.0.0." + RandomUtils.nextInt(1, 256), RandomUtils.nextInt(1024, 10240)
+                "127.0.0." + MockUtils.nextInt(1, 256), MockUtils.nextInt(1024, 10240)
             )
         }
     }

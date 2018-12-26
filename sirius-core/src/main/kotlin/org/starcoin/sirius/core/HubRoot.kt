@@ -2,9 +2,9 @@ package org.starcoin.sirius.core
 
 import kotlinx.serialization.SerialId
 import kotlinx.serialization.Serializable
-import org.apache.commons.lang3.RandomUtils
 import org.starcoin.proto.Starcoin
 import org.starcoin.sirius.serialization.ProtobufSchema
+import org.starcoin.sirius.util.MockUtils
 
 @ProtobufSchema(Starcoin.ProtoHubRoot::class)
 @Serializable
@@ -19,9 +19,8 @@ data class HubRoot(
         var DUMMY_HUB_ROOT = HubRoot()
 
         override fun mock(): HubRoot {
-            var node = NodeInformation.mock()
             return HubRoot(
-                AMTreePathInternalNode.mock(), RandomUtils.nextInt()
+                AMTreePathInternalNode.mock(), MockUtils.nextInt()
             )
         }
     }

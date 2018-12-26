@@ -1,6 +1,5 @@
 package org.starcoin.sirius.crypto.fallback
 
-import org.apache.commons.lang3.RandomUtils
 import org.ethereum.crypto.ECKey
 import org.junit.Assert
 import org.junit.Assert.*
@@ -8,6 +7,7 @@ import org.junit.Test
 import org.spongycastle.jcajce.provider.asymmetric.ec.BCECPrivateKey
 import org.starcoin.sirius.util.FileUtil
 import org.starcoin.sirius.util.KeyPairUtil
+import org.starcoin.sirius.util.MockUtils
 import java.io.File
 import java.nio.file.Files
 import java.nio.file.attribute.PosixFilePermissions
@@ -72,8 +72,8 @@ class KeyPairUtilTest {
 
         val kp = KeyPairUtil.generateKeyPair()
         for (i in 0..9) {
-            val count = RandomUtils.nextInt(32, 128)
-            val data = RandomUtils.nextBytes(count)
+            val count = MockUtils.nextInt(32, 128)
+            val data = MockUtils.nextBytes(count)
             val sign = KeyPairUtil.signData(data, kp.private)
             assertTrue(KeyPairUtil.verifySig(data, kp.public, sign))
         }

@@ -98,7 +98,7 @@ class SerializationTest {
 //        val from = BlockAddress.random()
 //        val to = BlockAddress.random()
 //
-//        val tx = OffchainTransaction(0, from, to, RandomUtils.nextLong())
+//        val tx = OffchainTransaction(0, from, to, MockUtils.nextLong())
 //        tx.sign(KeyPairUtil.TEST_KEYPAIR.private)
 //        var proto = Transform.transform<Starcoin.ProtoOffchainTransaction, OffchainTransaction>(tx)
 //

@@ -1,10 +1,10 @@
 package org.starcoin.sirius.crypto
 
-import org.apache.commons.lang3.RandomUtils
 import org.junit.Assert
 import org.junit.Before
 import org.junit.Test
 import org.starcoin.sirius.core.Hash
+import org.starcoin.sirius.util.MockUtils
 
 abstract class CryptoServiceTestBase {
 
@@ -27,7 +27,7 @@ abstract class CryptoServiceTestBase {
 
     @Test
     fun testHash() {
-        val data = RandomUtils.nextBytes(RandomUtils.nextInt(100, 1000))
+        val data = MockUtils.nextBytes(MockUtils.nextInt(100, 1000))
         val hash = CryptoService.hash(data)
         val hash1 = CryptoService.hash(data)
         Assert.assertEquals(hash, hash1)

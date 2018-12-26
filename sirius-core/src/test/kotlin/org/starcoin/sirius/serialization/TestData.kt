@@ -2,10 +2,10 @@ package org.starcoin.sirius.serialization
 
 import kotlinx.serialization.*
 import org.apache.commons.lang3.RandomStringUtils
-import org.apache.commons.lang3.RandomUtils
 import org.starcoin.proto.Starcoin
 import org.starcoin.sirius.core.SiriusObject
 import org.starcoin.sirius.core.SiriusObjectCompanion
+import org.starcoin.sirius.util.MockUtils
 
 enum class TestEnum {
     TEST_ENUM_ZERO,
@@ -39,24 +39,24 @@ data class TestData(
 
         fun random(): TestData {
             return TestData(
-                RandomUtils.nextBoolean(),
-                RandomUtils.nextInt(),
-                TestEnum.values()[RandomUtils.nextInt(0, TestEnum.values().size)],
+                MockUtils.nextBoolean(),
+                MockUtils.nextInt(),
+                TestEnum.values()[MockUtils.nextInt(0, TestEnum.values().size)],
                 RandomStringUtils.randomAlphabetic(
-                    RandomUtils.nextInt(
+                    MockUtils.nextInt(
                         10,
                         30
                     )
                 ),
                 ByteArrayWrapper(
-                    RandomUtils.nextBytes(
-                        RandomUtils.nextInt(
+                    MockUtils.nextBytes(
+                        MockUtils.nextInt(
                             10,
                             100
                         )
                     )
                 ),
-                when (RandomUtils.nextBoolean()) {
+                when (MockUtils.nextBoolean()) {
                     true -> ""
                     false -> "not empty"
                 }

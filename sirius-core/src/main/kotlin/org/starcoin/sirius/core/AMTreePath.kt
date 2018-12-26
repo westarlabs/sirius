@@ -3,10 +3,10 @@ package org.starcoin.sirius.core
 import kotlinx.serialization.Optional
 import kotlinx.serialization.SerialId
 import kotlinx.serialization.Serializable
-import org.apache.commons.lang3.RandomUtils
 import org.starcoin.proto.Starcoin
 import org.starcoin.sirius.core.MerklePath.Direction
 import org.starcoin.sirius.serialization.ProtobufSchema
+import org.starcoin.sirius.util.MockUtils
 
 
 abstract class AMTreePathNode : SiriusObject() {
@@ -31,8 +31,8 @@ data class AMTreePathInternalNode(
             return AMTreePathInternalNode(
                 AMTreeInternalNodeInfo.mock(),
                 Direction.random(),
-                RandomUtils.nextLong(),
-                RandomUtils.nextLong()
+                MockUtils.nextLong(),
+                MockUtils.nextLong()
             )
         }
     }
@@ -57,8 +57,8 @@ data class AMTreePathLeafNode(
             return AMTreePathLeafNode(
                 AMTreeLeafNodeInfo.mock(),
                 Direction.random(),
-                RandomUtils.nextLong(),
-                RandomUtils.nextLong()
+                MockUtils.nextLong(),
+                MockUtils.nextLong()
             )
         }
     }
@@ -89,8 +89,8 @@ data class AMTreePath(
         val DUMMY_PATH = AMTreePath(0, AMTreePathLeafNode.DUMMY_NODE)
 
         override fun mock(): AMTreePath {
-            val path = AMTreePath(RandomUtils.nextInt(), AMTreePathLeafNode.mock())
-            for (i in 0..RandomUtils.nextInt(0, 10)) {
+            val path = AMTreePath(MockUtils.nextInt(), AMTreePathLeafNode.mock())
+            for (i in 0..MockUtils.nextInt(0, 10)) {
                 path.append(AMTreePathInternalNode.mock())
             }
             return path

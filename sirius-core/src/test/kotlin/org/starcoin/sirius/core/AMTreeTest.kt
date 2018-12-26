@@ -1,16 +1,16 @@
 package org.starcoin.sirius.core
 
 import com.google.common.collect.Lists
-import org.apache.commons.lang3.RandomUtils
 import org.junit.Assert
 import org.junit.Test
 import org.starcoin.sirius.crypto.CryptoService
+import org.starcoin.sirius.util.MockUtils
 import java.util.*
 
 class AMTreeTest {
 
     @Test
-    fun testAugmentedMerkleTree() {
+    fun testAMTree() {
         val eon = 1
         val accounts = ArrayList<HubAccount>()
 
@@ -26,13 +26,13 @@ class AMTreeTest {
         val tree = AMTree(eon, accounts)
         Assert.assertNotNull(tree.hash())
         Assert.assertEquals(0, tree.offset)
-        Assert.assertEquals(5 * count.toLong(), tree.allotment)
+        Assert.assertEquals(10 * count.toLong(), tree.allotment)
     }
 
     //TODO random exception org.starcoin.sirius.core.AMTreePathLeafNode cannot be cast to org.starcoin.sirius.core.AMTreePathInternalNode
     @Test
     fun testMembershipProof() {
-        val tree = AMTree.random(RandomUtils.nextInt(10, 1000))
+        val tree = AMTree.random(MockUtils.nextInt(10, 1000))
         val node = tree.randomLeafNode()!!
         val path = tree.getMembershipProof((node.info as AMTreeLeafNodeInfo).addressHash)
         Assert.assertTrue(AMTree.verifyMembershipProof(tree.root, path))

@@ -1,9 +1,7 @@
 package org.starcoin.sirius.util
 
 import com.google.common.io.BaseEncoding
-import org.apache.commons.lang3.RandomUtils
-
-import java.util.UUID
+import java.util.*
 
 object Utils {
 
@@ -14,7 +12,7 @@ object Utils {
     }
 
     fun newNonce(): Long {
-        return RandomUtils.nextLong()
+        return MockUtils.nextLong()
     }
 
     fun newReuqestID(): String {
