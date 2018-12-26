@@ -1,6 +1,5 @@
 package org.starcoin.sirius.core
 
-import com.google.protobuf.InvalidProtocolBufferException
 import org.apache.commons.lang3.RandomStringUtils
 import org.apache.commons.lang3.RandomUtils
 import org.junit.Assert
@@ -71,7 +70,6 @@ class HashTest {
 
 
     @Test
-    @Throws(InvalidProtocolBufferException::class)
     fun testProto() {
         val hash = Hash.random()
         val protoChainHash = hash.toByteString()
@@ -105,4 +103,5 @@ class HashTest {
         Assert.assertEquals(Hash.LENGTH, hash3.size)
         Assert.assertEquals(Hash.LENGTH, hash4.size)
     }
+
 }

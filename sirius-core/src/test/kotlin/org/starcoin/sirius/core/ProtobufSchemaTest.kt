@@ -36,7 +36,7 @@ class ProtobufSchemaTest {
             val obj2 = companion.parseFromProtoMessage(protoMessage)
             Assert.assertEquals(obj, obj1)
             Assert.assertEquals(obj, obj2)
-            //Assert.assertArrayEquals(protoMessage.toByteArray(), protobufBytes)
+            Assert.assertArrayEquals(protoMessage.toByteArray(), protobufBytes)
 
             LOG.info("test ${clazz.jvmName} RLP")
             val rlpBytes = companion.toRLP(obj)

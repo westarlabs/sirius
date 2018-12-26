@@ -45,8 +45,8 @@ message ProtoOffchainTransaction {
 
 message ProtoAccountInfo {
     required bytes addressHash = 1;
-    required Update update = 3;
-    required uint64 allotment = 2;
+    required Update update = 2;
+    required uint64 allotment = 3;
 }
 
 message ProtoNodeInfo {

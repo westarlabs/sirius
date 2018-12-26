@@ -7,9 +7,9 @@ import kotlinx.serialization.context.getOrDefault
 import kotlinx.serialization.json.JSON
 import kotlinx.serialization.load
 import kotlinx.serialization.parse
-import kotlinx.serialization.protobuf.ProtoBuf
 import org.starcoin.sirius.lang.resetableLazy
 import org.starcoin.sirius.serialization.ProtobufSchema
+import org.starcoin.sirius.serialization.protobuf.ProtoBuf
 import org.starcoin.sirius.serialization.rlp.RLP
 import kotlin.reflect.KClass
 import kotlin.reflect.full.companionObjectInstance
