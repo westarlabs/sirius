@@ -2,7 +2,6 @@ package org.starcoin.sirius.core
 
 import kotlinx.serialization.SerialId
 import kotlinx.serialization.Serializable
-import kotlinx.serialization.Transient
 import org.starcoin.proto.Starcoin
 import org.starcoin.sirius.serialization.ProtobufSchema
 import org.starcoin.sirius.util.MockUtils
@@ -11,10 +10,6 @@ import org.starcoin.sirius.util.MockUtils
 @Serializable
 data class MerklePath(@SerialId(1) private val nodes: MutableList<MerklePathNode> = mutableListOf()) : SiriusObject(),
     List<MerklePathNode> by nodes {
-
-    @Transient
-    val leafNode: MerklePathNode
-        get() = nodes[0]
 
     fun append(node: MerkleTreeNode) {
         this.nodes.add(MerklePathNode(node.hash(), node.direction))

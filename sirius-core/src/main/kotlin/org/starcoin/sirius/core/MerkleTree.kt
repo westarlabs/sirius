@@ -7,7 +7,7 @@ class MerkleTree(private val root: MerkleTreeNode) : Hashable {
 
     constructor(leaves: List<Hashable>) : this(buildRoot(buildTreeNodes(leaves)))
 
-    constructor(path: MerklePath) : this(buildRoot(path))
+    constructor(path: MerklePath, leaf: Hashable) : this(buildRoot(path, leaf))
 
 
     fun getRoot(): MerkleTreeNode {
@@ -47,10 +47,9 @@ class MerkleTree(private val root: MerkleTreeNode) : Hashable {
 
     fun getMembershipProof(nodeHash: Hash?): MerklePath? {
         val node = this.findTreeNode(nodeHash) ?: return null
-        val path = MerklePath(mutableListOf(MerklePathNode(node.hash(), node.direction)))
-        var siblingNode: MerkleTreeNode = node.sibling ?: return null
-        path.append(siblingNode)
 
+        var siblingNode: MerkleTreeNode = node.sibling ?: return null
+        val path = MerklePath(mutableListOf(MerklePathNode(siblingNode.hash(), siblingNode.direction)))
         var parent = node.parent ?: return path
         while (parent.parent != null) {
             siblingNode = parent.sibling ?: return path
@@ -72,7 +71,7 @@ class MerkleTree(private val root: MerkleTreeNode) : Hashable {
                     mergedLeaves.add(MerkleTreeNode(leaves[i], leaves[i + 1]))
                     i++
                 } else {
-                    mergedLeaves.add(MerkleTreeNode(leaves[i], MerkleTreeNode.NULL_TREE_NODE))
+                    mergedLeaves.add(MerkleTreeNode(leaves[i], MerkleTreeNode.DUMMY_TREE_NODE))
                 }
                 i++
             }
@@ -94,10 +93,10 @@ class MerkleTree(private val root: MerkleTreeNode) : Hashable {
                 .collect(Collectors.toList())
         }
 
-        private fun buildRoot(path: MerklePath): MerkleTreeNode {
-            var node = MerkleTreeNode(path[0].nodeHash)
+        private fun buildRoot(path: MerklePath, leaf: Hashable): MerkleTreeNode {
+            var node = MerkleTreeNode(leaf.hash())
 
-            for (i in 1 until path.size) {
+            for (i in 0 until path.size) {
                 val pathNode = path[i]
                 node = when {
                     pathNode.direction == Direction.LEFT -> MerkleTreeNode(
@@ -120,8 +119,7 @@ class MerkleTree(private val root: MerkleTreeNode) : Hashable {
         fun verifyMembershipProof(rootHash: Hash?, path: MerklePath?, leaf: Hashable?): Boolean {
             return when {
                 leaf == null || path == null || rootHash == null -> false
-                leaf.hash() == path.leafNode.nodeHash -> buildRoot(path).hash() == rootHash
-                else -> false
+                else -> buildRoot(path, leaf).hash() == rootHash
             }
         }
     }
@@ -179,6 +177,6 @@ class MerkleTreeNode(val data: Hashable?, val left: MerkleTreeNode?, var right: 
     }
 
     companion object {
-        val NULL_TREE_NODE = MerkleTreeNode(Hash.EMPTY_DADA_HASH)
+        val DUMMY_TREE_NODE = MerkleTreeNode(Hash.EMPTY_DADA_HASH)
     }
 }
