@@ -14,7 +14,7 @@ import java.security.PublicKey
 @Serializable
 @ProtobufSchema(ProtoOffchainTransaction::class)
 data class OffchainTransaction(@SerialId(1) val data: OffchainTransactionData, @SerialId(2) var sign: Signature = Signature.ZERO_SIGN) :
-    SiriusObject(), MerkleTree.MerkleTreeData {
+    SiriusObject() {
 
 
     constructor(eon: Int, from: Address, to: Address, amount: Long) : this(

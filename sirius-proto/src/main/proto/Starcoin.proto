@@ -88,7 +88,7 @@ message ProtoWithdrawalStatus {
 }
 
 enum ProtoMerklePathDirection {
-    DIRECTION_UNKNOWN = 0;
+    DIRECTION_ROOT = 0;
     DIRECTION_LEFT = 1;
     DIRECTION_RIGTH = 2;
 }
@@ -211,7 +211,7 @@ message ProtoMerkleTreeNode {
 }
 
 message ProtoMerklePathNode {
-    required ProtoMerkleTreeNode node = 1;
+    required bytes nodeHash = 1;
     required ProtoMerklePathDirection direction = 2;
 }
 

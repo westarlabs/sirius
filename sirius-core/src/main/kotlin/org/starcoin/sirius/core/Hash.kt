@@ -27,7 +27,7 @@ import kotlin.experimental.and
  * safety. It is a final unmodifiable object.
  */
 @Serializable
-class Hash private constructor(internal val bytes: ByteArray) : Comparable<Hash> {
+class Hash private constructor(internal val bytes: ByteArray) : Comparable<Hash>, Hashable {
 
     val size: Int
         get() = bytes.size
@@ -84,6 +84,10 @@ class Hash private constructor(internal val bytes: ByteArray) : Comparable<Hash>
         if (!bytes.contentEquals(other.bytes)) return false
 
         return true
+    }
+
+    override fun hash(): Hash {
+        return this
     }
 
     @Serializer(forClass = Hash::class)

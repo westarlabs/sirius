@@ -1,14 +1,30 @@
 package org.starcoin.sirius.core
 
+import kotlinx.serialization.Transient
+import org.starcoin.sirius.lang.resetableLazy
+
 open abstract class CachedHash : Hashable {
 
-    val id: Hash by lazy { Hash.of(this.hashData()) }
+    @Transient
+    private val hashDelegate = resetableLazy { doHash() }
+
+    @Transient
+    val id: Hash by hashDelegate
 
     override fun hash(): Hash {
         return id
     }
 
-    protected abstract fun hashData(): ByteArray
+    protected open fun doHash(): Hash {
+        return Hash.of(this.hashData())
+    }
 
+    protected open fun hashData(): ByteArray {
+        TODO()
+    }
+
+    protected fun resetHash() {
+        this.hashDelegate.reset()
+    }
 
 }

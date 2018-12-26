@@ -6,12 +6,12 @@ import java.util.logging.Logger
 class TransferDeliveryChallenge(
     var update: UpdateData?,
     var transaction: OffchainTransaction?,
-    path: MerklePath<OffchainTransaction>
+    path: MerklePath
 ) {
 
     var status: ChallengeStatus? = null
 
-    private var provePath: MerklePath<OffchainTransaction>? = null
+    private var provePath: MerklePath? = null
 
     private val logger = Logger.getLogger(TransferDeliveryChallenge::class.java.name)
 
@@ -24,11 +24,11 @@ class TransferDeliveryChallenge(
         this.provePath = path
     }
 
-    fun getProvePath(): MerklePath<*>? {
+    fun getProvePath(): MerklePath? {
         return this.provePath
     }
 
-    fun setProvePath(provePath: MerklePath<OffchainTransaction>) {
+    fun setProvePath(provePath: MerklePath) {
         this.provePath = provePath
     }
 
