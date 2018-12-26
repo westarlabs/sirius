@@ -7,6 +7,8 @@ import org.junit.Ignore
 import org.junit.Test
 import org.starcoin.sirius.serialization.NamedData
 import org.starcoin.sirius.serialization.TestData
+import org.starcoin.sirius.util.Utils
+import java.math.BigInteger
 
 @Serializable
 data class TestCollectionData(val name: String, val list: List<TestData>)
@@ -34,10 +36,10 @@ class RLPTest {
         Assert.assertEquals(data, data1)
     }
 
-    //TODO
-    //@Test
+
+    @Test
     fun testObjectNestMany() {
-        0.rangeTo(1000).forEach {
+        0.rangeTo(10000).forEach {
             //println(it)
             testObjectNest()
         }
@@ -85,13 +87,31 @@ class RLPTest {
         Assert.assertEquals(int, int1)
     }
 
-//    @Test
-//    fun testLongRLP(){
-//        val long = 54408193066555392L
-//        val rlp = long.toRLP()
-//        val long1 = rlp.toLongFromRLP()
-//        Assert.assertEquals(long,long1)
-//    }
+    @Test
+    fun testLongRLP() {
+        val long = 54408193066555392L
+        val rlp = long.toRLP()
+        val long1 = rlp.toLongFromRLP()
+        Assert.assertEquals(long, long1)
+    }
+
+    @Test
+    fun testLongRLP2() {
+        val long = 9921459L
+
+        val bytes = org.ethereum.util.RLP.encodeBigInteger(BigInteger.valueOf(long))
+        val long1 = org.ethereum.util.RLP.decodeLong(bytes, 0)
+        Assert.assertEquals(long, long1)
+        println(Utils.HEX.encode(bytes))
+
+        val bigInteger = org.ethereum.util.RLP.decodeBigInteger(bytes, 0)
+        Assert.assertEquals(long, bigInteger.toLong())
+
+        val rlp = long.toRLP()
+        println(Utils.HEX.encode(rlp.encode()))
+        val long2 = rlp.toLongFromRLP()
+        Assert.assertEquals(long, long2)
+    }
 
     @Test
     fun testRLP() {
