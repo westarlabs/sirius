@@ -14,6 +14,37 @@ data class WithdrawalStatus(
     @SerialId(2)
     var type: WithdrawalStatusType = WithdrawalStatusType.INIT
 ) : SiriusObject() {
+
+    val withdrawalAmount: Long
+        get() = this.withdrawal!!.amount
+
+    val status: Int
+        get() = this.type!!.number
+
+    val isInit: Boolean
+        get() = this.type == WithdrawalStatusType.INIT
+
+    val eon: Int
+        get() = this.withdrawal!!.path!!.eon
+
+    fun pass() {
+        if (isInit) {
+            this.type = WithdrawalStatusType.PASSED
+        }
+    }
+
+    fun cancel() {
+        if (isInit) {
+            this.type = WithdrawalStatusType.CANCEL
+        }
+    }
+
+    fun clientConfirm() {
+        if (this.type == WithdrawalStatusType.PASSED || isInit || this.type == WithdrawalStatusType.CONFIRMED) {
+            this.type = WithdrawalStatusType.CLIENTCONFIRMED
+        }
+    }
+
     companion object :
         SiriusObjectCompanion<WithdrawalStatus, Starcoin.ProtoWithdrawalStatus>(WithdrawalStatus::class) {
 

@@ -1,64 +1,20 @@
 package org.starcoin.sirius.core
 
+import org.starcoin.proto.Starcoin
 
-import java.util.logging.Logger
+data class TransferDeliveryChallenge(
+    var update: UpdateData = UpdateData.DUMMY_UPDATE_DATA,
+    var transaction: OffchainTransaction = OffchainTransaction.DUMMY_OFFCHAIN_TRAN,
+    var path: MerklePath = MerklePath()
+) : SiriusObject() {
+    companion object : SiriusObjectCompanion<TransferDeliveryChallenge, Starcoin.ProtoTransferDeliveryChallenge>(
+        TransferDeliveryChallenge::class
+    ) {
 
-class TransferDeliveryChallenge(
-    var update: UpdateData?,
-    var transaction: OffchainTransaction?,
-    path: MerklePath
-) {
+        var DUMMY_TRAN_DELIVERY_CHALLENGE = TransferDeliveryChallenge()
 
-    var status: ChallengeStatus? = null
-
-    private var provePath: MerklePath? = null
-
-    private val logger = Logger.getLogger(TransferDeliveryChallenge::class.java.name)
-
-    val isClosed: Boolean
-        get() = synchronized(this) {
-            return this.status != null && this.status == ChallengeStatus.CLOSE
-        }
-
-    init {
-        this.provePath = path
-    }
-
-    fun getProvePath(): MerklePath? {
-        return this.provePath
-    }
-
-    fun setProvePath(provePath: MerklePath) {
-        this.provePath = provePath
-    }
-
-    fun openChallenge(): Boolean {
-        synchronized(this) {
-            if (this.status == null) {
-                this.status = ChallengeStatus.OPEN
-                logger.warning("openChallenge succ")
-                return true
-            }
-
-            logger.warning(
-                "openChallenge err status : " + if (this.status == null) "null" else this.status
-            )
-            return false
-        }
-    }
-
-    fun closeChallenge(): Boolean {
-        synchronized(this) {
-            if (this.status != null && this.status == ChallengeStatus.OPEN) {
-                this.status = ChallengeStatus.CLOSE
-                logger.warning("closeChallenge succ")
-                return true
-            }
-
-            logger.warning(
-                "openChallenge err status : " + if (this.status == null) "null" else this.status
-            )
-            return false
+        override fun mock(): TransferDeliveryChallenge {
+            return TransferDeliveryChallenge(UpdateData.mock(), OffchainTransaction.mock(), MerklePath.mock())
         }
     }
 }

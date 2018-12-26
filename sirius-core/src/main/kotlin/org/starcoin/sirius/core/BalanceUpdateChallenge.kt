@@ -14,9 +14,7 @@ data class BalanceUpdateChallenge(
     @SerialId(1)
     var proof: BalanceUpdateProof = BalanceUpdateProof.DUMMY_BALANCE_UPDATE_PROOF,
     @SerialId(2)
-    var publicKey: PublicKey = CryptoService.instance.loadPublicKey(ByteArray(32)),
-    @SerialId(3)
-    var status: WithdrawalStatus = WithdrawalStatus.DUMMY_WITHDRAWAL_STATUS
+    var publicKey: PublicKey = CryptoService.instance.loadPublicKey(ByteArray(32))
 ) : SiriusObject() {
     companion object :
         SiriusObjectCompanion<BalanceUpdateChallenge, Starcoin.ProtoBalanceUpdateChallenge>(BalanceUpdateChallenge::class) {
@@ -26,8 +24,7 @@ data class BalanceUpdateChallenge(
         override fun mock(): BalanceUpdateChallenge {
             return BalanceUpdateChallenge(
                 BalanceUpdateProof.mock(),
-                CryptoService.instance.loadPublicKey(ByteArray(32)),
-                WithdrawalStatus.mock()
+                CryptoService.instance.loadPublicKey(ByteArray(32))
             )
         }
     }

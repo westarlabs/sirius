@@ -69,6 +69,8 @@ data class OffchainTransaction(@SerialId(1) val data: OffchainTransactionData, @
     companion object :
         SiriusObjectCompanion<OffchainTransaction, ProtoOffchainTransaction>(OffchainTransaction::class) {
 
+        var DUMMY_OFFCHAIN_TRAN = OffchainTransaction(OffchainTransactionData.DUMMY_OFFCHAIN_TRAN_DATA)
+
         override fun mock(): OffchainTransaction {
             return OffchainTransaction(
                 RandomUtils.nextInt(),

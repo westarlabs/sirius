@@ -16,6 +16,12 @@ data class Withdrawal(
     var amount: Long = 0
 ) : SiriusObject() {
 
+    constructor(init: Starcoin.InitiateWithdrawalRequest) : this(
+        Address.wrap(init.address),
+        AugmentedMerklePath(init.path),
+        init.amount
+    )
+
     companion object : SiriusObjectCompanion<Withdrawal, Starcoin.InitiateWithdrawalRequest>(Withdrawal::class) {
 
         var DUMMY_WITHDRAWAL = Withdrawal()

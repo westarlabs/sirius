@@ -9,7 +9,7 @@ data class BalanceUpdateProof(
     @SerialId(1)
     var update: Update = Update.DUMMY_UPDATE,
     @SerialId(2)
-    var provePath: AugmentedMerklePath
+    var provePath: AugmentedMerklePath? = AugmentedMerklePath()
 ) : SiriusObject() {
     companion object :
         SiriusObjectCompanion<BalanceUpdateProof, Starcoin.ProtoBalanceUpdateChallenge>(BalanceUpdateProof::class) {

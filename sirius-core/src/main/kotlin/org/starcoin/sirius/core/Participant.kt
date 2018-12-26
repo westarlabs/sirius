@@ -20,6 +20,8 @@ data class Participant(@Serializable(with = PublicKeySerializer::class) @SerialI
 
     companion object : SiriusObjectCompanion<Participant, ProtoParticipant>(Participant::class) {
 
+        var DUMMY_PARTICIPANT = Participant(CryptoService.instance.loadPublicKey(ByteArray(32)))
+
         override fun mock(): Participant {
             return random()
         }

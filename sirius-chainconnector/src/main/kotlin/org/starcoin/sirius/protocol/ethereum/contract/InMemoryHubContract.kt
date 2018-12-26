@@ -46,7 +46,7 @@ class InMemoryHubContract(contract: SolidityContract) : HubContract{
         TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
     }
 
-    override fun closeBalanceUpdateChallenge(request: CloseBalanceUpdateChallenge): Hash {
+    override fun closeBalanceUpdateChallenge(request: BalanceUpdateProof): Hash {
         TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
     }
 

@@ -138,7 +138,7 @@ class Hub {
     }
 
     fun newTransferChallenge (
-        update: Update, path: MerkleTree<OffchainTransaction>, transaction: OffchainTransaction, keyPair: KeyPair
+        update: Update, path: MerkleTree, transaction: OffchainTransaction, keyPair: KeyPair
     ): ChainTransaction? {
         return null
     }

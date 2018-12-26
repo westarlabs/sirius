@@ -145,10 +145,6 @@ message ProtoBalanceUpdateProof {
     required Update update = 2;
 }
 
-message CloseBalanceUpdateChallengeRequest {
-    required ProtoBalanceUpdateProof proof = 1;
-}
-
 message RegisterParticipantRequest {
     required ProtoParticipant participant = 1;
     required Update update = 2;
@@ -274,14 +270,14 @@ message QueryBalanceUpdateChallengesResponse {
     repeated BalanceUpdateChallengeStatus challenges = 1;
 }
 
-enum ChallengeStatus {
+enum ProtoChallengeStatus {
     OPEN = 0;
     CLOSE = 1;
 }
 
 message BalanceUpdateChallengeStatus {
     required ProtoBalanceUpdateChallenge challenge = 1;
-    required ChallengeStatus status = 2;
+    required ProtoChallengeStatus status = 2;
 }
 
 message ProtoHubAccount {
@@ -345,10 +341,6 @@ message ProtoBlockAddress {
     required bytes address = 1;
 }
 
-message QueryCurrentTransferDeliveryChallengesRequest {
-    required ProtoBlockAddress addr = 1;
-}
-
 message QueryCurrentTransferDeliveryChallengesResponse {
     repeated ProtoTransferDeliveryChallenge challenges = 1;
 }
@@ -357,7 +349,7 @@ message ProtoTransferDeliveryChallenge {
     required Update update = 1;
     required ProtoOffchainTransaction transaction = 2;
     required ProtoMerklePath path = 3;
-    required ChallengeStatus status = 4;
+    required ProtoChallengeStatus status = 4;
 }
 
 service HubService {

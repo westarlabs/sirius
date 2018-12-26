@@ -10,7 +10,7 @@ data class HubRoot(
     @SerialId(1)
     var root: AugmentedMerkleTree.AugmentedMerkleTreeNode = AugmentedMerkleTree.AugmentedMerkleTreeNode(0),
     @SerialId(2)
-    var eon: Long = 0
+    var eon: Int = 0
 ) : SiriusObject() {
     companion object : SiriusObjectCompanion<HubRoot, Starcoin.ProtoHubRoot>(HubRoot::class) {
 
@@ -23,7 +23,7 @@ data class HubRoot(
                     node.offset,
                     node,
                     RandomUtils.nextLong()
-                ), RandomUtils.nextLong()
+                ), RandomUtils.nextInt()
             )
         }
     }

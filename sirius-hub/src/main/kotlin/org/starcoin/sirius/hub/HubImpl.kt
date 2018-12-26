@@ -322,14 +322,14 @@ class HubImpl(
         return future
     }
 
-    private fun processTransferDeliveryChallenge(challenge: OpenTransferDeliveryChallengeRequest) {
+    private fun processTransferDeliveryChallenge(challenge: Starcoin.OpenTransferDeliveryChallengeRequest) {
         val tx = OffchainTransaction.parseFromProtoMessage(challenge.transaction)
 
         val to = tx.to!!
         val accountProof = this.eonState!!.state!!.getMembershipProof(to)
         val previousAccount = this.eonState!!.previous!!.getAccount(to).get()
 
-        var txProof: MerklePath<OffchainTransaction>? = null
+        var txProof: MerklePath? = null
         val txs = previousAccount.getTransactions()
         if (!txs.isEmpty()) {
             val merkleTree = MerkleTree(txs)
@@ -338,7 +338,7 @@ class HubImpl(
         if (txProof != null) {
             val closeChallenge = CloseTransferDeliveryChallengeRequest.newBuilder()
                 .setBalancePath(accountProof.toProto())
-                .setTransPath(txProof.toProto())
+                .setTransPath(txProof.toProto<ProtoMerklePath>())
                 .setUpdate(accountProof.leaf!!.account!!.update!!.toProto() as Starcoin.Update)
                 .setToUserPublicKey(
                     ByteString.copyFrom(KeyPairUtil.encodePublicKey(previousAccount!!.publicKey!!))
@@ -367,8 +367,7 @@ class HubImpl(
         val proofPath = this.eonState!!.state!!.getMembershipProof(address)
 
         val proof = BalanceUpdateProof(proofPath.leaf!!.account!!.update!!, proofPath)
-        val closeBalanceUpdateChallengeRequest =
-            CloseBalanceUpdateChallengeRequest.newBuilder().setProof(proof.marshalProto()).build()
+        val closeBalanceUpdateChallengeRequest = proof.toProto<Starcoin.ProtoBalanceUpdateProof>()
 
         val chainTransaction = ChainTransaction(
             this.hubAddress,
@@ -503,7 +502,7 @@ class HubImpl(
             this.processWithdrawal(withdrawal)
         } else if (tx.action == "OpenTransferDeliveryChallenge") {
             //TODO
-            val arguments = tx.getArguments(OpenTransferDeliveryChallengeRequest::class.java)!!
+            val arguments = tx.getArguments(Starcoin.OpenTransferDeliveryChallengeRequest::class.java)!!
             logger.info(tx.action + ":" + arguments.toString())
             this.processTransferDeliveryChallenge(arguments)
         } else if (tx.action == "OpenBalanceUpdateChallenge") {

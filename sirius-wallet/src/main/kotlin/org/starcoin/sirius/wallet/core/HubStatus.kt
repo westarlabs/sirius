@@ -74,11 +74,11 @@ class HubStatus {
         )
     }
 
-    internal fun transactionTree(): MerkleTree<OffchainTransaction>{
+    internal fun transactionTree(): MerkleTree{
         return MerkleTree(eonStatuses[currentEonStatusIndex].transactionHistory)
     }
 
-    internal fun transactionPath(hash: Hash): MerklePath<OffchainTransaction>? {
+    internal fun transactionPath(hash: Hash): MerklePath? {
         val merkleTree = MerkleTree(eonStatuses[getEonByIndex(lastIndex)].transactionHistory)
         return merkleTree.getMembershipProof(hash)
     }
@@ -150,9 +150,11 @@ class HubStatus {
     internal fun newChallenge(update: Update, keyPair: KeyPair, lastIndex: Int): BalanceUpdateChallenge? {
         var challenge: BalanceUpdateChallenge? = null
         if (eonStatuses[lastIndex] != null && eonStatuses[lastIndex].path != null) {
-            challenge = BalanceUpdateChallenge(null, eonStatuses[lastIndex].path, keyPair.public)
+            var proof = BalanceUpdateProof(Update.DUMMY_UPDATE, eonStatuses[lastIndex].path)
+            challenge = BalanceUpdateChallenge(proof, keyPair.public)
         } else {
-            challenge = BalanceUpdateChallenge(update, null, keyPair.public)
+            var proof = BalanceUpdateProof(update, null)
+            challenge = BalanceUpdateChallenge(proof, keyPair.public)
         }
         return challenge
     }

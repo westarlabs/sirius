@@ -26,6 +26,9 @@ data class OffchainTransactionData(
         SiriusObjectCompanion<OffchainTransactionData, Starcoin.OffchainTransactionData>(
             OffchainTransactionData::class
         ) {
+
+        var DUMMY_OFFCHAIN_TRAN_DATA = OffchainTransactionData(0, Address.DUMMY_ADDRESS, Address.DUMMY_ADDRESS, 0, 0)
+
         override fun mock(): OffchainTransactionData {
             return OffchainTransactionData(
                 RandomUtils.nextInt(),

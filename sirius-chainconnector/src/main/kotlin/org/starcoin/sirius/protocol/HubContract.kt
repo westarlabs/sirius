@@ -17,7 +17,7 @@ interface HubContract {
     fun cancelWithdrawal(request: CancelWithdrawal): Hash
 
     fun openBalanceUpdateChallenge(request: BalanceUpdateChallenge): Hash
-    fun closeBalanceUpdateChallenge(request: CloseBalanceUpdateChallenge): Hash
+    fun closeBalanceUpdateChallenge(request: BalanceUpdateProof): Hash
 
     fun commit(request: HubRoot): Hash
 
