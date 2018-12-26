@@ -13,7 +13,7 @@ interface HubContract {
     fun queryCurrentTransferDeliveryChallenge(address: Address): TransferDeliveryChallenge
     fun queryWithdrawalStatus(address: Address): WithdrawalStatus
 
-    fun initiateWithdrawal(request: InitiateWithdrawal): Hash
+    fun initiateWithdrawal(request: Withdrawal): Hash
     fun cancelWithdrawal(request: CancelWithdrawal): Hash
 
     fun openBalanceUpdateChallenge(request: BalanceUpdateChallenge): Hash

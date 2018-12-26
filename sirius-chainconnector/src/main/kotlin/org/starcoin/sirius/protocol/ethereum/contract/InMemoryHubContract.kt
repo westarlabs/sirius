@@ -34,7 +34,7 @@ class InMemoryHubContract(contract: SolidityContract) : HubContract{
         TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
     }
 
-    override fun initiateWithdrawal(request: InitiateWithdrawal): Hash {
+    override fun initiateWithdrawal(request: Withdrawal): Hash {
         TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
     }
 

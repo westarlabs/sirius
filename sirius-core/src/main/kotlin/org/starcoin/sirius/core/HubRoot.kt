@@ -3,9 +3,11 @@ package org.starcoin.sirius.core
 import kotlinx.serialization.SerialId
 import org.apache.commons.lang3.RandomUtils
 import org.starcoin.proto.Starcoin
+import org.starcoin.sirius.serialization.ProtobufSchema
+import kotlinx.serialization.Serializable
 
-//@ProtobufSchema(Starcoin.ProtoHubRoot::class)
-//@Serializable
+@ProtobufSchema(Starcoin.ProtoHubRoot::class)
+@Serializable
 data class HubRoot(
     @SerialId(1)
     var root: AugmentedMerkleTree.AugmentedMerkleTreeNode = AugmentedMerkleTree.AugmentedMerkleTreeNode(0),
