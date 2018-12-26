@@ -5,7 +5,7 @@ import org.starcoin.sirius.util.MockUtils
 import java.util.*
 import java.util.stream.Collectors
 
-class BlockInfo : ProtobufCodec<ProtoBlockInfo>, CachedHash {
+class BlockInfo : ProtobufCodec<ProtoBlockInfo>, CachedHashable {
 
     var height: Int = 0
         private set

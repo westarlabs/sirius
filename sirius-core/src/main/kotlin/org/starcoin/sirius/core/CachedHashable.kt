@@ -3,7 +3,7 @@ package org.starcoin.sirius.core
 import kotlinx.serialization.Transient
 import org.starcoin.sirius.lang.resetableLazy
 
-open abstract class CachedHash : Hashable {
+open abstract class CachedHashable : Hashable {
 
     @Transient
     private val hashDelegate = resetableLazy { doHash() }

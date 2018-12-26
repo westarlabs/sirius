@@ -277,7 +277,7 @@ class AMTreeNode(
     val offset: Long = 0,
     val info: AMTreeNodeInfo = AMTreeLeafNodeInfo.DUMMY_NODE,
     val allotment: Long = 0
-) : CachedHash() {
+) : CachedHashable() {
 
     var parent: AMTreeNode? = null
         private set

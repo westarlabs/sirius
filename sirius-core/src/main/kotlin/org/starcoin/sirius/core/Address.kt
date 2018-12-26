@@ -12,7 +12,7 @@ import org.starcoin.sirius.util.Utils
 import java.security.PublicKey
 
 @Serializable
-class Address private constructor(private val bytes: ByteArray) : CachedHash() {
+class Address private constructor(private val bytes: ByteArray) : CachedHashable() {
 
     init {
         Preconditions.checkArgument(bytes.size == LENGTH, "expect address length:$LENGTH")

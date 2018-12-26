@@ -126,7 +126,7 @@ class MerkleTree(private val root: MerkleTreeNode) : Hashable {
 }
 
 class MerkleTreeNode(val data: Hashable?, val left: MerkleTreeNode?, var right: MerkleTreeNode?) :
-    CachedHash() {
+    CachedHashable() {
 
     var parent: MerkleTreeNode? = null
         private set
