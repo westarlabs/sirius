@@ -13,7 +13,7 @@ import java.security.PublicKey
 
 @Serializable
 @ProtobufSchema(ProtoOffchainTransaction::class)
-data class OffchainTransaction(@SerialId(1) var data: OffchainTransactionData, @SerialId(2) var sign: Signature = Signature.ZERO_SIGN) :
+data class OffchainTransaction(@SerialId(1) val data: OffchainTransactionData, @SerialId(2) var sign: Signature = Signature.ZERO_SIGN) :
     SiriusObject(), MerkleTree.MerkleTreeData {
 
 
@@ -45,6 +45,10 @@ data class OffchainTransaction(@SerialId(1) var data: OffchainTransactionData, @
     @kotlinx.serialization.Transient
     val timestamp: Long
         get() = data.timestamp
+
+    override fun doHash(): Hash {
+        return this.data.hash()
+    }
 
     fun sign(privateKey: PrivateKey) {
         this.sign = Signature.of(this.data, privateKey)

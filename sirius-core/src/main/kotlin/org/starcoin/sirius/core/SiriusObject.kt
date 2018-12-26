@@ -19,13 +19,17 @@ import kotlin.reflect.full.staticFunctions
 abstract class SiriusObject : Hashable {
 
     @kotlinx.serialization.Transient
-    private val hashDelegate = resetableLazy { Hash.of(this) }
+    private val hashDelegate = resetableLazy { doHash() }
 
     @kotlinx.serialization.Transient
     val id: Hash by hashDelegate
 
     override fun hash(): Hash {
         return id
+    }
+
+    protected open fun doHash(): Hash {
+        return Hash.of(this)
     }
 
     //Subclasses should call this fun when property change.

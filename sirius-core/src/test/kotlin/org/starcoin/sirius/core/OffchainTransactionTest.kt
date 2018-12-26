@@ -1,12 +1,10 @@
 package org.starcoin.sirius.core
 
 import com.google.protobuf.InvalidProtocolBufferException
-import kotlinx.serialization.*
-import kotlinx.serialization.json.JSON
-import kotlinx.serialization.protobuf.ProtoBuf
 import org.apache.commons.lang3.RandomUtils
 import org.junit.Assert
 import org.junit.Test
+import org.starcoin.sirius.core.SiriusObject.Companion.parseFromProtobuf
 import org.starcoin.sirius.crypto.CryptoService
 
 class OffchainTransactionTest {
@@ -28,42 +26,36 @@ class OffchainTransactionTest {
         Assert.assertEquals(hash, tx1.hash())
     }
 
-    @ImplicitReflectionSerializer
     @Test
     fun testOffchainTransactionSignatureAndHash() {
-        try {
-            val from = Address.random()
-            val to = Address.random()
+        val from = Address.random()
+        val to = Address.random()
 
-            val tx = OffchainTransaction(0, from, to, RandomUtils.nextLong())
+        val tx = OffchainTransaction(0, from, to, RandomUtils.nextLong())
 
-            val hash = tx.hash()
+        val hash = tx.hash()
 
-            val bytes = ProtoBuf.dump(tx)
+        val bytes = tx.toProtobuf()
 
-            val tx1: OffchainTransaction = ProtoBuf.load(bytes)
+        val tx1: OffchainTransaction = parseFromProtobuf(bytes)
 
-            Assert.assertEquals(tx, tx1)
-            Assert.assertEquals(hash, tx1.hash())
+        Assert.assertEquals(tx, tx1)
+        Assert.assertEquals(hash, tx1.hash())
 
-            val json = JSON.stringify(tx)
-            println(json)
-            val tx2 = JSON.parse<OffchainTransaction>(json)
-            Assert.assertEquals(tx, tx2)
-            Assert.assertEquals(hash, tx2.hash())
+        val json = tx.toJSON()
+        println(json)
+        val tx2 = OffchainTransaction.parseFromJSON(json)
+        Assert.assertEquals(tx, tx2)
+        Assert.assertEquals(hash, tx2.hash())
 
-            //add sign
-            tx.sign(CryptoService.getDummyCryptoKey())
+        //add sign
+        tx.sign(CryptoService.getDummyCryptoKey())
 
-            val bytes1 = ProtoBuf.dump(tx)
+        val bytes1 = tx.toProtobuf()
 
-            val tx3: OffchainTransaction = ProtoBuf.load(bytes1)
-            Assert.assertEquals(tx, tx3)
-            Assert.assertEquals(hash, tx3.hash())
-            Assert.fail()
-        } catch (ex: SerializationException) {
-            //TODO wait new version Serialization
-        }
+        val tx3: OffchainTransaction = parseFromProtobuf(bytes1)
+        Assert.assertEquals(tx, tx3)
+        Assert.assertEquals(hash, tx3.hash())
 
     }
 
