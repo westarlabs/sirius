@@ -4,7 +4,6 @@ import kotlinx.serialization.Optional
 import kotlinx.serialization.SerialId
 import kotlinx.serialization.Serializable
 import org.starcoin.proto.Starcoin
-import org.starcoin.sirius.core.MerklePath.Direction
 import org.starcoin.sirius.serialization.ProtobufSchema
 import org.starcoin.sirius.util.MockUtils
 
