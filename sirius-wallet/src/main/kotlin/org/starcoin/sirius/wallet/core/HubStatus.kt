@@ -87,9 +87,9 @@ class HubStatus {
         return eonStatuses[getEonByIndex(lastIndex)].transactionMap[hash]
     }
 
-    internal fun currentEonPath(): AMTreePath? {
+    internal fun currentEonPath(): AMTreeProof? {
         val eonStatus = eonStatuses[currentEonStatusIndex]
-        return eonStatus?.path
+        return eonStatus?.treeProof
     }
 
     internal fun currentTransactions(): List<OffchainTransaction> {
@@ -119,7 +119,7 @@ class HubStatus {
         this.depositingTransactions[chainTransaction.hash()] = chainTransaction
     }
 
-    internal fun nextEon(eon: Eon, path: AMTreePath): Int {
+    internal fun nextEon(eon: Eon, path: AMTreeProof): Int {
         this.allotment += this.eonStatuses[currentEonStatusIndex]
             .confirmedTransactions
             .stream()
@@ -143,17 +143,17 @@ class HubStatus {
         }
         this.eonStatuses[currentEonStatusIndex] = EonStatus(eon, this.allotment)
 
-        this.eonStatuses[currentEonStatusIndex].path = path
+        this.eonStatuses[currentEonStatusIndex].treeProof = path
         return lastIndex
     }
 
     internal fun newChallenge(update: Update, keyPair: KeyPair, lastIndex: Int): BalanceUpdateChallenge? {
         var challenge: BalanceUpdateChallenge? = null
-        if (eonStatuses[lastIndex] != null && eonStatuses[lastIndex].path != null) {
-            var proof = BalanceUpdateProof(Update.DUMMY_UPDATE, eonStatuses[lastIndex].path)
+        if (eonStatuses[lastIndex] != null && eonStatuses[lastIndex].treeProof != null) {
+            var proof = BalanceUpdateProof(Update.DUMMY_UPDATE, eonStatuses[lastIndex].treeProof?:AMTreeProof.DUMMY_PROOF)
             challenge = BalanceUpdateChallenge(proof, keyPair.public)
         } else {
-            var proof = BalanceUpdateProof(update, null)
+            var proof = BalanceUpdateProof(update)
             challenge = BalanceUpdateChallenge(proof, keyPair.public)
         }
         return challenge

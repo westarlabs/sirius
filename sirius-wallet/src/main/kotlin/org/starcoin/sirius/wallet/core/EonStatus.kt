@@ -7,7 +7,7 @@ class EonStatus() {
 
     var eon: Eon by Delegates.notNull()
 
-    var path: AMTreePath? = null
+    var treeProof: AMTreeProof? = null
 
     var transactionHistory: MutableList<OffchainTransaction> = mutableListOf()
 
