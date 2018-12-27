@@ -61,7 +61,7 @@ interface Hub {
 
     fun watch(listener: HubEventListener)
 
-    fun onBlock(blockInfo: BlockInfo)
+    fun onBlock(blockInfo: Block<*>)
 
     enum class MaliciousFlag private constructor(private val protoFlag: ProtoHubMaliciousFlag) :
         ProtoEnum<ProtoHubMaliciousFlag> {

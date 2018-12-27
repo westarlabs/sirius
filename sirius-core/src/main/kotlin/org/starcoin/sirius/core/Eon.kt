@@ -2,6 +2,8 @@ package org.starcoin.sirius.core
 
 class Eon(val id: Int, val epoch: Epoch) {
 
+    constructor(id: Long, epoch: Epoch) : this(id.toInt(), epoch)
+
     enum class Epoch {
         FIRST,
         SECOND,
@@ -11,10 +13,10 @@ class Eon(val id: Int, val epoch: Epoch) {
 
     companion object {
 
-        fun calculateEon(blockHeight: Int, blocksPerEon: Int): Eon {
+        fun calculateEon(blockHeight: Long, blocksPerEon: Int): Eon {
             return Eon(
-                blockHeight / blocksPerEon,
-                Epoch.values()[blockHeight % blocksPerEon / (blocksPerEon / 4)]
+                blockHeight / blocksPerEon.toLong(),
+                Epoch.values()[(blockHeight % blocksPerEon / (blocksPerEon / 4)).toInt()]
             )
         }
     }

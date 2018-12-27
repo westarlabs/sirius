@@ -1,11 +1,11 @@
 package org.starcoin.sirius.protocol
 
 import org.starcoin.sirius.core.Address
-import org.starcoin.sirius.core.BlockInfo
+import org.starcoin.sirius.core.Block
 import org.starcoin.sirius.core.ChainTransaction
 import org.starcoin.sirius.core.Hash
+import org.starcoin.sirius.crypto.CryptoKey
 import java.math.BigInteger
-import java.security.KeyPair
 
 //watch transaction process
 interface TransactionProgressListener {
@@ -16,7 +16,7 @@ enum class ChainType{
     ETH
 }
 
-interface Chain<T : ChainTransaction, B : BlockInfo, C : HubContract> {
+interface Chain<T : ChainTransaction, B : Block<T>, C : HubContract> {
 
     fun findTransaction(hash: Hash): T?
 
@@ -28,7 +28,7 @@ interface Chain<T : ChainTransaction, B : BlockInfo, C : HubContract> {
 
     fun getBalance(address: Address): BigInteger
 
-    fun newTransaction(keyPair: KeyPair, transaction: T)
+    fun newTransaction(key: CryptoKey, transaction: T)
 
     fun watchTransaction(txHash: Hash, listener: TransactionProgressListener)
 

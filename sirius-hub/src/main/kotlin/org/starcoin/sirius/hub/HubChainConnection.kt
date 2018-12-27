@@ -1,11 +1,11 @@
 package org.starcoin.sirius.hub
 
-import org.starcoin.sirius.core.BlockInfo
+import org.starcoin.sirius.core.Block
 import org.starcoin.sirius.core.ChainTransaction
 
 interface HubChainConnection {
 
-    fun watchBlock(block: (BlockInfo) -> Unit)
+    fun watchBlock(block: (Block<*>) -> Unit)
 
     fun submitTransaction(transaction: ChainTransaction)
 

@@ -2,10 +2,10 @@ package org.starcoin.sirius.protocol.ethereum
 
 import kotlinx.io.IOException
 import org.starcoin.sirius.core.Address
-import org.starcoin.sirius.core.BlockInfo
 import org.starcoin.sirius.core.Hash
+import org.starcoin.sirius.crypto.CryptoKey
+import org.starcoin.sirius.crypto.eth.EthCryptoKey
 import org.starcoin.sirius.protocol.*
-import org.starcoin.sirius.util.KeyPairUtil
 import org.web3j.crypto.Credentials
 import org.web3j.crypto.RawTransaction
 import org.web3j.crypto.TransactionEncoder
@@ -18,13 +18,12 @@ import org.web3j.protocol.http.HttpService
 import org.web3j.protocol.ipc.UnixIpcService
 import org.web3j.utils.Numeric
 import java.math.BigInteger
-import java.security.KeyPair
 
 const val defaultHttpUrl = "http://127.0.0.1:8545"
 
 class EthereumChain constructor(httpUrl: String = defaultHttpUrl, socketPath: String? = null) :
-    Chain<EthereumTransaction, BlockInfo, HubContract> {
-    override fun newTransaction(keyPair: KeyPair, transaction: EthereumTransaction) {
+    Chain<EthereumTransaction, EthereumBlock, HubContract> {
+    override fun newTransaction(key: CryptoKey, transaction: EthereumTransaction) {
         val rawtx = RawTransaction.createTransaction(
             BigInteger.valueOf(transaction.nonce),
             BigInteger.valueOf(transaction.gasPrice),
@@ -33,7 +32,7 @@ class EthereumChain constructor(httpUrl: String = defaultHttpUrl, socketPath: St
             BigInteger.valueOf(transaction.amount),
             transaction.data.toString()
         )
-        val credentials = Credentials.create(KeyPairUtil.getECKey(keyPair).privKey.toString())
+        val credentials = Credentials.create((key as EthCryptoKey).ecKey.privKey.toString())
         val hexTx = Numeric.toHexString(TransactionEncoder.signMessage(rawtx, credentials))
         web3jSrv!!.ethSendRawTransaction(hexTx).sendAsync().get()
     }
@@ -48,7 +47,7 @@ class EthereumChain constructor(httpUrl: String = defaultHttpUrl, socketPath: St
         return tx.chainTransaction()
     }
 
-    override fun getBlock(height: BigInteger): BlockInfo? {
+    override fun getBlock(height: BigInteger): EthereumBlock? {
 
         val blockReq = web3jSrv!!.ethGetBlockByNumber(
             if (height == BigInteger.valueOf(-1)) DefaultBlockParameterName.LATEST else
@@ -58,7 +57,7 @@ class EthereumChain constructor(httpUrl: String = defaultHttpUrl, socketPath: St
         if (blockReq.hasError()) throw IOException(blockReq.error.message)
 
         // FIXME: Use BigInteger in blockinfo
-        val blockInfo = BlockInfo(blockReq.block.number as Int)
+        val blockInfo = EthereumBlock(blockReq.block)
 
         blockReq.block.transactions.map { it ->
             val tx = it as Transaction
@@ -68,7 +67,7 @@ class EthereumChain constructor(httpUrl: String = defaultHttpUrl, socketPath: St
     }
 
 
-    override fun watchBlock(onNext: ((b: BlockInfo) -> Unit)) {
+    override fun watchBlock(onNext: ((b: EthereumBlock) -> Unit)) {
         web3jSrv!!.blockFlowable(true).subscribe { block -> onNext(block.block.blockInfo()) }
     }
 
@@ -84,7 +83,6 @@ class EthereumChain constructor(httpUrl: String = defaultHttpUrl, socketPath: St
 
     fun Transaction.chainTransaction(): EthereumTransaction {
         return EthereumTransaction(
-            Address.wrap(this.from),
             Address.wrap(this.to),
             System.currentTimeMillis(),  //timestamp
             this.gasPrice.longValueExact(),
@@ -94,13 +92,8 @@ class EthereumChain constructor(httpUrl: String = defaultHttpUrl, socketPath: St
         )
     }
 
-    fun EthBlock.Block.blockInfo(): BlockInfo {
-        val blockInfo = BlockInfo(this.number as Int)
-        this.transactions.map { it ->
-            val tx = it as Transaction
-            blockInfo.addTransaction(tx.chainTransaction())
-        }
-        return blockInfo
+    fun EthBlock.Block.blockInfo(): EthereumBlock {
+        return EthereumBlock(this)
     }
 
     override fun watchTransaction(txHash: Hash, listener: TransactionProgressListener) {

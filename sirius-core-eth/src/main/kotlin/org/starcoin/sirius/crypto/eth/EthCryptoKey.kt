@@ -13,7 +13,7 @@ import org.starcoin.sirius.crypto.CryptoKey
 import java.security.KeyPair
 import java.security.PrivateKey
 
-class EthCryptoKey internal constructor(private val ecKey: ECKey) : CryptoKey {
+class EthCryptoKey internal constructor(val ecKey: ECKey) : CryptoKey {
 
     internal constructor() : this(ECKey())
 

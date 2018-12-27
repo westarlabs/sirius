@@ -1,5 +1,6 @@
 dependencies{
     compile project(":sirius-core")
+    compile project(":sirius-core-eth")
     compile project(":sirius-proto")
     compile project(":sirius-contract")
 

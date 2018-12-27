@@ -5,27 +5,40 @@ import org.ethereum.core.Transaction
 import org.spongycastle.util.BigIntegers
 import org.starcoin.sirius.core.Address
 import org.starcoin.sirius.core.ChainTransaction
-import kotlin.properties.Delegates
+import org.starcoin.sirius.core.Hash
+import org.starcoin.sirius.lang.toULong
+import java.math.BigInteger
 
+//TODO use BigInteger to replace Long?
+class EthereumTransaction(val ethTx: Transaction) : ChainTransaction(
 
-class EthereumTransaction : ChainTransaction {
+    Address.wrap(ethTx.receiveAddress),
+    BigInteger(1, ethTx.value).toLong()
+) {
+    override val from: Address?
+        get() = when {
+            ethTx.sender == null -> null
+            else -> Address.wrap(ethTx.sender)
+        }
 
-    var ethTransaction: Transaction by Delegates.notNull()
-    var nonce: Long = 0
-    var gasPrice: Long = 0
-    var gasLimit: Long = 0
-    var data: ByteArray? = null
+    val nonce: Long
+        get() = ethTx.nonce.toULong()
+    val gasPrice: Long
+        get() = ethTx.gasPrice.toULong()
+    val gasLimit: Long
+        get() = ethTx.gasLimit.toULong()
+    val data: ByteArray?
+        get() = ethTx.data
 
     constructor(
-        from: Address,
         to: Address,
         nonce: Long,
         gasPrice: Long,
         gasLimit: Long,
         amount: Long,
         data: ByteArray?
-    ) : super(from, to, amount) {
-        ethTransaction = Transaction(
+    ) : this(
+        Transaction(
             BigIntegers.asUnsignedByteArray(nonce.toBigInteger()),
             BigIntegers.asUnsignedByteArray(gasPrice.toBigInteger()),
             BigIntegers.asUnsignedByteArray(gasLimit.toBigInteger()),
@@ -33,16 +46,9 @@ class EthereumTransaction : ChainTransaction {
             BigIntegers.asUnsignedByteArray(amount.toBigInteger()),
             data
         )
-        this.nonce = nonce
-        this.gasPrice = gasPrice
-        this.gasLimit = gasLimit
-        this.data = data
-        this.amount = amount
-    }
+    )
 
-    constructor(transaction: Transaction) {
-        ethTransaction = transaction
-        //FIXME: Init other properties
+    override fun txHash(): Hash {
+        return Hash.wrap(this.ethTx.hash)
     }
-
 }

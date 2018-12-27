@@ -309,18 +309,19 @@ class HubImpl(
         val hubRoot =
             HubRoot(this.eonState!!.state!!.root.toAMTreePathNode() as AMTreePathInternalNode, this.eonState!!.eon)
         logger.info("doCommit:" + hubRoot.toJSON())
-        val chainTransaction = ChainTransaction(
-            this.hubAddress,
-            Constants.CONTRACT_ADDRESS,
-            //TODO
-            "Commit",
-            hubRoot.toProto()
-        )
-        chainTransaction.sign(this.hubKeyPair)
-        this.connection.submitTransaction(chainTransaction)
-        val future = CompletableFuture<Receipt>()
-        this.txReceipts[chainTransaction.hash()] = future
-        return future
+        TODO()
+//        val chainTransaction = ChainTransaction(
+//            this.hubAddress,
+//            Constants.CONTRACT_ADDRESS,
+//            //TODO
+//            "Commit",
+//            hubRoot.toProto()
+//        )
+//        chainTransaction.sign(this.hubKeyPair)
+//        this.connection.submitTransaction(chainTransaction)
+//        val future = CompletableFuture<Receipt>()
+//        this.txReceipts[chainTransaction.hash()] = future
+//        return future
     }
 
     private fun processTransferDeliveryChallenge(challenge: Starcoin.OpenTransferDeliveryChallengeRequest) {
@@ -347,16 +348,16 @@ class HubImpl(
 //                )
                 .build()
 
-            val chainTransaction = ChainTransaction(
-                this.hubAddress,
-                Constants.CONTRACT_ADDRESS,
-                "CloseTransferDeliveryChallenge",
-                //LiquidityContractServiceGrpc.getCloseTransferDeliveryChallengeMethod()
-                //    .getFullMethodName(),
-                closeChallenge
-            )
-            chainTransaction.sign(this.hubKeyPair)
-            this.connection.submitTransaction(chainTransaction)
+//            val chainTransaction = ChainTransaction(
+//                this.hubAddress,
+//                Constants.CONTRACT_ADDRESS,
+//                "CloseTransferDeliveryChallenge",
+//                //LiquidityContractServiceGrpc.getCloseTransferDeliveryChallengeMethod()
+//                //    .getFullMethodName(),
+//                closeChallenge
+//            )
+//            chainTransaction.sign(this.hubKeyPair)
+//            this.connection.submitTransaction(chainTransaction)
         } else {
             logger.warning("Can not find tx Proof with challenge:" + challenge.toString())
         }
@@ -372,15 +373,15 @@ class HubImpl(
         val proof = BalanceUpdateProof()//(proofPath.leaf!!.account!!.update!!, proofPath)
         val closeBalanceUpdateChallengeRequest = proof.toProto<Starcoin.ProtoBalanceUpdateProof>()
 
-        val chainTransaction = ChainTransaction(
-            this.hubAddress,
-            Constants.CONTRACT_ADDRESS,
-            "CloseBalanceUpdateChallenge",
-            //LiquidityContractServiceGrpc.getCloseBalanceUpdateChallengeMethod().getFullMethodName(),
-            closeBalanceUpdateChallengeRequest
-        )
-        chainTransaction.sign(this.hubKeyPair)
-        this.connection.submitTransaction(chainTransaction)
+//        val chainTransaction = ChainTransaction(
+//            this.hubAddress,
+//            Constants.CONTRACT_ADDRESS,
+//            "CloseBalanceUpdateChallenge",
+//            //LiquidityContractServiceGrpc.getCloseBalanceUpdateChallengeMethod().getFullMethodName(),
+//            closeBalanceUpdateChallengeRequest
+//        )
+//        chainTransaction.sign(this.hubKeyPair)
+        //this.connection.submitTransaction(chainTransaction)
     }
 
     private fun processWithdrawal(withdrawal: Withdrawal) {
@@ -399,34 +400,34 @@ class HubImpl(
                         //TODO
                         //cancelWithdrawalBuilder.setPath(path.toProto()).build()
                     }
-                    val chainTransaction = ChainTransaction(
-                        this.hubAddress,
-                        Constants.CONTRACT_ADDRESS,
-                        "CancelWithdrawal",
-                        //LiquidityContractServiceGrpc.getCancelWithdrawalMethod().getFullMethodName(),
-                        cancelWithdrawalBuilder.build()
-                    )
-                    chainTransaction.sign(this.hubKeyPair)
-                    this.connection.submitTransaction(chainTransaction)
-                    val future = CompletableFuture<Receipt>()
-                    this.txReceipts[chainTransaction.hash()] = future
-                    future.whenComplete { _, _ ->
-                        // TODO ensure cancel success.
-                        logger.info(
-                            ("CancelWithdrawal:"
-                                    + blockAddress
-                                    + ", amount:"
-                                    + amount
-                                    + ", result:"
-                                    + future.getNow(null))
-                        )
+//                    val chainTransaction = ChainTransaction(
+//                        this.hubAddress,
+//                        Constants.CONTRACT_ADDRESS,
+//                        "CancelWithdrawal",
+//                        //LiquidityContractServiceGrpc.getCancelWithdrawalMethod().getFullMethodName(),
+//                        cancelWithdrawalBuilder.build()
+//                    )
+//                    chainTransaction.sign(this.hubKeyPair)
+//                    this.connection.submitTransaction(chainTransaction)
+//                    val future = CompletableFuture<Receipt>()
+//                    this.txReceipts[chainTransaction.hash()] = future
+//                    future.whenComplete { _, _ ->
+//                        // TODO ensure cancel success.
+//                        logger.info(
+//                            ("CancelWithdrawal:"
+//                                    + blockAddress
+//                                    + ", amount:"
+//                                    + amount
+//                                    + ", result:"
+//                                    + future.getNow(null))
+//                        )
 
-                        val withdrawalStatus = WithdrawalStatus(WithdrawalStatusType.INIT, withdrawal)
-                        withdrawalStatus.cancel()
-                        this.fireEvent(
-                            HubEvent(HubEventType.WITHDRAWAL, blockAddress, withdrawalStatus)
-                        )
-                    }
+//                        val withdrawalStatus = WithdrawalStatus(WithdrawalStatusType.INIT, withdrawal)
+//                        withdrawalStatus.cancel()
+//                        this.fireEvent(
+//                            HubEvent(HubEventType.WITHDRAWAL, blockAddress, withdrawalStatus)
+//                        )
+//                    }
                 } else {
                     val withdrawalStatus = WithdrawalStatus(WithdrawalStatusType.INIT, withdrawal)
                     withdrawalStatus.pass()
@@ -454,8 +455,8 @@ class HubImpl(
         )
     }
 
-    override fun onBlock(blockInfo: BlockInfo) {
-        logger.info("onBlock:" + blockInfo.toJson())
+    override fun onBlock(blockInfo: Block<*>) {
+        logger.info("onBlock:$blockInfo")
         val eon = Eon.calculateEon(blockInfo.height, this.blocksPerEon)
         var newEon = false
         if (this.eonState == null) {
@@ -496,29 +497,29 @@ class HubImpl(
 
     private fun processTransaction(tx: ChainTransaction) {
         val hash = tx.hash()
-        txReceipts[hash]?.complete(tx.receipt)
-        // default action is Deposit.
-        if (tx.action == null) {
-            val deposit = Deposit(tx.from!!, tx.amount!!)
-            logger.info("Deposit:" + deposit.toJSON())
-            this.processDeposit(deposit)
-        } else if (tx.action == "InitiateWithdrawal") {
-            val arguments = tx.getArguments(InitiateWithdrawalRequest::class.java)!!
-            //TODO
-            val withdrawal = Withdrawal.parseFromProtoMessage(arguments)
-            logger.info(tx.action + ":" + withdrawal.toString())
-            this.processWithdrawal(withdrawal)
-        } else if (tx.action == "OpenTransferDeliveryChallenge") {
-            //TODO
-            val arguments = tx.getArguments(Starcoin.OpenTransferDeliveryChallengeRequest::class.java)!!
-            logger.info(tx.action + ":" + arguments.toString())
-            this.processTransferDeliveryChallenge(arguments)
-        } else if (tx.action == "OpenBalanceUpdateChallenge") {
-            //TODO
-            val arguments = tx.getArguments(ProtoBalanceUpdateChallenge::class.java)!!
-            logger.info(tx.action + ":" + arguments.toString())
-            this.processBalanceUpdateChallenge(arguments)
-        }
+//        txReceipts[hash]?.complete(tx.receipt)
+//        // default action is Deposit.
+//        if (tx.action == null) {
+//            val deposit = Deposit(tx.from!!, tx.amount!!)
+//            logger.info("Deposit:" + deposit.toJSON())
+//            this.processDeposit(deposit)
+//        } else if (tx.action == "InitiateWithdrawal") {
+//            val arguments = tx.getArguments(InitiateWithdrawalRequest::class.java)!!
+//            //TODO
+//            val withdrawal = Withdrawal.parseFromProtoMessage(arguments)
+//            logger.info(tx.action + ":" + withdrawal.toString())
+//            this.processWithdrawal(withdrawal)
+//        } else if (tx.action == "OpenTransferDeliveryChallenge") {
+//            //TODO
+//            val arguments = tx.getArguments(Starcoin.OpenTransferDeliveryChallengeRequest::class.java)!!
+//            logger.info(tx.action + ":" + arguments.toString())
+//            this.processTransferDeliveryChallenge(arguments)
+//        } else if (tx.action == "OpenBalanceUpdateChallenge") {
+//            //TODO
+//            val arguments = tx.getArguments(ProtoBalanceUpdateChallenge::class.java)!!
+//            logger.info(tx.action + ":" + arguments.toString())
+//            this.processBalanceUpdateChallenge(arguments)
+//        }
     }
 
     override fun resetHubMaliciousFlag(): EnumSet<Hub.MaliciousFlag> {

@@ -1,6 +1,5 @@
 package org.starcoin.sirius.protocol.ethereum
 
-import org.bouncycastle.util.BigIntegers
 import org.ethereum.core.*
 import org.ethereum.listener.EthereumListener
 import org.ethereum.net.eth.message.StatusMessage
@@ -8,15 +7,12 @@ import org.ethereum.net.message.Message
 import org.ethereum.net.p2p.HelloMessage
 import org.ethereum.net.rlpx.Node
 import org.ethereum.net.server.Channel
-import org.starcoin.sirius.core.Address
-import org.starcoin.sirius.core.BlockInfo
-import org.starcoin.sirius.core.ChainTransaction
 import org.starcoin.sirius.core.Hash
 import org.starcoin.sirius.protocol.EthereumTransaction
 
-class  InMemoryEthereumListener : EthereumListener {
+class InMemoryEthereumListener : EthereumListener {
 
-    val blocks : MutableList<BlockInfo> = mutableListOf();
+    val blocks: MutableList<EthereumBlock> = mutableListOf();
 
     override fun onSyncDone(state: EthereumListener.SyncState?) {
         TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
@@ -47,8 +43,8 @@ class  InMemoryEthereumListener : EthereumListener {
     }
 
     override fun onBlock(blockSummary: BlockSummary?) {
-        val block=blockSummary?.blockInfo()
-        if(block!= null){
+        val block = blockSummary?.blockInfo()
+        if (block != null) {
             blocks.add(block)
         }
     }
@@ -93,31 +89,16 @@ class  InMemoryEthereumListener : EthereumListener {
         return EthereumTransaction(this)
     }
 
-    fun BlockSummary.blockInfo(): BlockInfo {
-        val blockInfo = BlockInfo(this.block?.number as Int)
-        this.block?.transactionsList?.map { it ->
-            blockInfo.addTransaction(
-                ChainTransaction(
-                    // Transaction from block address
-                    Address.wrap(it.sender),
-                    // Transaction to block address
-                    Address.wrap(it.receiveAddress),
-                    // Transaction timestamp
-                    0,  //timestamp
-                    // Transaction value
-                    BigIntegers.fromUnsignedByteArray(it.value).toLong(), // value
-                    // Transaction data
-                    "",
-                    // FIXME: No argument in ethereum transaction
-                    // Transaction argument
-                    it.data
-                )
-            )
+    fun BlockSummary.blockInfo(): EthereumBlock {
+        TODO() //use BlockSummary or EthBlock.Block
+        var blockInfo: EthereumBlock//(block?.number as Int)
+        this.block?.transactionsList?.map {
+            EthereumTransaction(it)
         }
         return blockInfo
     }
 
     fun findTransaction(hash: Hash): EthereumTransaction? {
-        return blocks.flatMap { it.getTransactions() }.first { it.equals(hash)} as EthereumTransaction
+        return blocks.flatMap { it.getTransactions() }.first { it.equals(hash) } as EthereumTransaction
     }
 }

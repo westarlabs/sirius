@@ -4,7 +4,6 @@ import org.apache.commons.lang3.RandomUtils
 import org.junit.Assert
 import org.junit.Before
 import org.junit.Test
-import org.starcoin.proto.Starcoin.InitiateWithdrawalRequest
 import org.starcoin.sirius.core.*
 import org.starcoin.sirius.hub.Hub.MaliciousFlag
 import org.starcoin.sirius.util.KeyPairUtil
@@ -21,7 +20,7 @@ class HubTest {
 
     private var hub: HubImpl? = null
     private var txs: MutableList<ChainTransaction> = ArrayList()
-    private var listenerReference: AtomicReference<(BlockInfo) -> Unit>? = null
+    private var listenerReference: AtomicReference<(Block<*>) -> Unit>? = null
     private var blockHeight = AtomicInteger()
 
     //internal var globalBalance: GlobalBalance
@@ -47,7 +46,7 @@ class HubTest {
 
         listenerReference = AtomicReference()
         val connection = object : HubChainConnection {
-            override fun watchBlock(blockInfoListener: (BlockInfo) -> Unit) {
+            override fun watchBlock(blockInfoListener: (Block<*>) -> Unit) {
                 listenerReference!!.set(blockInfoListener)
             }
 
@@ -63,26 +62,26 @@ class HubTest {
     }
 
     private fun processTransaction(tx: ChainTransaction) {
-        if (tx.action == null && tx.to == Constants.CONTRACT_ADDRESS) {
-            //TODO
-            //globalBalance.deposit(Deposit(tx.getFrom(), tx.getAmount()))
-        } else if (tx.action != null) {
-            if (tx.action == "Commit") {
-                //TODO
-//                val hubRoot = sirius.coreContractServiceGrpc.getCommitMethod()
-//                    .getRequestMarshaller()
-//                    .parse(ByteArrayInputStream(tx.getArguments()))
-//                val result = this.globalBalance.commit(HubRoot(hubRoot))
-//                Assert.assertTrue(result)
-                tx.receipt = Receipt(true)
-            } else if (tx.action == "InitiateWithdrawal") {
-                //TODO
-//                val request = sirius.coreContractServiceGrpc.getInitiateWithdrawalMethod()
-//                    .parseRequest(ByteArrayInputStream(tx.getArguments()))
-//                val withdrawal = Withdrawal(request)
-//                this.globalBalance.withdrawal(withdrawal.getAddress(), WithdrawalStatus(withdrawal))
-            }
-        }
+//        if (tx.action == null && tx.to == Constants.CONTRACT_ADDRESS) {
+//            //TODO
+//            //globalBalance.deposit(Deposit(tx.getFrom(), tx.getAmount()))
+//        } else if (tx.action != null) {
+//            if (tx.action == "Commit") {
+//                //TODO
+////                val hubRoot = sirius.coreContractServiceGrpc.getCommitMethod()
+////                    .getRequestMarshaller()
+////                    .parse(ByteArrayInputStream(tx.getArguments()))
+////                val result = this.globalBalance.commit(HubRoot(hubRoot))
+////                Assert.assertTrue(result)
+//                tx.receipt = Receipt(true)
+//            } else if (tx.action == "InitiateWithdrawal") {
+//                //TODO
+////                val request = sirius.coreContractServiceGrpc.getInitiateWithdrawalMethod()
+////                    .parseRequest(ByteArrayInputStream(tx.getArguments()))
+////                val withdrawal = Withdrawal(request)
+////                this.globalBalance.withdrawal(withdrawal.getAddress(), WithdrawalStatus(withdrawal))
+//            }
+//        }
     }
 
     private inner class LocalAccount {
@@ -224,7 +223,7 @@ class HubTest {
     }
 
     private fun deposit(account: LocalAccount, amount: Long, expectSuccess: Boolean) {
-        this.txs.add(ChainTransaction(account.address, Constants.CONTRACT_ADDRESS, amount))
+        //this.txs.add(ChainTransaction(account.address, Constants.CONTRACT_ADDRESS, amount))
         val previousDeposit = hub!!.getHubAccount(account.address)!!.deposit
         newBlock()
         account.hubAccount = hub!!.getHubAccount(account.address)
@@ -256,32 +255,33 @@ class HubTest {
     }
 
     private fun withdraw(address: Address, amount: Long) {
-        this.txs.add(
-            ChainTransaction(
-                address,
-                Constants.CONTRACT_ADDRESS,
-                "InitiateWithdrawal",
-                //sirius.coreContractServiceGrpc.getInitiateWithdrawalMethod().getFullMethodName(),
-                InitiateWithdrawalRequest.newBuilder()
-                    .setAddress(address.toByteString())
-                    .setAmount(amount)
-                    //TODO
-                    //.setPath(hub!!.getProof(address)!!.toProto())
-                    .build()
-            )
-        )
+//        this.txs.add(
+//            ChainTransaction(
+//                address,
+//                Constants.CONTRACT_ADDRESS,
+//                "InitiateWithdrawal",
+//                //sirius.coreContractServiceGrpc.getInitiateWithdrawalMethod().getFullMethodName(),
+//                InitiateWithdrawalRequest.newBuilder()
+//                    .setAddress(address.toByteString())
+//                    .setAmount(amount)
+//                    //TODO
+//                    //.setPath(hub!!.getProof(address)!!.toProto())
+//                    .build()
+//            )
+//        )
         newBlock()
         Assert.assertEquals(amount, hub!!.getHubAccount(address)!!.withdraw)
         totalHubBalance.addAndGet(-amount)
     }
 
-    private fun newBlock(): BlockInfo {
-        val blockInfo = BlockInfo(blockHeight.getAndIncrement())
-        if (this.txs.size > 0) {
-            this.txs.stream().peek { this.processTransaction(it) }
-                .forEach { blockInfo.addTransaction(it) }
-            this.txs = ArrayList()
-        }
+    private fun newBlock(): Block<*> {
+        TODO()
+        val blockInfo: Block<*> //(blockHeight.getAndIncrement())
+//        if (this.txs.size > 0) {
+//            this.txs.stream().peek { this.processTransaction(it) }
+//                .forEach { blockInfo.addTransaction(it) }
+//            this.txs = ArrayList()
+//        }
         listenerReference!!.get()(blockInfo)
         return blockInfo
     }
