@@ -11,15 +11,15 @@ data class BalanceUpdateProof(
     @SerialId(1)
     val update: Update = Update.DUMMY_UPDATE,
     @SerialId(2)
-    val provePath: AMTreePath? = AMTreePath.DUMMY_PATH
+    val proof: AMTreeProof = AMTreeProof.DUMMY_PROOF
 ) : SiriusObject() {
     companion object :
         SiriusObjectCompanion<BalanceUpdateProof, Starcoin.ProtoBalanceUpdateChallenge>(BalanceUpdateProof::class) {
 
-        var DUMMY_BALANCE_UPDATE_PROOF = BalanceUpdateProof(Update.DUMMY_UPDATE, AMTreePath.DUMMY_PATH)
+        var DUMMY_BALANCE_UPDATE_PROOF = BalanceUpdateProof(Update.DUMMY_UPDATE, AMTreeProof.DUMMY_PROOF)
 
         override fun mock(): BalanceUpdateProof {
-            return BalanceUpdateProof(Update.mock(), AMTreePath.mock())
+            return BalanceUpdateProof(Update.mock(), AMTreeProof.mock())
         }
     }
 }

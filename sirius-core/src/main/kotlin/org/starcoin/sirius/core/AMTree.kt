@@ -48,6 +48,7 @@ data class AMTreeLeafNodeInfo(
 @Serializable
 data class AMTreeProof(@SerialId(1) val path: AMTreePath, @SerialId(2) val leaf: AMTreePathLeafNode) : SiriusObject() {
     companion object : SiriusObjectCompanion<AMTreeProof, Starcoin.AMTreeProof>(AMTreeProof::class) {
+        val DUMMY_PROOF = AMTreeProof(AMTreePath.DUMMY_PATH, AMTreePathLeafNode.DUMMY_NODE)
         override fun mock(): AMTreeProof {
             return AMTreeProof(AMTreePath.mock(), AMTreePathLeafNode.mock())
         }

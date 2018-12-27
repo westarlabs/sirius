@@ -24,6 +24,7 @@ data class MerklePath(@SerialId(1) private val nodes: MutableList<MerklePathNode
     }
 
     companion object : SiriusObjectCompanion<MerklePath, Starcoin.ProtoMerklePath>(MerklePath::class) {
+        val DUMMY_PATH = MerklePath()
         override fun mock(): MerklePath {
             val path = MerklePath()
             for (i in 0..MockUtils.nextInt(0, 10)) {

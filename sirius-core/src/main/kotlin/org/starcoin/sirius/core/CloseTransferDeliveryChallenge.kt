@@ -3,19 +3,23 @@ package org.starcoin.sirius.core
 import kotlinx.serialization.SerialId
 import kotlinx.serialization.Serializable
 import org.starcoin.proto.Starcoin
+import org.starcoin.sirius.crypto.CryptoService
 import org.starcoin.sirius.serialization.ProtobufSchema
+import org.starcoin.sirius.serialization.PublicKeySerializer
+import java.security.PublicKey
 
 @ProtobufSchema(Starcoin.CloseTransferDeliveryChallengeRequest::class)
 @Serializable
 data class CloseTransferDeliveryChallenge(
     @SerialId(1)
-    var merklePath: AMTreePath = AMTreePath.DUMMY_PATH,
+    val proof: AMTreeProof = AMTreeProof.DUMMY_PROOF,
     @SerialId(2)
-    var update: Update = Update.DUMMY_UPDATE,
+    val update: Update = Update.DUMMY_UPDATE,
     @SerialId(3)
-    var path: MerklePath = MerklePath(),
+    val txPath: MerklePath = MerklePath.DUMMY_PATH,
     @SerialId(4)
-    var fromPublicKey: Participant = Participant.DUMMY_PARTICIPANT
+    @Serializable(with = PublicKeySerializer::class)
+    val fromPublicKey: PublicKey = CryptoService.getDummyCryptoKey().getKeyPair().public
 ) : SiriusObject() {
     companion object :
         SiriusObjectCompanion<CloseTransferDeliveryChallenge, Starcoin.CloseTransferDeliveryChallengeRequest>(
@@ -26,10 +30,10 @@ data class CloseTransferDeliveryChallenge(
 
         override fun mock(): CloseTransferDeliveryChallenge {
             return CloseTransferDeliveryChallenge(
-                AMTreePath.mock(),
+                AMTreeProof.mock(),
                 Update.mock(),
                 MerklePath.mock(),
-                Participant.mock()
+                CryptoService.getDummyCryptoKey().getKeyPair().public
             )
         }
     }

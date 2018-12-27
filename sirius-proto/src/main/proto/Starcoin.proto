@@ -161,7 +161,7 @@ message ProtoBalanceUpdateChallenge {
 
 message ProtoBalanceUpdateProof {
     required Update update = 1;
-    required AMTreePath path = 2;
+    required AMTreeProof proof = 2;
 }
 
 message RegisterParticipantRequest {
@@ -242,14 +242,14 @@ message OpenTransferDeliveryChallengeRequest {
 }
 
 message CloseTransferDeliveryChallengeRequest {
-    required AMTreePath balancePath = 1;
+    required AMTreeProof proof = 1;
     required Update update = 2;
-    required ProtoMerklePath transPath = 3;
-    required bytes toUserPublicKey = 4;
+    required ProtoMerklePath txPath = 3;
+    required bytes fromPublicKey = 4;
 }
 
 message RecoverFundsRequest {
-    required AMTreePath path = 1;
+    required AMTreeProof proof = 1;
     required bytes address = 2;
 }
 
@@ -379,8 +379,8 @@ service HubService {
     rpc receiveNewTransfer (ProtoIOU) returns (SuccResponse);
     rpc queryUpdate (ProtoBlockAddress) returns (Update);
     rpc queryUpdateWithEon (BlockAddressAndEon) returns (Update);
-    rpc getProof (ProtoBlockAddress) returns (AMTreePath);
-    rpc getProofWithEon (BlockAddressAndEon) returns (AMTreePath);
+    rpc getProof (ProtoBlockAddress) returns (AMTreeProof);
+    rpc getProofWithEon (BlockAddressAndEon) returns (AMTreeProof);
     rpc getHubInfo (google.protobuf.Empty) returns (ProtoHubInfo);
     rpc watch (ProtoBlockAddress) returns (stream ProtoHubEvent);
     rpc watchHubRoot (google.protobuf.Empty) returns (stream ProtoHubRoot);
