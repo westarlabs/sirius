@@ -28,8 +28,8 @@ class Wallet<T:ChainTransaction>{
 
         this.blockChainListener = BlockChainListener(hub)
 
-        chain.watchBlock {
-            this.blockChainListener.onNewBlock(it)
-        }
+        //chain.watchBlock {
+        //    this.blockChainListener.onNewBlock(it)
+        //}
     }
 }

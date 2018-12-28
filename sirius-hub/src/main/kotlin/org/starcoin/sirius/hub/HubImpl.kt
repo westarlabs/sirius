@@ -473,7 +473,7 @@ class HubImpl(
             val future = this.doCommit()
             // TODO only start new eon after commit success.
             future.whenComplete { receipt, throwable ->
-                if (!receipt.isSuccess) {
+                if (!receipt.success) {
                     // TODO
                     logger.severe("commit tx receipt is failure.")
                 } else {
