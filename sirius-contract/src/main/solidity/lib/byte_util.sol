@@ -97,7 +97,8 @@ library ByteUtilLib {
 
     function bool2byte(bool self) internal pure returns (bytes memory data) {
         data = new bytes(1);
-        data[0] = (self ? bytes1(0x01) : bytes1(0x80));
+        //TODO ensure false should use 0x80 or 0x0
+        data[0] = (self ? bytes1(0x01) : bytes1(0x0));
         return data;
     }
 
