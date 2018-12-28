@@ -5,7 +5,7 @@ import org.junit.Assert
 import org.junit.Test
 import org.starcoin.sirius.serialization.rlp.RLP
 
-class TestDataRLP : ContractTestBase("test_data_rlp.sol") {
+class TestDataRLP : ContractTestBase("test_data_rlp.sol", "TestDataRLP") {
 
     @Test
     fun testBool() {

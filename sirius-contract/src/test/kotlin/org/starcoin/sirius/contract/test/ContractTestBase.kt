@@ -6,6 +6,7 @@ import org.apache.commons.lang3.RandomUtils
 import org.ethereum.config.SystemProperties
 import org.ethereum.solidity.compiler.CompilationResult
 import org.ethereum.solidity.compiler.SolidityCompiler
+import org.ethereum.solidity.compiler.SolidityCompiler.Options
 import org.ethereum.util.blockchain.SolidityContract
 import org.ethereum.util.blockchain.StandaloneBlockchain
 import org.junit.Assert
@@ -33,7 +34,7 @@ data class Data(val boolean: Boolean, val int: Int, val string: String, val addr
     }
 }
 
-abstract class ContractTestBase(val contractFile: String) {
+abstract class ContractTestBase(val contractFile: String, val contractName: String) {
 
     companion object : WithLogging()
 
@@ -44,6 +45,7 @@ abstract class ContractTestBase(val contractFile: String) {
         contract = deployContract()
     }
 
+    @Suppress("INACCESSIBLE_TYPE")
     fun deployContract(): SolidityContract {
         val sb = StandaloneBlockchain().withAutoblock(true)
         val url = this.javaClass::class.java.getResource("/$contractFile")
@@ -51,19 +53,20 @@ abstract class ContractTestBase(val contractFile: String) {
 
         val path = File(url.toURI()).parentFile.absolutePath
         LOG.info("allowed_path:$path")
-
-        val contractName = "TestRLP"
         val compileRes = compiler.compileSrc(
             File(url.toURI()),
             false,
             true,
-            SolidityCompiler.Options.ABI,
-            SolidityCompiler.Options.BIN,
-            SolidityCompiler.Options.AllowPaths(listOf(path))
+            Options.ABI,
+            Options.BIN,
+            Options.AllowPaths(listOf(path))
         )
         Assert.assertFalse("Compile result: " + compileRes.errors, compileRes.isFailed)
 
         val result = CompilationResult.parse(compileRes.output)
-        return sb.submitNewContract(result.getContract(contractName)) as StandaloneBlockchain.SolidityContractImpl
+        val contractMetadata = result.getContract(contractName)
+        LOG.info("$contractFile compile abi ${contractMetadata.abi}")
+        LOG.info("$contractFile compile bin ${contractMetadata.bin}")
+        return sb.submitNewContract(contractMetadata) as StandaloneBlockchain.SolidityContractImpl
     }
 }

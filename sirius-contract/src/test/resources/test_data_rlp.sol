@@ -3,7 +3,7 @@ pragma solidity ^0.5.1;
 import "./lib/rlp_decoder.sol";
 import "./lib/rlp_encoder.sol";
 
-contract TestRLP {
+contract TestDataRLP {
 
     using RLPLib for RLPLib.RLPItem;
     using RLPLib for RLPLib.Iterator;
