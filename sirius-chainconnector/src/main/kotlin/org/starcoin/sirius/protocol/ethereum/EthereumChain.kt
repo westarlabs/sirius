@@ -7,9 +7,6 @@ import org.starcoin.sirius.core.Receipt
 import org.starcoin.sirius.crypto.CryptoKey
 import org.starcoin.sirius.crypto.eth.EthCryptoKey
 import org.starcoin.sirius.protocol.*
-import org.web3j.crypto.Credentials
-import org.web3j.crypto.RawTransaction
-import org.web3j.crypto.TransactionEncoder
 import org.web3j.protocol.Web3j
 import org.web3j.protocol.core.DefaultBlockParameter
 import org.web3j.protocol.core.DefaultBlockParameterName
@@ -18,33 +15,32 @@ import org.web3j.protocol.core.methods.response.Transaction
 import org.web3j.protocol.http.HttpService
 import org.web3j.protocol.ipc.UnixIpcService
 import org.web3j.utils.Numeric
+import java.lang.Exception
 import java.math.BigInteger
 
 const val defaultHttpUrl = "http://127.0.0.1:8545"
 
+class NewTransactionException(message: String) : Exception(message)
+
 class EthereumChain constructor(httpUrl: String = defaultHttpUrl, socketPath: String? = null) :
     Chain<EthereumTransaction, EthereumBlock, HubContract> {
-    override fun getTransactionReceipts(txHashs: List<Hash>): List<Receipt> {
-        TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
-    }
-
-    override fun newTransaction(key: CryptoKey, transaction: EthereumTransaction) {
-        val rawtx = RawTransaction.createTransaction(
-            BigInteger.valueOf(transaction.nonce),
-            BigInteger.valueOf(transaction.gasPrice),
-            BigInteger.valueOf(transaction.gasLimit),
-            transaction.to.toString(),
-            BigInteger.valueOf(transaction.amount),
-            transaction.data.toString()
-        )
-        val credentials = Credentials.create((key as EthCryptoKey).ecKey.privKey.toString())
-        val hexTx = Numeric.toHexString(TransactionEncoder.signMessage(rawtx, credentials))
-        web3jSrv!!.ethSendRawTransaction(hexTx).sendAsync().get()
-    }
-
     private val web3jSrv: Web3j? =
         Web3j.build(if (socketPath != null) UnixIpcService(socketPath) else HttpService(httpUrl))
 
+    fun getNonce(address: Address): Long {
+        return web3jSrv!!.ethGetTransactionCount(
+            Numeric.toHexString(address.toBytes()),
+            DefaultBlockParameterName.LATEST
+        ).send().transactionCount.toLong()
+    }
+
+    override fun newTransaction(key: CryptoKey, tx: EthereumTransaction) {
+        tx.ethTx.sign((key as EthCryptoKey).ecKey)
+        val hexTx = Numeric.toHexString(tx.ethTx.encoded)
+        val resp = web3jSrv!!.ethSendRawTransaction(hexTx).sendAsync().get()
+        if (resp.hasError())
+            throw NewTransactionException(resp.error.message)
+    }
 
     override fun findTransaction(hash: Hash): EthereumTransaction? {
         val req = web3jSrv!!.ethGetTransactionByHash(hash.toString()).send()
@@ -83,8 +79,10 @@ class EthereumChain constructor(httpUrl: String = defaultHttpUrl, socketPath: St
     }
 
     override fun getBalance(address: Address): BigInteger {
-        val req = web3jSrv!!.ethGetBalance(address.toString(), DefaultBlockParameterName.LATEST).send()
+        val req =
+            web3jSrv!!.ethGetBalance(Numeric.toHexString(address.toBytes()), DefaultBlockParameterName.LATEST).send()
         if (req.hasError()) throw IOException(req.error.message)
+
         return req.balance
     }
 
@@ -103,6 +101,9 @@ class EthereumChain constructor(httpUrl: String = defaultHttpUrl, socketPath: St
         return EthereumBlock(this)
     }
 
+    override fun getTransactionReceipts(txHashs: List<Hash>): List<Receipt> {
+        TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
+    }
 
     override fun getContract(parameter: QueryContractParameter): HubContract {
         TODO("not implemented") //To change body of created functions use File | Settings | File Templates.

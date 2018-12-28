@@ -20,7 +20,7 @@ class EthereumTransaction(val ethTx: Transaction) : ChainTransaction(
             ethTx.sender == null -> null
             else -> Address.wrap(ethTx.sender)
         }
-
+    // Note: Generate nonce by EthereumChain.getNonce
     val nonce: Long
         get() = ethTx.nonce.toULong()
     val gasPrice: Long
