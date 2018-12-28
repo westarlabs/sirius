@@ -8,9 +8,12 @@ import org.starcoin.sirius.crypto.CryptoKey
 import org.starcoin.sirius.crypto.eth.EthCryptoKey
 import org.starcoin.sirius.protocol.*
 import org.web3j.protocol.Web3j
+import org.web3j.protocol.core.Response.Error
 import org.web3j.protocol.core.DefaultBlockParameter
 import org.web3j.protocol.core.DefaultBlockParameterName
+import org.web3j.protocol.core.methods.request.EthFilter
 import org.web3j.protocol.core.methods.response.EthBlock
+import org.web3j.protocol.core.methods.response.EthLog.LogObject
 import org.web3j.protocol.core.methods.response.Transaction
 import org.web3j.protocol.http.HttpService
 import org.web3j.protocol.ipc.UnixIpcService
@@ -20,37 +23,78 @@ import java.math.BigInteger
 
 const val defaultHttpUrl = "http://127.0.0.1:8545"
 
-class NewTransactionException(message: String) : Exception(message)
 
 class EthereumChain constructor(httpUrl: String = defaultHttpUrl, socketPath: String? = null) :
     Chain<EthereumTransaction, EthereumBlock, HubContract> {
-    private val web3jSrv: Web3j? =
+
+    private val web3: Web3j =
         Web3j.build(if (socketPath != null) UnixIpcService(socketPath) else HttpService(httpUrl))
 
     fun getNonce(address: Address): Long {
-        return web3jSrv!!.ethGetTransactionCount(
+        return web3.ethGetTransactionCount(
             Numeric.toHexString(address.toBytes()),
             DefaultBlockParameterName.LATEST
         ).send().transactionCount.toLong()
     }
 
-    override fun newTransaction(key: CryptoKey, tx: EthereumTransaction) {
-        tx.ethTx.sign((key as EthCryptoKey).ecKey)
-        val hexTx = Numeric.toHexString(tx.ethTx.encoded)
-        val resp = web3jSrv!!.ethSendRawTransaction(hexTx).sendAsync().get()
-        if (resp.hasError())
-            throw NewTransactionException(resp.error.message)
+    override fun newTransaction(key: CryptoKey, transaction: EthereumTransaction) {
+        transaction.ethTx.sign((key as EthCryptoKey).ecKey)
+        val hexTx = Numeric.toHexString(transaction.ethTx.encoded)
+        val resp = web3.ethSendRawTransaction(hexTx).sendAsync().get()
+        if (resp.hasError()) throw NewTxException(resp.error)
     }
 
-    override fun findTransaction(hash: Hash): EthereumTransaction? {
-        val req = web3jSrv!!.ethGetTransactionByHash(hash.toString()).send()
+    override
+    fun watchTransactions(
+        contract: Address,
+        topic: EventTopic,
+        filter: (FilterArguments) -> Boolean,
+        onNext: (txResult: TransactionResult<EthereumTransaction>) -> Unit
+    ) {
+        val ethFilter = EthFilter(
+            DefaultBlockParameterName.LATEST,
+            DefaultBlockParameterName.LATEST,
+            Numeric.toHexString(contract.toBytes())
+        )
+        // ethFilter.addSingleTopic(topic)
+        val newFilterResp = web3.ethNewFilter(ethFilter).sendAsync().get()
+        if (newFilterResp.hasError()) throw NewFilterException(newFilterResp.error)
+        val filterChangeResp = web3.ethGetFilterChanges(newFilterResp.filterId).sendAsync().get()
+        if (filterChangeResp.hasError()) throw FilterChangeException(filterChangeResp.error)
+        filterChangeResp.logs.map { it as LogObject }.forEach {
+            it.blockHash
+        }
+
+    }
+
+
+    override fun watchBlock(
+        contract: Address,
+        topic: EventTopic,
+        filter: (FilterArguments) -> Boolean,
+        onNext: (block: EthereumBlock) -> Unit
+    ) {
+        web3.blockFlowable(true).subscribe { block -> onNext(block.block.blockInfo()) }
+    }
+
+    override fun getBalance(address: Address): BigInteger {
+        val req =
+            web3.ethGetBalance(Numeric.toHexString(address.toBytes()), DefaultBlockParameterName.LATEST).send()
         if (req.hasError()) throw IOException(req.error.message)
-        val tx = req.transaction.orElse(null)
+
+        return req.balance
+    }
+
+
+    override fun findTransaction(hash: Hash): EthereumTransaction? {
+        val resp = web3.ethGetTransactionByHash(hash.toString()).send()
+        if (resp.hasError()) throw Exception(resp.error.message)
+        val tx = resp.transaction.orElse(null)
         return tx.chainTransaction()
     }
 
     override fun getBlock(height: BigInteger): EthereumBlock? {
-        val blockReq = web3jSrv!!.ethGetBlockByNumber(
+        val blockReq = web3.ethGetBlockByNumber(
             if (height == BigInteger.valueOf(-1)) DefaultBlockParameterName.LATEST else
                 DefaultBlockParameter.valueOf(height),
             true
@@ -66,41 +110,6 @@ class EthereumChain constructor(httpUrl: String = defaultHttpUrl, socketPath: St
         return blockInfo
     }
 
-
-    override fun watchBlock(filter: (FilterArguments) -> Boolean, onNext: (block: EthereumBlock) -> Unit) {
-        web3jSrv!!.blockFlowable(true).subscribe { block -> onNext(block.block.blockInfo()) }
-    }
-
-    override fun watchTransactions(
-        filter: (FilterArguments) -> Boolean,
-        onNext: (txResult: TransactionResult<EthereumTransaction>) -> Unit
-    ) {
-        TODO()
-    }
-
-    override fun getBalance(address: Address): BigInteger {
-        val req =
-            web3jSrv!!.ethGetBalance(Numeric.toHexString(address.toBytes()), DefaultBlockParameterName.LATEST).send()
-        if (req.hasError()) throw IOException(req.error.message)
-
-        return req.balance
-    }
-
-    fun Transaction.chainTransaction(): EthereumTransaction {
-        return EthereumTransaction(
-            Address.wrap(this.to),
-            System.currentTimeMillis(),  //timestamp
-            this.gasPrice.longValueExact(),
-            0,
-            this.value as Long,
-            this.input.toByteArray()
-        )
-    }
-
-    fun EthBlock.Block.blockInfo(): EthereumBlock {
-        return EthereumBlock(this)
-    }
-
     override fun getTransactionReceipts(txHashs: List<Hash>): List<Receipt> {
         TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
     }
@@ -109,4 +118,23 @@ class EthereumChain constructor(httpUrl: String = defaultHttpUrl, socketPath: St
         TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
     }
 
+    private fun Transaction.chainTransaction(): EthereumTransaction {
+        return EthereumTransaction(
+            Address.wrap(this.to),
+            System.currentTimeMillis(),  //timestamp
+            this.gasPrice.longValueExact(),
+            0,
+            this.value.toLong(),
+            this.input.toByteArray()
+        )
+    }
+
+    private fun EthBlock.Block.blockInfo(): EthereumBlock {
+        return EthereumBlock(this)
+    }
+
+    class NewTxException(error: Error) : Exception(error.message)
+    open class WatchTxExecption(error: Error) : Exception(error.message)
+    class NewFilterException(error: Error) : WatchTxExecption(error)
+    class FilterChangeException(error: Error) : WatchTxExecption(error)
 }

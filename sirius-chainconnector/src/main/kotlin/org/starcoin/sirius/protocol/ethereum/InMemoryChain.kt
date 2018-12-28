@@ -10,6 +10,16 @@ import org.starcoin.sirius.protocol.*
 import java.math.BigInteger
 
 class InMemoryChain(autoGenblock: Boolean) : Chain<EthereumTransaction, EthereumBlock, HubContract> {
+
+    override fun watchTransactions(
+        contract: Address,
+        topic: EventTopic,
+        filter: (FilterArguments) -> Boolean,
+        onNext: (txResult: TransactionResult<EthereumTransaction>) -> Unit
+    ) {
+        TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
+    }
+
     override fun getTransactionReceipts(txHashs: List<Hash>): List<Receipt> {
         TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
     }
@@ -23,18 +33,16 @@ class InMemoryChain(autoGenblock: Boolean) : Chain<EthereumTransaction, Ethereum
         return inMemoryEthereumListener.blocks.get(height.toInt())
     }
 
-    override fun watchBlock(filter: (FilterArguments) -> Boolean, onNext: (block: EthereumBlock) -> Unit) {
+    override fun watchBlock(
+        contract: Address,
+        topic: EventTopic,
+        filter: (FilterArguments) -> Boolean,
+        onNext: (block: EthereumBlock) -> Unit
+    ) {
         sb.addEthereumListener(inMemoryEthereumListener)
         if(autoGenblock){
             sb.withAutoblock(autoGenblock)
         }
-    }
-
-    override fun watchTransactions(
-        filter: (FilterArguments) -> Boolean,
-        onNext: (txResult: TransactionResult<EthereumTransaction>) -> Unit
-    ) {
-
     }
 
     override fun getBalance(address: Address): BigInteger {

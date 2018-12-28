@@ -90,15 +90,10 @@ class InMemoryEthereumListener : EthereumListener {
     }
 
     fun BlockSummary.blockInfo(): EthereumBlock {
-        TODO() //use BlockSummary or EthBlock.Block
-        var blockInfo: EthereumBlock//(block?.number as Int)
-        this.block?.transactionsList?.map {
-            EthereumTransaction(it)
-        }
-        return blockInfo
+        TODO()
     }
 
     fun findTransaction(hash: Hash): EthereumTransaction? {
-        return blocks.flatMap { it.getTransactions() }.first { it.equals(hash) } as EthereumTransaction
+        return blocks.flatMap { it.getTransactions() }.first { it.equals(hash) }
     }
 }

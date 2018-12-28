@@ -3,6 +3,7 @@ package org.starcoin.sirius.protocol.ethereum.contract
 import org.ethereum.solidity.compiler.CompilationResult
 import org.ethereum.solidity.compiler.SolidityCompiler
 import org.ethereum.config.SystemProperties
+import org.starcoin.proto.Starcoin
 import org.starcoin.sirius.core.*
 import org.starcoin.sirius.protocol.EthereumTransaction
 import org.starcoin.sirius.protocol.HubContract
@@ -98,7 +99,7 @@ class EthereumHubContract(chain: EthereumChain) : HubContract {
         TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
     }
 
-    override fun recoverFunds(request: RecoverFunds): Hash {
+    override fun recoverFunds(request: Starcoin.RecoverFundsRequest): Hash {
         TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
     }
 

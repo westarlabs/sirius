@@ -8,12 +8,16 @@ enum class ChainType {
     ETH
 }
 
-class FilterArguments {
-    
-}
+class FilterArguments
+
 
 data class TransactionResult<T : ChainTransaction>(val tx: T, val receipt: Receipt) {
 
+}
+
+enum class EventTopic {
+    Deposit,
+    WithDraw
 }
 
 interface Chain<T : ChainTransaction, B : Block<T>, C : HubContract> {
@@ -22,11 +26,20 @@ interface Chain<T : ChainTransaction, B : Block<T>, C : HubContract> {
 
     fun getBlock(height: BigInteger = BigInteger.valueOf(-1)): B?
 
-    fun watchBlock(filter: (FilterArguments) -> Boolean, onNext: (block: B) -> Unit)
+    fun watchBlock(
+        contract: Address,
+        topic: EventTopic,
+        filter: (FilterArguments) -> Boolean, onNext: (block: B) -> Unit
+    )
 
     fun getTransactionReceipts(txHashs: List<Hash>): List<Receipt>
 
-    fun watchTransactions(filter: (FilterArguments) -> Boolean, onNext: (txResult: TransactionResult<T>) -> Unit)
+    fun watchTransactions(
+        contract: Address,
+        topic: EventTopic,
+        filter: (FilterArguments) -> Boolean,
+        onNext: (txResult: TransactionResult<T>) -> Unit
+    )
 
     fun getBalance(address: Address): BigInteger
 

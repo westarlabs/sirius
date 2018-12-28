@@ -2,6 +2,7 @@ package org.starcoin.sirius.protocol.ethereum.contract
 
 import org.ethereum.util.blockchain.SolidityContract
 import org.ethereum.util.blockchain.StandaloneBlockchain
+import org.starcoin.proto.Starcoin
 import org.starcoin.sirius.core.*
 import org.starcoin.sirius.protocol.HubContract
 import java.math.BigInteger
@@ -62,7 +63,7 @@ class InMemoryHubContract(contract: SolidityContract) : HubContract{
         TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
     }
 
-    override fun recoverFunds(request: RecoverFunds): Hash {
+    override fun recoverFunds(request: Starcoin.RecoverFundsRequest): Hash {
         TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
     }
 

@@ -1,5 +1,6 @@
 package org.starcoin.sirius.protocol
 
+import org.starcoin.proto.Starcoin
 import org.starcoin.sirius.core.*
 
 
@@ -25,7 +26,7 @@ interface HubContract {
     fun closeTransferDeliveryChallenge(request: CloseTransferDeliveryChallenge): Hash
 
 
-    fun recoverFunds(request: RecoverFunds): Hash
+    fun recoverFunds(request: Starcoin.RecoverFundsRequest): Hash
 
 
 }
