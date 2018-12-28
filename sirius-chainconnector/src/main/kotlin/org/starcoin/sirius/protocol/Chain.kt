@@ -1,19 +1,19 @@
 package org.starcoin.sirius.protocol
 
-import org.starcoin.sirius.core.Address
-import org.starcoin.sirius.core.Block
-import org.starcoin.sirius.core.ChainTransaction
-import org.starcoin.sirius.core.Hash
+import org.starcoin.sirius.core.*
 import org.starcoin.sirius.crypto.CryptoKey
 import java.math.BigInteger
 
-//watch transaction process
-interface TransactionProgressListener {
-
+enum class ChainType {
+    ETH
 }
 
-enum class ChainType{
-    ETH
+class FilterArguments {
+    
+}
+
+data class TransactionResult<T : ChainTransaction>(val tx: T, val receipt: Receipt) {
+
 }
 
 interface Chain<T : ChainTransaction, B : Block<T>, C : HubContract> {
@@ -22,15 +22,15 @@ interface Chain<T : ChainTransaction, B : Block<T>, C : HubContract> {
 
     fun getBlock(height: BigInteger = BigInteger.valueOf(-1)): B?
 
-    fun watchBlock(onNext: ((block: B) -> Unit))
+    fun watchBlock(filter: (FilterArguments) -> Boolean, onNext: (block: B) -> Unit)
 
-    fun watchTransactions(onNext: ((tx: T) -> Unit))
+    fun getTransactionReceipts(txHashs: List<Hash>): List<Receipt>
+
+    fun watchTransactions(filter: (FilterArguments) -> Boolean, onNext: (txResult: TransactionResult<T>) -> Unit)
 
     fun getBalance(address: Address): BigInteger
 
     fun newTransaction(key: CryptoKey, transaction: T)
-
-    fun watchTransaction(txHash: Hash, listener: TransactionProgressListener)
 
     fun getContract(parameter: QueryContractParameter): C
 
