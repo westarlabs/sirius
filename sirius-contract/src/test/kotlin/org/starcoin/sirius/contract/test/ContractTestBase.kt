@@ -47,7 +47,7 @@ abstract class ContractTestBase(val contractFile: String, val contractName: Stri
 
     @Suppress("INACCESSIBLE_TYPE")
     fun deployContract(): SolidityContract {
-        val sb = StandaloneBlockchain().withAutoblock(true)
+        val sb = StandaloneBlockchain().withAutoblock(true).withGasLimit(2147483647)
         val url = this.javaClass::class.java.getResource("/$contractFile")
         val compiler = SolidityCompiler(SystemProperties.getDefault())
 
@@ -55,7 +55,7 @@ abstract class ContractTestBase(val contractFile: String, val contractName: Stri
         LOG.info("allowed_path:$path")
         val compileRes = compiler.compileSrc(
             File(url.toURI()),
-            false,
+            true,
             true,
             Options.ABI,
             Options.BIN,

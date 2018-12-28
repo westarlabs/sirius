@@ -19,10 +19,10 @@ interface Sirius {
 }
 
 contract SiriusService is Sirius {
-    address private owner;
+    address private owner = msg.sender;
     bool private recoveryMode = false;
-    uint private startHeight;
-    uint private blocksPerEon;
+    uint private startHeight = block.number;
+    uint private blocksPerEon = 4;
     uint private balanceSize;
     BalanceLib.Balance[3] balances;
     mapping(address => DepositLib.Deposit) private all;
@@ -33,13 +33,6 @@ contract SiriusService is Sirius {
     using DepositLib for DepositLib.DepositMeta;
 
     event DepositEvent(address indexed addr, uint value);
-
-    constructor(uint blocks) public {
-        assert(blocks >= 4);
-        blocksPerEon = blocks;
-        owner = msg.sender;
-        startHeight = block.number;
-    }
 
     modifier onlyOwner() {
         require(msg.sender == owner);
@@ -313,7 +306,7 @@ contract SiriusService is Sirius {
         challenge.isVal = true;
 
         // bytes32 hash = OffchainTransactionLib.hash(open.tran);
-        // string memory key = Base58Util.bytes32ToBase58(hash);
+        // string memory key = string(ByteUtilLib.bytes32ToBytes(hash));
         // balances[0].transferChallenges[key] = challenge;//TODO:change path to bytes
     }
 
@@ -327,7 +320,7 @@ contract SiriusService is Sirius {
 
         MerklePathNodeLib.MerklePathNode memory leaf = MerklePathLib.leafNode(close.path);
         bytes32 hash = OffchainTransactionLib.hash(leaf.node.tran);
-        string memory key = Base58Util.bytes32ToBase58(hash);
+        string memory key = string(ByteUtilLib.bytes32ToBytes(hash));
         TransferDeliveryChallengeLib.TransferDeliveryChallenge memory challenge = balances[0].transferChallenges[key];
         require(challenge.isVal);
 

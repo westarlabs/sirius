@@ -6,16 +6,12 @@ import "./lib/byte_util.sol";
 
 contract TestDataRLP {
 
-<<<<<<< HEAD:sirius-contract/src/test/resources/test_data_rlp.sol
     using RLPLib for RLPLib.RLPItem;
     using RLPLib for RLPLib.Iterator;
     using RLPLib for bytes;
-=======
     using RLPDecoder for RLPLib.RLPItem;
     using RLPDecoder for RLPLib.Iterator;
->>>>>>> Change SafeMath public to internal.:sirius-contract/src/test/resources/TestRLP.sol
     using RLPDecoder for bytes;
-    using RLPDecoder for RLPLib.RLPItem;
 
     event NewData(bool, int, string, address);
 
