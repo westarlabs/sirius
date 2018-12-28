@@ -4,7 +4,7 @@ import "./lib/model.sol";
 import "./lib/safe_math.sol";
 
 interface Sirius {
-    function deposit() external payable;
+    function deposit(uint a) external payable;
     function commit(bytes calldata data) external;
     function initiateWithdrawal(bytes calldata data) external;
     function cancelWithdrawal(bytes calldata data) external;
@@ -80,8 +80,10 @@ contract SiriusService is Sirius {
         _;
     }
 
-    function deposit() external payable recovery {
+    function deposit(uint a) external payable recovery {
         require(msg.value > 0);
+        require(a > 0);
+        require(msg.value == a);
         DepositLib.add(balances[0].depositMeta, msg.sender, msg.value);
 
         DepositLib.Deposit memory d = all[msg.sender];
@@ -380,7 +382,7 @@ contract SiriusService is Sirius {
     }
 
     function getCurrentEon() external recovery returns (uint) {
-        return currentEon();
+        return 1;
     }
 
     function currentEon() private view returns (uint) {
