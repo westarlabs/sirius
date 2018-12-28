@@ -34,12 +34,11 @@ contract SiriusService is Sirius {
 
     event DepositEvent(address indexed addr, uint value);
 
-    constructor(uint blocks, bytes memory hubPublicKey) public {
+    constructor(uint blocks) public {
         assert(blocks >= 4);
         blocksPerEon = blocks;
         owner = msg.sender;
         startHeight = block.number;
-        hubPK = hubPublicKey;
     }
 
     modifier onlyOwner() {
