@@ -1,13 +1,19 @@
 package org.starcoin.sirius.hub
 
 import org.starcoin.sirius.core.*
+import org.starcoin.sirius.crypto.CryptoKey
 import org.starcoin.sirius.hub.Hub.MaliciousFlag
-import java.security.KeyPair
+import org.starcoin.sirius.protocol.Chain
+import org.starcoin.sirius.protocol.HubContract
 import java.security.PublicKey
 import java.util.*
 import java.util.concurrent.BlockingQueue
 
-class HubService(private val hubKeyPair: KeyPair, blocksPerEon: Int, connection: HubChainConnection) {
+class HubService<T : ChainTransaction>(
+    private val hubKey: CryptoKey,
+    blocksPerEon: Int,
+    chain: Chain<T, Block<T>, HubContract>
+) {
 
     var hubMaliciousFlag: EnumSet<MaliciousFlag>
         get() = hub.hubMaliciousFlag
@@ -21,7 +27,7 @@ class HubService(private val hubKeyPair: KeyPair, blocksPerEon: Int, connection:
         get() = hub.currentEon()
 
     val hubPublicKey: PublicKey
-        get() = this.hubKeyPair.public
+        get() = this.hubKey.keyPair.public
 
     val stateRoot: AMTreeNode
         get() = this.hub.stateRoot
@@ -30,7 +36,8 @@ class HubService(private val hubKeyPair: KeyPair, blocksPerEon: Int, connection:
         get() = this.hub.hubInfo
 
     init {
-        this.hub = HubImpl(hubKeyPair, blocksPerEon, connection)
+
+        this.hub = HubImpl(hubKey, blocksPerEon, chain)
     }
 
     fun start() {

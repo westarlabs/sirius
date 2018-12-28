@@ -3,6 +3,7 @@ mainClassName = 'org.starcoin.sirius.hub.MainKt'
 
 dependencies{
     compile project(":sirius-core")
+    compile project(":sirius-chainconnector")
     compile "io.ktor:ktor-server-core:$ktor_version"
     compile "io.ktor:ktor-server-netty:$ktor_version"
 }

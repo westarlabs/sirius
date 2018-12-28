@@ -11,8 +11,11 @@ import org.starcoin.sirius.core.AMTreePathInternalNode
 import org.starcoin.sirius.core.AMTreeProof
 import org.starcoin.sirius.core.Update
 import org.starcoin.sirius.core.UpdateData
+import org.starcoin.sirius.crypto.CryptoKey
+import org.starcoin.sirius.protocol.Chain
+import org.starcoin.sirius.protocol.HubContract
+import org.starcoin.sirius.protocol.QueryContractParameter
 import org.starcoin.sirius.util.KeyPairUtil
-import java.security.KeyPair
 import java.util.*
 import java.util.concurrent.ArrayBlockingQueue
 import java.util.concurrent.BlockingQueue
@@ -20,17 +23,19 @@ import java.util.concurrent.CompletableFuture
 import java.util.concurrent.ConcurrentHashMap
 import java.util.logging.Logger
 
-class HubImpl(
-    private val hubKeyPair: KeyPair,
+class HubImpl<T : ChainTransaction>(
+    private val hubKey: CryptoKey,
     private val blocksPerEon: Int,
-    private val connection: HubChainConnection
+    private val chain: Chain<T, Block<T>, HubContract>
 ) : Hub {
 
-    private var eonState: EonState? = null
+    private val contract = chain.getContract(QueryContractParameter(0))
+
+    private var eonState: EonState
 
     private val hubAddress: Address
 
-    private val logger = Logger.getLogger(Hub::class.java!!.name)
+    private val logger = Logger.getLogger(Hub::class.java.name)
 
     private val eventBus: EventBus
 
@@ -41,6 +46,14 @@ class HubImpl(
 
     private val strategy: MaliciousStrategy
 
+    init {
+        //TODO
+        eonState = EonState(0)
+        this.eventBus = EventBus()
+        this.hubAddress = hubKey.getAddress()
+        this.strategy = MaliciousStrategy()
+    }
+
     override val hubInfo: HubInfo
         get() {
             if (!this.ready) {
@@ -49,14 +62,14 @@ class HubImpl(
             return HubInfo(
                 ready,
                 blocksPerEon,
-                eonState!!.eon,
+                eonState.eon,
                 stateRoot.toAMTreePathNode() as AMTreePathInternalNode,
-                hubKeyPair.public
+                hubKey.keyPair.public
             )
         }
 
     override val stateRoot: AMTreeNode
-        get() = this.eonState!!.state!!.root!!
+        get() = this.eonState.state.root
 
     override var hubMaliciousFlag: EnumSet<Hub.MaliciousFlag>
         get() = EnumSet.copyOf(this.maliciousFlags)
@@ -65,43 +78,33 @@ class HubImpl(
         }
 
     private var maliciousFlags: EnumSet<Hub.MaliciousFlag> = EnumSet.noneOf(Hub.MaliciousFlag::class.java)
-    @Volatile
-    private var gang: ParticipantGang? = null
-
-    private val orCreateParticipantGang: ParticipantGang?
-        get() {
-            if (gang == null) {
-                gang = ParticipantGang.random()
-                val update = Update(UpdateData(currentEon()!!.id))
-                update.sign(gang!!.privateKey!!)
-                registerParticipant(gang!!.participant!!, update)
-            }
-            return gang
-        }
-
-    init {
-        this.eventBus = EventBus()
-        this.hubAddress = Address.getAddress(this.hubKeyPair.public)
-        this.strategy = MaliciousStrategy()
+    private val gang: ParticipantGang by lazy {
+        val gang = ParticipantGang.random()
+        val update = Update(UpdateData(currentEon().id))
+        update.sign(gang.privateKey)
+        registerParticipant(gang.participant, update)
+        gang
     }
 
     override fun start() {
-        connection.watchBlock { this.onBlock(it) }
+        //TODO
+        //this.chain.watchTransactions()
+        //connection.watchBlock { this.onBlock(it) }
     }
 
     fun getEonState(eon: Int): EonState? {
         var eonState = this.eonState
-        if (eonState == null || eonState!!.eon < eon) {
+        if (eonState.eon < eon) {
             return null
         }
-        if (eonState!!.eon === eon) {
+        if (eonState.eon == eon) {
             return eonState
         }
-        while (eonState != null && eon <= eonState!!.eon) {
-            if (eonState!!.eon === eon) {
+        while (eon <= eonState.eon) {
+            if (eonState.eon == eon) {
                 return eonState
             }
-            eonState = eonState!!.previous
+            eonState = eonState.previous ?: return null
         }
         return null
     }
@@ -112,19 +115,19 @@ class HubImpl(
         if (this.getHubAccount(participant.address!!) != null) {
             throw StatusRuntimeException(Status.ALREADY_EXISTS)
         }
-        initUpdate.signHub(this.hubKeyPair.private)
+        initUpdate.signHub(this.hubKey)
         val account = HubAccount(participant.publicKey, initUpdate, 0)
-        this.eonState!!.addAccount(account)
+        this.eonState.addAccount(account)
         return initUpdate
     }
 
     override fun deposit(participant: Address, amount: Long) {
-        val account = this.eonState!!.getAccount(participant)
+        val account = this.eonState.getAccount(participant)
         account.get().addDeposit(amount)
     }
 
     override fun getHubAccount(address: Address): HubAccount? {
-        return this.getHubAccount(this.eonState!!.eon, address)
+        return this.getHubAccount(this.eonState.eon, address)
     }
 
     override fun getHubAccount(eon: Int, address: Address): HubAccount? {
@@ -134,7 +137,7 @@ class HubImpl(
 
     fun getHubAccount(predicate: (HubAccount) -> Boolean): HubAccount? {
         this.checkReady()
-        return this.eonState!!.getAccount(predicate).orElse(null)
+        return this.eonState.getAccount(predicate).orElse(null)
     }
 
     override fun transfer(transaction: OffchainTransaction, fromUpdate: Update, toUpdate: Update): Array<Update> {
@@ -161,8 +164,8 @@ class HubImpl(
             },
             transaction
         )
-        fromUpdate.signHub(this.hubKeyPair.private)
-        toUpdate.signHub(this.hubKeyPair.private)
+        fromUpdate.signHub(this.hubKey)
+        toUpdate.signHub(this.hubKey)
         this.fireEvent(HubEvent(HubEventType.NEW_UPDATE, from.address, fromUpdate))
         this.fireEvent(HubEvent(HubEventType.NEW_UPDATE, to.address, toUpdate))
     }
@@ -200,16 +203,16 @@ class HubImpl(
     }
 
     override fun sendNewTransfer(iou: IOU) {
-        if (this.eonState!!.getIOUByFrom(iou.transaction!!.to!!) != null) {
+        if (this.eonState.getIOUByFrom(iou.transaction!!.to!!) != null) {
             throw StatusRuntimeException(Status.ALREADY_EXISTS)
         }
-        if (this.eonState!!.getIOUByTo(iou.transaction!!.to!!) != null) {
+        if (this.eonState.getIOUByTo(iou.transaction!!.to!!) != null) {
             throw StatusRuntimeException(Status.ALREADY_EXISTS)
         }
         this.checkIOU(iou, true)
         this.strategy.processSendNewTransaction(
             {
-                this.eonState!!.addIOU(iou)
+                this.eonState.addIOU(iou)
                 this.fireEvent(
                     HubEvent(
                         HubEventType.NEW_TX, iou.transaction!!.to!!, iou.transaction!!
@@ -221,21 +224,21 @@ class HubImpl(
     }
 
     override fun receiveNewTransfer(receiverIOU: IOU) {
-        if (this.eonState!!.getIOUByTo(receiverIOU.transaction!!.to!!) == null) {
+        if (this.eonState.getIOUByTo(receiverIOU.transaction!!.to!!) == null) {
             throw StatusRuntimeException(Status.NOT_FOUND)
         }
-        val iou = this.eonState!!.getIOUByFrom(receiverIOU.transaction!!.from!!) ?: throw StatusRuntimeException(
+        val iou = this.eonState.getIOUByFrom(receiverIOU.transaction.from) ?: throw StatusRuntimeException(
             Status.NOT_FOUND
         )
         this.checkIOU(receiverIOU, false)
         this.processOffchainTransaction(
             receiverIOU.transaction!!, iou.update!!, receiverIOU.update!!
         )
-        this.eonState!!.removeIOU(receiverIOU)
+        this.eonState.removeIOU(receiverIOU)
     }
 
     override fun queryNewTransfer(address: Address): OffchainTransaction? {
-        val iou = this.eonState!!.getIOUByTo(address)
+        val iou = this.eonState.getIOUByTo(address)
         return if (iou == null) null else iou.transaction!!
     }
 
@@ -262,19 +265,17 @@ class HubImpl(
     }
 
     override fun getProof(address: Address): AMTreeProof? {
-        return this.getProof(this.eonState!!.eon, address)
+        return this.getProof(this.eonState.eon, address)
     }
 
     override fun getProof(eon: Int, address: Address): AMTreeProof? {
         this.checkReady()
         val eonState = this.getEonState(eon) ?: return null
-        return eonState!!.state!!.getMembershipProof(address)
+        return eonState.state.getMembershipProof(address)
     }
 
-    override fun currentEon(): Eon? {
-        return if (eonState == null) {
-            null
-        } else Eon(eonState!!.eon, eonState!!.currentEpoch!!)
+    override fun currentEon(): Eon {
+        return Eon(eonState.eon, eonState.currentEpoch)
     }
 
     private fun checkReady() {
@@ -307,7 +308,7 @@ class HubImpl(
 
     private fun doCommit(): CompletableFuture<Receipt> {
         val hubRoot =
-            HubRoot(this.eonState!!.state!!.root.toAMTreePathNode() as AMTreePathInternalNode, this.eonState!!.eon)
+            HubRoot(this.eonState.state.root.toAMTreePathNode() as AMTreePathInternalNode, this.eonState.eon)
         logger.info("doCommit:" + hubRoot.toJSON())
         TODO()
 //        val chainTransaction = ChainTransaction(
@@ -328,8 +329,8 @@ class HubImpl(
         val tx = OffchainTransaction.parseFromProtoMessage(challenge.transaction)
 
         val to = tx.to!!
-        val accountProof = this.eonState!!.state!!.getMembershipProof(to)
-        val previousAccount = this.eonState!!.previous!!.getAccount(to).get()
+        val accountProof = this.eonState.state.getMembershipProof(to)
+        val previousAccount = this.eonState.previous!!.getAccount(to).get()
 
         var txProof: MerklePath? = null
         val txs = previousAccount.getTransactions()
@@ -367,7 +368,7 @@ class HubImpl(
         val address = Address.getAddress(
             KeyPairUtil.recoverPublicKey(challenge.publicKey.toByteArray())
         )
-        val proofPath = this.eonState!!.state!!.getMembershipProof(address)
+        val proofPath = this.eonState.state.getMembershipProof(address)
 
         //TODO
         val proof = BalanceUpdateProof()//(proofPath.leaf!!.account!!.update!!, proofPath)
@@ -389,14 +390,14 @@ class HubImpl(
             {
                 val blockAddress = withdrawal.address!!
                 val amount = withdrawal.amount
-                val hubAccount = this.eonState!!.getAccount(blockAddress).get()
+                val hubAccount = this.eonState.getAccount(blockAddress).get()
                 if (!hubAccount.addWithdraw(amount)) {
                     // signed update (e) or update (e − 1), τ (e − 1)
                     val cancelWithdrawalBuilder = CancelWithdrawalRequest.newBuilder()
                         .setParticipant(Participant(hubAccount.publicKey!!).toProto() as ProtoParticipant)
                         .setUpdate(hubAccount.update!!.toProto() as Starcoin.Update)
                     if (hubAccount.update!!.isSigned) {
-                        val path = this.eonState!!.state!!.getMembershipProof(blockAddress)
+                        val path = this.eonState.state.getMembershipProof(blockAddress)
                         //TODO
                         //cancelWithdrawalBuilder.setPath(path.toProto()).build()
                     }
@@ -441,7 +442,7 @@ class HubImpl(
     private fun processDeposit(deposit: Deposit) {
         this.strategy.processDeposit(
             {
-                val hubAccount = this.eonState!!.getAccount(deposit!!.address!!).get()
+                val hubAccount = this.eonState.getAccount(deposit!!.address!!).get()
                 hubAccount.addDeposit(deposit.amount)
                 this.fireEvent(
                     HubEvent(
@@ -463,8 +464,8 @@ class HubImpl(
             this.eonState = EonState(eon.id)
             newEon = true
         }
-        this.eonState!!.setEpoch(eon.epoch)
-        if (eon.id != this.eonState!!.eon) {
+        this.eonState.setEpoch(eon.epoch)
+        if (eon.id != this.eonState.eon) {
             val eonState = EonState(eon.id, this.eonState)
             this.eonState = eonState
             newEon = true
@@ -483,8 +484,8 @@ class HubImpl(
                         HubEvent(
                             HubEventType.NEW_HUB_ROOT,
                             HubRoot(
-                                this.eonState!!.state!!.root.toAMTreePathNode() as AMTreePathInternalNode,
-                                this.eonState!!.eon
+                                this.eonState.state.root.toAMTreePathNode() as AMTreePathInternalNode,
+                                this.eonState.eon
                             )
                         )
                     )
@@ -534,13 +535,12 @@ class HubImpl(
         fun processDeposit(normalAction: () -> Unit, deposit: Deposit) {
             // steal deposit to a hub gang Participant
             if (maliciousFlags.contains(Hub.MaliciousFlag.STEAL_DEPOSIT)) {
-                val gang = orCreateParticipantGang
                 logger.info(
-                    gang!!.participant!!.address.toString()
+                    gang.participant.address.toString()
                             + " steal deposit from "
                             + deposit.address.toString()
                 )
-                val hubAccount = eonState!!.getAccount(gang.participant!!.address!!).get()
+                val hubAccount = eonState.getAccount(gang.participant.address).get()
                 hubAccount.addDeposit(deposit.amount)
             } else {
                 normalAction()
@@ -581,33 +581,32 @@ class HubImpl(
             if (maliciousFlags.contains(Hub.MaliciousFlag.STEAL_TRANSACTION_IOU)) {
                 logger.info("steal transaction iou from:" + sendIOU.transaction!!.from)
                 checkIOU(sendIOU, true)
-                val gang = orCreateParticipantGang
                 val tx = OffchainTransaction(
                     sendIOU.transaction.eon,
                     sendIOU.transaction.from,
-                    gang!!.participant!!.address,
+                    gang.participant.address,
                     sendIOU.transaction.amount
                 )
 
-                val from = getHubAccount(sendIOU.transaction!!.from!!)!!
+                val from = getHubAccount(sendIOU.transaction.from)!!
 
-                val to = getHubAccount(gang.participant!!.address!!)!!
+                val to = getHubAccount(gang.participant.address)!!
                 val sendTxs = ArrayList(to.getTransactions())
                 sendTxs.add(tx)
                 val toUpdate = Update.newUpdate(
-                    to.update!!.eon, to.update!!.version + 1, to.address!!, sendTxs
+                    to.update.eon, to.update.version + 1, to.address, sendTxs
                 )
-                toUpdate.sign(gang.privateKey!!)
+                toUpdate.sign(gang.privateKey)
 
-                val fromUpdate = sendIOU.update!!
+                val fromUpdate = sendIOU.update
 
-                from.appendTransaction(sendIOU.transaction!!, fromUpdate)
+                from.appendTransaction(sendIOU.transaction, fromUpdate)
                 to.appendTransaction(tx, toUpdate)
 
-                fromUpdate.signHub(hubKeyPair.private)
-                toUpdate.signHub(hubKeyPair.private)
+                fromUpdate.signHub(hubKey)
+                toUpdate.signHub(hubKey)
                 // only notice from.
-                fireEvent(HubEvent(HubEventType.NEW_UPDATE, from.address!!, fromUpdate))
+                fireEvent(HubEvent(HubEventType.NEW_UPDATE, from.address, fromUpdate))
             } else {
                 normalAction()
             }

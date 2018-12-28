@@ -5,11 +5,11 @@ import org.starcoin.sirius.core.Eon.Epoch
 import java.util.*
 import java.util.concurrent.ConcurrentHashMap
 
-class EonState @JvmOverloads constructor(val eon: Int, val previous: EonState? = null) {
+class EonState(val eon: Int, val previous: EonState? = null) {
     private val accounts: MutableList<HubAccount>
-    var state: AMTree? = null
+    var state: AMTree
         private set
-    var currentEpoch: Epoch? = null
+    var currentEpoch: Epoch = Eon.Epoch.FIRST
         private set
     private val senderIOUs: MutableMap<Address, IOU>
     private val receiverIOUs: MutableMap<Address, IOU>
@@ -26,7 +26,6 @@ class EonState @JvmOverloads constructor(val eon: Int, val previous: EonState? =
         }
         this.senderIOUs = ConcurrentHashMap()
         this.receiverIOUs = ConcurrentHashMap()
-        setEpoch(Eon.Epoch.FIRST)
     }
 
     fun getAccount(address: Address): Optional<HubAccount> {
@@ -42,7 +41,7 @@ class EonState @JvmOverloads constructor(val eon: Int, val previous: EonState? =
     }
 
     fun getAccounts(): List<HubAccount> {
-        return this.accounts
+        return Collections.unmodifiableList(this.accounts)
     }
 
     fun setEpoch(epoch: Epoch) {
@@ -52,11 +51,11 @@ class EonState @JvmOverloads constructor(val eon: Int, val previous: EonState? =
     }
 
     fun addIOU(iou: IOU) {
-        this.senderIOUs[iou.transaction!!.from!!] = iou
-        this.receiverIOUs[iou.transaction!!.to!!] = iou
+        this.senderIOUs[iou.transaction.from] = iou
+        this.receiverIOUs[iou.transaction.to] = iou
     }
 
-    fun getIOUByFrom(blockAddress: Address): IOU?? {
+    fun getIOUByFrom(blockAddress: Address): IOU? {
         return this.senderIOUs[blockAddress]
     }
 
@@ -65,7 +64,7 @@ class EonState @JvmOverloads constructor(val eon: Int, val previous: EonState? =
     }
 
     fun removeIOU(iou: IOU) {
-        this.senderIOUs.remove(iou.transaction!!.from)
-        this.receiverIOUs.remove(iou.transaction!!.to!!)
+        this.senderIOUs.remove(iou.transaction.from)
+        this.receiverIOUs.remove(iou.transaction.to)
     }
 }
