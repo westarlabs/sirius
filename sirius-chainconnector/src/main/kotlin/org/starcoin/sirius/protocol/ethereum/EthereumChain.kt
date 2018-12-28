@@ -3,6 +3,7 @@ package org.starcoin.sirius.protocol.ethereum
 import kotlinx.io.IOException
 import org.starcoin.sirius.core.Address
 import org.starcoin.sirius.core.Hash
+import org.starcoin.sirius.core.Receipt
 import org.starcoin.sirius.crypto.CryptoKey
 import org.starcoin.sirius.crypto.eth.EthCryptoKey
 import org.starcoin.sirius.protocol.*
@@ -23,6 +24,10 @@ const val defaultHttpUrl = "http://127.0.0.1:8545"
 
 class EthereumChain constructor(httpUrl: String = defaultHttpUrl, socketPath: String? = null) :
     Chain<EthereumTransaction, EthereumBlock, HubContract> {
+    override fun getTransactionReceipts(txHashs: List<Hash>): List<Receipt> {
+        TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
+    }
+
     override fun newTransaction(key: CryptoKey, transaction: EthereumTransaction) {
         val rawtx = RawTransaction.createTransaction(
             BigInteger.valueOf(transaction.nonce),
@@ -66,12 +71,15 @@ class EthereumChain constructor(httpUrl: String = defaultHttpUrl, socketPath: St
     }
 
 
-    override fun watchBlock(onNext: ((b: EthereumBlock) -> Unit)) {
+    override fun watchBlock(filter: (FilterArguments) -> Boolean, onNext: (block: EthereumBlock) -> Unit) {
         web3jSrv!!.blockFlowable(true).subscribe { block -> onNext(block.block.blockInfo()) }
     }
 
-    override fun watchTransactions(onNext: ((t: EthereumTransaction) -> Unit)) {
-        web3jSrv!!.transactionFlowable().subscribe { tx -> onNext(tx.chainTransaction()) }
+    override fun watchTransactions(
+        filter: (FilterArguments) -> Boolean,
+        onNext: (txResult: TransactionResult<EthereumTransaction>) -> Unit
+    ) {
+        TODO()
     }
 
     override fun getBalance(address: Address): BigInteger {
@@ -95,9 +103,6 @@ class EthereumChain constructor(httpUrl: String = defaultHttpUrl, socketPath: St
         return EthereumBlock(this)
     }
 
-    override fun watchTransaction(txHash: Hash, listener: TransactionProgressListener) {
-        TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
-    }
 
     override fun getContract(parameter: QueryContractParameter): HubContract {
         TODO("not implemented") //To change body of created functions use File | Settings | File Templates.

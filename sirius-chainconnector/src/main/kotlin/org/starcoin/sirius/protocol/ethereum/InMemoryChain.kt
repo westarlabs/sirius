@@ -3,12 +3,16 @@ package org.starcoin.sirius.protocol.ethereum
 import org.ethereum.util.blockchain.StandaloneBlockchain
 import org.starcoin.sirius.core.Address
 import org.starcoin.sirius.core.Hash
+import org.starcoin.sirius.core.Receipt
 import org.starcoin.sirius.crypto.CryptoKey
 import org.starcoin.sirius.crypto.eth.EthCryptoKey
 import org.starcoin.sirius.protocol.*
 import java.math.BigInteger
 
 class InMemoryChain(autoGenblock: Boolean) : Chain<EthereumTransaction, EthereumBlock, HubContract> {
+    override fun getTransactionReceipts(txHashs: List<Hash>): List<Receipt> {
+        TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
+    }
 
     private val autoGenblock = autoGenblock
     val sb = StandaloneBlockchain().withAutoblock(autoGenblock)
@@ -18,14 +22,17 @@ class InMemoryChain(autoGenblock: Boolean) : Chain<EthereumTransaction, Ethereum
         return inMemoryEthereumListener.blocks.get(height.toInt())
     }
 
-    override fun watchBlock(onNext: (block: EthereumBlock) -> Unit) {
+    override fun watchBlock(filter: (FilterArguments) -> Boolean, onNext: (block: EthereumBlock) -> Unit) {
         sb.addEthereumListener(inMemoryEthereumListener)
         if(autoGenblock){
             sb.withAutoblock(autoGenblock)
         }
     }
 
-    override fun watchTransactions(onNext: (tx: EthereumTransaction) -> Unit) {
+    override fun watchTransactions(
+        filter: (FilterArguments) -> Boolean,
+        onNext: (txResult: TransactionResult<EthereumTransaction>) -> Unit
+    ) {
 
     }
 
@@ -40,10 +47,6 @@ class InMemoryChain(autoGenblock: Boolean) : Chain<EthereumTransaction, Ethereum
     override fun newTransaction(key: CryptoKey, transaction: EthereumTransaction) {
         transaction.ethTx.sign((key as EthCryptoKey).ecKey)
         sb.submitTransaction(transaction.ethTx)
-    }
-
-    override fun watchTransaction(txHash: Hash, listener: TransactionProgressListener) {
-        TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
     }
 
     override fun getContract(parameter: QueryContractParameter): HubContract {
