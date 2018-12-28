@@ -15,7 +15,7 @@ class InMemoryChain(autoGenblock: Boolean) : Chain<EthereumTransaction, Ethereum
     }
 
     private val autoGenblock = autoGenblock
-    val sb = StandaloneBlockchain().withAutoblock(autoGenblock).withGasLimit(50000000)
+    val sb = StandaloneBlockchain().withAutoblock(autoGenblock).withGasLimit(500000000)
 
     private val inMemoryEthereumListener = InMemoryEthereumListener()
 

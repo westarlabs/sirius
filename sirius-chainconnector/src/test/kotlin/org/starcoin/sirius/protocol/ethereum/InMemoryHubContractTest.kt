@@ -4,6 +4,7 @@ import kotlinx.serialization.ImplicitReflectionSerializer
 import org.ethereum.config.SystemProperties
 import org.ethereum.solidity.compiler.CompilationResult
 import org.ethereum.solidity.compiler.SolidityCompiler
+import org.junit.Assert
 import org.junit.Before
 import org.junit.Test
 import org.starcoin.sirius.protocol.ethereum.contract.InMemoryHubContract
@@ -53,9 +54,7 @@ class InMemoryHubContractTest {
 
         val result = CompilationResult.parse(compileRes.output)
 
-        var con= result.getContract(contractName)
-        //println(con.bin)
-        //con.bin=con.bin.replace("_","").replace("$","")
+        //var con= result.getContract(contractName)
         contract = InMemoryHubContract(chain.sb.submitNewContract(result.getContract(contractName)))
 
     }
@@ -63,6 +62,6 @@ class InMemoryHubContractTest {
     @Test
     @ImplicitReflectionSerializer
     fun testCurrentEon(){
-        println(contract.getCurrentEon())
+        Assert.assertEquals(contract.getCurrentEon(),1)
     }
 }
