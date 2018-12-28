@@ -1,15 +1,15 @@
 package org.starcoin.sirius.protocol
 
 
+import org.bouncycastle.util.BigIntegers
 import org.ethereum.core.Transaction
-import org.spongycastle.util.BigIntegers
 import org.starcoin.sirius.core.Address
 import org.starcoin.sirius.core.ChainTransaction
 import org.starcoin.sirius.core.Hash
 import org.starcoin.sirius.lang.toULong
 import java.math.BigInteger
 
-//TODO use BigInteger to replace Long?
+// TODO use BigInteger to replace Long?
 class EthereumTransaction(val ethTx: Transaction) : ChainTransaction(
 
     Address.wrap(ethTx.receiveAddress),

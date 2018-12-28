@@ -40,6 +40,7 @@ class EthereumChain constructor(httpUrl: String = defaultHttpUrl, socketPath: St
     private val web3jSrv: Web3j? =
         Web3j.build(if (socketPath != null) UnixIpcService(socketPath) else HttpService(httpUrl))
 
+
     override fun findTransaction(hash: Hash): EthereumTransaction? {
         val req = web3jSrv!!.ethGetTransactionByHash(hash.toString()).send()
         if (req.hasError()) throw IOException(req.error.message)
@@ -48,7 +49,6 @@ class EthereumChain constructor(httpUrl: String = defaultHttpUrl, socketPath: St
     }
 
     override fun getBlock(height: BigInteger): EthereumBlock? {
-
         val blockReq = web3jSrv!!.ethGetBlockByNumber(
             if (height == BigInteger.valueOf(-1)) DefaultBlockParameterName.LATEST else
                 DefaultBlockParameter.valueOf(height),
@@ -58,7 +58,6 @@ class EthereumChain constructor(httpUrl: String = defaultHttpUrl, socketPath: St
 
         // FIXME: Use BigInteger in blockinfo
         val blockInfo = EthereumBlock(blockReq.block)
-
         blockReq.block.transactions.map { it ->
             val tx = it as Transaction
             blockInfo.addTransaction(tx.chainTransaction())
@@ -103,4 +102,5 @@ class EthereumChain constructor(httpUrl: String = defaultHttpUrl, socketPath: St
     override fun getContract(parameter: QueryContractParameter): HubContract {
         TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
     }
+
 }

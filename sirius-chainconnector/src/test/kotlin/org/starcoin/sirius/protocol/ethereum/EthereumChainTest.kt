@@ -1,24 +1,38 @@
 package org.starcoin.sirius.protocol.ethereum
 
+import org.ethereum.crypto.ECKey
+import org.junit.Before
 import org.junit.Test
+import org.starcoin.sirius.core.Address
+import org.starcoin.sirius.protocol.EthereumTransaction
+import org.starcoin.sirius.util.KeyPairUtil
+import org.web3j.crypto.WalletUtils
+import org.web3j.utils.Numeric
+import java.security.KeyPair
+import kotlin.properties.Delegates
 
 class EthereumChainTest {
-    @Test
-    fun testfindTransaction(){
-        
+    private val rpcUrl = "http://127.0.0.1:8545"
+    private var chain: EthereumChain by Delegates.notNull()
+
+    @Before
+    fun setUp() {
+        /* Test Depend on the remove rpc server*/
+        chain = EthereumChain(rpcUrl)
     }
 
     @Test
-    fun testGetBlock(){
-        
+    fun testNewTransaction() {
     }
 
     @Test
-    fun testBlockWatch() {
-        /* Test Depend on the remove rpc server
-        val web3j = Web3j.build(HttpService("http://39.96.66.145:8545"))
-        val blockReq = web3j.ethGetBlockByNumber(DefaultBlockParameter.valueOf(BigInteger.valueOf(10)), true).send()
-        println("The block info is ${blockReq.block.nonce}, ${blockReq.block.transactions.size}")
-        */
+    fun testfindTransaction() {
+        TODO()
+    }
+
+    @Test
+    fun testGetBlock() {
+        val block = chain.getBlock()
+        println("the block height current is ${block!!.height}")
     }
 }
