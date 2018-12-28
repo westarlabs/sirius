@@ -30,6 +30,7 @@ class InMemoryHubContractTest {
     @Before
     fun beforeTest(){
         chain = InMemoryChain(true)
+        //chain.sb.withGasLimit(500000000000000)
         val compiler = SolidityCompiler(SystemProperties.getDefault())
 
         val solRResource= loadResource("/solidity/sirius.sol")
@@ -42,7 +43,7 @@ class InMemoryHubContractTest {
         val contractName = "SiriusService"
         val compileRes = compiler.compileSrc(
             File(solUri),
-            false,
+            true,
             true,
             SolidityCompiler.Options.ABI,
             SolidityCompiler.Options.BIN,
@@ -54,7 +55,7 @@ class InMemoryHubContractTest {
 
         var con= result.getContract(contractName)
         //println(con.bin)
-        con.bin=con.bin.replace("_","").replace("$","")
+        //con.bin=con.bin.replace("_","").replace("$","")
         contract = InMemoryHubContract(chain.sb.submitNewContract(result.getContract(contractName)))
 
     }

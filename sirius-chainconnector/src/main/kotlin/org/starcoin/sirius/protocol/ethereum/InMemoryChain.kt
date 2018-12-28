@@ -15,7 +15,8 @@ class InMemoryChain(autoGenblock: Boolean) : Chain<EthereumTransaction, Ethereum
     }
 
     private val autoGenblock = autoGenblock
-    val sb = StandaloneBlockchain().withAutoblock(autoGenblock)
+    val sb = StandaloneBlockchain().withAutoblock(autoGenblock).withGasLimit(50000000)
+
     private val inMemoryEthereumListener = InMemoryEthereumListener()
 
     override fun getBlock(height: BigInteger): EthereumBlock? {
