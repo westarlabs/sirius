@@ -64,7 +64,7 @@ data class Update(
     val root: Hash
         get() = data.root
 
-    fun verfySign(key: CryptoKey) = this.verifySig(key.getKeyPair().public)
+    fun verfySign(key: CryptoKey) = this.verifySig(key.keyPair.public)
 
     fun verifySig(publicKey: PublicKey): Boolean {
         return when {
@@ -73,7 +73,7 @@ data class Update(
         }
     }
 
-    fun verifyHubSig(key: CryptoKey) = this.verifyHubSig(key.getKeyPair().public)
+    fun verifyHubSig(key: CryptoKey) = this.verifyHubSig(key.keyPair.public)
 
     fun verifyHubSig(publicKey: PublicKey): Boolean {
         return when {
@@ -82,13 +82,13 @@ data class Update(
         }
     }
 
-    fun sign(key: CryptoKey) = this.sign(key.getKeyPair().private)
+    fun sign(key: CryptoKey) = this.sign(key.keyPair.private)
 
     fun sign(privateKey: PrivateKey) {
         this.sign = Signature.of(this.data, privateKey)
     }
 
-    fun signHub(key: CryptoKey) = this.signHub(key.getKeyPair().private)
+    fun signHub(key: CryptoKey) = this.signHub(key.keyPair.private)
 
     fun signHub(hubPrivateKey: PrivateKey) {
         this.hubSign = Signature.of(this.data, hubPrivateKey)

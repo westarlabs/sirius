@@ -21,16 +21,16 @@ class EthCryptoKey internal constructor(val ecKey: ECKey) : CryptoKey {
 
     internal constructor(bytes: ByteArray) : this(ECKey.fromPrivate(bytes))
 
-    override fun getKeyPair(): KeyPair {
+    override val keyPair: KeyPair by lazy {
         var privateKey = ECKeyFactory.getInstance(SpongyCastleProvider.getInstance())
-            .generatePrivate(ECPrivateKeySpec(ecKey.privKey!!, ECKey.CURVE_SPEC));
+            .generatePrivate(ECPrivateKeySpec(ecKey.privKey!!, ECKey.CURVE_SPEC))
         var publicKey = ECKeyFactory.getInstance(SpongyCastleProvider.getInstance()).generatePublic(
             ECPublicKeySpec(
                 ecKey.pubKeyPoint,
                 ECKey.CURVE_SPEC
             )
         )
-        return KeyPair(publicKey, privateKey)
+        KeyPair(publicKey, privateKey)
     }
 
     override fun sign(data: ByteArray) = ecKey.sign(

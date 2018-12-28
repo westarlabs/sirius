@@ -20,7 +20,7 @@ data class Participant(@Serializable(with = PublicKeySerializer::class) @SerialI
 
     companion object : SiriusObjectCompanion<Participant, ProtoParticipant>(Participant::class) {
 
-        var DUMMY_PARTICIPANT = Participant(CryptoService.getDummyCryptoKey().getKeyPair().public)
+        var DUMMY_PARTICIPANT = Participant(CryptoService.getDummyCryptoKey().keyPair.public)
 
         override fun mock(): Participant {
             return random()
@@ -28,7 +28,7 @@ data class Participant(@Serializable(with = PublicKeySerializer::class) @SerialI
 
         fun random(): Participant {
             val kp = CryptoService.generateCryptoKey()
-            return Participant(kp.getKeyPair().public)
+            return Participant(kp.keyPair.public)
         }
     }
 }

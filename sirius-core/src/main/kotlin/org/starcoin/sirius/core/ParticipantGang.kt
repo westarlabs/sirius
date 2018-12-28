@@ -1,47 +1,34 @@
 package org.starcoin.sirius.core
 
-import com.google.protobuf.ByteString
+import kotlinx.serialization.SerialId
+import kotlinx.serialization.Serializable
 import org.starcoin.proto.Starcoin
-import org.starcoin.proto.Starcoin.ProtoParticipantGang
-import org.starcoin.sirius.util.KeyPairUtil
-
+import org.starcoin.sirius.crypto.CryptoService
+import org.starcoin.sirius.serialization.PrivateKeySerializer
+import org.starcoin.sirius.serialization.ProtobufSchema
 import java.security.PrivateKey
 
 // just for test, mock malicious Participant
-class ParticipantGang : ProtobufCodec<ProtoParticipantGang> {
+@ProtobufSchema(Starcoin.ProtoParticipantGang::class)
+@Serializable
+data class ParticipantGang(
+    @SerialId(1)
+    val participant: Participant,
+    @SerialId(2)
+    @Serializable(with = PrivateKeySerializer::class)
+    val privateKey: PrivateKey
+) : SiriusObject() {
 
-    var participant: Participant? = null
-        private set
-    var privateKey: PrivateKey? = null
-        private set
 
-    constructor() {}
+    companion object : SiriusObjectCompanion<ParticipantGang, Starcoin.ProtoParticipantGang>(ParticipantGang::class) {
 
-    constructor(participant: Participant, privateKey: PrivateKey) {
-        this.participant = participant
-        this.privateKey = privateKey
-    }
-
-    override fun marshalProto(): ProtoParticipantGang {
-        return ProtoParticipantGang.newBuilder()
-            .setParticipant(this.participant!!.toProto() as Starcoin.ProtoParticipant)
-            .setPrivateKey(ByteString.copyFrom(KeyPairUtil.encodePrivateKey(this.privateKey!!)))
-            .build()
-    }
-
-    override fun unmarshalProto(proto: ProtoParticipantGang) {
-        this.participant = if (proto.hasParticipant()) Participant.parseFromProtoMessage(proto.participant) else null
-        this.privateKey = if (proto.privateKey.isEmpty)
-            null
-        else
-            KeyPairUtil.recoverPrivateKey(proto.privateKey.toByteArray())
-    }
-
-    companion object {
+        override fun mock(): ParticipantGang {
+            return random()
+        }
 
         fun random(): ParticipantGang {
-            val keyPair = KeyPairUtil.generateKeyPair()
-            return ParticipantGang(Participant(keyPair.public), keyPair.private)
+            val key = CryptoService.generateCryptoKey()
+            return ParticipantGang(Participant(key.keyPair.public), key.keyPair.private)
         }
     }
 }

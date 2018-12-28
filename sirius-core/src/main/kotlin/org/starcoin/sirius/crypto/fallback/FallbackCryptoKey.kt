@@ -9,12 +9,12 @@ import org.starcoin.sirius.util.HashUtil
 import org.starcoin.sirius.util.KeyPairUtil
 import java.security.KeyPair
 
-internal class FallbackCryptoKey(private val keyPairArg: KeyPair) : CryptoKey {
+internal class FallbackCryptoKey(override val keyPair: KeyPair) : CryptoKey {
 
     internal constructor(bytes: ByteArray) : this(KeyPairUtil.decodeKeyPair(bytes))
 
     override fun verify(data: ByteArray, sign: Signature): Boolean {
-        return KeyPairUtil.verifySig(data, keyPairArg.public, sign.toBytes())
+        return KeyPairUtil.verifySig(data, keyPair.public, sign.toBytes())
     }
 
     override fun verify(data: Hash, sign: Signature): Boolean {
@@ -25,14 +25,10 @@ internal class FallbackCryptoKey(private val keyPairArg: KeyPair) : CryptoKey {
         return this.verify(data.toProtobuf(), sign)
     }
 
-    override fun getKeyPair(): KeyPair {
-        return this.keyPairArg
-    }
-
     override fun sign(data: Hash): Signature = this.sign(data.toBytes())
 
     override fun sign(bytes: ByteArray): Signature {
-        return Signature.wrap(KeyPairUtil.signData(bytes, this.keyPairArg.private))
+        return Signature.wrap(KeyPairUtil.signData(bytes, this.keyPair.private))
     }
 
     override fun sign(data: SiriusObject): Signature {
@@ -45,7 +41,7 @@ internal class FallbackCryptoKey(private val keyPairArg: KeyPair) : CryptoKey {
             HashUtil.hash160(
                 HashUtil.sha256(
                     KeyPairUtil.encodePublicKey(
-                        this.keyPairArg.public,
+                        this.keyPair.public,
                         true
                     )
                 )
@@ -54,6 +50,6 @@ internal class FallbackCryptoKey(private val keyPairArg: KeyPair) : CryptoKey {
     }
 
     override fun toBytes(): ByteArray {
-        return KeyPairUtil.encodeKeyPair(this.keyPairArg)
+        return KeyPairUtil.encodeKeyPair(this.keyPair)
     }
 }

@@ -16,7 +16,7 @@ data class BalanceUpdateChallenge(
     val proof: BalanceUpdateProof = BalanceUpdateProof.DUMMY_BALANCE_UPDATE_PROOF,
     @SerialId(2)
     @Serializable(with = PublicKeySerializer::class)
-    val publicKey: PublicKey = CryptoService.getDummyCryptoKey().getKeyPair().public
+    val publicKey: PublicKey = CryptoService.getDummyCryptoKey().keyPair.public
 ) : SiriusObject() {
     companion object :
         SiriusObjectCompanion<BalanceUpdateChallenge, Starcoin.ProtoBalanceUpdateChallenge>(BalanceUpdateChallenge::class) {
@@ -26,7 +26,7 @@ data class BalanceUpdateChallenge(
         override fun mock(): BalanceUpdateChallenge {
             return BalanceUpdateChallenge(
                 BalanceUpdateProof.mock(),
-                CryptoService.getDummyCryptoKey().getKeyPair().public
+                CryptoService.getDummyCryptoKey().keyPair.public
             )
         }
     }

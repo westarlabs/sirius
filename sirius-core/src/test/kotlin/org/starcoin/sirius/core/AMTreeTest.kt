@@ -18,7 +18,7 @@ class AMTreeTest {
 
         for (i in 0 until count) {
             val a = HubAccount(
-                CryptoService.generateCryptoKey().getKeyPair().public, Update(eon, 0, 5, 10, Hash.random()), 5
+                CryptoService.generateCryptoKey().keyPair.public, Update(eon, 0, 5, 10, Hash.random()), 5
             )
             accounts.add(a)
         }

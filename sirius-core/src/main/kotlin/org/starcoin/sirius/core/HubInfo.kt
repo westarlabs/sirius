@@ -22,7 +22,7 @@ data class HubInfo(
     val root: AMTreePathInternalNode = AMTreePathInternalNode.DUMMY_NODE,
     @SerialId(5)
     @Serializable(with = PublicKeySerializer::class)
-    val publicKey: PublicKey = CryptoService.getDummyCryptoKey().getKeyPair().public
+    val publicKey: PublicKey = CryptoService.getDummyCryptoKey().keyPair.public
 ) : SiriusObject() {
 
     companion object : SiriusObjectCompanion<HubInfo, ProtoHubInfo>(HubInfo::class) {
@@ -32,7 +32,7 @@ data class HubInfo(
                 MockUtils.nextInt(10, 100) * 4,
                 MockUtils.nextInt(),
                 AMTreePathInternalNode.mock(),
-                CryptoService.generateCryptoKey().getKeyPair().public
+                CryptoService.generateCryptoKey().keyPair.public
             )
         }
 

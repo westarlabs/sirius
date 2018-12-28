@@ -121,7 +121,7 @@ data class HubAccount(
                 Long.MAX_VALUE / 2
             )
             val hubAccount = HubAccount(
-                CryptoService.generateCryptoKey().getKeyPair().public,
+                CryptoService.generateCryptoKey().keyPair.public,
                 update,
                 allotment,
                 deposit,

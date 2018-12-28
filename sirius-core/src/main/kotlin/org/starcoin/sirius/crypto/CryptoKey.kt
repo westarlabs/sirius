@@ -7,7 +7,10 @@ import org.starcoin.sirius.core.SiriusObject
 import java.security.KeyPair
 
 interface CryptoKey {
-    fun getKeyPair(): KeyPair
+
+    val keyPair: KeyPair
+
+    //fun getKeyPair(): KeyPair
 
     fun sign(data: ByteArray): Signature
 

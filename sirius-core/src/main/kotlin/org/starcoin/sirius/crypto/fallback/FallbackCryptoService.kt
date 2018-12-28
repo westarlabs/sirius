@@ -39,8 +39,16 @@ object FallbackCryptoService : CryptoService {
         return KeyPairUtil.recoverPublicKey(bytes)
     }
 
+    override fun loadPrivateKey(bytes: ByteArray): PrivateKey {
+        return KeyPairUtil.recoverPrivateKey(bytes)
+    }
+
     override fun encodePublicKey(publicKey: PublicKey): ByteArray {
         return KeyPairUtil.encodePublicKey(publicKey)
+    }
+
+    override fun encodePrivateKey(privateKey: PrivateKey): ByteArray {
+        return KeyPairUtil.encodePrivateKey(privateKey)
     }
 
     override fun getAddress(publicKey: PublicKey): Address {

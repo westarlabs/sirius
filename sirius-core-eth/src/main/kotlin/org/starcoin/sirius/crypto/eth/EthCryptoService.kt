@@ -56,9 +56,18 @@ object EthCryptoService : CryptoService {
         )
     }
 
+    override fun loadPrivateKey(bytes: ByteArray): PrivateKey {
+        //TODO optimize
+        return EthCryptoKey(ECKey.fromPrivate(bytes)).keyPair.private
+    }
+
     override fun encodePublicKey(publicKey: PublicKey): ByteArray {
         //TODO ensure
         return publicKey.encoded
+    }
+
+    override fun encodePrivateKey(privateKey: PrivateKey): ByteArray {
+        return privateKey.encoded
     }
 
     override fun sign(data: ByteArray, privateKey: PrivateKey): Signature {
