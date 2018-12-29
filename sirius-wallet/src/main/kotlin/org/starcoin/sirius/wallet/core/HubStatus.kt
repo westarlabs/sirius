@@ -150,10 +150,10 @@ class HubStatus {
     internal fun newChallenge(update: Update, keyPair: KeyPair, lastIndex: Int): BalanceUpdateChallenge? {
         var challenge: BalanceUpdateChallenge? = null
         if (eonStatuses[lastIndex] != null && eonStatuses[lastIndex].treeProof != null) {
-            var proof = BalanceUpdateProof(Update.DUMMY_UPDATE, eonStatuses[lastIndex].treeProof?:AMTreeProof.DUMMY_PROOF)
+            var proof = BalanceUpdateProof(hasUp = false, hasPath = true,proof=eonStatuses[lastIndex].treeProof?:AMTreeProof.DUMMY_PROOF)
             challenge = BalanceUpdateChallenge(proof, keyPair.public)
         } else {
-            var proof = BalanceUpdateProof(update)
+            var proof = BalanceUpdateProof(hasUp = true,update =update)
             challenge = BalanceUpdateChallenge(proof, keyPair.public)
         }
         return challenge
