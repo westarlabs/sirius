@@ -109,7 +109,7 @@ object EthCryptoService : CryptoService {
         return hash(obj.toRLP())
     }
 
-    override fun getAddress(publicKey: PublicKey): Address {
+    override fun generateAddress(publicKey: PublicKey): Address {
         return Address.wrap(ECKey.computeAddress(publicKey.encoded))
     }
 

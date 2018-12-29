@@ -77,4 +77,12 @@ abstract class CryptoServiceTestBase {
         Assert.assertEquals(key, key1)
     }
 
+    @Test
+    fun testAddress() {
+        val key = CryptoService.generateCryptoKey()
+        val address = key.address
+        val address1 = CryptoService.generateAddress(key.keyPair.public)
+        Assert.assertEquals(address, address1)
+    }
+
 }

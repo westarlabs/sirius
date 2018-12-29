@@ -2,14 +2,15 @@ package org.starcoin.sirius.util
 
 import org.junit.Assert.assertArrayEquals
 import org.junit.Test
+import org.starcoin.sirius.crypto.CryptoService
 
 class EncryptUtilTest {
 
     @Test
     fun testEncryptAndDecrypt() {
-        val keyPair = KeyPairUtil.generateKeyPair()
-        val publicKey = keyPair.public
-        val privateKey = keyPair.private
+        val key = CryptoService.generateCryptoKey()
+        val publicKey = key.keyPair.public
+        val privateKey = key.keyPair.private
 
         val data = "hello".toByteArray()
         val t1 = System.currentTimeMillis()

@@ -33,7 +33,7 @@ class FallbackCryptoKey(override val keyPair: KeyPair) : CryptoKey {
 
     internal constructor(bytes: ByteArray) : this(loadPrivateKey(bytes))
 
-    override val address: Address by lazy { getAddress(this.keyPair.public) }
+    override val address: Address by lazy { generateAddress(this.keyPair.public) }
 
     override fun verify(data: ByteArray, sign: Signature): Boolean {
         return verifySig(data, keyPair.public, sign.toBytes())
@@ -172,7 +172,7 @@ class FallbackCryptoKey(override val keyPair: KeyPair) : CryptoKey {
             return FallbackCryptoKey(bytes)
         }
 
-        override fun getAddress(publicKey: PublicKey): Address {
+        override fun generateAddress(publicKey: PublicKey): Address {
             return Address.wrap(HashUtil.hash160(HashUtil.sha256(encodePublicKey(publicKey))))
         }
 

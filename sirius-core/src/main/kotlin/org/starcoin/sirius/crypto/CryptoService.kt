@@ -25,7 +25,7 @@ interface CryptoService {
 
     fun encodePrivateKey(privateKey: PrivateKey): ByteArray
 
-    fun getAddress(publicKey: PublicKey): Address
+    fun generateAddress(publicKey: PublicKey): Address
 
     fun sign(data: ByteArray, privateKey: PrivateKey): Signature
 
@@ -73,7 +73,7 @@ interface CryptoService {
 
         override fun encodePrivateKey(privateKey: PrivateKey) = instance.encodePrivateKey(privateKey)
 
-        override fun getAddress(publicKey: PublicKey) = instance.getAddress(publicKey)
+        override fun generateAddress(publicKey: PublicKey) = instance.generateAddress(publicKey)
 
         override fun sign(data: ByteArray, privateKey: PrivateKey) = instance.sign(data, privateKey)
 

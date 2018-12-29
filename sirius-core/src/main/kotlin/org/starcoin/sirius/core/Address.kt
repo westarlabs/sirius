@@ -89,7 +89,7 @@ class Address private constructor(private val bytes: ByteArray) : CachedHashable
         }
 
         fun getAddress(publicKey: PublicKey): Address {
-            return CryptoService.getAddress(publicKey)
+            return CryptoService.generateAddress(publicKey)
         }
     }
 }
