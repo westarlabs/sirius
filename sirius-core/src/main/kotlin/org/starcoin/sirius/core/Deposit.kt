@@ -1,39 +1,21 @@
 package org.starcoin.sirius.core
 
+import kotlinx.serialization.SerialId
+import kotlinx.serialization.Serializable
 import org.starcoin.proto.Starcoin.DepositRequest
-import java.util.*
+import org.starcoin.sirius.crypto.CryptoService
+import org.starcoin.sirius.serialization.ProtobufSchema
+import org.starcoin.sirius.util.MockUtils
 
-class Deposit(address: Address, amount: Long) : SiriusObject() {
+@ProtobufSchema(DepositRequest::class)
+@Serializable
+data class Deposit(@SerialId(1) val address: Address, @SerialId(2) val amount: Long) : SiriusObject() {
 
-    var address: Address = address
-        private set
-    var amount: Long = amount
-        private set
+    companion object : SiriusObjectCompanion<Deposit, DepositRequest>(Deposit::class) {
 
-    fun marshalProto(): DepositRequest {
-        val builder = DepositRequest.newBuilder()
-        builder.address = this.address.toByteString()
-        builder.amount = this.amount
-        return builder.build()
-    }
-
-    fun unmarshalProto(proto: DepositRequest) {
-        this.address = Address.wrap(proto.address)
-        this.amount = proto.amount
-    }
-
-    override fun equals(o: Any?): Boolean {
-        if (this === o) {
-            return true
+        override fun mock(): Deposit {
+            val key = CryptoService.generateCryptoKey()
+            return Deposit(key.address, MockUtils.nextLong())
         }
-        if (o !is Deposit) {
-            return false
-        }
-        val deposit = o as Deposit?
-        return this.amount == deposit!!.amount && this.address == deposit.address
-    }
-
-    override fun hashCode(): Int {
-        return Objects.hash(this.address, this.amount)
     }
 }

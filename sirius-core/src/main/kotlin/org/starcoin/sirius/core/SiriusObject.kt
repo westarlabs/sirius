@@ -47,6 +47,7 @@ abstract class SiriusObject : Hashable {
         return ProtoBuf.dump(ProtoBuf.plain.context.getOrDefault(this::class) as KSerializer<SiriusObject>, this)
     }
 
+    @Suppress("UNCHECKED_CAST")
     @UseExperimental(ImplicitReflectionSerializer::class)
     fun toJSON(): String {
         return JSON.stringify(JSON.plain.context.getOrDefault(this::class) as KSerializer<SiriusObject>, this)

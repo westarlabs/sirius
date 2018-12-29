@@ -52,8 +52,7 @@ class Address private constructor(private val bytes: ByteArray) : CachedHashable
 
         val DUMMY_ADDRESS: Address by lazy { CryptoService.dummyCryptoKey.address }
 
-        @Deprecated("use DUMMY_ADDRESS")
-        val DEFAULT_ADDRESS = DUMMY_ADDRESS
+        val ZERO_ADDRESS = Address.wrap(ByteArray(LENGTH))
 
         override fun deserialize(input: Decoder): Address {
             return when (input) {

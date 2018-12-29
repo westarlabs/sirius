@@ -337,8 +337,8 @@ enum ProtoHubEventType {
 
 message ProtoHubEvent {
     required ProtoHubEventType type = 1;
-    required bytes address = 2;
-    required google.protobuf.Any payload = 3;
+    required bytes payload = 2;
+    required bytes address = 3;
 }
 
 message BlockAddressAndEon {

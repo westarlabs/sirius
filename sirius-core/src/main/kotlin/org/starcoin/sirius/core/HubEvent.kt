@@ -1,79 +1,62 @@
 package org.starcoin.sirius.core
 
-import com.google.protobuf.Any
-import com.google.protobuf.GeneratedMessageV3
+import kotlinx.serialization.SerialId
+import kotlinx.serialization.Serializable
+import kotlinx.serialization.Transient
 import org.starcoin.proto.Starcoin
-import java.util.*
+import org.starcoin.sirius.crypto.CryptoService
+import org.starcoin.sirius.serialization.ByteArrayWrapper
+import org.starcoin.sirius.serialization.ProtobufSchema
 
-class HubEvent<D : SiriusObject> : ProtobufCodec<Starcoin.ProtoHubEvent> {
+@ProtobufSchema(Starcoin.ProtoHubEvent::class)
+@Serializable
+data class HubEvent(
+    @SerialId(1)
+    val type: HubEventType,
+    @SerialId(2)
+    val payloadBytes: ByteArrayWrapper,
+    @SerialId(3)
+    val address: Address = Address.ZERO_ADDRESS
+) : SiriusObject() {
 
-    var type: HubEventType? = null
-        private set
-    var address: Address? = null
-        private set
-    var payload: D? = null
-        private set
+    constructor(type: HubEventType, obj: SiriusObject, address: Address = Address.ZERO_ADDRESS) : this(
+        type,
+        ByteArrayWrapper(obj.toProtobuf()),
+        address
+    )
 
+
+    fun <D : SiriusObject> getPayload(): D {
+        return type.parsePayload(payloadBytes.bytes)
+    }
+
+    @Transient
     val isPublicEvent: Boolean
-        get() = this.address == null
+        get() = this.address != Address.ZERO_ADDRESS
 
-    constructor() {}
 
-    constructor(proto: Starcoin.ProtoHubEvent) {
-        this.unmarshalProto(proto)
-    }
-
-    constructor(type: HubEventType, address: Address, payload: D) {
-        this.type = type
-        this.address = address
-        this.payload = payload
-    }
-
-    constructor(type: HubEventType, payload: D) {
-        this.type = type
-        this.payload = payload
-    }
-
-    override fun marshalProto(): Starcoin.ProtoHubEvent {
-        val builder = Starcoin.ProtoHubEvent.newBuilder().setType(this.type!!.toProto())
-        if (this.address != null) {
-            builder.address = address!!.toByteString()
+    companion object : SiriusObjectCompanion<HubEvent, Starcoin.ProtoHubEvent>(HubEvent::class) {
+        override fun mock(): HubEvent {
+            val type = HubEventType.random()
+            return when (type) {
+                HubEventType.NEW_HUB_ROOT -> HubEvent(type, HubRoot.mock())
+                HubEventType.NEW_DEPOSIT -> {
+                    val obj = Deposit.mock()
+                    HubEvent(type, obj, obj.address)
+                }
+                HubEventType.WITHDRAWAL -> {
+                    val obj = Withdrawal.mock()
+                    HubEvent(type, obj, obj.address)
+                }
+                HubEventType.NEW_TX -> {
+                    val obj = OffchainTransaction.mock()
+                    HubEvent(type, obj, obj.to)
+                }
+                HubEventType.NEW_UPDATE -> {
+                    val obj = Update.mock()
+                    HubEvent(type, obj, CryptoService.generateCryptoKey().address)
+                }
+            }
         }
-        if (this.payload != null) {
-            builder.payload = Any.pack<GeneratedMessageV3>(payload!!.toProto())
-        }
-        return builder.build()
-    }
-
-    override fun unmarshalProto(proto: Starcoin.ProtoHubEvent) {
-        this.type = HubEventType.valueOf(proto.type.number)
-        this.address = if (proto.address.isEmpty) null else Address.wrap(proto.address)
-        this.payload = if (proto.hasPayload()) this.type!!.parsePayload(proto.payload) else null
-    }
-
-    override fun equals(o: kotlin.Any?): Boolean {
-        if (this === o) {
-            return true
-        }
-        if (o !is HubEvent<*>) {
-            return false
-        }
-        val hubEvent = o as HubEvent<*>?
-        return (type == hubEvent!!.type
-                && address == hubEvent.address
-                && payload == hubEvent.payload)
-    }
-
-    override fun hashCode(): Int {
-        return Objects.hash(type, address, payload)
-    }
-
-    override fun toString(): String {
-        // TODO use toJson.
-        return (this.type!!.name
-                + " "
-                + (if (this.address == null) "" else this.address!!.toString())
-                + " "
-                + this.payload?.toJSON())
     }
 }

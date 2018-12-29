@@ -19,10 +19,10 @@ interface Hub {
     //return previous Flags
     fun resetHubMaliciousFlag(): EnumSet<MaliciousFlag>
 
-    class HubEventListener(val eventLambda: (HubEvent<SiriusObject>) -> Unit) {
+    class HubEventListener(val eventLambda: (HubEvent) -> Unit) {
 
         @Subscribe
-        fun onEvent(event: HubEvent<SiriusObject>) {
+        fun onEvent(event: HubEvent) {
             eventLambda(event)
         }
     }
@@ -53,11 +53,11 @@ interface Hub {
 
     fun currentEon(): Eon?
 
-    fun watch(address: Address): BlockingQueue<HubEvent<SiriusObject>> {
+    fun watch(address: Address): BlockingQueue<HubEvent> {
         return this.watchByFilter { event -> event.isPublicEvent || event.address == address }
     }
 
-    fun watchByFilter(predicate: (HubEvent<SiriusObject>) -> Boolean): BlockingQueue<HubEvent<SiriusObject>>
+    fun watchByFilter(predicate: (HubEvent) -> Boolean): BlockingQueue<HubEvent>
 
     fun watch(listener: HubEventListener)
 

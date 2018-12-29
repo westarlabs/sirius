@@ -82,11 +82,11 @@ class HubService<T : ChainTransaction>(
         return hub.getProof(eon, blockAddress)
     }
 
-    fun watch(address: Address): BlockingQueue<HubEvent<SiriusObject>> {
+    fun watch(address: Address): BlockingQueue<HubEvent> {
         return hub.watch(address)
     }
 
-    fun watch(predicate: (HubEvent<SiriusObject>) -> Boolean): BlockingQueue<HubEvent<SiriusObject>> {
+    fun watch(predicate: (HubEvent) -> Boolean): BlockingQueue<HubEvent> {
         return hub.watchByFilter(predicate)
     }
 

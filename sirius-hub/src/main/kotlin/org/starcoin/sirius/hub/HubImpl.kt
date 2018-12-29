@@ -166,11 +166,11 @@ class HubImpl<T : ChainTransaction>(
         )
         fromUpdate.signHub(this.hubKey)
         toUpdate.signHub(this.hubKey)
-        this.fireEvent(HubEvent(HubEventType.NEW_UPDATE, from.address, fromUpdate))
-        this.fireEvent(HubEvent(HubEventType.NEW_UPDATE, to.address, toUpdate))
+        this.fireEvent(HubEvent(HubEventType.NEW_UPDATE, fromUpdate, from.address))
+        this.fireEvent(HubEvent(HubEventType.NEW_UPDATE, toUpdate, to.address))
     }
 
-    private fun fireEvent(event: HubEvent<out SiriusObject>) {
+    private fun fireEvent(event: HubEvent) {
         try {
             logger.info("fireEvent:$event")
             this.eventBus.post(event)
@@ -215,7 +215,7 @@ class HubImpl<T : ChainTransaction>(
                 this.eonState.addIOU(iou)
                 this.fireEvent(
                     HubEvent(
-                        HubEventType.NEW_TX, iou.transaction!!.to!!, iou.transaction!!
+                        HubEventType.NEW_TX, iou.transaction, iou.transaction.to
                     )
                 )
             },
@@ -286,8 +286,8 @@ class HubImpl<T : ChainTransaction>(
         this.eventBus.register(listener)
     }
 
-    override fun watch(address: Address): BlockingQueue<HubEvent<SiriusObject>> {
-        val blockingQueue = ArrayBlockingQueue<HubEvent<SiriusObject>>(5, false)
+    override fun watch(address: Address): BlockingQueue<HubEvent> {
+        val blockingQueue = ArrayBlockingQueue<HubEvent>(5, false)
         this.watch(Hub.HubEventListener { event ->
             if (event.isPublicEvent || event.address == address) {
                 blockingQueue.offer(event)
@@ -296,8 +296,8 @@ class HubImpl<T : ChainTransaction>(
         return blockingQueue
     }
 
-    override fun watchByFilter(predicate: (HubEvent<SiriusObject>) -> Boolean): BlockingQueue<HubEvent<SiriusObject>> {
-        val blockingQueue = ArrayBlockingQueue<HubEvent<SiriusObject>>(5, false)
+    override fun watchByFilter(predicate: (HubEvent) -> Boolean): BlockingQueue<HubEvent> {
+        val blockingQueue = ArrayBlockingQueue<HubEvent>(5, false)
         this.watch(Hub.HubEventListener { event ->
             if (predicate(event)) {
                 blockingQueue.offer(event)
@@ -432,7 +432,7 @@ class HubImpl<T : ChainTransaction>(
                 } else {
                     val withdrawalStatus = WithdrawalStatus(WithdrawalStatusType.INIT, withdrawal)
                     withdrawalStatus.pass()
-                    this.fireEvent(HubEvent(HubEventType.WITHDRAWAL, blockAddress, withdrawalStatus))
+                    this.fireEvent(HubEvent(HubEventType.WITHDRAWAL, withdrawalStatus, blockAddress))
                 }
             },
             withdrawal
@@ -447,8 +447,8 @@ class HubImpl<T : ChainTransaction>(
                 this.fireEvent(
                     HubEvent(
                         HubEventType.NEW_DEPOSIT,
-                        deposit.address!!,
-                        Deposit(deposit.address!!, deposit.amount)
+                        Deposit(deposit.address, deposit.amount),
+                        deposit.address
                     )
                 )
             },
@@ -606,7 +606,7 @@ class HubImpl<T : ChainTransaction>(
                 fromUpdate.signHub(hubKey)
                 toUpdate.signHub(hubKey)
                 // only notice from.
-                fireEvent(HubEvent(HubEventType.NEW_UPDATE, from.address, fromUpdate))
+                fireEvent(HubEvent(HubEventType.NEW_UPDATE, fromUpdate, from.address))
             } else {
                 normalAction()
             }
