@@ -9,17 +9,21 @@ import org.starcoin.sirius.serialization.ProtobufSchema
 @Serializable
 data class BalanceUpdateProof(
     @SerialId(1)
-    val update: Update = Update.DUMMY_UPDATE,
+    val hasUp: Boolean = false,
     @SerialId(2)
+    val update: Update = Update.DUMMY_UPDATE,
+    @SerialId(3)
+    val hasPath: Boolean = false,
+    @SerialId(4)
     val proof: AMTreeProof = AMTreeProof.DUMMY_PROOF
 ) : SiriusObject() {
     companion object :
         SiriusObjectCompanion<BalanceUpdateProof, Starcoin.ProtoBalanceUpdateChallenge>(BalanceUpdateProof::class) {
 
-        var DUMMY_BALANCE_UPDATE_PROOF = BalanceUpdateProof(Update.DUMMY_UPDATE, AMTreeProof.DUMMY_PROOF)
+        var DUMMY_BALANCE_UPDATE_PROOF = BalanceUpdateProof(false, Update.DUMMY_UPDATE, false, AMTreeProof.DUMMY_PROOF)
 
         override fun mock(): BalanceUpdateProof {
-            return BalanceUpdateProof(Update.mock(), AMTreeProof.mock())
+            return BalanceUpdateProof(false, Update.mock(), false, AMTreeProof.mock())
         }
     }
 }

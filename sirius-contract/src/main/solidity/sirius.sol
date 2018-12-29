@@ -4,7 +4,7 @@ import "./lib/model.sol";
 import "./lib/safe_math.sol";
 
 interface Sirius {
-    function deposit(uint a) external payable;
+    function deposit() external payable;
     function commit(bytes calldata data) external;
     function initiateWithdrawal(bytes calldata data) external;
     function cancelWithdrawal(bytes calldata data) external;
@@ -24,13 +24,12 @@ contract SiriusService is Sirius {
     uint private startHeight = block.number;
     uint private blocksPerEon = 4;
     uint private balanceSize;
-    BalanceLib.Balance[3] balances;
-    mapping(address => DepositLib.Deposit) private all;
+    GlobleLib.Balance[3] balances;
+    mapping(address => GlobleLib.Deposit) private all;
     bytes private hubPK;
-    mapping(address => RecoveryMetaLib.RecoveryMeta) private recoverys;
+    mapping(address => GlobleLib.RecoveryMeta) private recoverys;
 
     using SafeMath for uint;
-    using DepositLib for DepositLib.DepositMeta;
 
     event DepositEvent(address indexed addr, uint value);
 
@@ -45,6 +44,8 @@ contract SiriusService is Sirius {
     }
 
     modifier recovery() {
+        require(!recoveryMode);
+
         //current eon
         uint tmp = SafeMath.sub(block.number, startHeight);
         uint newEon = SafeMath.div(tmp, blocksPerEon);
@@ -52,10 +53,10 @@ contract SiriusService is Sirius {
         if (newEon > balances[0].eon) {
             uint tmpEon = SafeMath.add(balances[0].eon, 1);
             if (newEon == tmpEon) {// init eon
-                DepositLib.DepositMeta memory depositMeta;
-                WithdrawalLib.WithdrawalMeta memory withdrawalMeta;
-                HubRootLib.HubRoot memory root;
-                BalanceLib.Balance memory latest = BalanceLib.Balance(newEon, depositMeta, withdrawalMeta, root, false);
+                GlobleLib.DepositMeta memory depositMeta;
+                GlobleLib.WithdrawalMeta memory withdrawalMeta;
+                ModelLib.HubRoot memory root;
+                GlobleLib.Balance memory latest = GlobleLib.Balance(newEon, depositMeta, withdrawalMeta, root, false);
                 checkBalances(latest);
             } else {//recovery
                 if (!balances[0].hasRoot) {
@@ -72,13 +73,11 @@ contract SiriusService is Sirius {
         _;
     }
 
-    function deposit(uint a) external payable recovery {
+    function deposit() external payable recovery {
         require(msg.value > 0);
-        require(a > 0);
-        require(msg.value == a);
-        DepositLib.add(balances[0].depositMeta, msg.sender, msg.value);
+        GlobleLib.deposit(balances[0].depositMeta, msg.sender, msg.value);
 
-        DepositLib.Deposit memory d = all[msg.sender];
+        GlobleLib.Deposit memory d = all[msg.sender];
         d.amount = SafeMath.add(d.amount, msg.value);
         d.hasVal = true;
         all[msg.sender] = d;
@@ -87,7 +86,7 @@ contract SiriusService is Sirius {
     }
 
     function commit(bytes calldata data) external recovery {
-        HubRootLib.HubRoot memory root = HubRootLib.unmarshal(data);
+        ModelLib.HubRoot memory root = ModelLib.unmarshalHubRoot(data);
         require(!balances[0].hasRoot);
         require(root.eon >= 0);
         require(balances[0].eon == root.eon);
@@ -100,7 +99,7 @@ contract SiriusService is Sirius {
         //TODO:add event
     }
 
-    function checkBalances(BalanceLib.Balance memory latest) private {
+    function checkBalances(GlobleLib.Balance memory latest) private {
         uint i = (balances.length - 1);
         for (; i >= 0; i--) {
             if (i == 0) {
@@ -112,7 +111,7 @@ contract SiriusService is Sirius {
     }
 
     function initiateWithdrawal(bytes calldata data) external recovery {
-        InitiateWithdrawalRequestLib.WithdrawalInfo memory init = InitiateWithdrawalRequestLib.unmarshal(data);
+        ModelLib.WithdrawalInfo memory init = ModelLib.unmarshalWithdrawalInfo(data);
         require(init.amount > 0);
 
         uint currentEon = currentEon();
@@ -120,29 +119,29 @@ contract SiriusService is Sirius {
 
         uint len = init.path.nodes.length;
         require(len > 0);
-        uint idx = SafeMath.sub(len, 1);
-        AccountInfoLib.AccountInfo memory account = init.path.nodes[idx].node.account;
-        bytes memory bs = ByteUtilLib.bytes32ToBytes(account.addr);
-        address addr = ByteUtilLib.bytesToAddress(bs);
-        require(addr == msg.sender);
+        // uint idx = SafeMath.sub(len, 1);
+        // AccountInfoLib.AccountInfo memory account = init.path.nodes[idx].node.account;
 
-        bool processingFlag = processingWithdrawal(addr);
+        // bytes memory bs = ByteUtilLib.bytes32ToBytes(init.addr);
+        // address addr = ByteUtilLib.bytesToAddress(bs);
+        require(init.addr == msg.sender);
+
+        bool processingFlag = processingWithdrawal(init.addr);
         require(!processingFlag);
 
-        HubRootLib.HubRoot memory latestRoot = latestRoot();
-        AugmentedMerkleTreeNodeLib.AugmentedMerkleTreeNode memory merkle = HubRootLib.hubRoot2AugmentedMerkleTreeNode(latestRoot);
-        bool proofFlag = AugmentedMerkleTreeLib.verifyMembershipProof(merkle, init.path);
+        ModelLib.HubRoot memory latestRoot = latestRoot();
+        //AugmentedMerkleTreeNodeLib.AugmentedMerkleTreeNode memory merkle = HubRootLib.hubRoot2AugmentedMerkleTreeNode(latestRoot);
+        bool proofFlag = ModelLib.verifyMembershipProof4AMTreePath(latestRoot.node, init.path);
         require(proofFlag);
 
-        require(account.allotment >= init.amount);
+        require(init.path.leaf.allotment >= init.amount);
 
-        WithdrawalLib.Withdrawal memory with;
-        with.addr = addr;
+        GlobleLib.Withdrawal memory with;
         with.info = init;
         with.isVal = true;
-        with.stat = WithdrawalStatusTypeLib.WithdrawalStatusType.INIT;
+        with.stat = GlobleLib.WithdrawalStatusType.INIT;
 
-        balances[0].withdrawalMeta.addrs.push(addr);
+        balances[0].withdrawalMeta.addrs.push(init.addr);
         // balances[0].withdrawalMeta.withdrawals[addr] = with;//TODO:change path to bytes
         balances[0].withdrawalMeta.total += init.amount;
     }
@@ -151,9 +150,9 @@ contract SiriusService is Sirius {
         flag = true;
         for(uint i=0;i<balances.length;i++) {
             if(balances[i].withdrawalMeta.withdrawals[addr].isVal) {
-                WithdrawalLib.Withdrawal memory with = balances[i].withdrawalMeta.withdrawals[addr];
+                GlobleLib.Withdrawal memory with = balances[i].withdrawalMeta.withdrawals[addr];
 
-                if(with.stat == WithdrawalStatusTypeLib.WithdrawalStatusType.CANCEL || with.stat == WithdrawalStatusTypeLib.WithdrawalStatusType.CONFIRMED) {
+                if(with.stat == GlobleLib.WithdrawalStatusType.CANCEL || with.stat == GlobleLib.WithdrawalStatusType.CONFIRMED) {
                     flag = false;
                 }
 
@@ -163,146 +162,155 @@ contract SiriusService is Sirius {
     }
 
     function cancelWithdrawal(bytes calldata data) external recovery {
-        CancelWithdrawalRequestLib.CancelWithdrawalRequest memory cancel = CancelWithdrawalRequestLib.unmarshal(data);
+        ModelLib.CancelWithdrawal memory cancel = ModelLib.unmarshalCancelWithdrawal(data);
         uint currentEon = currentEon();
-        require(cancel.update.eon >= 0 && cancel.update.eon == currentEon);
+        require(cancel.update.upData.eon >= 0 && cancel.update.upData.eon == currentEon);
 
-        bool participantFlag = ParticipantLib.verifyParticipant(cancel.participant);
+        bool participantFlag = ModelLib.verifyParticipant(cancel.participant);
         require(participantFlag);
 
-        bool signFlag = UpdateLib.verifySig(cancel.participant, cancel.update);
+        bool signFlag = ModelLib.verifySig4Update(cancel.participant, cancel.update);
         require(signFlag);
 
-        HubRootLib.HubRoot memory latestRoot = latestRoot();
-        AugmentedMerkleTreeNodeLib.AugmentedMerkleTreeNode memory merkle = HubRootLib.hubRoot2AugmentedMerkleTreeNode(latestRoot);
-        bool proofFlag = AugmentedMerkleTreeLib.verifyMembershipProof(merkle, cancel.merklePath);
+        ModelLib.HubRoot memory latestRoot = latestRoot();
+        // AugmentedMerkleTreeNodeLib.AugmentedMerkleTreeNode memory merkle = HubRootLib.hubRoot2AugmentedMerkleTreeNode(latestRoot);
+        bool proofFlag = ModelLib.verifyMembershipProof4AMTreePath(latestRoot.node, cancel.path);
         require(proofFlag);
 
-        WithdrawalLib.Withdrawal storage with = balances[0].withdrawalMeta.withdrawals[cancel.participant.addr];
-        if(with.isVal) {
-            if(with.stat == WithdrawalStatusTypeLib.WithdrawalStatusType.INIT) {
-                AugmentedMerkleTreeNodeLib.AugmentedMerkleTreeNode memory leaf = AugmentedMerklePathLib.leafNode(cancel.merklePath);
-                AccountInfoLib.AccountInfo memory account = leaf.account;
+        bytes memory bs = ByteUtilLib.bytes32ToBytes(cancel.path.leaf.nodeInfo.addressHash);
+        address addr = ByteUtilLib.bytesToAddress(bs);
 
-                uint tmp = SafeMath.sub(SafeMath.add(account.allotment, cancel.update.receiveAmount), cancel.update.sendAmount);
+        GlobleLib.Withdrawal storage with = balances[0].withdrawalMeta.withdrawals[addr];
+        if(with.isVal) {
+            if(with.stat == GlobleLib.WithdrawalStatusType.INIT) {
+                //AugmentedMerkleTreeNodeLib.AugmentedMerkleTreeNode memory leaf = AugmentedMerklePathLib.leafNode(cancel.merklePath);
+                // AccountInfoLib.AccountInfo memory account = leaf.account;
+
+                uint tmp = SafeMath.sub(SafeMath.add(cancel.path.leaf.allotment, cancel.update.upData.receiveAmount), cancel.update.upData.sendAmount);
                 if (with.info.amount > tmp) {
-                    with.stat = WithdrawalStatusTypeLib.WithdrawalStatusType.CANCEL;
-                    balances[0].withdrawalMeta.withdrawals[cancel.participant.addr] = with;
+                    with.stat = GlobleLib.WithdrawalStatusType.CANCEL;
+                    balances[0].withdrawalMeta.withdrawals[addr] = with;
                 }
             }
         }
     }
 
     function openBalanceUpdateChallenge(bytes calldata data) external recovery {
-        BalanceUpdateChallengeLib.BalanceUpdateChallenge memory challenge = BalanceUpdateChallengeLib.unmarshal(data);
+        ModelLib.BalanceUpdateChallenge memory challenge = ModelLib.unmarshalBalanceUpdateChallenge(data);
         require(challenge.proof.hasPath || challenge.proof.hasUp);
 
         if(challenge.proof.hasPath) {
-            uint tmpEon =  challenge.proof.path.eon;
+            uint tmpEon =  challenge.proof.proof.leaf.nodeInfo.update.upData.eon;
             require(tmpEon > 0);
             require(balances[1].hasRoot);
             require(tmpEon == balances[1].eon);
 
-            HubRootLib.HubRoot memory root = balances[1].root;
-            AugmentedMerkleTreeNodeLib.AugmentedMerkleTreeNode memory merkle = HubRootLib.hubRoot2AugmentedMerkleTreeNode(root);
-            bool proofFlag = AugmentedMerkleTreeLib.verifyMembershipProof(merkle, challenge.proof.path);
+            ModelLib.HubRoot memory root = balances[1].root;
+            //AugmentedMerkleTreeNodeLib.AugmentedMerkleTreeNode memory merkle = HubRootLib.hubRoot2AugmentedMerkleTreeNode(root);
+            //bool proofFlag = AugmentedMerkleTreeLib.verifyMembershipProof(merkle, challenge.proof.path);
+            bool proofFlag = ModelLib.verifyMembershipProof4AMTreePath(root.node, challenge.proof.proof.path);
             require(proofFlag);
         } else {
-            DepositLib.Deposit memory d = all[msg.sender];
+            GlobleLib.Deposit memory d = all[msg.sender];
             require(!d.hasVal);
         }
 
         if(challenge.proof.hasUp) {
-            UpdateLib.Update memory up = challenge.proof.update;
+            ModelLib.Update memory up = challenge.proof.update;
 
-            uint tmpEon = up.eon;
+            uint tmpEon = up.upData.eon;
             require(tmpEon > 0);
             require(tmpEon == balances[1].eon);
 
-            bool signFlag = UpdateLib.verifyHubSig(up, hubPK);
+            bool signFlag = ModelLib.verifyHubSig4Update(up, hubPK);
             require(signFlag);
         } else {
 
         }
 
-        BalanceUpdateChallengeStatusLib.BalanceUpdateChallengeStatus memory cs;
+        ModelLib.BalanceUpdateChallengeStatus memory cs;
         cs.challenge = challenge;
-        cs.status = ChallengeStatusLib.ChallengeStatus.OPEN;
+        cs.status = ModelLib.ChallengeStatus.OPEN;
 
         // balances[0].balanceChallenges[msg.sender] = cs;//TODO:change path to bytes
     }
 
     function closeBalanceUpdateChallenge(bytes calldata data) external recovery {
-        BalanceUpdateProofLib.BalanceUpdateProof memory proof = BalanceUpdateProofLib.unmarshal(data);
+        ModelLib.CloseBalanceUpdateChallenge memory close = ModelLib.unmarshalCloseBalanceUpdateChallenge(data);
 
-        HubRootLib.HubRoot memory root = balances[1].root;
-        AugmentedMerkleTreeNodeLib.AugmentedMerkleTreeNode memory merkle = HubRootLib.hubRoot2AugmentedMerkleTreeNode(root);
-        bool proofFlag = AugmentedMerkleTreeLib.verifyMembershipProof(merkle, proof.path);
+        ModelLib.HubRoot memory root = balances[1].root;
+        //AugmentedMerkleTreeNodeLib.AugmentedMerkleTreeNode memory merkle = HubRootLib.hubRoot2AugmentedMerkleTreeNode(root);
+        // bool proofFlag = AugmentedMerkleTreeLib.verifyMembershipProof(merkle, proof.path);
+        bool proofFlag = ModelLib.verifyMembershipProof4AMTreePath(root.node, close.proof.path);
         require(proofFlag);
 
-        AugmentedMerkleTreeNodeLib.AugmentedMerkleTreeNode memory leaf = AugmentedMerklePathLib.leafNode(proof.path);
-        AccountInfoLib.AccountInfo memory account = leaf.account;
-        bytes memory bs = ByteUtilLib.bytes32ToBytes(account.addr);
+        // AugmentedMerkleTreeNodeLib.AugmentedMerkleTreeNode memory leaf = AugmentedMerklePathLib.leafNode(proof.path);
+        // AccountInfoLib.AccountInfo memory account = leaf.account;
+        bytes memory bs = ByteUtilLib.bytes32ToBytes(close.proof.leaf.nodeInfo.addressHash);
         address addr = ByteUtilLib.bytesToAddress(bs);
 
-        BalanceUpdateChallengeStatusLib.BalanceUpdateChallengeStatus storage stat = balances[0].balanceChallenges[addr];
+        ModelLib.BalanceUpdateChallengeStatus storage stat = balances[0].balanceChallenges[addr];
         require(stat.isVal);
-        if(stat.status == ChallengeStatusLib.ChallengeStatus.OPEN) {
+        if(stat.status == ModelLib.ChallengeStatus.OPEN) {
             uint d = balances[1].depositMeta.deposits[addr];
-            if(proof.update.sendAmount == 0 && proof.update.receiveAmount == 0) {
+            if(close.update.upData.sendAmount == 0 && close.update.upData.receiveAmount == 0) {
                 if(d > 0) {
-                    require(d <= account.allotment);
+                    require(d <= close.proof.leaf.allotment);
                 }
             } else {
-                ParticipantLib.Participant memory participant;
-                participant.publicKey = stat.challenge.publicKey;
-                bool signFlag = UpdateLib.verifySig(participant, proof.update);
+                ModelLib.Participant memory participant;
+                participant.publicKey = ByteUtilLib.bytes32ToBytes(stat.challenge.publicKey);
+                bool signFlag = ModelLib.verifySig4Update(participant, close.update);
                 require(signFlag);
-                bool signFlag2 = UpdateLib.verifyHubSig(proof.update, hubPK);
+                bool signFlag2 = ModelLib.verifyHubSig4Update(close.update, hubPK);
                 require(signFlag2);
-                require(proof.update.version >= stat.challenge.proof.update.version);
+                require(close.update.upData.version >= stat.challenge.proof.update.upData.version);
             }
 
-            WithdrawalLib.Withdrawal memory w = balances[1].withdrawalMeta.withdrawals[addr];
+            GlobleLib.Withdrawal memory w = balances[1].withdrawalMeta.withdrawals[addr];
             uint preAllotment = 0;
             if(stat.challenge.proof.hasPath) {
-                AugmentedMerkleTreeNodeLib.AugmentedMerkleTreeNode memory tmp = AugmentedMerklePathLib.leafNode(stat.challenge.proof.path);
-                preAllotment = tmp.account.allotment;
+                // AugmentedMerkleTreeNodeLib.AugmentedMerkleTreeNode memory tmp = AugmentedMerklePathLib.leafNode(stat.challenge.proof.path);
+                // preAllotment = tmp.account.allotment;
+
+                preAllotment = stat.challenge.proof.proof.leaf.allotment;
             }
 
-            uint t1 = SafeMath.add(proof.update.receiveAmount, preAllotment);
+            uint t1 = SafeMath.add(close.update.upData.receiveAmount, preAllotment);
             t1 = SafeMath.add(t1, d);
             t1 = SafeMath.sub(t1, w.info.amount);
-            uint t2 = proof.update.sendAmount;
+            uint t2 = close.update.upData.sendAmount;
             uint allotment = SafeMath.sub(t1, t2);
-            require(allotment == leaf.allotment);
+            require(allotment == close.proof.leaf.allotment);
 
-            require(UpdateLib.equals(proof.update, account.update));
+            //TODO: require(close.update == close.proof.leaf.nodeInfo.update);
 
-            stat.status == ChallengeStatusLib.ChallengeStatus.CLOSE;
+            stat.status == ModelLib.ChallengeStatus.CLOSE;
             balances[0].balanceChallenges[addr] = stat;
         }
     }
 
     function openTransferDeliveryChallenge(bytes calldata data) external recovery {
-        OpenTransferDeliveryChallengeRequestLib.OpenTransferDeliveryChallengeRequest memory open = OpenTransferDeliveryChallengeRequestLib.unmarshal(data);
-        require(open.update.eon >= 0);
-        require(open.update.eon == balances[1].eon);
+        ModelLib.OpenTransferDeliveryChallengeRequest memory open = ModelLib.unmarshalOpenTransferDeliveryChallengeRequest(data);
+        require(open.update.upData.eon >= 0);
+        require(open.update.upData.eon == balances[1].eon);
 
-        bool signFlag = UpdateLib.verifyHubSig(open.update, hubPK);
+        bool signFlag = ModelLib.verifyHubSig4Update(open.update, hubPK);
         require(signFlag);
 
-        bool verifyFlag = MerkleTreeLib.verifyMembershipProof(open.update.root, open.path);
+        bool verifyFlag = ModelLib.verifyMembershipProof4Merkle(open.update.upData.root, open.path);
         require(verifyFlag);
 
-        MerklePathNodeLib.MerklePathNode memory leaf = MerklePathLib.leafNode(open.path);
-        require(OffchainTransactionLib.equals(open.tran, leaf.node.tran));
+        // MerklePathNodeLib.MerklePathNode memory leaf = MerklePathLib.leafNode(open.path);
+        // require(OffchainTransactionLib.equals(open.tran, leaf.node.tran));
 
-        TransferDeliveryChallengeLib.TransferDeliveryChallenge memory challenge;
+        require(ModelLib.hash4OffchainTransactionData(open.tran.offData) == open.path.nodes[0].nodeHash);
+
+        GlobleLib.TransferDeliveryChallenge memory challenge;
         challenge.tran = open.tran;
         challenge.update = open.update;
         challenge.path = open.path;
-        challenge.stat = ChallengeStatusLib.ChallengeStatus.OPEN;
+        challenge.stat = ModelLib.ChallengeStatus.OPEN;
         challenge.isVal = true;
 
         // bytes32 hash = OffchainTransactionLib.hash(open.tran);
@@ -311,54 +319,58 @@ contract SiriusService is Sirius {
     }
 
     function closeTransferDeliveryChallenge(bytes calldata data) external recovery {
-        CloseTransferDeliveryChallengeRequestLib.CloseTransferDeliveryChallengeRequest memory close = CloseTransferDeliveryChallengeRequestLib.unmarshal(data);
+        ModelLib.CloseTransferDeliveryChallenge memory close = ModelLib.unmarshalCloseTransferDeliveryChallenge(data);
 
-        HubRootLib.HubRoot memory latestRoot = latestRoot();
-        AugmentedMerkleTreeNodeLib.AugmentedMerkleTreeNode memory merkle = HubRootLib.hubRoot2AugmentedMerkleTreeNode(latestRoot);
-        bool proofFlag = AugmentedMerkleTreeLib.verifyMembershipProof(merkle, close.merklePath);
+        ModelLib.HubRoot memory latestRoot = latestRoot();
+        // AugmentedMerkleTreeNodeLib.AugmentedMerkleTreeNode memory merkle = HubRootLib.hubRoot2AugmentedMerkleTreeNode(latestRoot);
+        // bool proofFlag = AugmentedMerkleTreeLib.verifyMembershipProof(merkle, close.merklePath);
+        bool proofFlag = ModelLib.verifyMembershipProof4AMTreePath(latestRoot.node, close.proof.path);
         require(proofFlag);
 
-        MerklePathNodeLib.MerklePathNode memory leaf = MerklePathLib.leafNode(close.path);
-        bytes32 hash = OffchainTransactionLib.hash(leaf.node.tran);
-        string memory key = string(ByteUtilLib.bytes32ToBytes(hash));
-        TransferDeliveryChallengeLib.TransferDeliveryChallenge memory challenge = balances[0].transferChallenges[key];
+        ModelLib.MerklePathNode memory leaf = ModelLib.leaf4MerklePath(close.txPath);
+        string memory key = string(ByteUtilLib.bytes32ToBytes(leaf.nodeHash));
+        GlobleLib.TransferDeliveryChallenge memory challenge = balances[0].transferChallenges[key];
         require(challenge.isVal);
 
-        if(challenge.stat == ChallengeStatusLib.ChallengeStatus.OPEN) {
-            ParticipantLib.Participant memory participant;
-            participant.publicKey = close.fromPublicKey;
-            bool signFlag = UpdateLib.verifySig(participant, close.update);
+        if(challenge.stat == ModelLib.ChallengeStatus.OPEN) {
+            ModelLib.Participant memory participant;
+            participant.publicKey = ByteUtilLib.bytes32ToBytes(close.fromPublicKey);
+            bool signFlag = ModelLib.verifySig4Update(participant, close.update);
             require(signFlag);
 
-            AugmentedMerkleTreeNodeLib.AugmentedMerkleTreeNode memory leaf2 = AugmentedMerklePathLib.leafNode(close.merklePath);
-            require(UpdateLib.equals(leaf2.account.update, close.update));
+            // AugmentedMerkleTreeNodeLib.AugmentedMerkleTreeNode memory leaf2 = AugmentedMerklePathLib.leafNode(close.merklePath);
+            // require(UpdateLib.equals(leaf2.account.update, close.update));
 
-            bool verifyFlag = MerkleTreeLib.verifyMembershipProof(close.update.root, close.path);
+            //TODO:require(close.proof.leaf.nodeInfo.update == close.update);
+
+            bool verifyFlag = ModelLib.verifyMembershipProof4Merkle(close.update.upData.root, close.txPath);
             require(verifyFlag);
 
-            challenge.stat = ChallengeStatusLib.ChallengeStatus.CLOSE;
+            challenge.stat = ModelLib.ChallengeStatus.CLOSE;
             // balances[0].transferChallenges[key] = challenge;//TODO:change path to bytes
         }
     }
 
     function recoverFunds(bytes calldata data) external recovery {
-        AugmentedMerklePathLib.AugmentedMerklePath memory path = AugmentedMerklePathLib.unmarshal(data);
+        ModelLib.AMTreeProof memory proof = ModelLib.unmarshalAMTreeProof(data);
 
-        AugmentedMerkleTreeNodeLib.AugmentedMerkleTreeNode memory leaf = AugmentedMerklePathLib.leafNode(path);
-        require(ByteUtilLib.bytesToAddress(ByteUtilLib.bytes32ToBytes(leaf.account.addr)) == msg.sender);
+        // AugmentedMerkleTreeNodeLib.AugmentedMerkleTreeNode memory leaf = AugmentedMerklePathLib.leafNode(path);
 
-        require(balances[1].eon == path.eon);
+        require(ByteUtilLib.bytesToAddress(ByteUtilLib.bytes32ToBytes(proof.leaf.nodeInfo.addressHash)) == msg.sender);
 
-        HubRootLib.HubRoot memory latestRoot = latestRoot();
-        AugmentedMerkleTreeNodeLib.AugmentedMerkleTreeNode memory merkle = HubRootLib.hubRoot2AugmentedMerkleTreeNode(latestRoot);
-        bool proofFlag = AugmentedMerkleTreeLib.verifyMembershipProof(merkle, path);
+        require(balances[1].eon == proof.leaf.nodeInfo.update.upData.eon);
+
+        ModelLib.HubRoot memory latestRoot = latestRoot();
+        // AugmentedMerkleTreeNodeLib.AugmentedMerkleTreeNode memory merkle = HubRootLib.hubRoot2AugmentedMerkleTreeNode(latestRoot);
+        // bool proofFlag = AugmentedMerkleTreeLib.verifyMembershipProof(merkle, path);
+        bool proofFlag = ModelLib.verifyMembershipProof4AMTreePath(latestRoot.node, proof.path);
         require(proofFlag);
 
-        uint amount = SafeMath.add(leaf.allotment, balances[0].depositMeta.deposits[msg.sender]);
+        uint amount = SafeMath.add(proof.leaf.allotment, balances[0].depositMeta.deposits[msg.sender]);
         amount = SafeMath.add(amount, balances[1].depositMeta.deposits[msg.sender]);
         require(amount > 0);
 
-        RecoveryMetaLib.RecoveryMeta memory r = recoverys[msg.sender];
+        GlobleLib.RecoveryMeta memory r = recoverys[msg.sender];
         require(!r.isVal);
         r.isVal = true;
         recoverys[msg.sender] = r;
@@ -366,15 +378,15 @@ contract SiriusService is Sirius {
     }
 
     function getLatestRoot() external recovery returns (bytes memory) {
-        return HubRootLib.marshal(latestRoot());
+        return ModelLib.marshalHubRoot(latestRoot());
     }
 
-    function latestRoot() private view returns (HubRootLib.HubRoot memory) {
+    function latestRoot() private view returns (ModelLib.HubRoot memory) {
         return balances[0].root;
     }
 
     function getCurrentEon() external recovery returns (uint) {
-        return 1;
+        return currentEon();
     }
 
     function currentEon() private view returns (uint) {

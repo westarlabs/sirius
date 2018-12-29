@@ -160,6 +160,13 @@ message ProtoBalanceUpdateChallenge {
 }
 
 message ProtoBalanceUpdateProof {
+    required bool hasUp = 1;
+    required Update update = 2;
+    required bool hasPath = 3;
+    required AMTreeProof proof = 4;
+}
+
+message CloseBalanceUpdateChallenge {
     required Update update = 1;
     required AMTreeProof proof = 2;
 }

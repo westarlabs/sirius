@@ -12,13 +12,15 @@ class SiriusContractTest : ContractTestBase("sirius.sol", "SiriusService") {
     @Test
     fun testGetCurrentEon() {
         val callResult = contract.callConstFunction("getCurrentEon")
-        Assert.assertEquals(0, callResult[0] as BigInteger)
+        val eon = callResult[0] as BigInteger
+        println(eon.longValueExact())
+        Assert.assertTrue( eon.longValueExact() > 0)
     }
 
     @Test
     fun testDeposit() {
         val amount: Long = 10
-        val callResult = contract.callFunction(amount, "deposit", amount)
+        val callResult = contract.callFunction(amount, "deposit")
 
         Assert.assertTrue(callResult.isSuccessful)
         callResult.receipt.logInfoList.forEach { logInfo ->
