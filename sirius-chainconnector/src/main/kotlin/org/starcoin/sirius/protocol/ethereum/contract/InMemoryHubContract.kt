@@ -63,7 +63,7 @@ class InMemoryHubContract(contract: SolidityContract) : HubContract{
         TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
     }
 
-    override fun recoverFunds(request: Starcoin.RecoverFundsRequest): Hash {
+    override fun recoverFunds(request: AMTreeProof): Hash {
         TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
     }
 

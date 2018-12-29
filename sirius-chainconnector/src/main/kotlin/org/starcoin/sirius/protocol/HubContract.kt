@@ -25,8 +25,5 @@ interface HubContract {
     fun openTransferDeliveryChallenge(request: TransferDeliveryChallenge): Hash
     fun closeTransferDeliveryChallenge(request: CloseTransferDeliveryChallenge): Hash
 
-
-    fun recoverFunds(request: Starcoin.RecoverFundsRequest): Hash
-
-
+    fun recoverFunds(request: AMTreeProof): Hash
 }
