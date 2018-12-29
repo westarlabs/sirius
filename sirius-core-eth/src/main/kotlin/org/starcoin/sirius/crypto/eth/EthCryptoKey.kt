@@ -10,6 +10,7 @@ import org.starcoin.sirius.core.Hash
 import org.starcoin.sirius.core.Signature
 import org.starcoin.sirius.core.SiriusObject
 import org.starcoin.sirius.crypto.CryptoKey
+import org.starcoin.sirius.util.Utils
 import java.security.KeyPair
 import java.security.PrivateKey
 
@@ -58,9 +59,25 @@ class EthCryptoKey internal constructor(val ecKey: ECKey) : CryptoKey {
         return this.verify(data.hash(), sign)
     }
 
-    override fun getAddress() = Address.wrap(ecKey.address)
+    override val address get() = Address.wrap(ecKey.address)
 
     override fun toBytes(): ByteArray {
         return ecKey.privKeyBytes!!
+    }
+
+    override fun equals(other: Any?): Boolean {
+        if (this === other) return true
+        if (other !is EthCryptoKey) return false
+
+        if (!this.toBytes().contentEquals(other.toBytes())) return false
+        return true
+    }
+
+    override fun hashCode(): Int {
+        return this.toBytes().contentHashCode()
+    }
+
+    override fun toString(): String {
+        return Utils.HEX.encode(this.toBytes())
     }
 }

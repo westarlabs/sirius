@@ -19,7 +19,7 @@ class EthCryptoTest {
         val key1 = EthCryptoKey(keyBytes)
         val sign1 = key1.sign(bytes)
 
-        Assert.assertEquals(key.getAddress(), key1.getAddress())
+        Assert.assertEquals(key.address, key1.address)
         Assert.assertEquals(sign, sign1)
 
         Assert.assertTrue(key.verify(bytes, sign))

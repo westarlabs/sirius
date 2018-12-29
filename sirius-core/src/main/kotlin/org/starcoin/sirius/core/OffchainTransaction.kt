@@ -74,7 +74,7 @@ data class OffchainTransaction(@SerialId(1) val data: OffchainTransactionData, @
         override fun mock(): OffchainTransaction {
             return OffchainTransaction(
                 MockUtils.nextInt(),
-                CryptoService.getDummyCryptoKey().getAddress(),
+                CryptoService.getDummyCryptoKey().address,
                 Address.random(),
                 MockUtils.nextLong()
             )

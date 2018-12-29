@@ -12,10 +12,10 @@ import org.starcoin.sirius.core.AMTreeProof
 import org.starcoin.sirius.core.Update
 import org.starcoin.sirius.core.UpdateData
 import org.starcoin.sirius.crypto.CryptoKey
+import org.starcoin.sirius.crypto.CryptoService
 import org.starcoin.sirius.protocol.Chain
 import org.starcoin.sirius.protocol.HubContract
 import org.starcoin.sirius.protocol.QueryContractParameter
-import org.starcoin.sirius.util.KeyPairUtil
 import java.util.*
 import java.util.concurrent.ArrayBlockingQueue
 import java.util.concurrent.BlockingQueue
@@ -50,7 +50,7 @@ class HubImpl<T : ChainTransaction>(
         //TODO
         eonState = EonState(0)
         this.eventBus = EventBus()
-        this.hubAddress = hubKey.getAddress()
+        this.hubAddress = hubKey.address
         this.strategy = MaliciousStrategy()
     }
 
@@ -366,7 +366,7 @@ class HubImpl<T : ChainTransaction>(
 
     private fun processBalanceUpdateChallenge(challenge: Starcoin.ProtoBalanceUpdateChallenge) {
         val address = Address.getAddress(
-            KeyPairUtil.recoverPublicKey(challenge.publicKey.toByteArray())
+            CryptoService.loadPublicKey(challenge.publicKey.toByteArray())
         )
         val proofPath = this.eonState.state.getMembershipProof(address)
 

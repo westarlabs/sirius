@@ -14,11 +14,11 @@ class InMemoryEthereumListenerTest {
         var alice = CryptoService.generateCryptoKey()
         var bob = CryptoService.generateCryptoKey()
 
-        chain.sb.withAccountBalance(bob.getAddress().toBytes(), EtherUtil.convert(100, EtherUtil.Unit.ETHER))
-        chain.sb.withAccountBalance(alice.getAddress().toBytes(), EtherUtil.convert(199, EtherUtil.Unit.ETHER))
+        chain.sb.withAccountBalance(bob.address.toBytes(), EtherUtil.convert(100, EtherUtil.Unit.ETHER))
+        chain.sb.withAccountBalance(alice.address.toBytes(), EtherUtil.convert(199, EtherUtil.Unit.ETHER))
 
         var transaction = EthereumTransaction(
-            bob.getAddress(),
+            bob.address,
             0,
             0, 0,
             1,

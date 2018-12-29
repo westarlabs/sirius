@@ -10,7 +10,7 @@ interface CryptoKey {
 
     val keyPair: KeyPair
 
-    //fun getKeyPair(): KeyPair
+    val address: Address
 
     fun sign(data: ByteArray): Signature
 
@@ -24,7 +24,6 @@ interface CryptoKey {
 
     fun verify(data: SiriusObject, sign: Signature): Boolean
 
-    fun getAddress(): Address
-
     fun toBytes(): ByteArray
+
 }

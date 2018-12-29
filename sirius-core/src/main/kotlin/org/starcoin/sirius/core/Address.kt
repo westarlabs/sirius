@@ -50,7 +50,7 @@ class Address private constructor(private val bytes: ByteArray) : CachedHashable
 
         val LENGTH = 20
 
-        val DUMMY_ADDRESS:Address by lazy { CryptoService.getDummyCryptoKey().getAddress() }
+        val DUMMY_ADDRESS: Address by lazy { CryptoService.getDummyCryptoKey().address }
 
         @Deprecated("use DUMMY_ADDRESS")
         val DEFAULT_ADDRESS = DUMMY_ADDRESS

@@ -27,7 +27,7 @@ class EthereumChainTest {
     fun testNewTransaction() {
         val Bob = CryptoService.generateCryptoKey()
         val tx = EthereumTransaction(
-            Bob.getAddress(), chain.getNonce(Alice.getAddress()), 1000,
+            Bob.address, chain.getNonce(Alice.address), 1000,
             100000, 1, null
         )
         chain.newTransaction(Alice, tx)
@@ -46,6 +46,6 @@ class EthereumChainTest {
 
     @Test
     fun testGetBalance() {
-        println("balance of bob is ${chain.getBalance(Bob.getAddress())}")
+        println("balance of bob is ${chain.getBalance(Bob.address)}")
     }
 }

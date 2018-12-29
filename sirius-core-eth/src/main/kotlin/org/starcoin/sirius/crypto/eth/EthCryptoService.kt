@@ -4,6 +4,7 @@ import org.ethereum.crypto.ECKey
 import org.ethereum.crypto.jce.ECKeyFactory
 import org.ethereum.crypto.jce.SpongyCastleProvider
 import org.ethereum.util.RLP
+import org.spongycastle.jce.spec.ECPrivateKeySpec
 import org.spongycastle.jce.spec.ECPublicKeySpec
 import org.starcoin.sirius.core.Address
 import org.starcoin.sirius.core.Hash
@@ -12,6 +13,7 @@ import org.starcoin.sirius.core.SiriusObject
 import org.starcoin.sirius.crypto.CryptoKey
 import org.starcoin.sirius.crypto.CryptoService
 import org.starcoin.sirius.serialization.rlp.*
+import java.math.BigInteger
 import java.security.*
 
 object EthCryptoService : CryptoService {
@@ -57,17 +59,18 @@ object EthCryptoService : CryptoService {
     }
 
     override fun loadPrivateKey(bytes: ByteArray): PrivateKey {
-        //TODO optimize
-        return EthCryptoKey(ECKey.fromPrivate(bytes)).keyPair.private
+        return ECKeyFactory.getInstance(SpongyCastleProvider.getInstance())
+            .generatePrivate(ECPrivateKeySpec(BigInteger(1, bytes), ECKey.CURVE_SPEC))
     }
 
     override fun encodePublicKey(publicKey: PublicKey): ByteArray {
-        //TODO ensure
-        return publicKey.encoded
+        val pk = publicKey as org.spongycastle.jcajce.provider.asymmetric.ec.BCECPublicKey
+        return pk.q.getEncoded(true)
     }
 
     override fun encodePrivateKey(privateKey: PrivateKey): ByteArray {
-        return privateKey.encoded
+        val pk = privateKey as org.spongycastle.jcajce.provider.asymmetric.ec.BCECPrivateKey
+        return pk.d.toByteArray()
     }
 
     override fun sign(data: ByteArray, privateKey: PrivateKey): Signature {

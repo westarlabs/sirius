@@ -4,7 +4,7 @@ import org.starcoin.sirius.core.Address
 import org.starcoin.sirius.core.Hash
 import org.starcoin.sirius.core.Signature
 import org.starcoin.sirius.core.SiriusObject
-import org.starcoin.sirius.crypto.fallback.FallbackCryptoService
+import org.starcoin.sirius.crypto.fallback.FallbackCryptoKey
 import java.security.PrivateKey
 import java.security.PublicKey
 import java.util.*
@@ -55,7 +55,7 @@ interface CryptoService {
                 loaders.next().createService()
             } else {
                 //if can not find, use fallback
-                FallbackCryptoService
+                FallbackCryptoKey
             }
         }
 

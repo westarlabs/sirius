@@ -34,10 +34,47 @@ abstract class CryptoServiceTestBase {
     }
 
     @Test
+    fun testDummyKey() {
+        val key = CryptoService.getDummyCryptoKey()
+        val key1 = CryptoService.getDummyCryptoKey()
+        Assert.assertEquals(key, key1)
+    }
+
+    @Test
     fun testDummyKeySignature() {
         val hash = Hash.random()
         val key = CryptoService.getDummyCryptoKey()
         val sign = key.sign(hash)
         Assert.assertTrue(key.verify(hash, sign))
     }
+
+    @Test
+    fun testLoadKey() {
+        val key = CryptoService.generateCryptoKey()
+        val publicKeyBytes = CryptoService.encodePublicKey(key.keyPair.public)
+        val privateKeyBytes = CryptoService.encodePrivateKey(key.keyPair.private)
+        val publicKey = CryptoService.loadPublicKey(publicKeyBytes)
+        val privateKey = CryptoService.loadPrivateKey(privateKeyBytes)
+        Assert.assertArrayEquals(publicKeyBytes, CryptoService.encodePublicKey(publicKey))
+        Assert.assertArrayEquals(privateKeyBytes, CryptoService.encodePrivateKey(privateKey))
+    }
+
+    @Test
+    fun testSignature() {
+        val key = CryptoService.generateCryptoKey()
+        for (i in 0..9) {
+            val data = MockUtils.nextBytes(Hash.LENGTH)
+            val sign = key.sign(data)
+            Assert.assertTrue(key.verify(data, sign))
+        }
+    }
+
+    @Test
+    fun testEncodeAndDecode() {
+        val key = CryptoService.generateCryptoKey()
+        val bytes = key.toBytes()
+        val key1 = CryptoService.loadCryptoKey(bytes)
+        Assert.assertEquals(key, key1)
+    }
+
 }
