@@ -4,14 +4,18 @@ import org.starcoin.sirius.core.Address
 import org.starcoin.sirius.core.Hash
 import org.starcoin.sirius.core.Signature
 import org.starcoin.sirius.core.SiriusObject
-import org.starcoin.sirius.crypto.fallback.FallbackCryptoKey
+import org.starcoin.sirius.crypto.fallback.DefaultCryptoKey
 import java.security.PrivateKey
 import java.security.PublicKey
 import java.util.*
 
 interface CryptoService {
 
-    fun getDummyCryptoKey(): CryptoKey
+    val dummyCryptoKey: CryptoKey
+
+    val emptyDataHash: Hash
+
+    val emptyListHash: Hash
 
     fun generateCryptoKey(): CryptoKey
 
@@ -43,10 +47,6 @@ interface CryptoService {
 
     fun <T : SiriusObject> hash(obj: T): Hash
 
-    fun getEmptyDataHash(): Hash
-
-    fun getEmptyListHash(): Hash
-
     companion object : CryptoService {
         val instance: CryptoService by lazy {
             val loaders = ServiceLoader
@@ -55,11 +55,11 @@ interface CryptoService {
                 loaders.next().createService()
             } else {
                 //if can not find, use fallback
-                FallbackCryptoKey
+                DefaultCryptoKey
             }
         }
 
-        override fun getDummyCryptoKey() = instance.getDummyCryptoKey()
+        override val dummyCryptoKey get() = instance.dummyCryptoKey
 
         override fun generateCryptoKey() = instance.generateCryptoKey()
 
@@ -93,8 +93,8 @@ interface CryptoService {
 
         override fun <T : SiriusObject> hash(obj: T) = instance.hash(obj)
 
-        override fun getEmptyDataHash() = instance.getEmptyDataHash()
+        override val emptyDataHash get() = instance.emptyDataHash
 
-        override fun getEmptyListHash() = instance.getEmptyListHash()
+        override val emptyListHash get() = instance.emptyListHash
     }
 }

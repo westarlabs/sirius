@@ -1,12 +1,13 @@
 package org.starcoin.sirius.crypto
 
+import org.apache.commons.lang3.RandomUtils
 import org.junit.Assert
 import org.junit.Before
 import org.junit.Test
 import org.starcoin.sirius.core.Hash
 import org.starcoin.sirius.util.MockUtils
 
-abstract class CryptoServiceTestBase {
+abstract class CryptoTestBase {
 
     @Before
     fun setup() {
@@ -19,10 +20,14 @@ abstract class CryptoServiceTestBase {
 
     @Test
     fun testGenerateKeyPair() {
-        val keyPair = CryptoService.generateCryptoKey()
-        Assert.assertNotNull(keyPair)
-        val keyPair1 = CryptoService.generateCryptoKey()
-        Assert.assertNotEquals(keyPair, keyPair1)
+        val set = mutableSetOf<CryptoKey>()
+        val count = RandomUtils.nextInt(10, 100)
+        for (i in 1..count) {
+            val keyPair = CryptoService.generateCryptoKey()
+            set.add(keyPair)
+        }
+        //not generate same key
+        Assert.assertEquals(count, set.size)
     }
 
     @Test
@@ -35,15 +40,15 @@ abstract class CryptoServiceTestBase {
 
     @Test
     fun testDummyKey() {
-        val key = CryptoService.getDummyCryptoKey()
-        val key1 = CryptoService.getDummyCryptoKey()
+        val key = CryptoService.dummyCryptoKey
+        val key1 = CryptoService.dummyCryptoKey
         Assert.assertEquals(key, key1)
     }
 
     @Test
     fun testDummyKeySignature() {
         val hash = Hash.random()
-        val key = CryptoService.getDummyCryptoKey()
+        val key = CryptoService.dummyCryptoKey
         val sign = key.sign(hash)
         Assert.assertTrue(key.verify(hash, sign))
     }

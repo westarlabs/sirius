@@ -49,7 +49,7 @@ class OffchainTransactionTest {
         Assert.assertEquals(hash, tx2.hash())
 
         //add sign
-        tx.sign(CryptoService.getDummyCryptoKey())
+        tx.sign(CryptoService.dummyCryptoKey)
 
         val bytes1 = tx.toProtobuf()
 
@@ -61,7 +61,7 @@ class OffchainTransactionTest {
 
     @Test
     fun testTxSign() {
-        val key = CryptoService.getDummyCryptoKey()
+        val key = CryptoService.dummyCryptoKey
         val tx = OffchainTransaction.mock()
         tx.sign(key)
         Assert.assertTrue(tx.verify(key))

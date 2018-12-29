@@ -13,6 +13,7 @@ import org.starcoin.sirius.core.SiriusObject
 import org.starcoin.sirius.crypto.CryptoKey
 import org.starcoin.sirius.crypto.CryptoService
 import org.starcoin.sirius.serialization.rlp.*
+import org.starcoin.sirius.util.ByteUtil
 import java.math.BigInteger
 import java.security.*
 
@@ -37,9 +38,10 @@ object EthCryptoService : CryptoService {
     }
 
 
-    override fun getDummyCryptoKey(): CryptoKey {
-        return EthCryptoKey(ECKey.DUMMY)
-    }
+    override val dummyCryptoKey: CryptoKey
+        get() {
+            return EthCryptoKey(ECKey.DUMMY)
+        }
 
     override fun loadCryptoKey(bytes: ByteArray): CryptoKey {
         return EthCryptoKey(bytes)
@@ -65,12 +67,12 @@ object EthCryptoService : CryptoService {
 
     override fun encodePublicKey(publicKey: PublicKey): ByteArray {
         val pk = publicKey as org.spongycastle.jcajce.provider.asymmetric.ec.BCECPublicKey
-        return pk.q.getEncoded(true)
+        return pk.q.getEncoded(false)
     }
 
     override fun encodePrivateKey(privateKey: PrivateKey): ByteArray {
         val pk = privateKey as org.spongycastle.jcajce.provider.asymmetric.ec.BCECPrivateKey
-        return pk.d.toByteArray()
+        return ByteUtil.bigIntegerToBytes(pk.d, 32)
     }
 
     override fun sign(data: ByteArray, privateKey: PrivateKey): Signature {
@@ -110,16 +112,18 @@ object EthCryptoService : CryptoService {
     }
 
     override fun generateAddress(publicKey: PublicKey): Address {
-        return Address.wrap(ECKey.computeAddress(publicKey.encoded))
+        return Address.wrap(ECKey.computeAddress(encodePublicKey(publicKey)))
     }
 
-    override fun getEmptyDataHash(): Hash {
-        return EMPTY_DATA_HASH
-    }
+    override val emptyDataHash: Hash
+        get() {
+            return EMPTY_DATA_HASH
+        }
 
-    override fun getEmptyListHash(): Hash {
-        return EMPTY_LIST_HASH
-    }
+    override val emptyListHash: Hash
+        get() {
+            return EMPTY_LIST_HASH
+        }
 
     fun sha3(input: ByteArray): ByteArray {
         val digest: MessageDigest

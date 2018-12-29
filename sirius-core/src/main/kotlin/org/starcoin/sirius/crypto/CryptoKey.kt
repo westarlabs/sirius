@@ -4,26 +4,43 @@ import org.starcoin.sirius.core.Address
 import org.starcoin.sirius.core.Hash
 import org.starcoin.sirius.core.Signature
 import org.starcoin.sirius.core.SiriusObject
+import org.starcoin.sirius.util.Utils
 import java.security.KeyPair
 
-interface CryptoKey {
+abstract class CryptoKey {
 
-    val keyPair: KeyPair
+    abstract val keyPair: KeyPair
 
-    val address: Address
+    abstract val address: Address
 
-    fun sign(data: ByteArray): Signature
+    abstract fun sign(data: ByteArray): Signature
 
-    fun sign(data: Hash): Signature
+    abstract fun sign(data: Hash): Signature
 
-    fun sign(data: SiriusObject): Signature
+    abstract fun sign(data: SiriusObject): Signature
 
-    fun verify(data: ByteArray, sign: Signature): Boolean
+    abstract fun verify(data: ByteArray, sign: Signature): Boolean
 
-    fun verify(data: Hash, sign: Signature): Boolean
+    abstract fun verify(data: Hash, sign: Signature): Boolean
 
-    fun verify(data: SiriusObject, sign: Signature): Boolean
+    abstract fun verify(data: SiriusObject, sign: Signature): Boolean
 
-    fun toBytes(): ByteArray
+    abstract fun toBytes(): ByteArray
 
+    override fun equals(other: Any?): Boolean {
+        if (this === other) return true
+        if (other !is CryptoKey) return false
+
+        if (!this.toBytes().contentEquals(other.toBytes())) return false
+
+        return true
+    }
+
+    override fun hashCode(): Int {
+        return this.toBytes().contentHashCode()
+    }
+
+    override fun toString(): String {
+        return Utils.HEX.encode(this.toBytes())
+    }
 }

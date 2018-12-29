@@ -90,11 +90,11 @@ class Signature private constructor(internal val bytes: ByteArray) {
         }
 
         fun ofDummyKey(data: ByteArray): Signature {
-            return CryptoService.getDummyCryptoKey().sign(data)
+            return CryptoService.dummyCryptoKey.sign(data)
         }
 
         fun random(): Signature {
-            return CryptoService.getDummyCryptoKey().sign(Hash.random())
+            return CryptoService.dummyCryptoKey.sign(Hash.random())
         }
     }
 

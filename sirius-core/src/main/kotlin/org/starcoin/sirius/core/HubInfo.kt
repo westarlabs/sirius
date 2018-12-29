@@ -22,7 +22,7 @@ data class HubInfo(
     val root: AMTreePathInternalNode = AMTreePathInternalNode.DUMMY_NODE,
     @SerialId(5)
     @Serializable(with = PublicKeySerializer::class)
-    val publicKey: PublicKey = CryptoService.getDummyCryptoKey().keyPair.public
+    val publicKey: PublicKey = CryptoService.dummyCryptoKey.keyPair.public
 ) : SiriusObject() {
 
     companion object : SiriusObjectCompanion<HubInfo, ProtoHubInfo>(HubInfo::class) {

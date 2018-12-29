@@ -19,7 +19,7 @@ data class CloseTransferDeliveryChallenge(
     val txPath: MerklePath = MerklePath.DUMMY_PATH,
     @SerialId(4)
     @Serializable(with = PublicKeySerializer::class)
-    val fromPublicKey: PublicKey = CryptoService.getDummyCryptoKey().keyPair.public
+    val fromPublicKey: PublicKey = CryptoService.dummyCryptoKey.keyPair.public
 ) : SiriusObject() {
     companion object :
         SiriusObjectCompanion<CloseTransferDeliveryChallenge, Starcoin.CloseTransferDeliveryChallengeRequest>(
@@ -33,7 +33,7 @@ data class CloseTransferDeliveryChallenge(
                 AMTreeProof.mock(),
                 Update.mock(),
                 MerklePath.mock(),
-                CryptoService.getDummyCryptoKey().keyPair.public
+                CryptoService.dummyCryptoKey.keyPair.public
             )
         }
     }

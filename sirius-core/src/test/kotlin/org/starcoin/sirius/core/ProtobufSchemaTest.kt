@@ -12,7 +12,7 @@ import kotlin.reflect.full.companionObjectInstance
 import kotlin.reflect.jvm.jvmName
 
 
-class ProtobufSchemaTest {
+open class ProtobufSchemaTest {
 
     companion object : WithLogging() {
 

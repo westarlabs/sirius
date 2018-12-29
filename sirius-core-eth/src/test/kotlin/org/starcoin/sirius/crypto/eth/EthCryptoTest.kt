@@ -4,8 +4,14 @@ import org.apache.commons.lang3.RandomUtils
 import org.ethereum.crypto.ECKey
 import org.junit.Assert
 import org.junit.Test
+import org.starcoin.sirius.crypto.CryptoService
+import org.starcoin.sirius.crypto.CryptoTestBase
 
-class EthCryptoTest {
+class EthCryptoTest : CryptoTestBase() {
+
+    override fun assertCryptoServiceType(service: CryptoService) {
+        Assert.assertTrue(service is EthCryptoService)
+    }
 
     @Test
     fun testEthCrypto() {

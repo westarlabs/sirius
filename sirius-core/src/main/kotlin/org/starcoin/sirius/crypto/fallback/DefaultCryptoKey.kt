@@ -16,11 +16,10 @@ import org.starcoin.sirius.crypto.CryptoKey
 import org.starcoin.sirius.crypto.CryptoService
 import org.starcoin.sirius.util.ByteUtil
 import org.starcoin.sirius.util.HashUtil
-import org.starcoin.sirius.util.Utils
 import java.math.BigInteger
 import java.security.*
 
-class FallbackCryptoKey(override val keyPair: KeyPair) : CryptoKey {
+class DefaultCryptoKey(override val keyPair: KeyPair) : CryptoKey() {
 
     constructor() : this(generateKeyPair())
 
@@ -49,8 +48,8 @@ class FallbackCryptoKey(override val keyPair: KeyPair) : CryptoKey {
 
     override fun sign(data: Hash): Signature = this.sign(data.toBytes())
 
-    override fun sign(bytes: ByteArray): Signature {
-        return Signature.wrap(signData(bytes, this.keyPair.private))
+    override fun sign(data: ByteArray): Signature {
+        return Signature.wrap(signData(data, this.keyPair.private))
     }
 
     override fun sign(data: SiriusObject): Signature {
@@ -62,32 +61,15 @@ class FallbackCryptoKey(override val keyPair: KeyPair) : CryptoKey {
         return encodePrivateKey(this.keyPair.private)
     }
 
-    override fun equals(other: Any?): Boolean {
-        if (this === other) return true
-        if (other !is FallbackCryptoKey) return false
-
-        if (!this.toBytes().contentEquals(other.toBytes())) return false
-
-        return true
-    }
-
-    override fun hashCode(): Int {
-        return this.toBytes().contentHashCode()
-    }
-
-    override fun toString(): String {
-        return Utils.HEX.encode(this.toBytes())
-    }
-
     companion object : CryptoService {
-        val ALGORITHM = "EC"
-        val CURVE: ECDomainParameters
-        val CURVE_SPEC: ECParameterSpec
-        val PROVIDER: BouncyCastleProvider
+        private const val ALGORITHM = "EC"
+        private val CURVE: ECDomainParameters
+        private val CURVE_SPEC: ECParameterSpec
+        private val PROVIDER: BouncyCastleProvider
 
-        val EMPTY_BYTE_ARRAY = ByteArray(0)
-        val EMPTY_HASH: Hash
-        val DUMMY_KEY: FallbackCryptoKey
+        private val EMPTY_BYTE_ARRAY = ByteArray(0)
+        private val EMPTY_HASH: Hash
+        private val DUMMY_KEY: DefaultCryptoKey
 
         private val keyFactory: KeyFactory
 
@@ -102,7 +84,7 @@ class FallbackCryptoKey(override val keyPair: KeyPair) : CryptoKey {
             )
             PROVIDER = BouncyCastleProvider()
             keyFactory = KeyFactory.getInstance(ALGORITHM, PROVIDER)
-            DUMMY_KEY = FallbackCryptoKey(FallbackCryptoKey.generatePrivateKeyFromBigInteger(BigInteger.ONE))
+            DUMMY_KEY = DefaultCryptoKey(DefaultCryptoKey.generatePrivateKeyFromBigInteger(BigInteger.ONE))
             EMPTY_HASH = hash(EMPTY_BYTE_ARRAY)
         }
 
@@ -143,16 +125,16 @@ class FallbackCryptoKey(override val keyPair: KeyPair) : CryptoKey {
             return generatePublicKeyFromPoint(point)
         }
 
-        override fun loadPublicKey(encoded: ByteArray): PublicKey {
-            return generatePublicKeyFromPoint(CURVE.curve.decodePoint(encoded))
+        override fun loadPublicKey(bytes: ByteArray): PublicKey {
+            return generatePublicKeyFromPoint(CURVE.curve.decodePoint(bytes))
         }
 
         override fun encodePublicKey(publicKey: PublicKey): ByteArray {
             return (publicKey as BCECPublicKey).q.getEncoded(true)
         }
 
-        override fun loadPrivateKey(encoded: ByteArray): PrivateKey {
-            return generatePrivateKeyFromBigInteger(BigInteger(1, encoded))
+        override fun loadPrivateKey(bytes: ByteArray): PrivateKey {
+            return generatePrivateKeyFromBigInteger(BigInteger(1, bytes))
         }
 
         override fun encodePrivateKey(privateKey: PrivateKey): ByteArray {
@@ -160,16 +142,17 @@ class FallbackCryptoKey(override val keyPair: KeyPair) : CryptoKey {
             return ByteUtil.bigIntegerToBytes((privateKey as BCECPrivateKey).d, 32)
         }
 
-        override fun getDummyCryptoKey(): CryptoKey {
-            return DUMMY_KEY
-        }
+        override val dummyCryptoKey: CryptoKey
+            get() {
+                return DUMMY_KEY
+            }
 
         override fun generateCryptoKey(): CryptoKey {
-            return FallbackCryptoKey()
+            return DefaultCryptoKey()
         }
 
         override fun loadCryptoKey(bytes: ByteArray): CryptoKey {
-            return FallbackCryptoKey(bytes)
+            return DefaultCryptoKey(bytes)
         }
 
         override fun generateAddress(publicKey: PublicKey): Address {
@@ -212,13 +195,15 @@ class FallbackCryptoKey(override val keyPair: KeyPair) : CryptoKey {
             return hash(obj.toProtobuf())
         }
 
-        override fun getEmptyDataHash(): Hash {
-            return EMPTY_HASH
-        }
+        override val emptyDataHash: Hash
+            get() {
+                return EMPTY_HASH
+            }
 
-        override fun getEmptyListHash(): Hash {
-            return EMPTY_HASH
-        }
+        override val emptyListHash: Hash
+            get() {
+                return EMPTY_HASH
+            }
 
         /**
          * Returns a new SHA-256 MessageDigest instance.

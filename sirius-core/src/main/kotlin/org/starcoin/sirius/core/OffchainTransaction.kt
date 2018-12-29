@@ -74,16 +74,16 @@ data class OffchainTransaction(@SerialId(1) val data: OffchainTransactionData, @
         override fun mock(): OffchainTransaction {
             return OffchainTransaction(
                 MockUtils.nextInt(),
-                CryptoService.getDummyCryptoKey().address,
+                CryptoService.dummyCryptoKey.address,
                 Address.random(),
                 MockUtils.nextLong()
             )
         }
 
-        override fun parseFromProtoMessage(proto: ProtoOffchainTransaction): OffchainTransaction {
+        override fun parseFromProtoMessage(protoMessage: ProtoOffchainTransaction): OffchainTransaction {
             return OffchainTransaction(
-                OffchainTransactionData.parseFromProtoMessage(proto.data),
-                Signature.wrap(proto.sign)
+                OffchainTransactionData.parseFromProtoMessage(protoMessage.data),
+                Signature.wrap(protoMessage.sign)
             )
         }
 
