@@ -4,6 +4,7 @@ import kotlinx.serialization.Serializable
 import org.apache.commons.lang3.RandomStringUtils
 import org.apache.commons.lang3.RandomUtils
 import org.ethereum.config.SystemProperties
+import org.ethereum.core.*
 import org.ethereum.solidity.compiler.CompilationResult
 import org.ethereum.solidity.compiler.SolidityCompiler
 import org.ethereum.solidity.compiler.SolidityCompiler.Options
@@ -14,7 +15,6 @@ import org.junit.Before
 import org.starcoin.sirius.core.Address
 import org.starcoin.sirius.util.WithLogging
 import java.io.File
-
 
 @Serializable
 data class Data(val boolean: Boolean, val int: Int, val string: String, val address: Address) {
@@ -68,6 +68,13 @@ abstract class ContractTestBase(val contractFile: String, val contractName: Stri
         val contractMetadata = result.getContract(contractName)
         LOG.info("$contractFile compile abi ${contractMetadata.abi}")
         LOG.info("$contractFile compile bin ${contractMetadata.bin}")
-        return sb.submitNewContract(contractMetadata) as StandaloneBlockchain.SolidityContractImpl
+        val contract = sb.submitNewContract(contractMetadata) as StandaloneBlockchain.SolidityContractImpl
+
+        var lastSummary = StandaloneBlockchain::class.java.getDeclaredField("lastSummary")
+        lastSummary.setAccessible(true)
+        val sum = lastSummary.get(sb) as BlockSummary
+        sum.getReceipts().stream().forEach{receipt ->println(receipt.error + ":" + receipt.isTxStatusOK )}
+
+        return contract
     }
 }

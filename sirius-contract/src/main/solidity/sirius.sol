@@ -16,6 +16,7 @@ interface Sirius {
     function getLatestRoot() external returns (bytes memory);
     function getCurrentEon() external returns (uint);
     function isRecoveryMode() external returns (bool);
+    function test() external returns (bool);
 }
 
 contract SiriusService is Sirius {
@@ -395,5 +396,9 @@ contract SiriusService is Sirius {
 
     function isRecoveryMode() external recovery returns (bool) {
         return recoveryMode;
+    }
+
+    function test() external returns (bool) {
+        return true;
     }
 }

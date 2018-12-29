@@ -10,6 +10,14 @@ import kotlin.random.Random
 class SiriusContractTest : ContractTestBase("sirius.sol", "SiriusService") {
 
     @Test
+    fun test() {
+        val callResult = contract.callConstFunction("test")
+        var flag = callResult[0] as Boolean
+        println(flag)
+        Assert.assertTrue(flag)
+    }
+
+    @Test
     fun testGetCurrentEon() {
         val callResult = contract.callConstFunction("getCurrentEon")
         val eon = callResult[0] as BigInteger

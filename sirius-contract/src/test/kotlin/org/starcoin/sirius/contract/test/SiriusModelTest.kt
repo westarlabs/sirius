@@ -20,5 +20,8 @@ class SiriusModelTest : ContractTestBase("model_test.sol", "test_all") {
         val data = RLP.dump(HubRoot.serializer(), hub)
 
         val callResult = contract.callFunction("hub_root_test", data)
+        callResult.receipt.logInfoList.forEach { logInfo ->
+            println("event:$logInfo")
+        }
     }
 }
