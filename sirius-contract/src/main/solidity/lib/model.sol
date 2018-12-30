@@ -613,7 +613,7 @@ library ModelLib {
 
     struct BalanceUpdateChallenge {
         BalanceUpdateProof proof;
-        bytes32 publicKey;
+        bytes publicKey;
     }
 
     function unmarshalBalanceUpdateChallenge(RLPLib.RLPItem memory rlp) internal pure returns (BalanceUpdateChallenge memory buc) {
@@ -622,7 +622,7 @@ library ModelLib {
         while(RLPDecoder.hasNext(it)) {
             RLPLib.RLPItem memory r = RLPDecoder.next(it);
             if(idx == 0) buc.proof = unmarshalBalanceUpdateProof(r);
-            else if(idx == 1) buc.publicKey = ByteUtilLib.bytesToBytes32(RLPLib.toData(r));
+            else if(idx == 1) buc.publicKey = RLPLib.toData(r);
             else {}
 
             idx++;
@@ -631,7 +631,7 @@ library ModelLib {
 
     function marshalBalanceUpdateChallenge(BalanceUpdateChallenge memory buc) internal pure returns (bytes memory) {
         bytes memory proof = marshalBalanceUpdateProof(buc.proof);
-        bytes memory publicKey = RLPEncoder.encodeBytes(ByteUtilLib.bytes32ToBytes(buc.publicKey));
+        bytes memory publicKey = RLPEncoder.encodeBytes(buc.publicKey);
 
         return RLPEncoder.encodeList(ByteUtilLib.append(proof, publicKey));
     }
@@ -823,7 +823,7 @@ library ModelLib {
         AMTreeProof proof;
         Update update;
         MerklePath txPath;
-        bytes32 fromPublicKey;
+        bytes fromPublicKey;
     }
 
     function unmarshalCloseTransferDeliveryChallenge(RLPLib.RLPItem memory rlp) internal pure returns (CloseTransferDeliveryChallenge memory close) {
@@ -834,7 +834,7 @@ library ModelLib {
             if(idx == 0) close.proof = unmarshalAMTreeProof(r);
             else if(idx == 1) close.update = unmarshalUpdate(r);
             else if(idx == 2) close.txPath = unmarshalMerklePath(r);
-            else if(idx == 3) close.fromPublicKey = ByteUtilLib.bytesToBytes32(RLPLib.toData(r));
+            else if(idx == 3) close.fromPublicKey = RLPLib.toData(r);
             else {}
 
             idx++;
@@ -845,7 +845,7 @@ library ModelLib {
         bytes memory proof = marshalAMTreeProof(close.proof);
         bytes memory update = marshalUpdate(close.update);
         bytes memory txPath = marshalMerklePath(close.txPath);
-        bytes memory fromPublicKey = RLPEncoder.encodeBytes(ByteUtilLib.bytes32ToBytes(close.fromPublicKey));
+        bytes memory fromPublicKey = RLPEncoder.encodeBytes(close.fromPublicKey);
 
         return RLPEncoder.encodeList(ByteUtilLib.append(ByteUtilLib.append(ByteUtilLib.append(proof, update), txPath), fromPublicKey));
     }
