@@ -451,27 +451,6 @@ library ModelLib {
 
 //////////////////////////////////
 
-    struct Signature {
-        bytes sign;
-    }
-
-    function unmarshalSignature(RLPLib.RLPItem memory rlp) internal pure returns (Signature memory signature) {
-        RLPLib.Iterator memory it = RLPDecoder.iterator(rlp);
-
-        uint idx;
-        while (RLPDecoder.hasNext(it)) {
-            RLPLib.RLPItem memory r = RLPDecoder.next(it);
-            if (idx == 0) signature.sign = RLPLib.toData(r);
-            else {}
-
-            idx++;
-        }
-    }
-
-    function marshalSignature(Signature memory signature) internal pure returns (bytes memory) {
-        return RLPEncoder.encodeList(RLPEncoder.encodeBytes(signature.sign));
-    }
-
     struct UpdateData {
         uint eon;
         uint version;
@@ -508,8 +487,8 @@ library ModelLib {
 
     struct Update {
         UpdateData upData;
-        Signature sign;
-        Signature hubSign;
+        bytes sign;
+        bytes hubSign;
     }
 
     function unmarshalUpdate(RLPLib.RLPItem memory rlp) internal pure returns (Update memory update) {
@@ -518,8 +497,8 @@ library ModelLib {
         while (RLPDecoder.hasNext(it)) {
             RLPLib.RLPItem memory r = RLPDecoder.next(it);
             if (idx == 0) update.upData = unmarshalUpdateData(r);
-            else if (idx == 1) update.sign = unmarshalSignature(r);
-            else if (idx == 2) update.hubSign = unmarshalSignature(r);
+            else if (idx == 1) update.sign = RLPLib.toData(r);
+            else if (idx == 2) update.hubSign = RLPLib.toData(r);
             else {}
 
             idx++;
@@ -528,8 +507,8 @@ library ModelLib {
 
     function marshalUpdate(Update memory update) internal pure returns (bytes memory) {
         bytes memory upData = marshalUpdateData(update.upData);
-        bytes memory sign = marshalSignature(update.sign);
-        bytes memory hubSign = marshalSignature(update.hubSign);
+        bytes memory sign = RLPEncoder.encodeBytes(update.sign);
+        bytes memory hubSign = RLPEncoder.encodeBytes(update.hubSign);
 
         return RLPEncoder.encodeList(ByteUtilLib.append(ByteUtilLib.append(upData, sign), hubSign));
     }
@@ -780,7 +759,7 @@ library ModelLib {
 
     struct OffchainTransaction {
         OffchainTransactionData offData;
-        Signature sign;
+        bytes sign;
     }
 
     function unmarshalOffchainTransaction(RLPLib.RLPItem memory rlp) internal pure returns (OffchainTransaction memory off) {
@@ -789,7 +768,7 @@ library ModelLib {
         while(RLPDecoder.hasNext(it)) {
             RLPLib.RLPItem memory r = RLPDecoder.next(it);
             if(idx == 0) off.offData = unmarshalOffchainTransactionData(r);
-            else if(idx == 1) off.sign = unmarshalSignature(r);
+            else if(idx == 1) off.sign = RLPLib.toData(r);
             else {}
 
             idx++;
@@ -798,7 +777,7 @@ library ModelLib {
 
     function marshalOffchainTransaction(OffchainTransaction memory off) internal pure returns (bytes memory) {
         bytes memory offData = marshalOffchainTransactionData(off.offData);
-        bytes memory sign = marshalSignature(off.sign);
+        bytes memory sign = RLPEncoder.encodeBytes(off.sign);
 
         return RLPEncoder.encodeList(ByteUtilLib.append(offData, sign));
     }

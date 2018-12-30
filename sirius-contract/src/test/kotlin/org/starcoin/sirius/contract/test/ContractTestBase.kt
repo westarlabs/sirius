@@ -73,8 +73,49 @@ abstract class ContractTestBase(val contractFile: String, val contractName: Stri
         var lastSummary = StandaloneBlockchain::class.java.getDeclaredField("lastSummary")
         lastSummary.setAccessible(true)
         val sum = lastSummary.get(sb) as BlockSummary
-        sum.getReceipts().stream().forEach{receipt ->println(receipt.error + ":" + receipt.isTxStatusOK )}
+        sum.getReceipts().stream().forEach { receipt -> println(receipt.error + ":" + receipt.isTxStatusOK) }
 
         return contract
+    }
+
+    fun call(data: ByteArray, method: String) {
+        call(data, method, true)
+    }
+
+    fun call(data: ByteArray, method: String, hasReturn: Boolean) {
+        val dataStr = bytesToHexString(data)!!
+
+        println(dataStr)
+
+        val callResult = contract.callFunction(method, data)
+
+        println(callResult.receipt.error)
+
+        assert(callResult.receipt.isTxStatusOK)
+        if (hasReturn) {
+            val resultStr = bytesToHexString(callResult.receipt.executionResult)!!
+
+            println(resultStr)
+        } else {
+            callResult.receipt.logInfoList.forEach { logInfo ->
+                println("event:$logInfo")
+            }
+        }
+    }
+
+    private fun bytesToHexString(src: ByteArray?): String? {
+        val stringBuilder = StringBuilder("")
+        if (src == null || src.size <= 0) {
+            return null
+        }
+        for (i in 0..src.size - 1) {
+            val v = src[i].toInt() and 0xFF
+            val hv = Integer.toHexString(v)
+            if (hv.length < 2) {
+                stringBuilder.append(0)
+            }
+            stringBuilder.append(hv)
+        }
+        return stringBuilder.toString()
     }
 }

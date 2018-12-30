@@ -4,6 +4,7 @@ import kotlinx.serialization.SerialId
 import kotlinx.serialization.Serializable
 import org.starcoin.proto.Starcoin
 import org.starcoin.sirius.serialization.ProtobufSchema
+import org.starcoin.sirius.util.MockUtils
 
 @ProtobufSchema(Starcoin.InitiateWithdrawalRequest::class)
 @Serializable
@@ -21,7 +22,7 @@ data class Withdrawal(
         var DUMMY_WITHDRAWAL = Withdrawal()
 
         override fun mock(): Withdrawal {
-            return Withdrawal(Address.random(), AMTreePath.mock(), 0)
+            return Withdrawal(Address.random(), AMTreePath.mock(), MockUtils.nextLong())
         }
     }
 }
