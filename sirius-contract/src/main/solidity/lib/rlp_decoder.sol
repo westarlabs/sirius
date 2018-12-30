@@ -164,7 +164,7 @@ library RLPDecoder {
         uint rStartPos;
         uint len;
         (rStartPos, len) = RLPLib._decode(self);
-        if (len > 32 || len == 0)
+        if (len > 32)
             revert();
         assembly {
             data := div(mload(rStartPos), exp(256, sub(32, len)))

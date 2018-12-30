@@ -87,7 +87,7 @@ contract SiriusService is Sirius {
     }
 
     function commit(bytes calldata data) external recovery {
-        ModelLib.HubRoot memory root = ModelLib.unmarshalHubRoot(data);
+        ModelLib.HubRoot memory root = ModelLib.unmarshalHubRoot(RLPDecoder.toRLPItem(data, true));
         require(!balances[0].hasRoot);
         require(root.eon >= 0);
         require(balances[0].eon == root.eon);
@@ -112,7 +112,7 @@ contract SiriusService is Sirius {
     }
 
     function initiateWithdrawal(bytes calldata data) external recovery {
-        ModelLib.WithdrawalInfo memory init = ModelLib.unmarshalWithdrawalInfo(data);
+        ModelLib.WithdrawalInfo memory init = ModelLib.unmarshalWithdrawalInfo(RLPDecoder.toRLPItem(data, true));
         require(init.amount > 0);
 
         uint currentEon = currentEon();
@@ -163,7 +163,7 @@ contract SiriusService is Sirius {
     }
 
     function cancelWithdrawal(bytes calldata data) external recovery {
-        ModelLib.CancelWithdrawal memory cancel = ModelLib.unmarshalCancelWithdrawal(data);
+        ModelLib.CancelWithdrawal memory cancel = ModelLib.unmarshalCancelWithdrawal(RLPDecoder.toRLPItem(data, true));
         uint currentEon = currentEon();
         require(cancel.update.upData.eon >= 0 && cancel.update.upData.eon == currentEon);
 
@@ -197,7 +197,7 @@ contract SiriusService is Sirius {
     }
 
     function openBalanceUpdateChallenge(bytes calldata data) external recovery {
-        ModelLib.BalanceUpdateChallenge memory challenge = ModelLib.unmarshalBalanceUpdateChallenge(data);
+        ModelLib.BalanceUpdateChallenge memory challenge = ModelLib.unmarshalBalanceUpdateChallenge(RLPDecoder.toRLPItem(data, true));
         require(challenge.proof.hasPath || challenge.proof.hasUp);
 
         if(challenge.proof.hasPath) {
@@ -237,7 +237,7 @@ contract SiriusService is Sirius {
     }
 
     function closeBalanceUpdateChallenge(bytes calldata data) external recovery {
-        ModelLib.CloseBalanceUpdateChallenge memory close = ModelLib.unmarshalCloseBalanceUpdateChallenge(data);
+        ModelLib.CloseBalanceUpdateChallenge memory close = ModelLib.unmarshalCloseBalanceUpdateChallenge(RLPDecoder.toRLPItem(data, true));
 
         ModelLib.HubRoot memory root = balances[1].root;
         //AugmentedMerkleTreeNodeLib.AugmentedMerkleTreeNode memory merkle = HubRootLib.hubRoot2AugmentedMerkleTreeNode(root);
@@ -292,7 +292,7 @@ contract SiriusService is Sirius {
     }
 
     function openTransferDeliveryChallenge(bytes calldata data) external recovery {
-        ModelLib.OpenTransferDeliveryChallengeRequest memory open = ModelLib.unmarshalOpenTransferDeliveryChallengeRequest(data);
+        ModelLib.OpenTransferDeliveryChallengeRequest memory open = ModelLib.unmarshalOpenTransferDeliveryChallengeRequest(RLPDecoder.toRLPItem(data, true));
         require(open.update.upData.eon >= 0);
         require(open.update.upData.eon == balances[1].eon);
 
@@ -320,7 +320,7 @@ contract SiriusService is Sirius {
     }
 
     function closeTransferDeliveryChallenge(bytes calldata data) external recovery {
-        ModelLib.CloseTransferDeliveryChallenge memory close = ModelLib.unmarshalCloseTransferDeliveryChallenge(data);
+        ModelLib.CloseTransferDeliveryChallenge memory close = ModelLib.unmarshalCloseTransferDeliveryChallenge(RLPDecoder.toRLPItem(data, true));
 
         ModelLib.HubRoot memory latestRoot = latestRoot();
         // AugmentedMerkleTreeNodeLib.AugmentedMerkleTreeNode memory merkle = HubRootLib.hubRoot2AugmentedMerkleTreeNode(latestRoot);
@@ -353,7 +353,7 @@ contract SiriusService is Sirius {
     }
 
     function recoverFunds(bytes calldata data) external recovery {
-        ModelLib.AMTreeProof memory proof = ModelLib.unmarshalAMTreeProof(data);
+        ModelLib.AMTreeProof memory proof = ModelLib.unmarshalAMTreeProof(RLPDecoder.toRLPItem(data, true));
 
         // AugmentedMerkleTreeNodeLib.AugmentedMerkleTreeNode memory leaf = AugmentedMerklePathLib.leafNode(path);
 

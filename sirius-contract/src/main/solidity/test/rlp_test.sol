@@ -4,6 +4,7 @@ import "../lib/rlp_decoder.sol";
 import "../lib/rlp_encoder.sol";
 import "../lib/log_util.sol";
 import "../lib/byte_util.sol";
+import "../lib/model.sol";
 
 interface rlp_test_interface {
     function testUint(uint data) external returns (uint);
@@ -11,6 +12,8 @@ interface rlp_test_interface {
     function testStruct() external;
     function testMap(uint data) external;
     function testBase58() external;
+    function testHubRootEncode() external;
+    function testHubRootDeconde() external;
 }
 
 contract rlp_test is rlp_test_interface {
@@ -134,5 +137,82 @@ contract rlp_test is rlp_test_interface {
         Log.log("base58_2", tmp2);
         string memory tmp3 = Base58Util.bytes32ToBase58(tmp2);
         Log.log("base58_3", tmp3);
+    }
+
+    function testHubRootEncode() external {
+        // eon:18067911 offset:0 allotment:13789592 direction:ROOT
+        // left:123a1d14be2941b9692aaf935e49294d9e7af3849521f5f522628c244de06f38
+        // right:8d0da8cbfc71a73b24e599088e31641d292d6e6aba69aa0e3bb328fcf10659a4
+
+        ModelLib.HubRoot memory root;
+        root.eon = 18067911;
+        root.node.offset = 0;
+        root.node.allotment = 13789592;
+        root.node.direction = ModelLib.Direction.DIRECTION_ROOT;
+        root.node.nodeInfo.left = 0x123a1d14be2941b9692aaf935e49294d9e7af3849521f5f522628c244de06f38;
+        root.node.nodeInfo.offset = 0;
+        root.node.nodeInfo.right = 0x8d0da8cbfc71a73b24e599088e31641d292d6e6aba69aa0e3bb328fcf10659a4;
+
+        bytes memory data = ModelLib.marshalHubRoot(root);
+        Log.log("test", data);
+    }
+
+    function testHubRootDeconde() external {
+        RLPLib.RLPItem memory rlp = RLPDecoder.toRLPItem(hex"f852f84bf843a0123a1d14be2941b9692aaf935e49294d9e7af3849521f5f522628c244de06f3880a08d0da8cbfc71a73b24e599088e31641d292d6e6aba69aa0e3bb328fcf10659a4808083d26998840113b1c7", true);
+        RLPLib.Iterator memory it = RLPDecoder.iterator(rlp);
+        uint idx;
+        while(RLPDecoder.hasNext(it)) {
+            RLPLib.RLPItem memory r = RLPDecoder.next(it);
+            if(idx == 0) {
+                // bytes memory tmp1 = RLPLib.toData(r);
+
+                // RLPLib.RLPItem memory rlp1 = RLPDecoder.toRLPItem(tmp1, true);
+                RLPLib.Iterator memory it1 = RLPDecoder.iterator(r);
+                uint a = RLPDecoder.items(r);
+                Log.log("len", a);
+                uint idx1;
+                while (RLPDecoder.hasNext(it1)) {
+                    RLPLib.RLPItem memory r1 = RLPDecoder.next(it1);
+                    if (idx1 == 0) {
+                        // bytes memory tmp2 = RLPLib.toData(r1);
+
+                        // RLPLib.RLPItem memory rlp2 = RLPDecoder.toRLPItem(tmp2, true);
+                        RLPLib.Iterator memory it2 = RLPDecoder.iterator(r1);
+                        uint idx2;
+                        while (RLPDecoder.hasNext(it2)) {
+                            RLPLib.RLPItem memory r2 = RLPDecoder.next(it2);
+                            if (idx2 == 0) {
+                                bytes32 left = ByteUtilLib.bytesToBytes32(RLPLib.toData(r2));
+                                Log.log("left", left);
+                            } else if (idx2 == 1) {
+                                uint offset = RLPDecoder.toUint(r2);
+                                Log.log("offset", offset);
+                            } else if (idx2 == 2) {
+                                bytes32 right = ByteUtilLib.bytesToBytes32(RLPLib.toData(r2));
+                                Log.log("right", right);
+                            } else {}
+
+                            idx2++;
+                        }
+                    } else if (idx1 == 1) {
+                        uint direction = RLPDecoder.toUint(r1);
+                        Log.log("direction", direction);
+                    } else if (idx1 == 2) {
+                        uint offset = RLPDecoder.toUint(r1);
+                        Log.log("offset", offset);
+                    } else if (idx1 == 3) {
+                        uint allotment = RLPDecoder.toUint(r1);
+                        Log.log("allotment", allotment);
+                    } else {}
+
+                    idx1++;
+                }
+            } else if(idx == 1) {
+                uint eon = RLPDecoder.toUint(r);
+                Log.log("eon", eon);
+            } else {}
+
+            idx++;
+        }
     }
 }

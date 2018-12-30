@@ -21,7 +21,7 @@ data class Withdrawal(
         var DUMMY_WITHDRAWAL = Withdrawal()
 
         override fun mock(): Withdrawal {
-            return Withdrawal(Address.DUMMY_ADDRESS, AMTreePath.DUMMY_PATH, 0)
+            return Withdrawal(Address.random(), AMTreePath.mock(), 0)
         }
     }
 }
