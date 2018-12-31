@@ -15,6 +15,7 @@ data class CancelWithdrawal(
     @SerialId(3)
     var path: AMTreePath = AMTreePath.DUMMY_PATH
 ) : SiriusObject() {
+
     companion object :
         SiriusObjectCompanion<CancelWithdrawal, Starcoin.CancelWithdrawalRequest>(CancelWithdrawal::class) {
 

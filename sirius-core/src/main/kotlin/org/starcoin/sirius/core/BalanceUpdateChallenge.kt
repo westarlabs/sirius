@@ -18,6 +18,7 @@ data class BalanceUpdateChallenge(
     @Serializable(with = PublicKeySerializer::class)
     val publicKey: PublicKey = CryptoService.dummyCryptoKey.keyPair.public
 ) : SiriusObject() {
+
     companion object :
         SiriusObjectCompanion<BalanceUpdateChallenge, Starcoin.ProtoBalanceUpdateChallenge>(BalanceUpdateChallenge::class) {
 

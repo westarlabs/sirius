@@ -74,8 +74,6 @@ data class AMTreePath(
     @Optional
     private val nodes: MutableList<AMTreePathInternalNode> = mutableListOf()
 ) : List<AMTreePathInternalNode> by nodes, SiriusObject() {
-
-
     fun append(node: AMTreeNode) {
         this.nodes.add(node.toAMTreePathNode() as AMTreePathInternalNode)
     }

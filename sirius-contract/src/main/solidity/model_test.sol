@@ -13,7 +13,7 @@ contract test_all_interface {
     function cancel_withdrawal_test(bytes calldata data) external returns (bytes memory);
     function balance_update_challenge_test(bytes calldata data) external returns (bytes memory);
     function close_balance_update_challenge_test(bytes calldata data) external returns (bytes memory);
-    function open_pransfer_delivery_challenge_request_test(bytes calldata data) external returns (bytes memory);
+    function open_transfer_delivery_challenge_request_test(bytes calldata data) external returns (bytes memory);
     function close_transfer_delivery_challenge_test(bytes calldata data) external returns (bytes memory);
     function am_tree_proof_test(bytes calldata data) external returns (bytes memory);
     function am_tree_path_leaf_node_test(bytes calldata data) external returns (bytes memory);
@@ -62,7 +62,7 @@ contract test_all is test_all_interface {
         return ModelLib.marshalCloseBalanceUpdateChallenge(close);
     }
 
-    function open_pransfer_delivery_challenge_request_test(bytes calldata data) external returns (bytes memory) {
+    function open_transfer_delivery_challenge_request_test(bytes calldata data) external returns (bytes memory) {
         ModelLib.OpenTransferDeliveryChallengeRequest memory open = ModelLib.unmarshalOpenTransferDeliveryChallengeRequest(RLPDecoder.toRLPItem(data, true));
 
         return ModelLib.marshalOpenTransferDeliveryChallengeRequest(open);

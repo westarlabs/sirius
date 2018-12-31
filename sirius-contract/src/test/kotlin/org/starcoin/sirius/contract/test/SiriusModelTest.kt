@@ -23,7 +23,11 @@ class SiriusModelTest : ContractTestBase("model_test.sol", "test_all") {
     fun testHubRoot() {
         val hub = HubRoot.mock()
         val data = RLP.dump(HubRoot.serializer(), hub)
-        call(data, "hub_root_test")
+
+        val callResult = contract.callConstFunction("hub_root_test", data)[0] as ByteArray
+        var tmp = RLP.load(HubRoot.serializer(), callResult)
+
+        assert(hub.equals(tmp))
     }
 
     @Test
@@ -31,7 +35,11 @@ class SiriusModelTest : ContractTestBase("model_test.sol", "test_all") {
         var w = Withdrawal.mock()
 
         val data = RLP.dump(Withdrawal.serializer(), w)
-        call(data, "initiate_withdrawal_test")
+
+        val callResult = contract.callConstFunction("initiate_withdrawal_test", data)[0] as ByteArray
+        var tmp = RLP.load(Withdrawal.serializer(), callResult)
+
+        assert(w.equals(tmp))
     }
 
     @Test
@@ -39,43 +47,67 @@ class SiriusModelTest : ContractTestBase("model_test.sol", "test_all") {
         var w = CancelWithdrawal.mock()
 
         val data = RLP.dump(CancelWithdrawal.serializer(), w)
-        call(data, "cancel_withdrawal_test")
+
+        val callResult = contract.callConstFunction("cancel_withdrawal_test", data)[0] as ByteArray
+        var tmp = RLP.load(CancelWithdrawal.serializer(), callResult)
+
+        assert(w.equals(tmp))
     }
 
     @Test
     fun testBalanceUpdateChallenge() {
-        var w = BalanceUpdateChallenge.mock()
+        var b = BalanceUpdateChallenge.mock()
 
-        val data = RLP.dump(BalanceUpdateChallenge.serializer(), w)
-        call(data, "balance_update_challenge_test")
+        val data = RLP.dump(BalanceUpdateChallenge.serializer(), b)
+
+        val callResult = contract.callConstFunction("balance_update_challenge_test", data)[0] as ByteArray
+        var tmp = RLP.load(BalanceUpdateChallenge.serializer(), callResult)
+
+        assert(b.equals(tmp))
     }
 
     @Test
     fun testCloseBalanceUpdateChallenge() {
         var close = CloseBalanceUpdateChallenge.mock()
         val data = RLP.dump(CloseBalanceUpdateChallenge.serializer(), close)
-        call(data, "close_balance_update_challenge_test")
+
+        val callResult = contract.callConstFunction("close_balance_update_challenge_test", data)[0] as ByteArray
+        var tmp = RLP.load(CloseBalanceUpdateChallenge.serializer(), callResult)
+
+        assert(close.equals(tmp))
     }
 
     @Test
     fun testOpenTransferDeliveryChallengeRequest() {
         var open = OpenTransferDeliveryChallengeRequest.mock()
         val data = RLP.dump(OpenTransferDeliveryChallengeRequest.serializer(), open)
-        call(data, "open_pransfer_delivery_challenge_request_test")
+
+        val callResult =
+            contract.callConstFunction("open_transfer_delivery_challenge_request_test", data)[0] as ByteArray
+        var tmp = RLP.load(OpenTransferDeliveryChallengeRequest.serializer(), callResult)
+
+        assert(open.equals(tmp))
     }
 
     @Test
     fun testCloseTransferDeliveryChallenge() {
-        var cloes = CloseTransferDeliveryChallenge.mock()
-        val data = RLP.dump(CloseTransferDeliveryChallenge.serializer(), cloes)
-        call(data, "close_transfer_delivery_challenge_test")
+        var close = CloseTransferDeliveryChallenge.mock()
+        val data = RLP.dump(CloseTransferDeliveryChallenge.serializer(), close)
+
+        val callResult = contract.callConstFunction("close_transfer_delivery_challenge_test", data)[0] as ByteArray
+        var tmp = RLP.load(CloseTransferDeliveryChallenge.serializer(), callResult)
+
+        assert(close.equals(tmp))
     }
 
     @Test
     fun testAMTreeProof() {
         var proof = AMTreeProof.mock()
         val data = RLP.dump(AMTreeProof.serializer(), proof)
-        call(data, "am_tree_proof_test")
+        val callResult = contract.callConstFunction("am_tree_proof_test", data)[0] as ByteArray
+        var tmp = RLP.load(AMTreeProof.serializer(), callResult)
+
+        assert(proof.equals(tmp))
     }
 
     @Test
@@ -83,7 +115,10 @@ class SiriusModelTest : ContractTestBase("model_test.sol", "test_all") {
         var leaf = AMTreePathLeafNode.mock()
 
         val data = RLP.dump(AMTreePathLeafNode.serializer(), leaf)
-        call(data, "am_tree_path_leaf_node")
+        val callResult = contract.callConstFunction("am_tree_path_leaf_node_test", data)[0] as ByteArray
+        var tmp = RLP.load(AMTreePathLeafNode.serializer(), callResult)
+
+        assert(leaf.equals(tmp))
     }
 
     @Test
@@ -91,6 +126,9 @@ class SiriusModelTest : ContractTestBase("model_test.sol", "test_all") {
         var proof = BalanceUpdateProof.mock()
 
         val data = RLP.dump(BalanceUpdateProof.serializer(), proof)
-        call(data, "balance_update_proof_test")
+        val callResult = contract.callConstFunction("balance_update_proof_test", data)[0] as ByteArray
+        var tmp = RLP.load(BalanceUpdateProof.serializer(), callResult)
+
+        assert(proof.equals(tmp))
     }
 }
