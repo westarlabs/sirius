@@ -4,7 +4,7 @@ import kotlinx.serialization.Serializable
 import org.apache.commons.lang3.RandomStringUtils
 import org.apache.commons.lang3.RandomUtils
 import org.ethereum.config.SystemProperties
-import org.ethereum.core.*
+import org.ethereum.core.BlockSummary
 import org.ethereum.solidity.compiler.CompilationResult
 import org.ethereum.solidity.compiler.SolidityCompiler
 import org.ethereum.solidity.compiler.SolidityCompiler.Options
@@ -18,7 +18,7 @@ import java.io.File
 
 @Serializable
 data class Data(val boolean: Boolean, val int: Int, val string: String, val address: Address) {
-    companion object {
+    companion object : WithLogging() {
         fun random(): Data {
             return random(RandomUtils.nextBoolean())
         }

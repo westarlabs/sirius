@@ -6,6 +6,7 @@ gradle
 target/
 build
 out
+logs
 *.DS_Store
 */database/
 */logs

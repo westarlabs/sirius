@@ -3,6 +3,7 @@ package org.starcoin.sirius.contract.test
 import org.ethereum.core.CallTransaction
 import org.junit.Assert
 import org.junit.Test
+import org.starcoin.sirius.core.Address
 import org.starcoin.sirius.serialization.rlp.RLP
 
 class TestDataRLP : ContractTestBase("test_data_rlp.sol", "TestDataRLP") {
@@ -34,6 +35,12 @@ class TestDataRLP : ContractTestBase("test_data_rlp.sol", "TestDataRLP") {
         doTestDataSetAndGet(data)
         val data1 = Data.random(false)
         doTestDataSetAndGet(data1)
+    }
+
+    @Test
+    fun testDataSetAndGetDefaultValue() {
+        val data = Data(false, 0, "", Address.ZERO_ADDRESS)
+        doTestDataSetAndGet(data)
     }
 
     fun doTestDataSetAndGet(data: Data) {

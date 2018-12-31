@@ -1,5 +1,6 @@
 package org.starcoin.sirius.contract.test
 
+import org.junit.Assert
 import org.junit.Test
 import org.starcoin.sirius.core.*
 import org.starcoin.sirius.serialization.rlp.RLP
@@ -113,9 +114,12 @@ class SiriusModelTest : ContractTestBase("model_test.sol", "test_all") {
     @Test
     fun testAMTreePathLeafNode() {
         var leaf = AMTreePathLeafNode.mock()
-
+        LOG.info(leaf.toJSON())
         val data = RLP.dump(AMTreePathLeafNode.serializer(), leaf)
         val callResult = contract.callConstFunction("am_tree_path_leaf_node_test", data)[0] as ByteArray
+        //LOG.info(Utils.HEX.encode(data))
+        //LOG.info(Utils.HEX.encode(callResult))
+        Assert.assertArrayEquals(data, callResult)
         var tmp = RLP.load(AMTreePathLeafNode.serializer(), callResult)
 
         assert(leaf.equals(tmp))
