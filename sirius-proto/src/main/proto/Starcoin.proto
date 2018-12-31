@@ -253,6 +253,7 @@ message CloseTransferDeliveryChallengeRequest {
     required Update update = 2;
     required ProtoMerklePath txPath = 3;
     required bytes fromPublicKey = 4;
+    required bytes txHash = 5;
 }
 
 message RecoverFundsRequest {

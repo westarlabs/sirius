@@ -9,6 +9,7 @@ library GlobleLib {
 
     using SafeMath for uint;
 
+    ////////////////////////////////////////Withdrawal
     enum WithdrawalStatusType {
         INIT,
         CANCEL,
@@ -43,7 +44,7 @@ library GlobleLib {
     }
 
     struct Withdrawal {
-        ModelLib.WithdrawalInfo info;
+        bytes info;//bytes for ModelLib.WithdrawalInfo
         WithdrawalStatusType stat;
         bool isVal;
     }
@@ -51,13 +52,10 @@ library GlobleLib {
     struct WithdrawalMeta {
         uint total;
         address[] addrs;
-        mapping(address => Withdrawal) withdrawals;
+        mapping(bytes32 => Withdrawal) withdrawals;
     }
 
-    struct RecoveryMeta {
-        bool isVal;
-    }
-
+    ////////////////////////////////////////Deposit
     struct Deposit {
         bool hasVal;
         address addr;
@@ -66,30 +64,59 @@ library GlobleLib {
 
     struct DepositMeta {
         uint total;
-        mapping(address => uint) deposits;
+        mapping(bytes32 => uint) deposits;
     }
 
     function deposit(DepositMeta storage self, address addr, uint amount) internal {
-        self.deposits[addr] = SafeMath.add(self.deposits[addr], amount);
+        bytes32 key = ByteUtilLib.address2hash(addr);
+        self.deposits[key] = SafeMath.add(self.deposits[key], amount);
         self.total = SafeMath.add(self.total, amount);
     }
 
-    struct TransferDeliveryChallenge {
-        ModelLib.OffchainTransaction tran;
-        ModelLib.Update update;
-        ModelLib.MerklePath path;
+    ////////////////////////////////////////Transfer challenge
+
+    struct TransferDeliveryChallengeMeta {
+        bytes32[] transferChallengeKeys;
+        mapping(bytes32 => TransferDeliveryChallengeAndStatus) transferChallenges;
+    }
+
+    struct TransferDeliveryChallengeAndStatus {
+        bytes challenge;//bytes for ModelLib.TransferDeliveryChallenge
         ModelLib.ChallengeStatus stat;
         bool isVal;
     }
 
+    function change2TransferDeliveryChallenge(TransferDeliveryChallengeAndStatus memory tcs) internal pure returns(ModelLib.TransferDeliveryChallenge memory bs) {
+        return ModelLib.unmarshalTransferDeliveryChallenge(RLPDecoder.toRLPItem(tcs.challenge, true));
+    }
+
+    ////////////////////////////////////////Balance challenge
+    struct BalanceUpdateChallengeAndStatus {
+        bytes challenge;//bytes for ModelLib.BalanceUpdateChallenge
+        ModelLib.ChallengeStatus status;
+        bool isVal;
+    }
+
+    function change2BalanceUpdateChallengeStatus(BalanceUpdateChallengeAndStatus memory bas) internal pure returns(ModelLib.BalanceUpdateChallengeStatus memory bs) {
+        bs.challenge = ModelLib.unmarshalBalanceUpdateChallenge(RLPDecoder.toRLPItem(bas.challenge, true));
+        bs.status = bas.status;
+    }
+
+    struct BalanceUpdateChallengeMeta {
+        bytes32[] balanceChallengeKeys;
+        mapping(bytes32 => BalanceUpdateChallengeAndStatus) balanceChallenges;//Use address hash as the key
+    }
+
+    ////////////////////////////////////////Balance
+
     struct Balance {
         uint eon;
+        bool hasRoot;
+        ModelLib.HubRoot root;
         DepositMeta depositMeta;
         WithdrawalMeta withdrawalMeta;
-        ModelLib.HubRoot root;
-        mapping(address => ModelLib.BalanceUpdateChallengeStatus) balanceChallenges;
-        mapping(string => TransferDeliveryChallenge) transferChallenges;
-        bool hasRoot;
+        BalanceUpdateChallengeMeta bucMeta;
+        TransferDeliveryChallengeMeta tdcMeta;
     }
 }
 
@@ -337,6 +364,13 @@ library ModelLib {
         return true;
     }
 
+    function verifyMembershipProof4AMTreeProof(AMTreePathInternalNode memory root, AMTreeProof memory proof) internal pure returns(bool) {
+        //TODO
+        root;
+        proof;
+        return true;
+    }
+
     function unmarshalAMTreePath(RLPLib.RLPItem memory rlp) internal pure returns (AMTreePath memory path) {
         RLPLib.Iterator memory it = RLPDecoder.iterator(rlp);
         uint idx;
@@ -438,9 +472,10 @@ library ModelLib {
         return RLPEncoder.encodeList(data);
     }
 
-    function verifyMembershipProof4Merkle(bytes32 root, MerklePath memory path) internal pure returns(bool flag) {
+    function verifyMembershipProof4Merkle(bytes32 root, MerklePath memory path, bytes32 txHash) internal pure returns(bool flag) {
         root;
         path;
+        txHash;
         //TODO
         return true;
     }
@@ -513,14 +548,14 @@ library ModelLib {
         return RLPEncoder.encodeList(ByteUtilLib.append(ByteUtilLib.append(upData, sign), hubSign));
     }
 
-    function verifySig4Update(Participant memory participant, Update memory update) internal pure returns(bool flag) {
+    function verifySig4Update(bytes memory userPK, Update memory update) internal pure returns(bool flag) {
         //TODO
-        participant;
+        userPK;
         update;
         return true;
     }
 
-    function verifyHubSig4Update(Update memory update, bytes memory hubPK) internal pure returns(bool flag) {
+    function verifyHubSig4Update(bytes memory hubPK, Update memory update) internal pure returns(bool flag) {
         hubPK;
         update;
         return true;
@@ -556,14 +591,16 @@ library ModelLib {
         return RLPEncoder.encodeList(ByteUtilLib.append(ByteUtilLib.append(addr, path), amount));
     }
 
-    struct Participant {
-        bytes publicKey;
+    function verifyEon4WithdrawalInfo(WithdrawalInfo memory self, uint eon) internal pure {
+        require(eon == self.path.eon && eon == self.path.leaf.nodeInfo.update.upData.eon);
     }
 
-    function verifyParticipant(Participant memory participant) internal pure returns(bool flag){
-        //TODO
-        participant;//publicKey can comput addr
-        return true;
+    function verifyAddr4WithdrawalInfo(WithdrawalInfo memory self, address addr) internal pure {
+        require(addr == self.addr && ByteUtilLib.address2hash(addr) == self.path.leaf.nodeInfo.addressHash);
+    }
+
+    struct Participant {
+        bytes publicKey;
     }
 
     function unmarshalParticipant(RLPLib.RLPItem memory rlp) internal pure returns (Participant memory participant) {
@@ -751,12 +788,6 @@ library ModelLib {
         return RLPEncoder.encodeList(ByteUtilLib.append(ByteUtilLib.append(ByteUtilLib.append(ByteUtilLib.append(eon, fr), to), amount), timestamp));
     }
 
-    function hash4OffchainTransactionData(OffchainTransactionData memory offData) internal pure returns (bytes32) {
-        //TODO
-        offData;
-        return keccak256(marshalOffchainTransactionData(offData));
-    }
-
     struct OffchainTransaction {
         OffchainTransactionData offData;
         bytes sign;
@@ -791,13 +822,13 @@ library ModelLib {
         return (hash4OffchainTransaction(tran1) == hash4OffchainTransaction(tran2));
     }
 
-    struct OpenTransferDeliveryChallengeRequest {
+    struct TransferDeliveryChallenge {
         Update update;
         OffchainTransaction tran;
         MerklePath path;
     }
 
-    function unmarshalOpenTransferDeliveryChallengeRequest(RLPLib.RLPItem memory rlp) internal pure returns (OpenTransferDeliveryChallengeRequest memory open) {
+    function unmarshalTransferDeliveryChallenge(RLPLib.RLPItem memory rlp) internal pure returns (TransferDeliveryChallenge memory open) {
         RLPLib.Iterator memory it = RLPDecoder.iterator(rlp);
         uint idx;
         while(RLPDecoder.hasNext(it)) {
@@ -811,7 +842,7 @@ library ModelLib {
         }
     }
 
-    function marshalOpenTransferDeliveryChallengeRequest(OpenTransferDeliveryChallengeRequest memory open) internal pure returns (bytes memory) {
+    function marshalTransferDeliveryChallenge(TransferDeliveryChallenge memory open) internal pure returns (bytes memory) {
         bytes memory update = marshalUpdate(open.update);
         bytes memory tran = marshalOffchainTransaction(open.tran);
         bytes memory path = marshalMerklePath(open.path);
@@ -824,6 +855,7 @@ library ModelLib {
         Update update;
         MerklePath txPath;
         bytes fromPublicKey;
+        bytes32 txHash;
     }
 
     function unmarshalCloseTransferDeliveryChallenge(RLPLib.RLPItem memory rlp) internal pure returns (CloseTransferDeliveryChallenge memory close) {
@@ -835,6 +867,7 @@ library ModelLib {
             else if(idx == 1) close.update = unmarshalUpdate(r);
             else if(idx == 2) close.txPath = unmarshalMerklePath(r);
             else if(idx == 3) close.fromPublicKey = RLPLib.toData(r);
+            else if(idx == 4) close.txHash = ByteUtilLib.bytesToBytes32(RLPLib.toData(r));
             else {}
 
             idx++;
@@ -846,14 +879,14 @@ library ModelLib {
         bytes memory update = marshalUpdate(close.update);
         bytes memory txPath = marshalMerklePath(close.txPath);
         bytes memory fromPublicKey = RLPEncoder.encodeBytes(close.fromPublicKey);
+        bytes memory txHash = RLPEncoder.encodeBytes(ByteUtilLib.bytes32ToBytes(close.txHash));
 
-        return RLPEncoder.encodeList(ByteUtilLib.append(ByteUtilLib.append(ByteUtilLib.append(proof, update), txPath), fromPublicKey));
+        return RLPEncoder.encodeList(ByteUtilLib.append(ByteUtilLib.append(ByteUtilLib.append(ByteUtilLib.append(proof, update), txPath), fromPublicKey), txHash));
     }
 
     struct BalanceUpdateChallengeStatus {
         BalanceUpdateChallenge challenge;
         ChallengeStatus status;
-        bool isVal;
     }
 
     function unmarshalBalanceUpdateChallengeStatus(RLPLib.RLPItem memory rlp) internal pure returns (BalanceUpdateChallengeStatus memory challengeStatus) {
@@ -867,8 +900,6 @@ library ModelLib {
 
             idx++;
         }
-
-        challengeStatus.isVal = true;
     }
 
     function marshalBalanceUpdateChallengeStatus(BalanceUpdateChallengeStatus memory challengeStatus) internal pure returns (bytes memory) {
