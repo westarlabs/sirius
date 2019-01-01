@@ -13,10 +13,10 @@ interface Sirius {
     function openTransferDeliveryChallenge(bytes calldata data) external;
     function closeTransferDeliveryChallenge(bytes calldata data) external;
     function recoverFunds(bytes calldata data) external;
-    function getLatestRoot() external returns (bytes memory);
-    function getCurrentEon() external returns (uint);
-    function isRecoveryMode() external returns (bool);
-    function test() external returns (bool);
+    function getLatestRoot() external view returns (bytes memory);
+    function getCurrentEon() external view returns (uint);
+    function isRecoveryMode() external view returns (bool);
+    function test() external view returns (bool);
 }
 
 contract SiriusService is Sirius {
@@ -308,19 +308,19 @@ contract SiriusService is Sirius {
         msg.sender.transfer(amount);
     }
 
-    function getLatestRoot() external recovery returns (bytes memory) {
+    function getLatestRoot() external view returns (bytes memory) {
         return ModelLib.marshalHubRoot(latestRoot());
     }
 
-    function getCurrentEon() external recovery returns (uint) {
+    function getCurrentEon() external view returns (uint) {
         return currentEon();
     }
 
-    function isRecoveryMode() external recovery returns (bool) {
+    function isRecoveryMode() external view returns (bool) {
         return recoveryMode;
     }
 
-    function test() external returns (bool) {
+    function test() external view returns (bool) {
         return true;
     }
 
@@ -336,13 +336,14 @@ contract SiriusService is Sirius {
     }
 
     function checkBalances(GlobleLib.Balance memory latest) private {
-        uint i = (balances.length - 1);
-        for (; i >= 0; i--) {
-            if (i == 0) {
-                balances[i] = latest;
+        for (uint i = balances.length; i > 0; i--) {
+            uint tmp = i - 1;
+            if (tmp == 0) {
+                balances[0] = latest;
                 //TODO: add event
-            }else if (balances[i - 1].hasRoot)
-                balances[i] = balances[i - 1];
+            }else if(balances[tmp - 1].hasRoot) {
+                balances[tmp] = balances[tmp - 1];
+            }
         }
     }
 
