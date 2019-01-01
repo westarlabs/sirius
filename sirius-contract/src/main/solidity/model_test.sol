@@ -63,9 +63,9 @@ contract test_all is test_all_interface {
     }
 
     function open_transfer_delivery_challenge_request_test(bytes calldata data) external returns (bytes memory) {
-        ModelLib.OpenTransferDeliveryChallengeRequest memory open = ModelLib.unmarshalOpenTransferDeliveryChallengeRequest(RLPDecoder.toRLPItem(data, true));
+        ModelLib.TransferDeliveryChallenge memory open = ModelLib.unmarshalTransferDeliveryChallenge(RLPDecoder.toRLPItem(data, true));
 
-        return ModelLib.marshalOpenTransferDeliveryChallengeRequest(open);
+        return ModelLib.marshalTransferDeliveryChallenge(open);
     }
 
     function close_transfer_delivery_challenge_test(bytes calldata data) external returns (bytes memory) {
