@@ -103,7 +103,7 @@ abstract class ContractTestBase(val contractFile: String, val contractName: Stri
         }
     }
 
-    private fun bytesToHexString(src: ByteArray?): String? {
+    fun bytesToHexString(src: ByteArray?): String? {
         val stringBuilder = StringBuilder("")
         if (src == null || src.size <= 0) {
             return null

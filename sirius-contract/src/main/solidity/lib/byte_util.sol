@@ -121,17 +121,7 @@ library ByteUtilLib {
         assembly {
             mstore(add(b, 32), _x)
         }
-        uint i = 0;
-        for (; i < 32; i++) {
-            if (b[i] != 0) {
-                break;
-            }
-        }
-        bytes memory res = new bytes(32 - i);
-        for (uint j = 0; j < res.length; j++) {
-            res[j] = b[i++];
-        }
-        return res;
+        return b;
     }
 
     /**
