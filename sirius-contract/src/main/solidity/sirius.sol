@@ -17,7 +17,6 @@ interface Sirius {
     function getCurrentEon() external view returns (uint);
     function isRecoveryMode() external view returns (bool);
     function test() external view returns (bool);
-    function test2() external view returns (uint);
 }
 
 contract SiriusService is Sirius {
@@ -254,7 +253,6 @@ contract SiriusService is Sirius {
         bool verifyFlag = ModelLib.verifyMembershipProof4Merkle(open.update.upData.root, open.path, hash);
         require(verifyFlag);
 
-
         GlobleLib.TransferDeliveryChallengeAndStatus memory challenge = balances[0].tdcMeta.transferChallenges[hash];
         challenge.challenge = data;
         challenge.stat = ModelLib.ChallengeStatus.OPEN;
@@ -263,7 +261,6 @@ contract SiriusService is Sirius {
         }
         challenge.isVal = true;
         balances[0].tdcMeta.transferChallenges[hash] = challenge;
-
     }
 
     function closeTransferDeliveryChallenge(bytes calldata data) external recovery {
@@ -276,7 +273,7 @@ contract SiriusService is Sirius {
         require(proofFlag);
 
         GlobleLib.TransferDeliveryChallengeAndStatus memory challenge = balances[0].tdcMeta.transferChallenges[key];
-        require(challenge.isVal);
+        //require(challenge.isVal);
 
         if(challenge.stat == ModelLib.ChallengeStatus.OPEN) {
             bool signFlag = ModelLib.verifySig4Update(close.fromPublicKey, close.update);
@@ -332,10 +329,6 @@ contract SiriusService is Sirius {
         return true;
     }
 
-    function test2() external view returns (uint) {
-        return balances[0].depositMeta.total;
-    }
-
     /** private methods **/
 
     function newBalance(uint newEon) private pure returns(GlobleLib.Balance memory latest) {
@@ -375,7 +368,7 @@ contract SiriusService is Sirius {
     }
 
     function latestRoot() private view returns (ModelLib.HubRoot memory) {
-        return balances[0].root;
+        return balances[1].root;
     }
 
     function currentEon() private view returns (uint) {
@@ -396,7 +389,7 @@ contract SiriusService is Sirius {
                 GlobleLib.Balance memory latest = newBalance(newEon);
                 checkBalances(latest);
             } else {//recovery
-                if (!balances[0].hasRoot) {
+                if (!balances[1].hasRoot) {
                     uint tmp2 = SafeMath.add(SafeMath.mul(blocksPerEon, newEon), SafeMath.div(blocksPerEon, 4));
                     if (tmp > tmp2) {
                         recoveryMode = true;
@@ -404,6 +397,8 @@ contract SiriusService is Sirius {
                     }
                 }
             }
+
+
 
             require(!recoveryMode);
         }

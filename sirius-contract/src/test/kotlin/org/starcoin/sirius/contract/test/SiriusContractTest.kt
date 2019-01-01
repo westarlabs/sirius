@@ -16,19 +16,13 @@ class SiriusContractTest : ContractTestBase("sirius.sol", "SiriusService") {
     private val frUser = DefaultCryptoKey.generateKeyPair()
     private val deposit: Long = 10000
 
+
     @Test
     fun test() {
         val callResult = contract.callConstFunction("test")
         val flag = callResult[0] as Boolean
         println(flag)
         Assert.assertTrue(flag)
-    }
-
-    @Test
-    fun test2() {
-        val callResult = contract.callConstFunction("test2")
-        val amount = callResult[0] as BigInteger
-        println(amount)
     }
 
     @Test
@@ -53,12 +47,17 @@ class SiriusContractTest : ContractTestBase("sirius.sol", "SiriusService") {
     }
 
     private fun commitData(eon: Int, amount: Long) {
+        commitData(eon, amount, true)
+    }
+    private fun commitData(eon: Int, amount: Long, flag:Boolean) {
         val info = AMTreeInternalNodeInfo(Hash.random(), amount, Hash.random())
         val node = AMTreePathInternalNode(info, Direction.ROOT, 0, amount)
         val root = HubRoot(node, eon)
         val data = RLP.dump(HubRoot.serializer(), root)
         val callResult = contract.callFunction("commit", data)
-        verifyReturn(callResult)
+        println(callResult.receipt.error)
+        if(flag)
+            verifyReturn(callResult)
     }
 
     @Test
@@ -94,7 +93,7 @@ class SiriusContractTest : ContractTestBase("sirius.sol", "SiriusService") {
         val path = newPath(addr, update1)
         val update2 = newUpdate(eon, 1, 0)//mine
         val leaf2 = newLeaf(addr, update2, 1100, 1000)
-        var amtp = AMTreeProof(path, leaf2)
+        val amtp = AMTreeProof(path, leaf2)
         val bup = BalanceUpdateProof(true, update2, true, amtp)
         val buc = BalanceUpdateChallenge(bup, owner.public)
         val data = RLP.dump(BalanceUpdateChallenge.serializer(), buc)
@@ -110,13 +109,52 @@ class SiriusContractTest : ContractTestBase("sirius.sol", "SiriusService") {
         val update4 = newUpdate(eon, 4, 0)//mine
         val path = newPath(addr, update3)
         val leaf3 = newLeaf(addr, update4, 1100, 1000)
-        var amtp = AMTreeProof(path, leaf3)
+        val amtp = AMTreeProof(path, leaf3)
         val close = CloseBalanceUpdateChallenge(update4, amtp)
         val data = RLP.dump(CloseBalanceUpdateChallenge.serializer(), close)
         val callResult = contract.callFunction("closeBalanceUpdateChallenge", data)
         verifyReturn(callResult)
     }
 
+    @Test
+    fun testOpenTransferDeliveryChallenge() {
+        val eon = 1
+        createEon(1)
+        val update = newUpdate(eon, 1, 0)
+        val txData = OffchainTransactionData(eon, addr, addr, 10, 1)
+        tx = OffchainTransaction(txData, Signature.of(txData, owner.private))
+        val open = OpenTransferDeliveryChallengeRequest(update, tx, MerklePath.mock())
+        val data = RLP.dump(OpenTransferDeliveryChallengeRequest.serializer(), open)
+        val callResult = contract.callFunction("openTransferDeliveryChallenge", data)
+        verifyReturn(callResult)
+    }
+
+    @Test
+    fun testCloseTransferDeliveryChallenge() {
+        val eon = 1
+        testOpenTransferDeliveryChallenge()
+
+        val update1 = newUpdate(eon, 1, 0)//other
+        val path = newPath(addr, update1)
+        val update2 = newUpdate(eon, 1, 0)//mine
+        val leaf2 = newLeaf(addr, update2, 1100, 1000)
+        val amtp = AMTreeProof(path, leaf2)
+        val close =
+            CloseTransferDeliveryChallenge(amtp, update2, MerklePath.mock(), owner.public, Hash.of(tx))
+
+        val data = RLP.dump(CloseTransferDeliveryChallenge.serializer(), close)
+        val callResult = contract.callFunction("closeTransferDeliveryChallenge", data)
+        verifyReturn(callResult)
+    }
+
+    @Test
+    fun testRecoverFunds() {
+//        createEon(2, false)
+//
+//        val flag = contract.callConstFunction("isRecoveryMode")[0] as Boolean
+//        assert(flag)
+//        verifyReturn(callResult)
+    }
 
     private fun newUpdate(eon: Int, version: Long, sendAmount: Long): Update {
         val updateData = UpdateData(eon, version, sendAmount, 0, Hash.random())
@@ -140,20 +178,23 @@ class SiriusContractTest : ContractTestBase("sirius.sol", "SiriusService") {
     }
 
     private fun createEon(eon: Int) {
+        createEon(eon, true)
+    }
+    private fun createEon(eon: Int, flag:Boolean) {
         var ct = 0
         for (i in 0..eon) {
-            while (blockHeight.get() < (4 * (i + 1))) {
+            val tmp = if(flag) {(4 * (i + 1))} else {(4 * (i + 1)) + 2}
+            while (blockHeight.get() < tmp) {
                 testDeposit()
                 ct += 1
                 Thread.sleep(10)
             }
             var total = (ct - 1) * deposit
-            commitData(i, total)
+            commitData(i, total, flag)
         }
     }
 
     private fun verifyReturn(callResult: SolidityCallResult) {
-        println(callResult.receipt.error)
         Assert.assertTrue(callResult.isSuccessful)
         callResult.receipt.logInfoList.forEach { logInfo ->
             println("event:$logInfo")

@@ -21,6 +21,7 @@ import org.ethereum.util.blockchain.StandaloneBlockchain
 import org.junit.Assert
 import org.junit.Before
 import org.starcoin.sirius.core.Address
+import org.starcoin.sirius.core.OffchainTransaction
 import org.starcoin.sirius.crypto.fallback.DefaultCryptoKey
 import org.starcoin.sirius.util.WithLogging
 import java.io.File
@@ -57,6 +58,7 @@ abstract class ContractTestBase(val contractFile: String, val contractName: Stri
     lateinit var owner: KeyPair
     lateinit var addr: Address
     val blockHeight: AtomicLong = AtomicLong(0)
+    lateinit var tx: OffchainTransaction
 
     @Before
     fun setup() {
