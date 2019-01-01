@@ -12,7 +12,7 @@ data class HubRoot(
     @SerialId(1)
     val root: AMTreePathInternalNode = AMTreePathInternalNode.DUMMY_NODE,
     @SerialId(2)
-    val eon: Long = 0
+    val eon: Int = 0
 ) : SiriusObject() {
     companion object : SiriusObjectCompanion<HubRoot, Starcoin.ProtoHubRoot>(HubRoot::class) {
 
@@ -20,7 +20,7 @@ data class HubRoot(
 
         override fun mock(): HubRoot {
             return HubRoot(
-                AMTreePathInternalNode.mock(), MockUtils.nextLong()
+                AMTreePathInternalNode.mock(), MockUtils.nextInt()
             )
         }
     }
