@@ -3,6 +3,8 @@ pragma solidity ^0.5.1;
 //byte operat lib
 library ByteUtilLib {
 
+    bytes constant ZERO_BYTES = hex"00";
+
     function equal(bytes memory one, bytes memory two) internal pure returns (bool) {
         if (!(one.length == two.length)) {
             return false;
@@ -117,11 +119,24 @@ library ByteUtilLib {
      * @return RLP encoded bytes.
      */
     function toBinary(uint _x) private pure returns (bytes memory encoded) {
+        if(_x == 0){
+            return ZERO_BYTES;
+        }
         bytes memory b = new bytes(32);
         assembly {
             mstore(add(b, 32), _x)
         }
-        return b;
+        uint i = 0;
+        for (; i < 32; i++) {
+             if (b[i] != 0) {
+                break;
+             }
+        }
+        bytes memory res = new bytes(32 - i);
+        for (uint j = 0; j < res.length; j++) {
+             res[j] = b[i++];
+        }
+        return res;
     }
 
     /**

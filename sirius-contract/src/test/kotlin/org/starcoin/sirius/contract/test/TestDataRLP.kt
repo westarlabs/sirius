@@ -57,7 +57,7 @@ class TestDataRLP : ContractTestBase("test_data_rlp.sol", "TestDataRLP") {
         val callResult = contract.callConstFunction("get")
         Assert.assertTrue(callResult.isNotEmpty())
         val returnDataRLP = callResult[0] as ByteArray
-//        Assert.assertArrayEquals(dataRLP, returnDataRLP)
+        Assert.assertArrayEquals(dataRLP, returnDataRLP)
 //        println("${dataRLP.size}:${returnDataRLP.size}")
 //        println(bytesToHexString(dataRLP))
 //        println(bytesToHexString(returnDataRLP))
