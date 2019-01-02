@@ -2,14 +2,17 @@ package org.starcoin.sirius.protocol.ethereum.contract
 
 import org.ethereum.util.blockchain.SolidityContract
 import org.ethereum.util.blockchain.StandaloneBlockchain
-import org.starcoin.proto.Starcoin
 import org.starcoin.sirius.core.*
 import org.starcoin.sirius.protocol.HubContract
 import java.math.BigInteger
 
 class InMemoryHubContract(contract: SolidityContract) : HubContract{
 
-    private var contract =contract;
+    private var contract =contract
+
+    override fun getContractAddr():ByteArray{
+        return contract.address
+    }
 
     override fun queryHubInfo(): HubInfo {
         TODO("not implemented") //To change body of created functions use File | Settings | File Templates.

@@ -26,4 +26,6 @@ interface HubContract {
     fun closeTransferDeliveryChallenge(request: CloseTransferDeliveryChallenge): Hash
 
     fun recoverFunds(request: AMTreeProof): Hash
+
+    fun getContractAddr():ByteArray
 }

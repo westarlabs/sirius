@@ -1,5 +1,6 @@
 package org.starcoin.sirius.protocol.ethereum
 
+import kotlinx.coroutines.channels.Channel
 import org.ethereum.util.blockchain.StandaloneBlockchain
 import org.starcoin.sirius.core.Address
 import org.starcoin.sirius.core.Hash
@@ -14,9 +15,7 @@ class InMemoryChain(autoGenblock: Boolean) : Chain<EthereumTransaction, Ethereum
     override fun watchTransactions(
         contract: Address,
         topic: EventTopic,
-        filter: (FilterArguments) -> Boolean,
-        onNext: (txResult: TransactionResult<EthereumTransaction>) -> Unit
-    ) {
+        filter: (FilterArguments) -> Boolean):Channel<TransactionResult<EthereumTransaction>> {
         TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
     }
 
@@ -36,13 +35,14 @@ class InMemoryChain(autoGenblock: Boolean) : Chain<EthereumTransaction, Ethereum
     override fun watchBlock(
         contract: Address,
         topic: EventTopic,
-        filter: (FilterArguments) -> Boolean,
-        onNext: (block: EthereumBlock) -> Unit
-    ) {
+        filter: (FilterArguments) -> Boolean
+    ) :Channel<EthereumBlock>{
         sb.addEthereumListener(inMemoryEthereumListener)
         if(autoGenblock){
             sb.withAutoblock(autoGenblock)
         }
+        TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
+
     }
 
     override fun getBalance(address: Address): BigInteger {

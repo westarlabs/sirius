@@ -103,6 +103,8 @@ class EthereumHubContract(chain: EthereumChain) : HubContract {
         TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
     }
 
-
+    override fun getContractAddr(): ByteArray {
+        TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
+    }
 
 }
