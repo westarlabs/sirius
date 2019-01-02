@@ -12,13 +12,11 @@ enum class ChainType {
 class FilterArguments
 
 
-data class TransactionResult<T : ChainTransaction>(val tx: T, val receipt: Receipt) {
+data class TransactionResult<T : ChainTransaction>(val tx: T, val receipt: Receipt) 
 
-}
 
-enum class EventTopic {
-    Deposit,
-    WithDraw
+enum class EventTopic(val event: String) {
+    Deposit("DepositEvent(address,uint)")
 }
 
 interface Chain<T : ChainTransaction, B : Block<T>, C : HubContract> {

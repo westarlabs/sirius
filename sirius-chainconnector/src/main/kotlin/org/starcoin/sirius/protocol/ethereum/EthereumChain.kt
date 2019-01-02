@@ -1,7 +1,9 @@
 package org.starcoin.sirius.protocol.ethereum
 
 import kotlinx.io.IOException
+import org.ethereum.crypto.HashUtil
 import org.starcoin.sirius.core.Address
+import org.starcoin.sirius.core.ChainTransaction
 import org.starcoin.sirius.core.Hash
 import org.starcoin.sirius.core.Receipt
 import org.starcoin.sirius.crypto.CryptoKey
@@ -27,7 +29,7 @@ const val defaultHttpUrl = "http://127.0.0.1:8545"
 class EthereumChain constructor(httpUrl: String = defaultHttpUrl, socketPath: String? = null) :
     Chain<EthereumTransaction, EthereumBlock, HubContract> {
 
-    private val web3: Web3j =
+    val web3: Web3j =
         Web3j.build(if (socketPath != null) UnixIpcService(socketPath) else HttpService(httpUrl))
 
     fun getNonce(address: Address): Long {
@@ -56,17 +58,28 @@ class EthereumChain constructor(httpUrl: String = defaultHttpUrl, socketPath: St
             DefaultBlockParameterName.LATEST,
             Numeric.toHexString(contract.toBytes())
         )
-        // ethFilter.addSingleTopic(topic)
+        val topicHex = Numeric.toHexString(HashUtil.sha256(topic.name.toByteArray()))
+        ethFilter.addSingleTopic(topicHex)
         val newFilterResp = web3.ethNewFilter(ethFilter).sendAsync().get()
         if (newFilterResp.hasError()) throw NewFilterException(newFilterResp.error)
         val filterChangeResp = web3.ethGetFilterChanges(newFilterResp.filterId).sendAsync().get()
         if (filterChangeResp.hasError()) throw FilterChangeException(filterChangeResp.error)
         filterChangeResp.logs.map { it as LogObject }.forEach {
-            it.blockHash
+            val recepitResp = web3.ethGetTransactionReceipt(it.transactionHash).sendAsync().get()
+            if (recepitResp.hasError()) throw GetRecepitException(recepitResp.error)
+            val r = recepitResp.transactionReceipt.get()
+            val receipt = Receipt(
+                r.transactionHash, r.transactionIndex,
+                r.blockHash, r.blockNumber, r.contractAddress,
+                r.from, r.to, r.gasUsed, r.logsBloom,
+                r.cumulativeGasUsed, r.root, r.isStatusOK
+            )
+            val txResp = web3.ethGetTransactionByHash(r.transactionHash).sendAsync().get()
+            if (txResp.hasError()) throw GetTransactionException(txResp.error)
+            val tx = txResp.transaction.get().chainTransaction()
+            onNext(TransactionResult(tx, receipt))
         }
-
     }
-
 
     override fun watchBlock(
         contract: Address,
@@ -137,4 +150,6 @@ class EthereumChain constructor(httpUrl: String = defaultHttpUrl, socketPath: St
     open class WatchTxExecption(error: Error) : Exception(error.message)
     class NewFilterException(error: Error) : WatchTxExecption(error)
     class FilterChangeException(error: Error) : WatchTxExecption(error)
+    class GetRecepitException(error: Error) : WatchTxExecption(error)
+    class GetTransactionException(error: Error) : WatchTxExecption(error)
 }
