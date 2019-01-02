@@ -1,5 +1,6 @@
 package org.starcoin.sirius.protocol.ethereum
 
+import com.google.common.annotations.VisibleForTesting
 import org.junit.Before
 import org.junit.Test
 import org.starcoin.sirius.crypto.CryptoService
@@ -7,6 +8,8 @@ import org.starcoin.sirius.protocol.EthereumTransaction
 import org.web3j.utils.Numeric
 import kotlin.properties.Delegates
 import kotlinx.coroutines.*
+import kotlinx.coroutines.channels.Channel
+import java.lang.Thread.sleep
 
 
 /* XXX: Move those properties to test configure*/
@@ -74,6 +77,28 @@ class EthereumChainTest {
             bob.address, chain.getNonce(alice.address), 1000, 100000, 1, data
         )
         chain.newTransaction(alice, tx)
-        //println(Numeric.toHexString(tx.ethTx.contractAddress))
+        println(Numeric.toHexString(tx.ethTx.contractAddress))
+    }
+
+    @Test
+    fun testChannel() {
+        suspend fun newJob(): Channel<Int> {
+            val ch = Channel<Int>(10)
+            GlobalScope.launch {
+                repeat(100) {
+                    ch.send(it)
+                }
+            }
+
+            return ch
+        }
+        
+        runBlocking {
+            val ch = newJob()
+            sleep(2000)
+            repeat(100) {
+                println(ch.receive())                        
+            }
+        }
     }
 }

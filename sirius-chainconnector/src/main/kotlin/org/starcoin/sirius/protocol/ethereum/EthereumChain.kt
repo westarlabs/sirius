@@ -1,9 +1,11 @@
 package org.starcoin.sirius.protocol.ethereum
 
+import kotlinx.coroutines.GlobalScope
+import kotlinx.coroutines.channels.Channel
+import kotlinx.coroutines.launch
 import kotlinx.io.IOException
 import org.ethereum.crypto.HashUtil
 import org.starcoin.sirius.core.Address
-import org.starcoin.sirius.core.ChainTransaction
 import org.starcoin.sirius.core.Hash
 import org.starcoin.sirius.core.Receipt
 import org.starcoin.sirius.crypto.CryptoKey
@@ -50,9 +52,9 @@ class EthereumChain constructor(httpUrl: String = defaultHttpUrl, socketPath: St
     fun watchTransactions(
         contract: Address,
         topic: EventTopic,
-        filter: (FilterArguments) -> Boolean,
-        onNext: (txResult: TransactionResult<EthereumTransaction>) -> Unit
-    ) {
+        filter: (FilterArguments) -> Boolean
+    ): Channel<TransactionResult<EthereumTransaction>> {
+        val ch = Channel<TransactionResult<EthereumTransaction>>(10)
         val ethFilter = EthFilter(
             DefaultBlockParameterName.LATEST,
             DefaultBlockParameterName.LATEST,
@@ -77,17 +79,23 @@ class EthereumChain constructor(httpUrl: String = defaultHttpUrl, socketPath: St
             val txResp = web3.ethGetTransactionByHash(r.transactionHash).sendAsync().get()
             if (txResp.hasError()) throw GetTransactionException(txResp.error)
             val tx = txResp.transaction.get().chainTransaction()
-            onNext(TransactionResult(tx, receipt))
+            val txr = TransactionResult(tx, receipt)
+            GlobalScope.launch {
+                ch.send(txr)
+            }
         }
+        return ch
     }
 
     override fun watchBlock(
         contract: Address,
         topic: EventTopic,
-        filter: (FilterArguments) -> Boolean,
-        onNext: (block: EthereumBlock) -> Unit
-    ) {
-        web3.blockFlowable(true).subscribe { block -> onNext(block.block.blockInfo()) }
+        filter: (FilterArguments) -> Boolean
+    ): Channel<EthereumBlock> {
+        val ch = Channel<EthereumBlock>(10)
+        web3.blockFlowable(true).subscribe { block -> block.block.blockInfo()}
+        return ch
+
     }
 
     override fun getBalance(address: Address): BigInteger {
