@@ -1,5 +1,6 @@
 package org.starcoin.sirius.protocol.ethereum
 
+import org.bouncycastle.util.BigIntegers
 import org.ethereum.core.*
 import org.ethereum.listener.EthereumListener
 import org.ethereum.net.eth.message.StatusMessage
@@ -9,10 +10,13 @@ import org.ethereum.net.rlpx.Node
 import org.ethereum.net.server.Channel
 import org.starcoin.sirius.core.Hash
 import org.starcoin.sirius.protocol.EthereumTransaction
+import org.web3j.protocol.core.methods.response.EthBlock
+import kotlin.properties.Delegates
 
 class InMemoryEthereumListener : EthereumListener {
 
-    val blocks: MutableList<EthereumBlock> = mutableListOf();
+    val blocks: MutableList<EthereumBlock> = mutableListOf()
+    var blockChannel :kotlinx.coroutines.channels.Channel<EthereumBlock> by Delegates.notNull()
 
     override fun onSyncDone(state: EthereumListener.SyncState?) {
         TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
@@ -47,6 +51,12 @@ class InMemoryEthereumListener : EthereumListener {
         if (block != null) {
             blocks.add(block)
         }
+        var w3jBlock = EthBlock.Block()
+        w3jBlock.setGasLimit(String(blockSummary?.block?.gasLimit?: ByteArray(0)))
+        w3jBlock.setDifficulty(blockSummary?.block?.difficultyBI?.toString())
+        w3jBlock.setGasUsed(String.format("%d",blockSummary?.block?.gasUsed?:0))
+        w3jBlock.setNonce(BigIntegers.fromUnsignedByteArray(blockSummary?.block?.nonce?:ByteArray(0)).toString())
+        w3jBlock.setNumber(String.format("%d",blockSummary?.block?.number?:0))
     }
 
     override fun onPeerDisconnect(host: String?, port: Long) {

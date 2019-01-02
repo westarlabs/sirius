@@ -37,12 +37,13 @@ class InMemoryChain(autoGenblock: Boolean) : Chain<EthereumTransaction, Ethereum
         topic: EventTopic,
         filter: (FilterArguments) -> Boolean
     ) :Channel<EthereumBlock>{
+        var blockChannel = Channel<EthereumBlock>()
+        inMemoryEthereumListener.blockChannel = blockChannel
         sb.addEthereumListener(inMemoryEthereumListener)
         if(autoGenblock){
             sb.withAutoblock(autoGenblock)
         }
-        TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
-
+        return blockChannel
     }
 
     override fun getBalance(address: Address): BigInteger {
