@@ -92,7 +92,7 @@ object EthCryptoService : CryptoService {
         sign: Signature,
         publicKey: PublicKey
     ): Boolean {
-        return ECKey.verify(data, sign.toECDSASignature(), publicKey.encoded)
+        return ECKey.verify(data, sign.toECDSASignature(), encodePublicKey(publicKey))
     }
 
     override fun verify(data: Hash, sign: Signature, publicKey: PublicKey): Boolean {

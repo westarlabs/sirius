@@ -37,11 +37,11 @@ data class Update(
 
     @kotlinx.serialization.Transient
     val isSigned: Boolean
-        get() = this.sign.isZero()
+        get() = !this.sign.isZero()
 
     @kotlinx.serialization.Transient
     val isSignedByHub: Boolean
-        get() = this.hubSign.isZero()
+        get() = !this.hubSign.isZero()
 
     @kotlinx.serialization.Transient
     val eon: Int

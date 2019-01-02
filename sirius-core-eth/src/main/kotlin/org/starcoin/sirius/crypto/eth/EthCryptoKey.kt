@@ -17,7 +17,7 @@ class EthCryptoKey internal constructor(val ecKey: ECKey) : CryptoKey() {
 
     internal constructor() : this(ECKey())
 
-    internal constructor(privateKey: PrivateKey) : this(privateKey.encoded)
+    internal constructor(privateKey: PrivateKey) : this(EthCryptoService.encodePrivateKey(privateKey))
 
     internal constructor(bytes: ByteArray) : this(ECKey.fromPrivate(bytes))
 

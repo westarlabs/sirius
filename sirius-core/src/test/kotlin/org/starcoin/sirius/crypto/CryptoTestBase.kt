@@ -5,6 +5,7 @@ import org.junit.Assert
 import org.junit.Before
 import org.junit.Test
 import org.starcoin.sirius.core.Hash
+import org.starcoin.sirius.core.Update
 import org.starcoin.sirius.util.MockUtils
 
 abstract class CryptoTestBase {
@@ -72,6 +73,17 @@ abstract class CryptoTestBase {
             val sign = key.sign(data)
             Assert.assertTrue(key.verify(data, sign))
         }
+    }
+
+    @Test
+    fun testUpdateSignature() {
+        val update = Update.mock()
+        val key = CryptoService.generateCryptoKey()
+        val hubKey = CryptoService.generateCryptoKey()
+        update.sign(key)
+        update.signHub(hubKey)
+        Assert.assertTrue(update.verfySign(key))
+        Assert.assertTrue(update.verifyHubSig(hubKey))
     }
 
     @Test
