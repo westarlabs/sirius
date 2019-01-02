@@ -5,12 +5,7 @@ import com.google.common.eventbus.EventBus
 import io.grpc.Status
 import io.grpc.StatusRuntimeException
 import org.starcoin.proto.Starcoin
-import org.starcoin.proto.Starcoin.*
 import org.starcoin.sirius.core.*
-import org.starcoin.sirius.core.AMTreePathInternalNode
-import org.starcoin.sirius.core.AMTreeProof
-import org.starcoin.sirius.core.Update
-import org.starcoin.sirius.core.UpdateData
 import org.starcoin.sirius.crypto.CryptoKey
 import org.starcoin.sirius.crypto.CryptoService
 import org.starcoin.sirius.protocol.Chain
@@ -325,21 +320,21 @@ class HubImpl<T : ChainTransaction>(
 //        return future
     }
 
-    private fun processTransferDeliveryChallenge(challenge: Starcoin.OpenTransferDeliveryChallengeRequest) {
-        val tx = OffchainTransaction.parseFromProtoMessage(challenge.transaction)
-
-        val to = tx.to!!
-        val accountProof = this.eonState.state.getMembershipProof(to)
-        val previousAccount = this.eonState.previous!!.getAccount(to).get()
-
-        var txProof: MerklePath? = null
-        val txs = previousAccount.getTransactions()
-        if (!txs.isEmpty()) {
-            val merkleTree = MerkleTree(txs)
-            txProof = merkleTree.getMembershipProof(tx.hash())
-        }
-        if (txProof != null) {
-            val closeChallenge = CloseTransferDeliveryChallengeRequest.newBuilder()
+//    private fun processTransferDeliveryChallenge(challenge: Starcoin.OpenTransferDeliveryChallengeRequest) {
+//        val tx = OffchainTransaction.parseFromProtoMessage(challenge.transaction)
+//
+//        val to = tx.to!!
+//        val accountProof = this.eonState.state.getMembershipProof(to)
+//        val previousAccount = this.eonState.previous!!.getAccount(to).get()
+//
+//        var txProof: MerklePath? = null
+//        val txs = previousAccount.getTransactions()
+//        if (!txs.isEmpty()) {
+//            val merkleTree = MerkleTree(txs)
+//            txProof = merkleTree.getMembershipProof(tx.hash())
+//        }
+//        if (txProof != null) {
+//            val closeChallenge = CloseTransferDeliveryChallengeRequest.newBuilder()
                 //TODO
 //                .setBalancePath(accountProof?.path.toProto())
 //                .setTransPath(txProof.toProto<ProtoMerklePath>())
@@ -347,7 +342,7 @@ class HubImpl<T : ChainTransaction>(
 //                .setToUserPublicKey(
 //                    ByteString.copyFrom(KeyPairUtil.encodePublicKey(previousAccount!!.publicKey!!))
 //                )
-                .build()
+    //.build()
 
 //            val chainTransaction = ChainTransaction(
 //                this.hubAddress,
@@ -359,12 +354,12 @@ class HubImpl<T : ChainTransaction>(
 //            )
 //            chainTransaction.sign(this.hubKeyPair)
 //            this.connection.submitTransaction(chainTransaction)
-        } else {
-            logger.warning("Can not find tx Proof with challenge:" + challenge.toString())
-        }
-    }
+//        } else {
+//            logger.warning("Can not find tx Proof with challenge:" + challenge.toString())
+//        }
+//    }
 
-    private fun processBalanceUpdateChallenge(challenge: Starcoin.ProtoBalanceUpdateChallenge) {
+    private fun processBalanceUpdateChallenge(challenge: Starcoin.BalanceUpdateChallenge) {
         val address = Address.getAddress(
             CryptoService.loadPublicKey(challenge.publicKey.toByteArray())
         )
@@ -372,7 +367,7 @@ class HubImpl<T : ChainTransaction>(
 
         //TODO
         val proof = BalanceUpdateProof()//(proofPath.leaf!!.account!!.update!!, proofPath)
-        val closeBalanceUpdateChallengeRequest = proof.toProto<Starcoin.ProtoBalanceUpdateProof>()
+        val closeBalanceUpdateChallengeRequest = proof.toProto<Starcoin.BalanceUpdateProof>()
 
 //        val chainTransaction = ChainTransaction(
 //            this.hubAddress,
@@ -393,8 +388,8 @@ class HubImpl<T : ChainTransaction>(
                 val hubAccount = this.eonState.getAccount(blockAddress).get()
                 if (!hubAccount.addWithdraw(amount)) {
                     // signed update (e) or update (e − 1), τ (e − 1)
-                    val cancelWithdrawalBuilder = CancelWithdrawalRequest.newBuilder()
-                        .setParticipant(Participant(hubAccount.publicKey!!).toProto() as ProtoParticipant)
+                    val cancelWithdrawalBuilder = Starcoin.CancelWithdrawal.newBuilder()
+                        .setParticipant(Participant(hubAccount.publicKey!!).toProto() as Starcoin.Participant)
                         .setUpdate(hubAccount.update!!.toProto() as Starcoin.Update)
                     if (hubAccount.update!!.isSigned) {
                         val path = this.eonState.state.getMembershipProof(blockAddress)

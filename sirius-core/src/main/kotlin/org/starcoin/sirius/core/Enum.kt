@@ -4,13 +4,13 @@ import org.starcoin.proto.Starcoin
 import org.starcoin.sirius.util.MockUtils
 
 //TODO move other enum
-enum class Direction constructor(private val protoType: Starcoin.ProtoMerklePathDirection) :
-    ProtoEnum<Starcoin.ProtoMerklePathDirection> {
-    ROOT(Starcoin.ProtoMerklePathDirection.DIRECTION_ROOT),
-    LEFT(Starcoin.ProtoMerklePathDirection.DIRECTION_LEFT),
-    RIGHT(Starcoin.ProtoMerklePathDirection.DIRECTION_RIGTH);
+enum class Direction constructor(private val protoType: Starcoin.PathDirection) :
+    ProtoEnum<Starcoin.PathDirection> {
+    ROOT(Starcoin.PathDirection.DIRECTION_ROOT),
+    LEFT(Starcoin.PathDirection.DIRECTION_LEFT),
+    RIGHT(Starcoin.PathDirection.DIRECTION_RIGTH);
 
-    override fun toProto(): Starcoin.ProtoMerklePathDirection {
+    override fun toProto(): Starcoin.PathDirection {
         return protoType
     }
 

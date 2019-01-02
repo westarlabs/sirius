@@ -8,7 +8,7 @@ import org.starcoin.sirius.serialization.ProtobufSchema
 import org.starcoin.sirius.serialization.PublicKeySerializer
 import java.security.PublicKey
 
-@ProtobufSchema(Starcoin.CloseTransferDeliveryChallengeRequest::class)
+@ProtobufSchema(Starcoin.CloseTransferDeliveryChallenge::class)
 @Serializable
 data class CloseTransferDeliveryChallenge(
     @SerialId(1)
@@ -24,7 +24,7 @@ data class CloseTransferDeliveryChallenge(
     val txHash: Hash = Hash.ZERO_HASH
 ) : SiriusObject() {
     companion object :
-        SiriusObjectCompanion<CloseTransferDeliveryChallenge, Starcoin.CloseTransferDeliveryChallengeRequest>(
+        SiriusObjectCompanion<CloseTransferDeliveryChallenge, Starcoin.CloseTransferDeliveryChallenge>(
             CloseTransferDeliveryChallenge::class
         ) {
 

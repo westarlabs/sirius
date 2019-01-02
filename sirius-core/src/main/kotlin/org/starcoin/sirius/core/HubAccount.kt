@@ -5,7 +5,7 @@ import kotlinx.serialization.Optional
 import kotlinx.serialization.SerialId
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.Transient
-import org.starcoin.proto.Starcoin.ProtoHubAccount
+import org.starcoin.proto.Starcoin
 import org.starcoin.sirius.crypto.CryptoService
 import org.starcoin.sirius.serialization.ProtobufSchema
 import org.starcoin.sirius.serialization.PublicKeySerializer
@@ -16,7 +16,7 @@ import java.util.*
 import java.util.stream.Collectors
 
 @Serializable
-@ProtobufSchema(ProtoHubAccount::class)
+@ProtobufSchema(Starcoin.HubAccount::class)
 data class HubAccount(
     @Serializable(with = PublicKeySerializer::class)
     @SerialId(1)
@@ -111,7 +111,7 @@ data class HubAccount(
         return HubAccount(publicKey, Update(UpdateData(eon, 0, 0, 0)), allotment)
     }
 
-    companion object : SiriusObjectCompanion<HubAccount, ProtoHubAccount>(HubAccount::class) {
+    companion object : SiriusObjectCompanion<HubAccount, Starcoin.HubAccount>(HubAccount::class) {
         override fun mock(): HubAccount {
             val update = Update.mock()
             val deposit = MockUtils.nextLong()
@@ -135,7 +135,7 @@ data class HubAccount(
             return hubAccount
         }
 
-        override fun parseFromProtoMessage(protoMessage: ProtoHubAccount): HubAccount {
+        override fun parseFromProtoMessage(protoMessage: Starcoin.HubAccount): HubAccount {
             return HubAccount(
                 CryptoService.loadPublicKey(protoMessage.publicKey.toByteArray()),
                 Update.parseFromProtoMessage(protoMessage.update),
@@ -148,8 +148,8 @@ data class HubAccount(
             )
         }
 
-        override fun toProtoMessage(obj: HubAccount): ProtoHubAccount {
-            return ProtoHubAccount.newBuilder()
+        override fun toProtoMessage(obj: HubAccount): Starcoin.HubAccount {
+            return Starcoin.HubAccount.newBuilder()
                 .setPublicKey(CryptoService.encodePublicKey(obj.publicKey).toByteString())
                 .setUpdate(Update.toProtoMessage(obj.update))
                 .setAllotment(obj.allotment)

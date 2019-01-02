@@ -123,8 +123,8 @@ class SiriusContractTest : ContractTestBase("sirius.sol", "SiriusService") {
         val update = newUpdate(eon, 1, 0)
         val txData = OffchainTransactionData(eon, addr, addr, 10, 1)
         tx = OffchainTransaction(txData, Signature.of(txData, owner.private))
-        val open = OpenTransferDeliveryChallengeRequest(update, tx, MerklePath.mock())
-        val data = RLP.dump(OpenTransferDeliveryChallengeRequest.serializer(), open)
+        val open = OpenTransferDeliveryChallenge(update, tx, MerklePath.mock())
+        val data = RLP.dump(OpenTransferDeliveryChallenge.serializer(), open)
         val callResult = contract.callFunction("openTransferDeliveryChallenge", data)
         verifyReturn(callResult)
     }

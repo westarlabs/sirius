@@ -8,7 +8,7 @@ import org.starcoin.sirius.crypto.CryptoService
 import org.starcoin.sirius.serialization.ByteArrayWrapper
 import org.starcoin.sirius.serialization.ProtobufSchema
 
-@ProtobufSchema(Starcoin.ProtoHubEvent::class)
+@ProtobufSchema(Starcoin.HubEvent::class)
 @Serializable
 data class HubEvent(
     @SerialId(1)
@@ -35,7 +35,7 @@ data class HubEvent(
         get() = this.address != Address.ZERO_ADDRESS
 
 
-    companion object : SiriusObjectCompanion<HubEvent, Starcoin.ProtoHubEvent>(HubEvent::class) {
+    companion object : SiriusObjectCompanion<HubEvent, Starcoin.HubEvent>(HubEvent::class) {
         override fun mock(): HubEvent {
             val type = HubEventType.random()
             return when (type) {

@@ -14,7 +14,7 @@ data class CloseBalanceUpdateChallenge(
     val proof: AMTreeProof = AMTreeProof.DUMMY_PROOF
 ) : SiriusObject() {
     companion object :
-        SiriusObjectCompanion<CloseBalanceUpdateChallenge, Starcoin.ProtoBalanceUpdateChallenge>(
+        SiriusObjectCompanion<CloseBalanceUpdateChallenge, Starcoin.BalanceUpdateChallenge>(
             CloseBalanceUpdateChallenge::class
         ) {
 

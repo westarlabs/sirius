@@ -9,7 +9,7 @@ import org.starcoin.sirius.serialization.PublicKeySerializer
 
 import java.security.PublicKey
 
-@ProtobufSchema(Starcoin.ProtoBalanceUpdateChallenge::class)
+@ProtobufSchema(Starcoin.BalanceUpdateChallenge::class)
 @Serializable
 data class BalanceUpdateChallenge(
     @SerialId(1)
@@ -20,7 +20,7 @@ data class BalanceUpdateChallenge(
 ) : SiriusObject() {
 
     companion object :
-        SiriusObjectCompanion<BalanceUpdateChallenge, Starcoin.ProtoBalanceUpdateChallenge>(BalanceUpdateChallenge::class) {
+        SiriusObjectCompanion<BalanceUpdateChallenge, Starcoin.BalanceUpdateChallenge>(BalanceUpdateChallenge::class) {
 
         var DUMMY_BALANCE_UPDATE_CHALLENGE = BalanceUpdateChallenge()
 

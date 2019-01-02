@@ -6,18 +6,18 @@ import org.starcoin.proto.Starcoin
 import org.starcoin.sirius.serialization.ProtobufSchema
 import org.starcoin.sirius.util.MockUtils
 
-@ProtobufSchema(Starcoin.InitiateWithdrawalRequest::class)
+@ProtobufSchema(Starcoin.Withdrawal::class)
 @Serializable
 data class Withdrawal(
     @SerialId(1)
-    var address: Address = Address.DUMMY_ADDRESS,
+    val address: Address = Address.DUMMY_ADDRESS,
     @SerialId(2)
-    var path: AMTreePath = AMTreePath.DUMMY_PATH,
+    val path: AMTreePath = AMTreePath.DUMMY_PATH,
     @SerialId(3)
-    var amount: Long = 0
+    val amount: Long = 0
 ) : SiriusObject() {
 
-    companion object : SiriusObjectCompanion<Withdrawal, Starcoin.InitiateWithdrawalRequest>(Withdrawal::class) {
+    companion object : SiriusObjectCompanion<Withdrawal, Starcoin.Withdrawal>(Withdrawal::class) {
 
         var DUMMY_WITHDRAWAL = Withdrawal()
 

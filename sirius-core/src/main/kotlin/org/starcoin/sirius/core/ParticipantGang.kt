@@ -9,7 +9,7 @@ import org.starcoin.sirius.serialization.ProtobufSchema
 import java.security.PrivateKey
 
 // just for test, mock malicious Participant
-@ProtobufSchema(Starcoin.ProtoParticipantGang::class)
+@ProtobufSchema(Starcoin.ParticipantGang::class)
 @Serializable
 data class ParticipantGang(
     @SerialId(1)
@@ -20,7 +20,7 @@ data class ParticipantGang(
 ) : SiriusObject() {
 
 
-    companion object : SiriusObjectCompanion<ParticipantGang, Starcoin.ProtoParticipantGang>(ParticipantGang::class) {
+    companion object : SiriusObjectCompanion<ParticipantGang, Starcoin.ParticipantGang>(ParticipantGang::class) {
 
         override fun mock(): ParticipantGang {
             return random()

@@ -159,7 +159,7 @@ class HubStatus {
         return challenge
     }
 
-    internal fun syncAllotment(accountInfo: Starcoin.ProtoHubAccount) {
+    internal fun syncAllotment(accountInfo: Starcoin.HubAccount) {
         this.allotment += accountInfo.deposit
         this.allotment += accountInfo.allotment
     }

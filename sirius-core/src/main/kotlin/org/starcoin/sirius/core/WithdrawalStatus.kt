@@ -7,7 +7,7 @@ import org.starcoin.proto.Starcoin
 import org.starcoin.proto.Starcoin.ProtoWithdrawalStatusType
 import org.starcoin.sirius.serialization.ProtobufSchema
 
-@ProtobufSchema(Starcoin.ProtoWithdrawalStatus::class)
+@ProtobufSchema(Starcoin.WithdrawalStatus::class)
 @Serializable
 data class WithdrawalStatus(
     @SerialId(1)
@@ -51,7 +51,7 @@ data class WithdrawalStatus(
     }
 
     companion object :
-        SiriusObjectCompanion<WithdrawalStatus, Starcoin.ProtoWithdrawalStatus>(WithdrawalStatus::class) {
+        SiriusObjectCompanion<WithdrawalStatus, Starcoin.WithdrawalStatus>(WithdrawalStatus::class) {
 
         var DUMMY_WITHDRAWAL_STATUS = WithdrawalStatus()
 

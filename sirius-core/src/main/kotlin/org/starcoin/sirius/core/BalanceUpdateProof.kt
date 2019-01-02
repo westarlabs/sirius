@@ -5,7 +5,7 @@ import kotlinx.serialization.Serializable
 import org.starcoin.proto.Starcoin
 import org.starcoin.sirius.serialization.ProtobufSchema
 
-@ProtobufSchema(Starcoin.ProtoBalanceUpdateProof::class)
+@ProtobufSchema(Starcoin.BalanceUpdateProof::class)
 @Serializable
 data class BalanceUpdateProof(
     @SerialId(1)
@@ -18,7 +18,7 @@ data class BalanceUpdateProof(
     val proof: AMTreeProof = AMTreeProof.DUMMY_PROOF
 ) : SiriusObject() {
     companion object :
-        SiriusObjectCompanion<BalanceUpdateProof, Starcoin.ProtoBalanceUpdateChallenge>(BalanceUpdateProof::class) {
+        SiriusObjectCompanion<BalanceUpdateProof, Starcoin.BalanceUpdateChallenge>(BalanceUpdateProof::class) {
 
         var DUMMY_BALANCE_UPDATE_PROOF = BalanceUpdateProof(false, Update.DUMMY_UPDATE, false, AMTreeProof.DUMMY_PROOF)
 

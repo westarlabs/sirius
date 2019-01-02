@@ -3,7 +3,7 @@ package org.starcoin.sirius.core
 
 import kotlinx.serialization.SerialId
 import kotlinx.serialization.Serializable
-import org.starcoin.proto.Starcoin.ProtoOffchainTransaction
+import org.starcoin.proto.Starcoin
 import org.starcoin.sirius.crypto.CryptoKey
 import org.starcoin.sirius.crypto.CryptoService
 import org.starcoin.sirius.serialization.ProtobufSchema
@@ -12,7 +12,7 @@ import java.security.PrivateKey
 import java.security.PublicKey
 
 @Serializable
-@ProtobufSchema(ProtoOffchainTransaction::class)
+@ProtobufSchema(Starcoin.OffchainTransaction::class)
 data class OffchainTransaction(@SerialId(1) val data: OffchainTransactionData, @SerialId(2) var sign: Signature = Signature.ZERO_SIGN) :
     SiriusObject() {
 
@@ -67,7 +67,7 @@ data class OffchainTransaction(@SerialId(1) val data: OffchainTransactionData, @
     fun verify(key: CryptoKey) = verify(key.keyPair.public)
 
     companion object :
-        SiriusObjectCompanion<OffchainTransaction, ProtoOffchainTransaction>(OffchainTransaction::class) {
+        SiriusObjectCompanion<OffchainTransaction, Starcoin.OffchainTransaction>(OffchainTransaction::class) {
 
         var DUMMY_OFFCHAIN_TRAN = OffchainTransaction(OffchainTransactionData.DUMMY_OFFCHAIN_TRAN_DATA)
 
@@ -80,15 +80,15 @@ data class OffchainTransaction(@SerialId(1) val data: OffchainTransactionData, @
             )
         }
 
-        override fun parseFromProtoMessage(protoMessage: ProtoOffchainTransaction): OffchainTransaction {
+        override fun parseFromProtoMessage(protoMessage: Starcoin.OffchainTransaction): OffchainTransaction {
             return OffchainTransaction(
                 OffchainTransactionData.parseFromProtoMessage(protoMessage.data),
                 Signature.wrap(protoMessage.sign)
             )
         }
 
-        override fun toProtoMessage(obj: OffchainTransaction): ProtoOffchainTransaction {
-            return ProtoOffchainTransaction.newBuilder().setData(OffchainTransactionData.toProtoMessage(obj.data))
+        override fun toProtoMessage(obj: OffchainTransaction): Starcoin.OffchainTransaction {
+            return Starcoin.OffchainTransaction.newBuilder().setData(OffchainTransactionData.toProtoMessage(obj.data))
                 .setSign(obj.sign.toByteString()).build()
         }
     }

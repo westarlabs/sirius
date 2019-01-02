@@ -59,7 +59,7 @@ class SiriusModelTest : ContractTestBase("model_test.sol", "test_all") {
 
     @Test
     fun testOpenTransferDeliveryChallengeRequest() {
-        doTest(OpenTransferDeliveryChallengeRequest::class, "open_transfer_delivery_challenge_request_test")
+        doTest(OpenTransferDeliveryChallenge::class, "open_transfer_delivery_challenge_request_test")
     }
 
     @Test

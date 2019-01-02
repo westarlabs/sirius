@@ -5,7 +5,7 @@ import kotlinx.serialization.Serializable
 import org.starcoin.proto.Starcoin
 import org.starcoin.sirius.serialization.ProtobufSchema
 
-@ProtobufSchema(Starcoin.CancelWithdrawalRequest::class)
+@ProtobufSchema(Starcoin.CancelWithdrawal::class)
 @Serializable
 data class CancelWithdrawal(
     @SerialId(1)
@@ -17,7 +17,7 @@ data class CancelWithdrawal(
 ) : SiriusObject() {
 
     companion object :
-        SiriusObjectCompanion<CancelWithdrawal, Starcoin.CancelWithdrawalRequest>(CancelWithdrawal::class) {
+        SiriusObjectCompanion<CancelWithdrawal, Starcoin.CancelWithdrawal>(CancelWithdrawal::class) {
 
         var DUMMY_CANCEL_WITHDRAWAL = CancelWithdrawal()
 

@@ -6,7 +6,7 @@ import org.starcoin.proto.Starcoin
 import org.starcoin.sirius.serialization.ProtobufSchema
 import org.starcoin.sirius.util.MockUtils
 
-@ProtobufSchema(Starcoin.ProtoMerklePath::class)
+@ProtobufSchema(Starcoin.MerklePath::class)
 @Serializable
 data class MerklePath(@SerialId(1) private val nodes: MutableList<MerklePathNode> = mutableListOf()) : SiriusObject(),
     List<MerklePathNode> by nodes {
@@ -23,7 +23,7 @@ data class MerklePath(@SerialId(1) private val nodes: MutableList<MerklePathNode
         this.nodes.add(pathNode)
     }
 
-    companion object : SiriusObjectCompanion<MerklePath, Starcoin.ProtoMerklePath>(MerklePath::class) {
+    companion object : SiriusObjectCompanion<MerklePath, Starcoin.MerklePath>(MerklePath::class) {
         val DUMMY_PATH = MerklePath()
         override fun mock(): MerklePath {
             val path = MerklePath()
@@ -36,12 +36,12 @@ data class MerklePath(@SerialId(1) private val nodes: MutableList<MerklePathNode
 
 }
 
-@ProtobufSchema(Starcoin.ProtoMerklePathNode::class)
+@ProtobufSchema(Starcoin.MerklePathNode::class)
 @Serializable
 data class MerklePathNode(@SerialId(1) val nodeHash: Hash, @SerialId(2) val direction: Direction) :
     SiriusObject() {
 
-    companion object : SiriusObjectCompanion<MerklePathNode, Starcoin.ProtoMerklePathNode>(MerklePathNode::class) {
+    companion object : SiriusObjectCompanion<MerklePathNode, Starcoin.MerklePathNode>(MerklePathNode::class) {
         override fun mock(): MerklePathNode {
             return MerklePathNode(Hash.random(), Direction.random())
         }
