@@ -21,6 +21,8 @@ interface CryptoService {
 
     fun loadCryptoKey(bytes: ByteArray): CryptoKey
 
+    fun loadCryptoKey(privateKey: PrivateKey): CryptoKey
+
     fun loadPublicKey(bytes: ByteArray): PublicKey
 
     fun loadPrivateKey(bytes: ByteArray): PrivateKey
@@ -31,11 +33,17 @@ interface CryptoService {
 
     fun generateAddress(publicKey: PublicKey): Address
 
-    fun sign(data: ByteArray, privateKey: PrivateKey): Signature
+    fun sign(data: ByteArray, key: CryptoKey) = key.sign(data)
 
-    fun sign(data: Hash, privateKey: PrivateKey): Signature
+    fun sign(data: Hash, key: CryptoKey) = key.sign(data)
 
-    fun sign(data: SiriusObject, privateKey: PrivateKey): Signature
+    fun sign(data: SiriusObject, key: CryptoKey) = key.sign(data)
+
+    fun verify(data: ByteArray, sign: Signature, key: CryptoKey) = key.verify(data, sign)
+
+    fun verify(data: Hash, sign: Signature, key: CryptoKey) = key.verify(data, sign)
+
+    fun verify(data: SiriusObject, sign: Signature, key: CryptoKey) = key.verify(data, sign)
 
     fun verify(data: ByteArray, sign: Signature, publicKey: PublicKey): Boolean
 
@@ -65,6 +73,8 @@ interface CryptoService {
 
         override fun loadCryptoKey(bytes: ByteArray) = instance.loadCryptoKey(bytes)
 
+        override fun loadCryptoKey(privateKey: PrivateKey) = instance.loadCryptoKey(privateKey)
+
         override fun loadPublicKey(bytes: ByteArray) = instance.loadPublicKey(bytes)
 
         override fun loadPrivateKey(bytes: ByteArray): PrivateKey = instance.loadPrivateKey(bytes)
@@ -74,12 +84,6 @@ interface CryptoService {
         override fun encodePrivateKey(privateKey: PrivateKey) = instance.encodePrivateKey(privateKey)
 
         override fun generateAddress(publicKey: PublicKey) = instance.generateAddress(publicKey)
-
-        override fun sign(data: ByteArray, privateKey: PrivateKey) = instance.sign(data, privateKey)
-
-        override fun sign(data: Hash, privateKey: PrivateKey) = instance.sign(data, privateKey)
-
-        override fun sign(data: SiriusObject, privateKey: PrivateKey) = instance.sign(data, privateKey)
 
         override fun verify(data: ByteArray, sign: Signature, publicKey: PublicKey) =
             instance.verify(data, sign, publicKey)

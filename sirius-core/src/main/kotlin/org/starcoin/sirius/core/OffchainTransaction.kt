@@ -51,11 +51,11 @@ data class OffchainTransaction(@SerialId(1) val data: OffchainTransactionData, @
     }
 
     fun sign(privateKey: PrivateKey) {
-        this.sign = Signature.of(this.data, privateKey)
+        this.sign(CryptoService.loadCryptoKey(privateKey))
     }
 
     fun sign(key: CryptoKey) {
-        this.sign(key.keyPair.private)
+        this.sign = key.sign(this.data)
     }
 
     fun verify(publicKey: PublicKey): Boolean {
@@ -64,7 +64,7 @@ data class OffchainTransaction(@SerialId(1) val data: OffchainTransactionData, @
         return this.sign.verify(this.data, publicKey)
     }
 
-    fun verify(key: CryptoKey) = verify(key.keyPair.public)
+    fun verify(key: CryptoKey) = key.verify(this.data, this.sign)
 
     companion object :
         SiriusObjectCompanion<OffchainTransaction, Starcoin.OffchainTransaction>(OffchainTransaction::class) {

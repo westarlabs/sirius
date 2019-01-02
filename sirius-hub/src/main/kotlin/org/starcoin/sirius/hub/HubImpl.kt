@@ -468,24 +468,24 @@ class HubImpl<T : ChainTransaction>(
         if (newEon) {
             val future = this.doCommit()
             // TODO only start new eon after commit success.
-            future.whenComplete { receipt, throwable ->
-                if (!receipt.success) {
-                    // TODO
-                    logger.severe("commit tx receipt is failure.")
-                } else {
-                    // TODO only
-                    this.ready = true
-                    this.fireEvent(
-                        HubEvent(
-                            HubEventType.NEW_HUB_ROOT,
-                            HubRoot(
-                                this.eonState.state.root.toAMTreePathNode() as AMTreePathInternalNode,
-                                this.eonState.eon
-                            )
-                        )
-                    )
-                }
-            }
+//            future.whenComplete { receipt, throwable ->
+//                if (!receipt.success) {
+//                    // TODO
+//                    logger.severe("commit tx receipt is failure.")
+//                } else {
+//                    // TODO only
+//                    this.ready = true
+//                    this.fireEvent(
+//                        HubEvent(
+//                            HubEventType.NEW_HUB_ROOT,
+//                            HubRoot(
+//                                this.eonState.state.root.toAMTreePathNode() as AMTreePathInternalNode,
+//                                this.eonState.eon
+//                            )
+//                        )
+//                    )
+//                }
+//            }
         }
         // only process contract tx.
         blockInfo.filterTxByTo(Constants.CONTRACT_ADDRESS).stream().forEach { this.processTransaction(it) }

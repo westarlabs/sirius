@@ -4,6 +4,7 @@ import kotlinx.serialization.SerialId
 import kotlinx.serialization.Serializable
 import org.starcoin.proto.Starcoin
 import org.starcoin.sirius.crypto.CryptoKey
+import org.starcoin.sirius.crypto.CryptoService
 import org.starcoin.sirius.serialization.ProtobufSchema
 import java.security.PrivateKey
 import java.security.PublicKey
@@ -81,16 +82,22 @@ data class Update(
         }
     }
 
-    fun sign(key: CryptoKey) = this.sign(key.keyPair.private)
-
-    fun sign(privateKey: PrivateKey) {
-        this.sign = Signature.of(this.data, privateKey)
+    fun sign(key: CryptoKey) {
+        this.sign = key.sign(this.data)
     }
 
-    fun signHub(key: CryptoKey) = this.signHub(key.keyPair.private)
+    @Deprecated("Should use sign(CryptoKey)", replaceWith = ReplaceWith("sign", "CryptoKey"))
+    fun sign(privateKey: PrivateKey) {
+        this.sign(CryptoService.loadCryptoKey(privateKey))
+    }
 
+    fun signHub(key: CryptoKey) {
+        this.hubSign = key.sign(this.data)
+    }
+
+    @Deprecated("Should use signHub(CryptoKey)", replaceWith = ReplaceWith("signHub", "CryptoKey"))
     fun signHub(hubPrivateKey: PrivateKey) {
-        this.hubSign = Signature.of(this.data, hubPrivateKey)
+        this.sign(CryptoService.loadCryptoKey(hubPrivateKey))
     }
 
     companion object : SiriusObjectCompanion<Update, Starcoin.Update>(Update::class) {

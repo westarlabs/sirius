@@ -75,16 +75,8 @@ object EthCryptoService : CryptoService {
         return ByteUtil.bigIntegerToBytes(pk.d, 32)
     }
 
-    override fun sign(data: ByteArray, privateKey: PrivateKey): Signature {
-        return EthCryptoKey(privateKey).sign(data)
-    }
-
-    override fun sign(data: Hash, privateKey: PrivateKey): Signature {
-        return this.sign(data.toBytes(), privateKey)
-    }
-
-    override fun sign(data: SiriusObject, privateKey: PrivateKey): Signature {
-        return this.sign(data.hash(), privateKey)
+    override fun loadCryptoKey(privateKey: PrivateKey): CryptoKey {
+        return EthCryptoKey(privateKey)
     }
 
     override fun verify(

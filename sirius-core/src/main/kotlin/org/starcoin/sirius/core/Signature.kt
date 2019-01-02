@@ -2,11 +2,11 @@ package org.starcoin.sirius.core
 
 import com.google.protobuf.ByteString
 import kotlinx.serialization.*
+import org.starcoin.sirius.crypto.CryptoKey
 import org.starcoin.sirius.crypto.CryptoService
 import org.starcoin.sirius.serialization.BinaryDecoder
 import org.starcoin.sirius.serialization.BinaryEncoder
 import org.starcoin.sirius.util.Utils
-import java.security.PrivateKey
 import java.security.PublicKey
 
 @Serializable
@@ -22,6 +22,10 @@ class Signature private constructor(internal val bytes: ByteArray) {
     fun verify(data: SiriusObject, publicKey: PublicKey): Boolean {
         return CryptoService.verify(data, this, publicKey)
     }
+
+    fun verify(data: ByteArray, key: CryptoKey) = key.verify(data, this)
+
+    fun verify(data: SiriusObject, key: CryptoKey) = key.verify(data, this)
 
     override fun toString(): String {
         return Utils.HEX.encode(this.bytes)
@@ -77,17 +81,11 @@ class Signature private constructor(internal val bytes: ByteArray) {
             return Signature(byteString.toByteArray())
         }
 
-        fun of(data: ByteArray, privateKey: PrivateKey): Signature {
-            return CryptoService.sign(data, privateKey)
-        }
+        fun of(data: ByteArray, key: CryptoKey) = key.sign(data)
 
-        fun of(data: Hash, privateKey: PrivateKey): Signature {
-            return CryptoService.sign(data, privateKey)
-        }
+        fun of(data: SiriusObject, key: CryptoKey) = key.sign(data)
 
-        fun of(data: SiriusObject, privateKey: PrivateKey): Signature {
-            return CryptoService.sign(data, privateKey)
-        }
+        fun of(data: Hash, key: CryptoKey) = key.sign(data)
 
         fun ofDummyKey(data: ByteArray): Signature {
             return CryptoService.dummyCryptoKey.sign(data)

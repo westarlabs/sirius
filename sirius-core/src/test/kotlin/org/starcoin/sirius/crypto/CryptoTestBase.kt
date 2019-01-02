@@ -72,6 +72,10 @@ abstract class CryptoTestBase {
             val data = MockUtils.nextBytes(Hash.LENGTH)
             val sign = key.sign(data)
             Assert.assertTrue(key.verify(data, sign))
+            Assert.assertTrue(CryptoService.verify(data, sign, key.keyPair.public))
+            Assert.assertTrue(CryptoService.verify(data, sign, key))
+            Assert.assertTrue(sign.verify(data, key.keyPair.public))
+            Assert.assertTrue(sign.verify(data, key))
         }
     }
 

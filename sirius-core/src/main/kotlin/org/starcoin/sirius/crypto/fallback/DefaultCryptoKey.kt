@@ -155,20 +155,12 @@ class DefaultCryptoKey(override val keyPair: KeyPair) : CryptoKey() {
             return DefaultCryptoKey(bytes)
         }
 
+        override fun loadCryptoKey(privateKey: PrivateKey): CryptoKey {
+            return DefaultCryptoKey(privateKey)
+        }
+
         override fun generateAddress(publicKey: PublicKey): Address {
             return Address.wrap(HashUtil.hash160(HashUtil.sha256(encodePublicKey(publicKey))))
-        }
-
-        override fun sign(data: ByteArray, privateKey: PrivateKey): Signature {
-            return Signature.wrap(signData(data, privateKey))
-        }
-
-        override fun sign(data: Hash, privateKey: PrivateKey): Signature {
-            return this.sign(data.bytes, privateKey)
-        }
-
-        override fun sign(data: SiriusObject, privateKey: PrivateKey): Signature {
-            return this.sign(data.toProtobuf(), privateKey)
         }
 
         override fun verify(
@@ -184,7 +176,7 @@ class DefaultCryptoKey(override val keyPair: KeyPair) : CryptoKey() {
         }
 
         override fun verify(data: SiriusObject, sign: Signature, publicKey: PublicKey): Boolean {
-            return this.verify(data.toProtobuf(), sign, publicKey)
+            return this.verify(data.hash(), sign, publicKey)
         }
 
         override fun hash(bytes: ByteArray): Hash {
