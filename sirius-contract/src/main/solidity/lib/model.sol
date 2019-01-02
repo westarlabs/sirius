@@ -937,4 +937,22 @@ library ModelLib {
 
         return RLPEncoder.encodeUint(tmp);
     }
+
+    struct HashTest {
+        bytes32 hash;
+        address addr;
+    }
+
+    function unmarshalHashTest(RLPLib.RLPItem memory rlp) internal pure returns (HashTest memory ht) {
+        RLPLib.Iterator memory it = RLPDecoder.iterator(rlp);
+        uint idx;
+        while(RLPDecoder.hasNext(it)) {
+            RLPLib.RLPItem memory r = RLPDecoder.next(it);
+            if(idx == 0) ht.hash = ByteUtilLib.bytesToBytes32(RLPLib.toData(r));
+            else if(idx == 1) ht.addr = RLPDecoder.toAddress(r);
+            else {}
+
+            idx++;
+        }
+    }
 }

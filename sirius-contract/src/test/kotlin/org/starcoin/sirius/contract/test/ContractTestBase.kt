@@ -6,13 +6,7 @@ import org.apache.commons.lang3.RandomUtils
 import org.ethereum.config.SystemProperties
 import org.ethereum.core.*
 import org.ethereum.crypto.ECKey
-import org.ethereum.listener.EthereumListener
 import org.ethereum.listener.EthereumListenerAdapter
-import org.ethereum.net.eth.message.StatusMessage
-import org.ethereum.net.message.Message
-import org.ethereum.net.p2p.HelloMessage
-import org.ethereum.net.rlpx.Node
-import org.ethereum.net.server.Channel
 import org.ethereum.solidity.compiler.CompilationResult
 import org.ethereum.solidity.compiler.SolidityCompiler
 import org.ethereum.solidity.compiler.SolidityCompiler.Options
@@ -22,11 +16,9 @@ import org.junit.Assert
 import org.junit.Before
 import org.starcoin.sirius.core.Address
 import org.starcoin.sirius.core.OffchainTransaction
-import org.starcoin.sirius.crypto.fallback.DefaultCryptoKey
+import org.starcoin.sirius.crypto.eth.EthCryptoKey
 import org.starcoin.sirius.util.WithLogging
 import java.io.File
-import java.security.KeyPair
-import java.security.PrivateKey
 import java.util.concurrent.atomic.AtomicLong
 
 @Serializable
@@ -51,12 +43,31 @@ data class ContractData(val sb: StandaloneBlockchain, val contract: SolidityCont
 
 abstract class ContractTestBase(val contractFile: String, val contractName: String) {
 
-    companion object : WithLogging()
+    companion object : WithLogging() {
+        fun bytesToHexString(src: ByteArray?): String? {
+            val stringBuilder = StringBuilder("")
+            if (src == null || src.isEmpty()) {
+                return null
+            }
+            for (i in 0..src.size - 1) {
+                val v = src[i].toInt() and 0xFF
+                val hv = Integer.toHexString(v)
+                if (hv.length < 2) {
+                    stringBuilder.append(0)
+                }
+                stringBuilder.append(hv)
+            }
+            return stringBuilder.toString()
+        }
+
+        fun ethKey2Address(ethKey: EthCryptoKey): Address {
+            return Address.getAddress(ethKey.keyPair.public)
+        }
+    }
 
     lateinit var sb: StandaloneBlockchain
     lateinit var contract: SolidityContract
-    lateinit var owner: KeyPair
-    lateinit var addr: Address
+    lateinit var callUser: EthCryptoKey
     val blockHeight: AtomicLong = AtomicLong(0)
     lateinit var tx: OffchainTransaction
 
@@ -65,13 +76,7 @@ abstract class ContractTestBase(val contractFile: String, val contractName: Stri
         val tmp = deployContract()
         sb = tmp.sb
         contract = tmp.contract
-
-        val privKey = DefaultCryptoKey.generatePrivateKeyFromBigInteger(tmp.owner.privKey)
-        owner = KeyPair(
-            DefaultCryptoKey.generatePublicKeyFromPrivateKey(privKey), privKey
-        )
-
-        addr = Address.getAddress(owner.public)
+        callUser = EthCryptoKey(tmp.owner)
     }
 
     @Suppress("INACCESSIBLE_TYPE")
@@ -102,57 +107,36 @@ abstract class ContractTestBase(val contractFile: String, val contractName: Stri
         val lastSummary = StandaloneBlockchain::class.java.getDeclaredField("lastSummary")
         lastSummary.setAccessible(true)
         val sum = lastSummary.get(sb) as BlockSummary
-        sum.getReceipts().stream().forEach { receipt -> println(receipt.error + ":" + receipt.isTxStatusOK) }
-
+        sum.getReceipts().stream().forEach { receipt -> assert(receipt.isTxStatusOK) }
 
         sb.addEthereumListener(object : EthereumListenerAdapter() {
             override fun onBlock(blockSummary: BlockSummary) {
                 blockHeight.incrementAndGet()
-                println(blockHeight.get())
+                LOG.info("block length:$blockHeight")
             }
         })
 
         return ContractData(sb, contract, sb.sender)
     }
 
-    fun call(data: ByteArray, method: String) {
-        call(data, method, true)
-    }
-
     fun call(data: ByteArray, method: String, hasReturn: Boolean) {
         val dataStr = bytesToHexString(data)!!
 
-        println(dataStr)
+        LOG.info("contract args:$dataStr")
 
         val callResult = contract.callFunction(method, data)
 
-        println(callResult.receipt.error)
+        LOG.warning("conract err:$callResult.receipt.error")
 
         assert(callResult.receipt.isTxStatusOK)
         if (hasReturn) {
             val resultStr = bytesToHexString(callResult.receipt.executionResult)!!
 
-            println(resultStr)
+            LOG.info("contract return:$resultStr")
         } else {
             callResult.receipt.logInfoList.forEach { logInfo ->
-                println("event:$logInfo")
+                LOG.info("event:$logInfo")
             }
         }
-    }
-
-    private fun bytesToHexString(src: ByteArray?): String? {
-        val stringBuilder = StringBuilder("")
-        if (src == null || src.isEmpty()) {
-            return null
-        }
-        for (i in 0..src.size - 1) {
-            val v = src[i].toInt() and 0xFF
-            val hv = Integer.toHexString(v)
-            if (hv.length < 2) {
-                stringBuilder.append(0)
-            }
-            stringBuilder.append(hv)
-        }
-        return stringBuilder.toString()
     }
 }

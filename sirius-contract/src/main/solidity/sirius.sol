@@ -17,6 +17,7 @@ interface Sirius {
     function getCurrentEon() external view returns (uint);
     function isRecoveryMode() external view returns (bool);
     function test() external view returns (bool);
+    function test2(bytes calldata data) external;
 }
 
 contract SiriusService is Sirius {
@@ -48,7 +49,9 @@ contract SiriusService is Sirius {
 
     modifier recovery() {
         doRecovery();
-        _;
+        if(!recoveryMode) {
+            _;
+        }
     }
 
     /** public methods **/
@@ -144,8 +147,8 @@ contract SiriusService is Sirius {
         ModelLib.BalanceUpdateChallenge memory challenge = ModelLib.unmarshalBalanceUpdateChallenge(RLPDecoder.toRLPItem(data, true));
         require(challenge.proof.hasPath || challenge.proof.hasUp);
 
-        //bytes32 key = ByteUtilLib.address2hash(msg.sender);
-        bytes32 key = challenge.proof.proof.leaf.nodeInfo.addressHash;
+        bytes32 key = ByteUtilLib.address2hash(msg.sender);
+        //bytes32 key = challenge.proof.proof.leaf.nodeInfo.addressHash;
         if(challenge.proof.hasPath) {//Special case:eon-1 exist a account, evil owner removed it in this eon, so the account only path
             uint tmpEon =  challenge.proof.proof.leaf.nodeInfo.update.upData.eon;
             require(tmpEon >= 0);
@@ -329,6 +332,12 @@ contract SiriusService is Sirius {
         return true;
     }
 
+    function test2(bytes calldata data) external {
+        ModelLib.HashTest memory ht = ModelLib.unmarshalHashTest(RLPDecoder.toRLPItem(data, true));
+        emit DepositEvent2(10, ht.hash);
+        emit DepositEvent2(9, ByteUtilLib.address2hash(ht.addr));
+    }
+
     /** private methods **/
 
     function newBalance(uint newEon) private pure returns(GlobleLib.Balance memory latest) {
@@ -382,25 +391,23 @@ contract SiriusService is Sirius {
         uint tmp = SafeMath.sub(block.number, startHeight);
         uint newEon = SafeMath.div(tmp, blocksPerEon);
 
-        if (newEon > balances[0].eon) {
+        //recovery
+        uint tmp2 = SafeMath.add(SafeMath.mul(blocksPerEon, newEon), SafeMath.div(blocksPerEon, 4));
+        uint tmp3 = SafeMath.add(tmp2, blocksPerEon);
+        if (newEon > 0 && ((tmp > tmp3 && !balances[0].hasRoot) || (tmp > tmp2 && !balances[1].hasRoot))) {
+            recoveryMode = true;
+            //TODO: add event
+        }
+
+        if (!recoveryMode && newEon > balances[0].eon) {
             uint tmpEon = SafeMath.add(balances[0].eon, 1);
             if (newEon == tmpEon) {// init eon
                 //TODO:check challenge and do withdrawal
                 GlobleLib.Balance memory latest = newBalance(newEon);
                 checkBalances(latest);
-            } else {//recovery
-                if (!balances[1].hasRoot) {
-                    uint tmp2 = SafeMath.add(SafeMath.mul(blocksPerEon, newEon), SafeMath.div(blocksPerEon, 4));
-                    if (tmp > tmp2) {
-                        recoveryMode = true;
-                        //TODO: add event
-                    }
-                }
+            } else {
+
             }
-
-
-
-            require(!recoveryMode);
         }
     }
 }
