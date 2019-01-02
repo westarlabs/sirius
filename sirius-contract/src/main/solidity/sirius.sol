@@ -17,7 +17,6 @@ interface Sirius {
     function getCurrentEon() external view returns (uint);
     function isRecoveryMode() external view returns (bool);
     function test() external view returns (bool);
-    function test2(bytes calldata data) external;
 }
 
 contract SiriusService is Sirius {
@@ -44,7 +43,9 @@ contract SiriusService is Sirius {
     modifier onlyOwner() {
         require(msg.sender == owner);
         doRecovery();
-        _;
+        if(!recoveryMode) {
+            _;
+        }
     }
 
     modifier recovery() {
@@ -297,7 +298,8 @@ contract SiriusService is Sirius {
 
         ModelLib.AMTreeProof memory proof = ModelLib.unmarshalAMTreeProof(RLPDecoder.toRLPItem(data, true));
 
-        require(proof.leaf.nodeInfo.addressHash == ByteUtilLib.address2hash(msg.sender));
+        bytes32 key = ByteUtilLib.address2hash(msg.sender);
+        require(proof.leaf.nodeInfo.addressHash == key);
 
         require(balances[1].eon == proof.leaf.nodeInfo.update.upData.eon);
 
@@ -305,7 +307,6 @@ contract SiriusService is Sirius {
         bool proofFlag = ModelLib.verifyMembershipProof4AMTreeProof(latestRoot.node, proof);
         require(proofFlag);
 
-        bytes32 key = ByteUtilLib.address2hash(msg.sender);
         uint amount = SafeMath.add(proof.leaf.allotment, balances[0].depositMeta.deposits[key]);
         amount = SafeMath.add(amount, balances[1].depositMeta.deposits[key]);
         require(amount > 0);
@@ -330,12 +331,6 @@ contract SiriusService is Sirius {
 
     function test() external view returns (bool) {
         return true;
-    }
-
-    function test2(bytes calldata data) external {
-        ModelLib.HashTest memory ht = ModelLib.unmarshalHashTest(RLPDecoder.toRLPItem(data, true));
-        emit DepositEvent2(10, ht.hash);
-        emit DepositEvent2(9, ByteUtilLib.address2hash(ht.addr));
     }
 
     /** private methods **/
