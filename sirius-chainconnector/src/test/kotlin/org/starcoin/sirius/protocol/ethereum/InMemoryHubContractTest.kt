@@ -83,6 +83,8 @@ class InMemoryHubContractTest {
         var alice = CryptoService.generateCryptoKey()
 
         //var transactions = List<EthereumTransaction>
+        var blockChannel=chain.watchBlock(Address.wrap(contract.getContractAddr()),EventTopic.Deposit)
+
         chain.sb.withAccountBalance(alice.address.toBytes(), EtherUtil.convert(123, EtherUtil.Unit.ETHER))
 
         var ethereumTransaction = EthereumTransaction(
@@ -93,8 +95,6 @@ class InMemoryHubContractTest {
 
         println(ethereumTransaction.ethTx.key)
         chain.sb.createBlock()
-
-        var blockChannel=chain.watchBlock(Address.wrap(contract.getContractAddr()),EventTopic.Deposit)
 
         runBlocking{
             var block=blockChannel.receive()

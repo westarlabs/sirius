@@ -1,7 +1,6 @@
 package org.starcoin.sirius.protocol
 
 
-import org.bouncycastle.util.BigIntegers
 import org.ethereum.core.Transaction
 import org.ethereum.util.ByteUtil
 import org.starcoin.sirius.core.Address

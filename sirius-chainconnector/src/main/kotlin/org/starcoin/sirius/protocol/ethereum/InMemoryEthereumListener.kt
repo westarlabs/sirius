@@ -66,7 +66,7 @@ class InMemoryEthereumListener : EthereumListener {
             EthBlock.TransactionObject(it.hash?.toHEXString(),it.nonce?.toString(),w3jBlock.hash,w3jBlock.number.toString(),
                 index.toString(),it.sender.toString(),it.receiveAddress.toString(),it.value.toBigIntString(),
                 it.gasPrice.toBigIntString(),it.gasLimit.toBigIntString(),it.data?.toString(),blockSummary?.block?.timestamp.toString(),
-                it.key.pubKey.toHEXString(),it.encodedRaw.toString(),it.signature.r.toString(),it.signature.s.toString(),it.signature.v.toInt())
+                it.key?.pubKey?.toHEXString(),it.encodedRaw.toString(),it.signature.r.toString(),it.signature.s.toString(),it.signature.v.toInt())
         }
         GlobalScope.launch {
             blockChannel.send(EthereumBlock(w3jBlock))

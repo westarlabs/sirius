@@ -1,7 +1,10 @@
 package org.starcoin.sirius.protocol.ethereum
 
+import org.ethereum.core.Transaction
 import org.ethereum.crypto.ECKey
+import org.ethereum.util.ByteUtil
 import org.ethereum.util.blockchain.EtherUtil
+import org.junit.Assert
 import org.junit.Test
 import org.starcoin.sirius.crypto.CryptoService
 import org.starcoin.sirius.crypto.eth.EthCryptoKey
@@ -34,12 +37,10 @@ class InMemoryEthereumListenerTest {
 
         println(transaction.ethTx.key)
 
-        var tx=chain.sb.createTransaction(0,bob.address.toBytes(), 1,null)
+        var tx=chain.sb.createTransaction(0,(bob as EthCryptoKey).ecKey.address, 1, null)
         println(tx.key)
 
         chain.sb.createBlock()
 
     }
-
-
 }
