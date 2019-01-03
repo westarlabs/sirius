@@ -1,5 +1,8 @@
 package org.starcoin.sirius.protocol.ethereum
 
+import kotlinx.coroutines.GlobalScope
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.runBlocking
 import org.bouncycastle.util.BigIntegers
 import org.ethereum.core.*
 import org.ethereum.listener.EthereumListener
@@ -9,11 +12,16 @@ import org.ethereum.net.p2p.HelloMessage
 import org.ethereum.net.rlpx.Node
 import org.ethereum.net.server.Channel
 import org.starcoin.sirius.core.Hash
+import org.starcoin.sirius.lang.toHEXString
 import org.starcoin.sirius.protocol.EthereumTransaction
 import org.web3j.protocol.core.methods.response.EthBlock
+import org.web3j.utils.Numeric
+import java.math.BigInteger
 import kotlin.properties.Delegates
 
 class InMemoryEthereumListener : EthereumListener {
+
+    val ZEROBYTES=ByteArray(0)
 
     val blocks: MutableList<EthereumBlock> = mutableListOf()
     var blockChannel :kotlinx.coroutines.channels.Channel<EthereumBlock> by Delegates.notNull()
@@ -27,7 +35,7 @@ class InMemoryEthereumListener : EthereumListener {
     }
 
     override fun onPendingStateChanged(pendingState: PendingState?) {
-        TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
+        println(pendingState)
     }
 
     override fun onRecvMessage(channel: Channel?, message: Message?) {
@@ -47,16 +55,30 @@ class InMemoryEthereumListener : EthereumListener {
     }
 
     override fun onBlock(blockSummary: BlockSummary?) {
-        val block = blockSummary?.blockInfo()
-        if (block != null) {
-            blocks.add(block)
-        }
         var w3jBlock = EthBlock.Block()
-        w3jBlock.setGasLimit(String(blockSummary?.block?.gasLimit?: ByteArray(0)))
+        w3jBlock.setGasLimit(blockSummary?.block?.gasLimit?.toBigIntString())
         w3jBlock.setDifficulty(blockSummary?.block?.difficultyBI?.toString())
-        w3jBlock.setGasUsed(String.format("%d",blockSummary?.block?.gasUsed?:0))
-        w3jBlock.setNonce(BigIntegers.fromUnsignedByteArray(blockSummary?.block?.nonce?:ByteArray(0)).toString())
-        w3jBlock.setNumber(String.format("%d",blockSummary?.block?.number?:0))
+        w3jBlock.setGasUsed(blockSummary?.block?.gasUsed.toString())
+        w3jBlock.setNonce(blockSummary?.block?.nonce?.toBigIntString())
+        w3jBlock.setNumber(blockSummary?.block?.number?.toBigIntString())
+        w3jBlock.hash = blockSummary?.block?.hash?.toHEXString()
+        w3jBlock.transactions=blockSummary?.block?.transactionsList?.mapIndexed{index, it->
+            EthBlock.TransactionObject(it.hash?.toHEXString(),it.nonce?.toString(),w3jBlock.hash,w3jBlock.number.toString(),
+                index.toString(),it.sender.toString(),it.receiveAddress.toString(),it.value.toBigIntString(),
+                it.gasPrice.toBigIntString(),it.gasLimit.toBigIntString(),it.data?.toString(),blockSummary?.block?.timestamp.toString(),
+                it.key.pubKey.toHEXString(),it.encodedRaw.toString(),it.signature.r.toString(),it.signature.s.toString(),it.signature.v.toInt())
+        }
+        GlobalScope.launch {
+            blockChannel.send(EthereumBlock(w3jBlock))
+        }
+    }
+
+    fun ByteArray.toBigIntString():String{
+        return BigIntegers.fromUnsignedByteArray(this).toString()
+    }
+
+    fun Long.toBigIntString():String{
+        return Numeric.encodeQuantity(BigInteger.valueOf(this))
     }
 
     override fun onPeerDisconnect(host: String?, port: Long) {
@@ -88,7 +110,7 @@ class InMemoryEthereumListener : EthereumListener {
     }
 
     override fun trace(output: String?) {
-        TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
+        println(output)
     }
 
     override fun onNoConnections() {

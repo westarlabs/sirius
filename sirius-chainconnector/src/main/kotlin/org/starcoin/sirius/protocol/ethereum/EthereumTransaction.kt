@@ -3,6 +3,7 @@ package org.starcoin.sirius.protocol
 
 import org.bouncycastle.util.BigIntegers
 import org.ethereum.core.Transaction
+import org.ethereum.util.ByteUtil
 import org.starcoin.sirius.core.Address
 import org.starcoin.sirius.core.ChainTransaction
 import org.starcoin.sirius.core.Hash
@@ -38,11 +39,11 @@ class EthereumTransaction(val ethTx: Transaction) : ChainTransaction(
         data: ByteArray?
     ) : this(
         Transaction(
-            BigIntegers.asUnsignedByteArray(nonce.toBigInteger()),
-            BigIntegers.asUnsignedByteArray(gasPrice.toBigInteger()),
-            BigIntegers.asUnsignedByteArray(gasLimit.toBigInteger()),
+            ByteUtil.longToBytesNoLeadZeroes(nonce),
+            ByteUtil.longToBytesNoLeadZeroes(gasPrice),
+            ByteUtil.longToBytesNoLeadZeroes(gasLimit),
             to.toBytes(),
-            BigIntegers.asUnsignedByteArray(amount.toBigInteger()),
+            ByteUtil.longToBytesNoLeadZeroes(amount),
             data
         )
     )

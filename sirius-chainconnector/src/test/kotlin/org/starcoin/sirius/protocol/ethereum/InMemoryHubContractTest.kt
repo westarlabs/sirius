@@ -1,7 +1,10 @@
 package org.starcoin.sirius.protocol.ethereum
 
+import kotlinx.coroutines.GlobalScope
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.runBlocking
 import kotlinx.serialization.ImplicitReflectionSerializer
-import org.bouncycastle.util.BigIntegers
 import org.ethereum.config.SystemProperties
 import org.ethereum.solidity.compiler.CompilationResult
 import org.ethereum.solidity.compiler.SolidityCompiler
@@ -11,11 +14,11 @@ import org.junit.Before
 import org.junit.Test
 import org.starcoin.sirius.core.Address
 import org.starcoin.sirius.crypto.CryptoService
+import org.starcoin.sirius.crypto.eth.EthCryptoKey
 import org.starcoin.sirius.protocol.EthereumTransaction
 import org.starcoin.sirius.protocol.EventTopic
 import org.starcoin.sirius.protocol.ethereum.contract.InMemoryHubContract
 import java.io.File
-import java.math.BigInteger
 import java.net.URL
 import java.util.concurrent.atomic.AtomicInteger
 import kotlin.properties.Delegates
@@ -78,16 +81,10 @@ class InMemoryHubContractTest {
     fun testDeposit() {
 
         var nonce = AtomicInteger();
-        var alice = CryptoService.dummyCryptoKey
+        var alice = CryptoService.generateCryptoKey()
 
         //var transactions = List<EthereumTransaction>
         chain.sb.withAccountBalance(alice.address.toBytes(), EtherUtil.convert(123, EtherUtil.Unit.ETHER))
-
-        /**
-        chain.watchBlock(Address.wrap(contract.getContractAddr()),EventTopic.Deposit,onNext={
-           transactions.plus(it.getTransactions().filter { it.ethTx.sender==alice.address.toBytes()&&
-                    BigIntegers.fromUnsignedByteArray(it.ethTx.value).toInt()==1  })
-        })**/
 
         var ethereumTransaction = EthereumTransaction(
             Address.wrap(contract.getContractAddr()),nonce.getAndIncrement().toLong() , 0,
@@ -95,8 +92,14 @@ class InMemoryHubContractTest {
 
         chain.newTransaction(alice,ethereumTransaction)
 
+        println(ethereumTransaction.ethTx.key)
         chain.sb.createBlock()
 
+        var blockChannel=chain.watchBlock(Address.wrap(contract.getContractAddr()),EventTopic.Deposit)
 
+        runBlocking{
+            var block=blockChannel.receive()
+            Assert.assertEquals(block.getTransactions().size,1)
+        }
     }
 }
