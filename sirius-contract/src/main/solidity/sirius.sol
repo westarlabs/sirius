@@ -4,7 +4,6 @@ import "./lib/model.sol";
 import "./lib/safe_math.sol";
 
 interface Sirius {
-    function deposit() external payable;
     function commit(bytes calldata data) external;
     function initiateWithdrawal(bytes calldata data) external;
     function cancelWithdrawal(bytes calldata data) external;
@@ -56,21 +55,13 @@ contract SiriusService is Sirius {
     }
 
     /** public methods **/
-
-    function deposit() external payable recovery {
-        require(msg.value > 0);
-        GlobleLib.deposit(balances[0].depositMeta, msg.sender, msg.value);
-        emit DepositEvent2(100, ByteUtilLib.address2hash(msg.sender));
-
-        GlobleLib.Deposit memory d = all[msg.sender];
-        d.amount = SafeMath.add(d.amount, msg.value);
-        d.hasVal = true;
-        all[msg.sender] = d;
-
-        emit DepositEvent(1, balances[0].depositMeta.total);
+    function() external payable {
+        deposit();
     }
 
-    function commit(bytes calldata data) external onlyOwner {
+    function commit(bytes calldata data) external {
+        require(!recoveryMode);
+        require(msg.sender == owner);
         ModelLib.HubRoot memory root = ModelLib.unmarshalHubRoot(RLPDecoder.toRLPItem(data, true));
         require(balances[0].eon > 0);
         require(!balances[1].hasRoot);
@@ -116,7 +107,7 @@ contract SiriusService is Sirius {
         balances[0].withdrawalMeta.total += init.amount;
     }
 
-    function cancelWithdrawal(bytes calldata data) external recovery {
+    function cancelWithdrawal(bytes calldata data) external onlyOwner {
         ModelLib.CancelWithdrawal memory cancel = ModelLib.unmarshalCancelWithdrawal(RLPDecoder.toRLPItem(data, true));
         uint currentEon = currentEon();
         require(cancel.update.upData.eon >= 0 && cancel.update.upData.eon == currentEon);
@@ -193,7 +184,7 @@ contract SiriusService is Sirius {
         balances[0].bucMeta.balanceChallenges[key] = cs;
     }
 
-    function closeBalanceUpdateChallenge(bytes calldata data) external recovery {
+    function closeBalanceUpdateChallenge(bytes calldata data) external onlyOwner {
         ModelLib.CloseBalanceUpdateChallenge memory close = ModelLib.unmarshalCloseBalanceUpdateChallenge(RLPDecoder.toRLPItem(data, true));
 
         ModelLib.HubRoot memory root = balances[1].root;
@@ -267,7 +258,7 @@ contract SiriusService is Sirius {
         balances[0].tdcMeta.transferChallenges[hash] = challenge;
     }
 
-    function closeTransferDeliveryChallenge(bytes calldata data) external recovery {
+    function closeTransferDeliveryChallenge(bytes calldata data) external onlyOwner {
         ModelLib.CloseTransferDeliveryChallenge memory close = ModelLib.unmarshalCloseTransferDeliveryChallenge(RLPDecoder.toRLPItem(data, true));
 
         bytes32 key = close.txHash;
@@ -334,6 +325,19 @@ contract SiriusService is Sirius {
     }
 
     /** private methods **/
+
+    function deposit() private {
+        require(msg.value > 0);
+        GlobleLib.deposit(balances[0].depositMeta, msg.sender, msg.value);
+        emit DepositEvent2(100, ByteUtilLib.address2hash(msg.sender));
+
+        GlobleLib.Deposit memory d = all[msg.sender];
+        d.amount = SafeMath.add(d.amount, msg.value);
+        d.hasVal = true;
+        all[msg.sender] = d;
+
+        emit DepositEvent(1, balances[0].depositMeta.total);
+    }
 
     function newBalance(uint newEon) private pure returns(GlobleLib.Balance memory latest) {
         GlobleLib.DepositMeta memory depositMeta;

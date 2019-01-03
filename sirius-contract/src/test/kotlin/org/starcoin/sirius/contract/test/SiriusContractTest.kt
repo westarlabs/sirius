@@ -40,7 +40,7 @@ class SiriusContractTest : ContractTestBase("sirius.sol", "SiriusService") {
     }
 
     fun testDeposit(flag: Boolean) {
-        val callResult = contract.callFunction(deposit, "deposit")
+        val callResult = contract.callFunction(deposit, "")
         if (flag)
             verifyReturn(callResult)
         else
@@ -158,9 +158,8 @@ class SiriusContractTest : ContractTestBase("sirius.sol", "SiriusService") {
         var eon = 2
         createEon(eon, false)
 
-        val flag = contract.callConstFunction("isRecoveryMode")[0] as Boolean
-        assert(flag)
-
+        var recovery = contract.callConstFunction("isRecoveryMode")[0] as Boolean
+        assert(recovery)
         eon = if (currentEon() == 0) {
             0
         } else {
@@ -207,6 +206,7 @@ class SiriusContractTest : ContractTestBase("sirius.sol", "SiriusService") {
 
     private fun createEon(eon: Int, flag: Boolean) {
         var ct = 0
+
         for (i in 0..eon) {
             val tmp = if (flag) {
                 (4 * (i + 1))
