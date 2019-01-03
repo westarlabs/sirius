@@ -38,11 +38,11 @@ class EthereumTransaction(val ethTx: Transaction) : ChainTransaction(
         data: ByteArray?
     ) : this(
         Transaction(
-            BigIntegers.asUnsignedByteArray(nonce.toBigInteger()),
-            BigIntegers.asUnsignedByteArray(gasPrice.toBigInteger()),
-            BigIntegers.asUnsignedByteArray(gasLimit.toBigInteger()),
+            ByteUtil.longToBytesNoLeadZeroes(nonce),
+            ByteUtil.longToBytesNoLeadZeroes(gasPrice),
+            ByteUtil.longToBytesNoLeadZeroes(gasLimit),
             to?.toBytes(),
-            BigIntegers.asUnsignedByteArray(value.toBigInteger()),
+            ByteUtil.longToBytesNoLeadZeroes(value),
             data
         )
     )
