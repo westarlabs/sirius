@@ -93,7 +93,6 @@ class EthCryptoTest : CryptoTestBase() {
         val sender = ECKey()
         val receiver = ECKey()
         val tx = createTx(sender, receiver.address, ByteArray(0), 100)
-        tx.sign(sender)
         Assert.assertArrayEquals(sender.address, tx.sender)
     }
 
