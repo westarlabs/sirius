@@ -35,6 +35,7 @@ class EthereumChain constructor(httpUrl: String = defaultHttpUrl, socketPath: St
     val web3: Web3j =
         Web3j.build(if (socketPath != null) UnixIpcService(socketPath) else HttpService(httpUrl))
 
+
     fun getNonce(address: Address): Long {
         return web3.ethGetTransactionCount(
             Numeric.toHexString(address.toBytes()),

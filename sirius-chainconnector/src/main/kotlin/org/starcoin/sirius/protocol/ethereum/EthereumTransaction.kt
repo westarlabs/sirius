@@ -31,23 +31,22 @@ class EthereumTransaction(val ethTx: Transaction) : ChainTransaction(
         get() = ethTx.data
 
     constructor(
-        to: Address,
+        to: Address?,
         nonce: Long,
         gasPrice: Long,
         gasLimit: Long,
-        amount: Long,
+        value: Long,
         data: ByteArray?
     ) : this(
         Transaction(
-            ByteUtil.longToBytesNoLeadZeroes(nonce),
-            ByteUtil.longToBytesNoLeadZeroes(gasPrice),
-            ByteUtil.longToBytesNoLeadZeroes(gasLimit),
-            to.toBytes(),
-            ByteUtil.longToBytesNoLeadZeroes(amount),
+            BigIntegers.asUnsignedByteArray(nonce.toBigInteger()),
+            BigIntegers.asUnsignedByteArray(gasPrice.toBigInteger()),
+            BigIntegers.asUnsignedByteArray(gasLimit.toBigInteger()),
+            to?.toBytes(),
+            BigIntegers.asUnsignedByteArray(value.toBigInteger()),
             data
         )
     )
-
     override fun txHash(): Hash {
         return Hash.wrap(this.ethTx.hash)
     }

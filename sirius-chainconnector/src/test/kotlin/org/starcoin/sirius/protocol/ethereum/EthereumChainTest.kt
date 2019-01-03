@@ -8,6 +8,7 @@ import org.web3j.utils.Numeric
 import kotlin.properties.Delegates
 import kotlinx.coroutines.*
 import kotlinx.coroutines.channels.Channel
+import org.ethereum.util.ByteUtil
 import java.lang.Thread.sleep
 
 
@@ -73,7 +74,7 @@ class EthereumChainTest {
         val data =
             "6080604052348015600f57600080fd5b5060be8061001e6000396000f3fe6080604052600436106038577c01000000000000000000000000000000000000000000000000000000006000350463b214faa58114603d575b600080fd5b605760048036036020811015605157600080fd5b50356059565b005b60408051348152905133917fe1fffcc4923d04b559f4d29a8bfc6cda04eb5b0d3c460751c2402c5c5cc9109c919081900360200190a25056fea165627a7a72305820c67e9008687d656c665ae79c4fbe2d8ec17dd117a845c566753b9ecd8095d8870029".toByteArray()
         val tx = EthereumTransaction(
-            bob.address, chain.getNonce(alice.address), 1000, 100000, 1, data
+            null, chain.getNonce(alice.address), 1000, 100000, 1, data
         )
         chain.newTransaction(alice, tx)
         println(Numeric.toHexString(tx.ethTx.contractAddress))
