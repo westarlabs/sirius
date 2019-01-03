@@ -14,8 +14,8 @@ import org.junit.Before
 import org.junit.Test
 import org.starcoin.sirius.core.Address
 import org.starcoin.sirius.crypto.CryptoService
-import org.starcoin.sirius.crypto.eth.EthCryptoKey
 import org.starcoin.sirius.protocol.EthereumTransaction
+import org.starcoin.sirius.protocol.EventTopic
 import org.starcoin.sirius.protocol.ethereum.contract.InMemoryHubContract
 import java.io.File
 import java.net.URL
@@ -83,7 +83,7 @@ class InMemoryHubContractTest {
         var alice = CryptoService.generateCryptoKey()
 
         //var transactions = List<EthereumTransaction>
-        var blockChannel=chain.watchBlock(Address.wrap(contract.getContractAddr()),EventTopic.Deposit)
+        var blockChannel=chain.watchBlock(Address.wrap(contract.getContractAddr()), EventTopic.Deposit)
 
         chain.sb.withAccountBalance(alice.address.toBytes(), EtherUtil.convert(123, EtherUtil.Unit.ETHER))
 

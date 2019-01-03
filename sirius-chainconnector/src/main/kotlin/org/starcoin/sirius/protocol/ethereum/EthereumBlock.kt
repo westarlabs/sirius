@@ -18,4 +18,5 @@ class EthereumBlock(val ethBlock: EthBlock.Block) : Block<EthereumTransaction>(
     override fun blockHash(): Hash {
         return Hash.wrap(ethBlock.hash)
     }
+
 }
