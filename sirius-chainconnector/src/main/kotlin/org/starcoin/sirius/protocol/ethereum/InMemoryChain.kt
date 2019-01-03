@@ -11,11 +11,15 @@ import org.starcoin.sirius.protocol.*
 import java.math.BigInteger
 
 class InMemoryChain(autoGenblock: Boolean) : Chain<EthereumTransaction, EthereumBlock, HubContract> {
-
-    override fun watchTransactions(
+    override fun watchEvents(
         contract: Address,
         topic: EventTopic,
-        filter: (FilterArguments) -> Boolean):Channel<TransactionResult<EthereumTransaction>> {
+        filter: (FilterArguments) -> Boolean
+    ): Channel<TransactionResult<EthereumTransaction>> {
+        TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
+    }
+
+    override fun watchTransactions(filter: (FilterArguments) -> Boolean): Channel<TransactionResult<EthereumTransaction>> {
         TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
     }
 

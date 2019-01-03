@@ -5,46 +5,37 @@ import org.ethereum.solidity.compiler.SolidityCompiler
 import org.ethereum.config.SystemProperties
 import org.starcoin.proto.Starcoin
 import org.starcoin.sirius.core.*
+import org.starcoin.sirius.crypto.CryptoKey
 import org.starcoin.sirius.protocol.EthereumTransaction
 import org.starcoin.sirius.protocol.HubContract
 import org.starcoin.sirius.protocol.ethereum.EthereumChain
 import java.io.File
+import java.math.BigInteger
 import java.net.URL
 import java.security.KeyPair
 
 
-class EthereumHubContract(chain: EthereumChain) : HubContract {
+class EthereumHubContract(private val chain: EthereumChain) : HubContract {
 
-    private val chain: EthereumChain = chain
-    private val contract: ByteArray = ByteArray(0)
     private val compiler = SolidityCompiler(SystemProperties.getDefault())
-    fun loadResource(name: String): URL {
-        return javaClass::class.java.getResource(name) ?: File("./out/test/resources/$name").toURL()
-    }
     val contractName = "SiriusService"
-    fun newContract(
-        keyPair: KeyPair,
-        to: Address,
-        nonce: Long,
-        gasPrice: Long,
-        gasLimit: Long,
-        value: Long
-    ) {
-        val contractCode: ByteArray = ByteArray(0)
-        val solResource = javaClass::class.java.getResource("solidity/sirius.sol")
-            ?: File("./out/test/resources/solidity/sirius.sol").toURL()
-        val solUri = solResource.toURI()
+
+    fun compileContract(sourceName: String = "solidity/sirius.sol"): CompilationResult {
+        val srcPath = javaClass::class.java.getResource(sourceName).toURI()
+        val srcDir = listOf(File(srcPath).parentFile.absolutePath)
         val compiledResult = compiler.compileSrc(
-            File(solUri),
-            false,
+            File(srcPath),
+            true,
             true,
             SolidityCompiler.Options.ABI,
             SolidityCompiler.Options.BIN,
-            SolidityCompiler.Options.AllowPaths(listOf(File(solUri).parentFile.absolutePath))
+            SolidityCompiler.Options.AllowPaths(srcDir)
         )
         if (compiledResult.isFailed) throw RuntimeException("Compile result: " + compiledResult.errors)
-        val result = CompilationResult.parse(compiledResult.output)
-        var con = result.getContract(contractName)
+        return CompilationResult.parse(compiledResult.output)
+    }
+
+    fun newContract(compiledContract: CompilationResult, key: CryptoKey, GasLimit: BigInteger, Gas: BigInteger) {
     }
 
     override fun queryHubInfo(): HubInfo {

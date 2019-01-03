@@ -31,6 +31,7 @@ const val defaultHttpUrl = "http://127.0.0.1:8545"
 class EthereumChain constructor(httpUrl: String = defaultHttpUrl, socketPath: String? = null) :
     Chain<EthereumTransaction, EthereumBlock, HubContract> {
 
+
     val web3: Web3j =
         Web3j.build(if (socketPath != null) UnixIpcService(socketPath) else HttpService(httpUrl))
 
@@ -48,8 +49,12 @@ class EthereumChain constructor(httpUrl: String = defaultHttpUrl, socketPath: St
         if (resp.hasError()) throw NewTxException(resp.error)
     }
 
+    override fun watchTransactions(filter: (FilterArguments) -> Boolean): Channel<TransactionResult<EthereumTransaction>> {
+        TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
+    }
+
     override
-    fun watchTransactions(
+    fun watchEvents(
         contract: Address,
         topic: EventTopic,
         filter: (FilterArguments) -> Boolean
