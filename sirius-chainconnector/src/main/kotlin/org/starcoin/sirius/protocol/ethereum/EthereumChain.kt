@@ -93,14 +93,15 @@ class EthereumChain constructor(httpUrl: String = defaultHttpUrl, socketPath: St
         filter: (FilterArguments) -> Boolean
     ): Channel<EthereumBlock> {
         val ch = Channel<EthereumBlock>(10)
-        web3.blockFlowable(true).subscribe { block -> block.block.blockInfo()}
+        web3.blockFlowable(true).subscribe { block -> block.block.blockInfo() }
         return ch
 
     }
 
     override fun getBalance(address: Address): BigInteger {
         val req =
-            web3.ethGetBalance(Numeric.toHexString(address.toBytes()), DefaultBlockParameterName.LATEST).send()
+            web3.ethGetBalance(Numeric.toHexString(address.toBytes()), DefaultBlockParameterName.LATEST).sendAsync()
+                .get()
         if (req.hasError()) throw IOException(req.error.message)
 
         return req.balance
@@ -119,10 +120,10 @@ class EthereumChain constructor(httpUrl: String = defaultHttpUrl, socketPath: St
             if (height == BigInteger.valueOf(-1)) DefaultBlockParameterName.LATEST else
                 DefaultBlockParameter.valueOf(height),
             true
-        ).send()
+        ).sendAsync().get()
         if (blockReq.hasError()) throw IOException(blockReq.error.message)
 
-        // FIXME: Use BigInteger in blockinfo
+        // FIXME: Use BigInbteger in blockinfo
         val blockInfo = EthereumBlock(blockReq.block)
         blockReq.block.transactions.map { it ->
             val tx = it as Transaction
@@ -132,7 +133,17 @@ class EthereumChain constructor(httpUrl: String = defaultHttpUrl, socketPath: St
     }
 
     override fun getTransactionReceipts(txHashs: List<Hash>): List<Receipt> {
-        TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
+        return txHashs.map {
+            val recepitResp = web3.ethGetTransactionReceipt(it.toString()).sendAsync().get()
+            if (recepitResp.hasError()) throw GetRecepitException(recepitResp.error)
+            val r = recepitResp.transactionReceipt.get()
+            Receipt(
+                r.transactionHash, r.transactionIndex,
+                r.blockHash, r.blockNumber, r.contractAddress,
+                r.from, r.to, r.gasUsed, r.logsBloom,
+                r.cumulativeGasUsed, r.root, r.isStatusOK
+            )
+        }
     }
 
     override fun getContract(parameter: QueryContractParameter): HubContract {
