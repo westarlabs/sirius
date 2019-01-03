@@ -12,7 +12,7 @@ import kotlin.reflect.full.companionObjectInstance
 import kotlin.reflect.jvm.jvmName
 
 
-open class ProtobufSchemaTest {
+open class SiriusObjectSerializationTest {
 
     companion object : WithLogging() {
 

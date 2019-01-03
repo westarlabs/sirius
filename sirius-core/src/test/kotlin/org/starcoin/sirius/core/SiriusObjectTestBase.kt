@@ -7,6 +7,6 @@ abstract class SiriusObjectTestBase<T : SiriusObject>(val objectClass: KClass<T>
 
     @Test
     fun test() {
-        ProtobufSchemaTest.testClass(objectClass)
+        SiriusObjectSerializationTest.testClass(objectClass)
     }
 }
