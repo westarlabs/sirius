@@ -2,7 +2,7 @@ package org.starcoin.sirius.hub
 
 import org.starcoin.sirius.core.*
 import org.starcoin.sirius.crypto.CryptoKey
-import org.starcoin.sirius.hub.Hub.MaliciousFlag
+import org.starcoin.sirius.hub.Hub.HubMaliciousFlag
 import org.starcoin.sirius.protocol.Chain
 import org.starcoin.sirius.protocol.HubContract
 import java.security.PublicKey
@@ -15,7 +15,7 @@ class HubService<T : ChainTransaction>(
     chain: Chain<T, Block<T>, HubContract>
 ) {
 
-    var hubMaliciousFlag: EnumSet<MaliciousFlag>
+    var hubMaliciousFlag: EnumSet<HubMaliciousFlag>
         get() = hub.hubMaliciousFlag
         set(flags) {
             hub.hubMaliciousFlag = flags
@@ -94,7 +94,7 @@ class HubService<T : ChainTransaction>(
         return this.hub.getHubAccount(blockAddress)
     }
 
-    fun resetHubMaliciousFlag(): EnumSet<MaliciousFlag> {
+    fun resetHubMaliciousFlag(): EnumSet<HubMaliciousFlag> {
         return this.hub.resetHubMaliciousFlag()
     }
 }

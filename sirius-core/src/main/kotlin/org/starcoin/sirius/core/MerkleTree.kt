@@ -99,7 +99,7 @@ class MerkleTree(private val root: MerkleTreeNode) : Hashable {
             for (i in 0 until path.size) {
                 val pathNode = path[i]
                 node = when {
-                    pathNode.direction == Direction.LEFT -> MerkleTreeNode(
+                    pathNode.direction == PathDirection.LEFT -> MerkleTreeNode(
                         MerkleTreeNode(pathNode.nodeHash),
                         node
                     )
@@ -149,12 +149,12 @@ class MerkleTreeNode(val data: Hashable?, val left: MerkleTreeNode?, var right: 
             }
         }
 
-    val direction: Direction
+    val direction: PathDirection
         get() {
             return when {
-                this.parent == null -> Direction.ROOT
-                this === this.parent?.left -> Direction.LEFT
-                else -> Direction.RIGHT
+                this.parent == null -> PathDirection.ROOT
+                this === this.parent?.left -> PathDirection.LEFT
+                else -> PathDirection.RIGHT
             }
         }
 

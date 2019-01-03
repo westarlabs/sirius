@@ -198,14 +198,14 @@ class AMTree(
 
         fun buildRoot(path: AMTreePath, leafNode: AMTreePathLeafNode): AMTreeNode {
 
-            var node = if (path.leaf.direction == Direction.LEFT) AMTreeNode(
+            var node = if (path.leaf.direction == PathDirection.LEFT) AMTreeNode(
                 AMTreeNode(path.leaf), AMTreeNode(leafNode)
             ) else AMTreeNode(AMTreeNode(leafNode), AMTreeNode(path.leaf))
 
             for (i in 0 until path.size) {
                 val pathNode = path[i]
                 node = when {
-                    pathNode.direction == Direction.LEFT -> AMTreeNode(
+                    pathNode.direction == PathDirection.LEFT -> AMTreeNode(
                         AMTreeNode(
                             pathNode
                         ), node
@@ -334,12 +334,12 @@ class AMTreeNode(
             }
         }
 
-    val direction: Direction
+    val direction: PathDirection
         get() {
             return when {
-                this.parent == null -> Direction.ROOT
-                this === this.parent?.left -> Direction.LEFT
-                else -> Direction.RIGHT
+                this.parent == null -> PathDirection.ROOT
+                this === this.parent?.left -> PathDirection.LEFT
+                else -> PathDirection.RIGHT
             }
         }
 

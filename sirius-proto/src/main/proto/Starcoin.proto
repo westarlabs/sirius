@@ -62,7 +62,7 @@ message Withdrawal {
     required uint64 amount = 3;
 }
 
-enum ProtoWithdrawalStatusType {
+enum WithdrawalStatusType {
     WITHDRAWAL_STATUS_INIT = 0;
     WITHDRAWAL_STATUS_CANCEL = 1;
     WITHDRAWAL_STATUS_PASSED = 2;
@@ -71,7 +71,7 @@ enum ProtoWithdrawalStatusType {
 }
 
 message WithdrawalStatus {
-    required ProtoWithdrawalStatusType type = 1;
+    required WithdrawalStatusType type = 1;
     required Withdrawal withdrawal = 2;
 }
 
@@ -200,14 +200,14 @@ message MerklePath {
     repeated MerklePathNode nodes = 1;
 }
 
-enum ProtoChallengeStatus {
+enum ChallengeStatus {
     OPEN = 0;
     CLOSE = 1;
 }
 
 message BalanceUpdateChallengeStatus {
     required BalanceUpdateChallenge challenge = 1;
-    required ProtoChallengeStatus status = 2;
+    required ChallengeStatus status = 2;
 }
 
 message HubAccount {
@@ -224,7 +224,7 @@ message IOU {
     required Update update = 2;
 }
 
-enum ProtoHubEventType {
+enum HubEventType {
     HUB_EVENT_NEW_HUB_ROOT = 0;
     HUB_EVENT_NEW_DEPOSIT = 1;
     HUB_EVENT_WITHDRAWAL = 2;
@@ -233,7 +233,7 @@ enum ProtoHubEventType {
 }
 
 message HubEvent {
-    required ProtoHubEventType type = 1;
+    required HubEventType type = 1;
     required bytes payload = 2;
     required bytes address = 3;
 }
@@ -243,15 +243,15 @@ message BlockAddressAndEon {
     required int32 eon = 2;
 }
 
-enum ProtoHubMaliciousFlag {
-    PROTO_STEAL_DEPOSIT = 0;
-    PROTO_STEAL_WITHDRAWAL = 1;
-    PROTO_STEAL_TRANSACTION = 2;
-    PROTO_STEAL_TRANSACTION_IOU = 3;
+enum HubMaliciousFlag {
+    STEAL_DEPOSIT = 0;
+    STEAL_WITHDRAWAL = 1;
+    STEAL_TRANSACTION = 2;
+    STEAL_TRANSACTION_IOU = 3;
 }
 
-message ProtoHubMaliciousFlags {
-    repeated ProtoHubMaliciousFlag flags = 1;
+message HubMaliciousFlags {
+    repeated HubMaliciousFlag flags = 1;
 }
 
 message ProtoBlockAddress {
@@ -284,8 +284,8 @@ service HubService {
     //just for mock test.
     rpc deposit (Deposit) returns (SuccResponse);
     //return flags merge result.
-    rpc setMaliciousFlags (ProtoHubMaliciousFlags) returns (ProtoHubMaliciousFlags);
-    rpc getMaliciousFlags (google.protobuf.Empty) returns (ProtoHubMaliciousFlags);
+    rpc setMaliciousFlags (HubMaliciousFlags) returns (HubMaliciousFlags);
+    rpc getMaliciousFlags (google.protobuf.Empty) returns (HubMaliciousFlags);
     //return previous Flags
-    rpc resetMaliciousFlags (google.protobuf.Empty) returns (ProtoHubMaliciousFlags);
+    rpc resetMaliciousFlags (google.protobuf.Empty) returns (HubMaliciousFlags);
 }

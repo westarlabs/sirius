@@ -54,7 +54,7 @@ class SiriusContractTest : ContractTestBase("sirius.sol", "SiriusService") {
 
     private fun commitData(eon: Int, amount: Long, flag: Boolean) {
         val info = AMTreeInternalNodeInfo(Hash.random(), amount, Hash.random())
-        val node = AMTreePathInternalNode(info, Direction.ROOT, 0, amount)
+        val node = AMTreePathInternalNode(info, PathDirection.ROOT, 0, amount)
         val root = HubRoot(node, eon)
         val data = RLP.dump(HubRoot.serializer(), root)
         val callResult = contract.callFunction("commit", data)
@@ -198,7 +198,7 @@ class SiriusContractTest : ContractTestBase("sirius.sol", "SiriusService") {
 
     private fun newLeaf(addr: Address, update: Update, offset: Long, allotment: Long): AMTreePathLeafNode {
         val nodeInfo = AMTreeLeafNodeInfo(addr.hash(), update)
-        return AMTreePathLeafNode(nodeInfo, Direction.LEFT, offset, allotment)
+        return AMTreePathLeafNode(nodeInfo, PathDirection.LEFT, offset, allotment)
     }
 
     private fun createEon(eon: Int) {

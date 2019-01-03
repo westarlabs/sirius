@@ -1,10 +1,19 @@
 package org.starcoin.sirius.core
 
-import java.util.HashMap
+import org.starcoin.sirius.crypto.CryptoKey
+import org.starcoin.sirius.crypto.CryptoService
+import java.util.*
+import kotlin.reflect.KClass
+import kotlin.reflect.full.companionObjectInstance
 
-class MockContext {
+object MockContext {
 
     private val properites = HashMap<String, Any?>()
+    var cryptoKey: CryptoKey by properites
+
+    init {
+        cryptoKey = CryptoService.dummyCryptoKey
+    }
 
     fun containsKey(key: String): Boolean {
         return properites.containsKey(key)
@@ -42,21 +51,9 @@ class MockContext {
         return v as V
     }
 
-    companion object {
 
-        val DEFAULT = MockContext()
-
-        fun <T : Mockable> mock(clazz: Class<T>, context: MockContext): T {
-            try {
-                val t = clazz.newInstance()
-                t.mock(context)
-                return t
-            } catch (e: InstantiationException) {
-                throw RuntimeException(e)
-            } catch (e: IllegalAccessException) {
-                throw RuntimeException(e)
-            }
-
-        }
+    fun <T : SiriusObject> mock(clazz: KClass<T>): T {
+        val companion = clazz.companionObjectInstance as SiriusObjectCompanion<T, *>
+        return companion.mock()
     }
 }

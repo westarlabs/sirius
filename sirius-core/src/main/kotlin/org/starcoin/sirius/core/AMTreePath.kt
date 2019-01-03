@@ -10,7 +10,7 @@ import org.starcoin.sirius.util.MockUtils
 
 abstract class AMTreePathNode : SiriusObject() {
     abstract val nodeInfo: AMTreeNodeInfo
-    abstract val direction: Direction
+    abstract val direction: PathDirection
     abstract val offset: Long
     abstract val allotment: Long
 }
@@ -19,17 +19,17 @@ abstract class AMTreePathNode : SiriusObject() {
 @Serializable
 data class AMTreePathInternalNode(
     @SerialId(1) override val nodeInfo: AMTreeInternalNodeInfo,
-    @SerialId(2) override val direction: Direction,
+    @SerialId(2) override val direction: PathDirection,
     @SerialId(3) override val offset: Long,
     @SerialId(4) override val allotment: Long
 ) : AMTreePathNode() {
     companion object :
         SiriusObjectCompanion<AMTreePathInternalNode, Starcoin.AMTreePathInternalNode>(AMTreePathInternalNode::class) {
-        val DUMMY_NODE = AMTreePathInternalNode(AMTreeInternalNodeInfo.DUMMY_NODE, Direction.ROOT, 0, 0)
+        val DUMMY_NODE = AMTreePathInternalNode(AMTreeInternalNodeInfo.DUMMY_NODE, PathDirection.ROOT, 0, 0)
         override fun mock(): AMTreePathInternalNode {
             return AMTreePathInternalNode(
                 AMTreeInternalNodeInfo.mock(),
-                Direction.random(),
+                PathDirection.random(),
                 MockUtils.nextLong(),
                 MockUtils.nextLong()
             )
@@ -43,7 +43,7 @@ data class AMTreePathLeafNode(
     @SerialId(1)
     override val nodeInfo: AMTreeLeafNodeInfo,
     @SerialId(2)
-    override val direction: Direction,
+    override val direction: PathDirection,
     @SerialId(3)
     override val offset: Long,
     @SerialId(4)
@@ -51,11 +51,11 @@ data class AMTreePathLeafNode(
 ) : AMTreePathNode() {
     companion object :
         SiriusObjectCompanion<AMTreePathLeafNode, Starcoin.AMTreePathLeafNode>(AMTreePathLeafNode::class) {
-        val DUMMY_NODE = AMTreePathLeafNode(AMTreeLeafNodeInfo.DUMMY_NODE, Direction.ROOT, 0, 0)
+        val DUMMY_NODE = AMTreePathLeafNode(AMTreeLeafNodeInfo.DUMMY_NODE, PathDirection.ROOT, 0, 0)
         override fun mock(): AMTreePathLeafNode {
             return AMTreePathLeafNode(
                 AMTreeLeafNodeInfo.mock(),
-                Direction.random(),
+                PathDirection.random(),
                 MockUtils.nextLong(),
                 MockUtils.nextLong()
             )

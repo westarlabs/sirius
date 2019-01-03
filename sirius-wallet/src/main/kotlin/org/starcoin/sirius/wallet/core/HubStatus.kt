@@ -24,11 +24,11 @@ class HubStatus {
                 return
             }
             if (this.withdrawalStatus?.withdrawalAmount==value?.withdrawalAmount
-                && this.withdrawalStatus?.status === org.starcoin.proto.Starcoin.ProtoWithdrawalStatusType.WITHDRAWAL_STATUS_CLIENT_CONFIRMED_VALUE
+                && this.withdrawalStatus?.status === Starcoin.WithdrawalStatusType.WITHDRAWAL_STATUS_CLIENT_CONFIRMED_VALUE
             ) {
                 return
             }
-            if (value?.status != org.starcoin.proto.Starcoin.ProtoWithdrawalStatusType.WITHDRAWAL_STATUS_CLIENT_CONFIRMED_VALUE || value.status != org.starcoin.proto.Starcoin.ProtoWithdrawalStatusType.WITHDRAWAL_STATUS_CANCEL_VALUE)
+            if (value?.status != Starcoin.WithdrawalStatusType.WITHDRAWAL_STATUS_CLIENT_CONFIRMED_VALUE || value.status != Starcoin.WithdrawalStatusType.WITHDRAWAL_STATUS_CANCEL_VALUE)
                 this.withdrawalStatus = withdrawalStatus
         }
 
@@ -127,7 +127,7 @@ class HubStatus {
             .sum()
         this.allotment += this.currentUpdate(eon).receiveAmount
         this.allotment -= this.currentUpdate(eon).sendAmount
-        if ((this.withdrawalStatus?.status == org.starcoin.proto.Starcoin.ProtoWithdrawalStatusType.WITHDRAWAL_STATUS_PASSED_VALUE || this.withdrawalStatus?.status === org.starcoin.proto.Starcoin.ProtoWithdrawalStatusType.WITHDRAWAL_STATUS_CLIENT_CONFIRMED_VALUE)
+        if ((this.withdrawalStatus?.status == Starcoin.WithdrawalStatusType.WITHDRAWAL_STATUS_PASSED_VALUE || this.withdrawalStatus?.status === Starcoin.WithdrawalStatusType.WITHDRAWAL_STATUS_CLIENT_CONFIRMED_VALUE)
             && this.withdrawalStatus?.eon === eon.id - 2
         ) {
             this.allotment -= this.withdrawalStatus?.withdrawalAmount?:0

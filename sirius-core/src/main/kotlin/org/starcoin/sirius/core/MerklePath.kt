@@ -15,7 +15,7 @@ data class MerklePath(@SerialId(1) private val nodes: MutableList<MerklePathNode
         this.nodes.add(MerklePathNode(node.hash(), node.direction))
     }
 
-    fun append(nodeHash: Hash, direction: Direction) {
+    fun append(nodeHash: Hash, direction: PathDirection) {
         this.nodes.add(MerklePathNode(nodeHash, direction))
     }
 
@@ -38,12 +38,12 @@ data class MerklePath(@SerialId(1) private val nodes: MutableList<MerklePathNode
 
 @ProtobufSchema(Starcoin.MerklePathNode::class)
 @Serializable
-data class MerklePathNode(@SerialId(1) val nodeHash: Hash, @SerialId(2) val direction: Direction) :
+data class MerklePathNode(@SerialId(1) val nodeHash: Hash, @SerialId(2) val direction: PathDirection) :
     SiriusObject() {
 
     companion object : SiriusObjectCompanion<MerklePathNode, Starcoin.MerklePathNode>(MerklePathNode::class) {
         override fun mock(): MerklePathNode {
-            return MerklePathNode(Hash.random(), Direction.random())
+            return MerklePathNode(Hash.random(), PathDirection.random())
         }
 
     }
