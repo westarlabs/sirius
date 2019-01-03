@@ -86,6 +86,7 @@ class EthCryptoTest : CryptoTestBase() {
         val addressBytes = ECKey.signatureToAddress(hash, sign)
         Assert.assertNotNull(addressBytes)
         Assert.assertArrayEquals(key.address, addressBytes)
+        Assert.assertEquals(key, ECKey.recoverFromSignature(sign.v.toInt(), sign, hash))
     }
 
     @Test
@@ -94,6 +95,9 @@ class EthCryptoTest : CryptoTestBase() {
         val receiver = ECKey()
         val tx = createTx(sender, receiver.address, ByteArray(0), 100)
         Assert.assertArrayEquals(sender.address, tx.sender)
+        //TODO wait https://github.com/ethereum/ethereumj/issues/1248
+        //Assert.assertNotNull(tx.key)
+        //Assert.assertEquals(sender, tx.key)
     }
 
     private fun createTx(
