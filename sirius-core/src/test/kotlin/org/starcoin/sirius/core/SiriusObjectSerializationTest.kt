@@ -5,7 +5,6 @@ import org.junit.Assert
 import org.junit.Before
 import org.junit.Test
 import org.reflections.Reflections
-import org.starcoin.sirius.serialization.ProtobufSchema
 import org.starcoin.sirius.util.WithLogging
 import kotlin.reflect.KClass
 import kotlin.reflect.full.companionObjectInstance
@@ -18,6 +17,10 @@ open class SiriusObjectSerializationTest {
 
         fun <T : SiriusObject> testClass(clazz: KClass<T>) {
             LOG.info("test ${clazz.jvmName}")
+            if (clazz.companionObjectInstance !is SiriusObjectCompanion<*, *>) {
+                LOG.warning("Can not find SiriusObjectCompanion for class $clazz")
+                return
+            }
             val companion = clazz.companionObjectInstance as SiriusObjectCompanion<T, GeneratedMessageV3>
             val obj = companion.mock()
 
@@ -45,14 +48,14 @@ open class SiriusObjectSerializationTest {
         }
     }
 
-    val siriusObjectClass: MutableList<KClass<SiriusObject>> = mutableListOf()
+    val siriusObjectClass: MutableList<KClass<out SiriusObject>> = mutableListOf()
 
     @Before
     fun setup() {
         val reflections = Reflections("org.starcoin.sirius.core")
-        reflections.getTypesAnnotatedWith(ProtobufSchema::class.java).forEach {
-            LOG.info("find ProtobufSchema class : ${it.name}")
-            siriusObjectClass.add(it.kotlin as KClass<SiriusObject>)
+        reflections.getSubTypesOf(SiriusObject::class.java).filter { !it.kotlin.isAbstract }.forEach {
+            LOG.info("find SiriusObject class : ${it.name}")
+            siriusObjectClass.add(it.kotlin as KClass<out SiriusObject>)
         }
     }
 
