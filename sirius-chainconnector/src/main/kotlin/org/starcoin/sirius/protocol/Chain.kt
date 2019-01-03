@@ -16,7 +16,7 @@ data class TransactionResult<T : ChainTransaction>(val tx: T, val receipt: Recei
 
 
 enum class EventTopic(val event: String) {
-    Deposit("DepositEvent(address,uint)")
+    Deposit("DepositEvent(byte[])")
 }
 
 interface Chain<T : ChainTransaction, B : Block<T>, C : HubContract> {

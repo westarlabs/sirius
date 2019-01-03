@@ -77,7 +77,7 @@ class InMemoryHubContractTest {
     @ImplicitReflectionSerializer
     fun testDeposit() {
 
-        var nance = AtomicInteger();
+        var nonce = AtomicInteger();
         var alice = CryptoService.dummyCryptoKey
 
         //var transactions = List<EthereumTransaction>
@@ -90,7 +90,7 @@ class InMemoryHubContractTest {
         })**/
 
         var ethereumTransaction = EthereumTransaction(
-            Address.wrap(contract.getContractAddr()),nance.getAndIncrement().toLong() , 0,
+            Address.wrap(contract.getContractAddr()),nonce.getAndIncrement().toLong() , 0,
             0, 1, null)
 
         chain.newTransaction(alice,ethereumTransaction)

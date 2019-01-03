@@ -1,6 +1,5 @@
 package org.starcoin.sirius.protocol.ethereum
 
-import com.google.common.annotations.VisibleForTesting
 import org.junit.Before
 import org.junit.Test
 import org.starcoin.sirius.crypto.CryptoService
