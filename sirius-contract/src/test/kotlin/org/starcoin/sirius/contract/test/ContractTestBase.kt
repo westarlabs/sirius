@@ -10,13 +10,14 @@ import org.ethereum.listener.EthereumListenerAdapter
 import org.ethereum.solidity.compiler.CompilationResult
 import org.ethereum.solidity.compiler.SolidityCompiler
 import org.ethereum.solidity.compiler.SolidityCompiler.Options
+import org.ethereum.util.blockchain.SolidityCallResult
 import org.ethereum.util.blockchain.SolidityContract
 import org.ethereum.util.blockchain.StandaloneBlockchain
 import org.junit.Assert
 import org.junit.Before
-import org.starcoin.sirius.core.Address
-import org.starcoin.sirius.core.OffchainTransaction
+import org.starcoin.sirius.core.*
 import org.starcoin.sirius.crypto.eth.EthCryptoKey
+import org.starcoin.sirius.serialization.rlp.RLP
 import org.starcoin.sirius.util.WithLogging
 import java.io.File
 import java.util.concurrent.atomic.AtomicLong
@@ -137,6 +138,31 @@ abstract class ContractTestBase(val contractFile: String, val contractName: Stri
             callResult.receipt.logInfoList.forEach { logInfo ->
                 LOG.info("event:$logInfo")
             }
+        }
+    }
+
+//    fun commitData(eon: Int, amount: Long, flag: Boolean) {
+//        commitData(this.contract, eon, amount, flag)
+//    }
+
+    fun commitData(eon: Int, amount: Long, flag: Boolean) {
+        val info = AMTreeInternalNodeInfo(Hash.random(), amount, Hash.random())
+        val node = AMTreePathInternalNode(info, PathDirection.ROOT, 0, amount)
+        val root = HubRoot(node, eon)
+        val data = RLP.dump(HubRoot.serializer(), root)
+        val callResult = contract.callFunction("commit", data)
+
+        if (flag)
+            verifyReturn(callResult)
+        else
+            LOG.warning(callResult.receipt.error)
+    }
+
+    fun verifyReturn(callResult: SolidityCallResult) {
+        LOG.warning(callResult.receipt.error)
+        Assert.assertTrue(callResult.isSuccessful)
+        callResult.receipt.logInfoList.forEach { logInfo ->
+            LOG.info("event:$logInfo")
         }
     }
 }

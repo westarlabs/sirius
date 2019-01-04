@@ -1,7 +1,7 @@
 package org.starcoin.sirius.contract.test
 
-import org.ethereum.util.blockchain.SolidityCallResult
 import org.junit.Assert
+import org.junit.Before
 import org.junit.Test
 import org.starcoin.sirius.core.*
 import org.starcoin.sirius.serialization.rlp.RLP
@@ -12,6 +12,11 @@ import kotlin.random.Random
 class SiriusContractTest : ContractTestBase("sirius.sol", "SiriusService") {
 
     private val deposit: Long = 10000
+
+    @Before
+    fun zeroEonCommit() {
+        commitData( 0, 0, true)
+    }
 
     @Test
     fun test() {
@@ -40,7 +45,7 @@ class SiriusContractTest : ContractTestBase("sirius.sol", "SiriusService") {
     }
 
     fun testDeposit(flag: Boolean) {
-        val callResult = contract.callFunction(deposit, "")
+        val callResult = contract.callFunction(deposit, "deposit")
         if (flag)
             verifyReturn(callResult)
         else
@@ -49,20 +54,7 @@ class SiriusContractTest : ContractTestBase("sirius.sol", "SiriusService") {
 
     @Test
     fun testCommit() {
-        createEon(Random.nextInt(0, 10))
-    }
-
-    private fun commitData(eon: Int, amount: Long, flag: Boolean) {
-        val info = AMTreeInternalNodeInfo(Hash.random(), amount, Hash.random())
-        val node = AMTreePathInternalNode(info, PathDirection.ROOT, 0, amount)
-        val root = HubRoot(node, eon)
-        val data = RLP.dump(HubRoot.serializer(), root)
-        val callResult = contract.callFunction("commit", data)
-
-        if (flag)
-            verifyReturn(callResult)
-        else
-            LOG.warning(callResult.receipt.error)
+        createEon(Random.nextInt(1, 10))
     }
 
     @Test
@@ -208,27 +200,21 @@ class SiriusContractTest : ContractTestBase("sirius.sol", "SiriusService") {
         var ct = 0
 
         for (i in 0..eon) {
-            val tmp = if (flag) {
-                (4 * (i + 1))
+            var tmp = if (!flag && i == eon) {
+                (4 * (i + 1)) + 1
             } else {
-                (4 * (i + 1)) + 2
+                (4 * (i + 1)) - 1
             }
+
 
             while (blockHeight.get() < tmp) {
                 testDeposit(flag)
                 ct += 1
-                Thread.sleep(10)
             }
-            var total = (ct - 1) * deposit
-            commitData(i, total, flag)
+            var total = ct * deposit
+            commitData(i + 1, total, flag)
         }
     }
 
-    private fun verifyReturn(callResult: SolidityCallResult) {
-        LOG.warning(callResult.receipt.error)
-        Assert.assertTrue(callResult.isSuccessful)
-        callResult.receipt.logInfoList.forEach { logInfo ->
-            LOG.info("event:$logInfo")
-        }
-    }
+
 }

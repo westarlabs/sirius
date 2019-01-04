@@ -4,6 +4,7 @@ import "./lib/model.sol";
 import "./lib/safe_math.sol";
 
 interface Sirius {
+    function deposit() external payable;
     function commit(bytes calldata data) external;
     function initiateWithdrawal(bytes calldata data) external;
     function cancelWithdrawal(bytes calldata data) external;
@@ -55,24 +56,39 @@ contract SiriusService is Sirius {
     }
 
     /** public methods **/
-    function() external payable {
-        deposit();
+
+    function deposit() external payable {
+        doRecovery();
+        require(msg.value > 0);
+        if(!recoveryMode) {
+            GlobleLib.deposit(balances[0].depositMeta, msg.sender, msg.value);
+            emit DepositEvent2(100, ByteUtilLib.address2hash(msg.sender));
+
+            GlobleLib.Deposit memory d = all[msg.sender];
+            d.amount = SafeMath.add(d.amount, msg.value);
+            d.hasVal = true;
+            all[msg.sender] = d;
+
+            emit DepositEvent(1, balances[0].depositMeta.total);
+        } else {
+            msg.sender.transfer(msg.value);
+        }
     }
 
-    function commit(bytes calldata data) external {
-        require(!recoveryMode);
-        require(msg.sender == owner);
+    function commit(bytes calldata data) external onlyOwner {
         ModelLib.HubRoot memory root = ModelLib.unmarshalHubRoot(RLPDecoder.toRLPItem(data, true));
-        require(balances[0].eon > 0);
-        require(!balances[1].hasRoot);
+        require(!balances[0].hasRoot);
         require(root.eon >= 0);
-        require(balances[1].eon == root.eon);
+        require(balances[0].eon == root.eon);
         require(root.node.allotment >= 0);
-        uint tmp = SafeMath.add(balances[2].root.node.allotment, balances[1].depositMeta.total);
+        uint tmp = SafeMath.add(balances[1].root.node.allotment, balances[1].depositMeta.total);
+        emit DepositEvent(2, root.node.allotment);
         uint allotmentTmp = SafeMath.sub(tmp, balances[1].withdrawalMeta.total);
+        emit DepositEvent(9, allotmentTmp);
+        emit DepositEvent(0, balances[1].depositMeta.total);
         require(allotmentTmp >= 0 && allotmentTmp == root.node.allotment);
-        balances[1].root = root;
-        balances[1].hasRoot = true;
+        balances[0].root = root;
+        balances[0].hasRoot = true;
         //TODO:add event
     }
 
@@ -107,7 +123,7 @@ contract SiriusService is Sirius {
         balances[0].withdrawalMeta.total += init.amount;
     }
 
-    function cancelWithdrawal(bytes calldata data) external onlyOwner {
+    function cancelWithdrawal(bytes calldata data) external recovery {
         ModelLib.CancelWithdrawal memory cancel = ModelLib.unmarshalCancelWithdrawal(RLPDecoder.toRLPItem(data, true));
         uint currentEon = currentEon();
         require(cancel.update.upData.eon >= 0 && cancel.update.upData.eon == currentEon);
@@ -184,7 +200,7 @@ contract SiriusService is Sirius {
         balances[0].bucMeta.balanceChallenges[key] = cs;
     }
 
-    function closeBalanceUpdateChallenge(bytes calldata data) external onlyOwner {
+    function closeBalanceUpdateChallenge(bytes calldata data) external recovery {
         ModelLib.CloseBalanceUpdateChallenge memory close = ModelLib.unmarshalCloseBalanceUpdateChallenge(RLPDecoder.toRLPItem(data, true));
 
         ModelLib.HubRoot memory root = balances[1].root;
@@ -258,7 +274,7 @@ contract SiriusService is Sirius {
         balances[0].tdcMeta.transferChallenges[hash] = challenge;
     }
 
-    function closeTransferDeliveryChallenge(bytes calldata data) external onlyOwner {
+    function closeTransferDeliveryChallenge(bytes calldata data) external recovery {
         ModelLib.CloseTransferDeliveryChallenge memory close = ModelLib.unmarshalCloseTransferDeliveryChallenge(RLPDecoder.toRLPItem(data, true));
 
         bytes32 key = close.txHash;
@@ -326,19 +342,6 @@ contract SiriusService is Sirius {
 
     /** private methods **/
 
-    function deposit() private {
-        require(msg.value > 0);
-        GlobleLib.deposit(balances[0].depositMeta, msg.sender, msg.value);
-        emit DepositEvent2(100, ByteUtilLib.address2hash(msg.sender));
-
-        GlobleLib.Deposit memory d = all[msg.sender];
-        d.amount = SafeMath.add(d.amount, msg.value);
-        d.hasVal = true;
-        all[msg.sender] = d;
-
-        emit DepositEvent(1, balances[0].depositMeta.total);
-    }
-
     function newBalance(uint newEon) private pure returns(GlobleLib.Balance memory latest) {
         GlobleLib.DepositMeta memory depositMeta;
         GlobleLib.WithdrawalMeta memory withdrawalMeta;
@@ -389,24 +392,25 @@ contract SiriusService is Sirius {
         //current eon
         uint tmp = SafeMath.sub(block.number, startHeight);
         uint newEon = SafeMath.div(tmp, blocksPerEon);
+        uint latestEon = currentEon();
+        uint addEon = SafeMath.add(balances[0].eon, 1);
+        emit DepositEvent(8, tmp);
+        emit DepositEvent(7, newEon);
 
         //recovery
+        emit DepositEvent(6, latestEon);
         uint tmp2 = SafeMath.add(SafeMath.mul(blocksPerEon, newEon), SafeMath.div(blocksPerEon, 4));
-        uint tmp3 = SafeMath.add(tmp2, blocksPerEon);
-        if (newEon > 0 && ((tmp > tmp3 && !balances[0].hasRoot) || (tmp > tmp2 && !balances[1].hasRoot))) {
+        emit DepositEvent(5, tmp2);
+        if ((newEon > addEon) || (newEon == addEon && !balances[0].hasRoot) || (newEon == latestEon && tmp > tmp2 && !balances[0].hasRoot)) {
+            emit DepositEvent(4, 0);
             recoveryMode = true;
             //TODO: add event
         }
 
-        if (!recoveryMode && newEon > balances[0].eon) {
-            uint tmpEon = SafeMath.add(balances[0].eon, 1);
-            if (newEon == tmpEon) {// init eon
-                //TODO:check challenge and do withdrawal
-                GlobleLib.Balance memory latest = newBalance(newEon);
-                checkBalances(latest);
-            } else {
-
-            }
-        }
+        if (newEon == addEon && !recoveryMode) {// change eon
+            emit DepositEvent(3, 0);
+            GlobleLib.Balance memory latest = newBalance(newEon);
+            checkBalances(latest);
+        } else {}
     }
 }
