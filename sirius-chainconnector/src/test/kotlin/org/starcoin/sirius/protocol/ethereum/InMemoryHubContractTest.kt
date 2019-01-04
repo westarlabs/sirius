@@ -83,23 +83,25 @@ class InMemoryHubContractTest {
         var alice = CryptoService.generateCryptoKey()
 
         //var transactions = List<EthereumTransaction>
-        var transactionChannel=chain.watchTransactions({it.tx.from==alice.address})
+        var transactionChannel=chain.watchTransactions({it.tx.from==alice.address&&it.tx.to==Address.wrap(contract.getContractAddr())})
 
         chain.sb.withAccountBalance(alice.address.toBytes(), EtherUtil.convert(123, EtherUtil.Unit.ETHER))
 
+        var amount= EtherUtil.convert(1, EtherUtil.Unit.ETHER).toLong()
         var ethereumTransaction = EthereumTransaction(
             Address.wrap(contract.getContractAddr()),nonce.getAndIncrement().toLong() , 0,
-            0, 1, null)
+            0, amount, null)
 
         chain.newTransaction(alice,ethereumTransaction)
 
-        println(ethereumTransaction.ethTx.key)
         chain.sb.createBlock()
 
         runBlocking{
             var transaction=transactionChannel.receive()
-            println(transaction)
-            //Assert.assertEquals(block.getTransactions().size,1)
+            Assert.assertEquals(transaction.tx.from,alice.address)
+            Assert.assertEquals(transaction.tx.to,Address.wrap(contract.getContractAddr()))
+            Assert.assertEquals(transaction.tx.amount,amount)
+
         }
     }
 }
