@@ -1,9 +1,6 @@
 package org.starcoin.sirius.protocol
 
-import org.starcoin.proto.Starcoin
 import org.starcoin.sirius.core.*
-
-
 
 interface HubContract {
 

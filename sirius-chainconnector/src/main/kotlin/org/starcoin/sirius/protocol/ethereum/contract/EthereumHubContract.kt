@@ -3,46 +3,65 @@ package org.starcoin.sirius.protocol.ethereum.contract
 import org.ethereum.solidity.compiler.CompilationResult
 import org.ethereum.solidity.compiler.SolidityCompiler
 import org.ethereum.config.SystemProperties
+import org.ethereum.core.CallTransaction.Contract
 import org.starcoin.sirius.core.*
 import org.starcoin.sirius.crypto.CryptoKey
 import org.starcoin.sirius.protocol.EthereumTransaction
 import org.starcoin.sirius.protocol.HubContract
 import org.starcoin.sirius.protocol.ethereum.EthereumChain
 import java.io.File
-import java.math.BigInteger
 import kotlin.properties.Delegates
 
+class EthereumHubContract private constructor(
+    val chain: EthereumChain
+) : HubContract {
+    private val contractName = "SiriusService"
+    private var contractAddress: Address by Delegates.notNull()
+    private var contract: Contract by Delegates.notNull()
+    private var contractResult: CompilationResult by Delegates.notNull()
 
-class EthereumHubContract(private val chain: EthereumChain) : HubContract {
-    val contractName = "SiriusService"
-    private val compiler = SolidityCompiler(SystemProperties.getDefault())
-    private val contract: Address by Delegates.notNull()
+    constructor(
+        chain: EthereumChain,
+        srcName: String = "solidity/sirius.sol",
+        contractAddress: Address
+    ) : this(chain) {
+        this.contractAddress = contractAddress
+        this.contractResult = compileContract(srcName)
+        this.contract = Contract(contractResult.getContract(contractName).abi)
+    }
 
-    class ContractFun(val name: String) {
-        fun setFunArgs(vararg args: String) {
-        }
+    constructor(
+        chain: EthereumChain,
+        srcName: String = "solidity/sirius.sol",
+        key: CryptoKey,
+        gasPrice: Long,
+        gasLimit: Long,
+        value: Long = 0
+    ):this(chain) {
+        this.contractAddress = submitContract(key, gasPrice, gasLimit, value)
+        this.contractResult = compileContract(srcName)
+        this.contract = Contract(contractResult.getContract(contractName).abi)
+    }
 
-        fun encode() {
+    companion object {
+        private val compiler = SolidityCompiler(SystemProperties.getDefault())
+        fun compileContract(srcName: String): CompilationResult {
+            val srcPath = javaClass::class.java.getResource(srcName).toURI()
+            val srcDir = listOf(File(srcPath).parentFile.absolutePath)
+            val compiledResult = compiler.compileSrc(
+                File(srcPath),
+                true,
+                true,
+                SolidityCompiler.Options.ABI,
+                SolidityCompiler.Options.BIN,
+                SolidityCompiler.Options.AllowPaths(srcDir)
+            )
+            if (compiledResult.isFailed) throw RuntimeException("Compile result: " + compiledResult.errors)
+            return CompilationResult.parse(compiledResult.output)
         }
     }
 
-    fun compileContract(srcName: String = "solidity/sirius.sol"): CompilationResult {
-        val srcPath = javaClass::class.java.getResource(srcName).toURI()
-        val srcDir = listOf(File(srcPath).parentFile.absolutePath)
-        val compiledResult = compiler.compileSrc(
-            File(srcPath),
-            true,
-            true,
-            SolidityCompiler.Options.ABI,
-            SolidityCompiler.Options.BIN,
-            SolidityCompiler.Options.AllowPaths(srcDir)
-        )
-        if (compiledResult.isFailed) throw RuntimeException("Compile result: " + compiledResult.errors)
-        return CompilationResult.parse(compiledResult.output)
-    }
-
-    fun deployContract(
-        contract: CompilationResult,
+    fun submitContract(
         key: CryptoKey,
         gasPrice: Long,
         gasLimit: Long,
@@ -51,29 +70,32 @@ class EthereumHubContract(private val chain: EthereumChain) : HubContract {
         val tx = EthereumTransaction(
             null, chain.getNonce(key.address),
             gasPrice, gasLimit, value,
-            contract.getContract(contractName).bin.toByteArray()
+            contractResult.getContract(contractName).bin.toByteArray()
         )
-        this.chain.newTransaction(key, tx)
+        chain.newTransaction(key, tx)
         return Address.wrap(tx.ethTx.contractAddress)
     }
 
-    fun deployContract(
-        srcName: String = "solidity/sirius.sol",
-        key: CryptoKey,
+
+    fun callFunction(
+        caller: CryptoKey,
+        nonce: Long,
         gasPrice: Long,
         gasLimit: Long,
-        value: Long = 0
-    ): Address {
-        return deployContract(compileContract(srcName), key, gasPrice, gasLimit, value)
+        value: Long,
+        name: String,
+        vararg args: Any
+    ) {
+        val function = this.contract.getByName(name)
+        val data = function.encode(args)
+        chain.newTransaction(
+            caller,
+            EthereumTransaction(this.contractAddress, nonce, gasPrice, gasLimit, value, data)
+        )
     }
 
-    fun callFun(caller: CryptoKey, contract: Address) {
-
-    }
-
-
-    fun callConstFun() {
-
+    fun callConstFunction() {
+        TODO()
     }
 
     override fun queryHubInfo(): HubInfo {
