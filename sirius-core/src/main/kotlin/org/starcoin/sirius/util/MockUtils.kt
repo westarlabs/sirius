@@ -1,6 +1,7 @@
 package org.starcoin.sirius.util
 
 import org.apache.commons.lang3.RandomUtils
+import java.math.BigInteger
 
 
 object MockUtils {
@@ -14,6 +15,10 @@ object MockUtils {
 
     fun nextLong(startInclusive: Long, endExclusive: Long): Long {
         return RandomUtils.nextLong(startInclusive, endExclusive)
+    }
+
+    fun nextBigInteger(): BigInteger {
+        return RandomUtils.nextLong().toBigInteger()
     }
 
     fun nextInt(): Int {

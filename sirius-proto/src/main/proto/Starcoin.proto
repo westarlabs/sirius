@@ -174,7 +174,11 @@ message HubInfo {
     required uint32 blocksPerEon = 3;
     required AMTreePathInternalNode root = 4;
     required bytes publicKey = 5;
+}
 
+message ContractHubInfo {
+    required bytes startBlockNumber = 1;
+    required bytes hubAddress = 2;
 }
 
 message MerklePathNode {

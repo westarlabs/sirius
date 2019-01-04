@@ -14,7 +14,7 @@ class InMemoryHubContract(contract: SolidityContract) : HubContract{
         return contract.address
     }
 
-    override fun queryHubInfo(): HubInfo {
+    override fun queryHubInfo(): ContractHubInfo {
         TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
     }
 

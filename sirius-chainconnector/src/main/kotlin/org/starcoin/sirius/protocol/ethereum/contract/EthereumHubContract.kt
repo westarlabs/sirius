@@ -1,9 +1,9 @@
 package org.starcoin.sirius.protocol.ethereum.contract
 
-import org.ethereum.solidity.compiler.CompilationResult
-import org.ethereum.solidity.compiler.SolidityCompiler
 import org.ethereum.config.SystemProperties
 import org.ethereum.core.CallTransaction.Contract
+import org.ethereum.solidity.compiler.CompilationResult
+import org.ethereum.solidity.compiler.SolidityCompiler
 import org.starcoin.sirius.core.*
 import org.starcoin.sirius.crypto.CryptoKey
 import org.starcoin.sirius.protocol.EthereumTransaction
@@ -98,7 +98,7 @@ class EthereumHubContract private constructor(
         TODO()
     }
 
-    override fun queryHubInfo(): HubInfo {
+    override fun queryHubInfo(): ContractHubInfo {
         TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
     }
 
