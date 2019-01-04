@@ -12,10 +12,11 @@ import kotlin.random.Random
 class SiriusContractTest : ContractTestBase("sirius.sol", "SiriusService") {
 
     private val deposit: Long = 10000
+    var ip = "192.168.0.0.1:80"
 
     @Before
     fun zeroEonCommit() {
-        commitData( 0, 0, true)
+        commitData(0, 0, true)
     }
 
     @Test
@@ -35,7 +36,7 @@ class SiriusContractTest : ContractTestBase("sirius.sol", "SiriusService") {
         val callResult = contract.callConstFunction("getCurrentEon")
         val eon = callResult[0] as BigInteger
         LOG.info("eon:$eon")
-        Assert.assertTrue(eon.longValueExact() > 0)
+        Assert.assertTrue(eon.longValueExact() >= 0)
         return eon.lowestSetBit
     }
 
@@ -216,5 +217,17 @@ class SiriusContractTest : ContractTestBase("sirius.sol", "SiriusService") {
         }
     }
 
+    @Test
+    fun testHubIp() {
+        val callResult = contract.callFunction("hubIp", ip.toByteArray())
+        verifyReturn(callResult)
+    }
 
+    @Test
+    fun testHubInfo() {
+        testHubIp()
+        val callResult = contract.callConstFunction("hubInfo")[0] as ByteArray
+        val obj1 = ContractHubInfo.parseFromRLP(callResult)
+        assert(ip == obj1.hubAddress)
+    }
 }

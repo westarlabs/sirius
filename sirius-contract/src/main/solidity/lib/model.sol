@@ -937,4 +937,18 @@ library ModelLib {
 
         return RLPEncoder.encodeUint(tmp);
     }
+
+    struct ContractHubInfo {
+        uint startBlockNum;
+        string hubAddress;
+        uint blocksPerEon;
+    }
+
+    function marshalContractHubInfo(ContractHubInfo memory chi) internal pure returns (bytes memory) {
+        bytes memory startBlockNum = RLPEncoder.encodeUint(chi.startBlockNum);
+        bytes memory hubAddress = RLPEncoder.encodeString(chi.hubAddress);
+        bytes memory blocksPerEon = RLPEncoder.encodeUint(chi.blocksPerEon);
+
+        return RLPEncoder.encodeList(ByteUtilLib.append(ByteUtilLib.append(startBlockNum, hubAddress), blocksPerEon));
+    }
 }

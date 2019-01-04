@@ -179,6 +179,7 @@ message HubInfo {
 message ContractHubInfo {
     required bytes startBlockNumber = 1;
     required bytes hubAddress = 2;
+    required bytes blocksPerEon = 3;
 }
 
 message MerklePathNode {

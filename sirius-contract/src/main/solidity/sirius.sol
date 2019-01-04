@@ -17,6 +17,8 @@ interface Sirius {
     function getCurrentEon() external view returns (uint);
     function isRecoveryMode() external view returns (bool);
     function test() external view returns (bool);
+    function hubIp(bytes calldata data) external;
+    function hubInfo() external view returns (bytes memory);
 }
 
 contract SiriusService is Sirius {
@@ -25,6 +27,7 @@ contract SiriusService is Sirius {
     uint private startHeight = block.number;
     uint private blocksPerEon = 4;
     bytes private hubPK;
+    string ip;
 
     GlobleLib.Balance[3] balances;
 
@@ -56,6 +59,10 @@ contract SiriusService is Sirius {
     }
 
     /** public methods **/
+
+    function hubIp(bytes calldata data) external onlyOwner {
+        ip = string(data);
+    }
 
     function deposit() external payable {
         doRecovery();
@@ -123,7 +130,7 @@ contract SiriusService is Sirius {
         balances[0].withdrawalMeta.total += init.amount;
     }
 
-    function cancelWithdrawal(bytes calldata data) external recovery {
+    function cancelWithdrawal(bytes calldata data) external onlyOwner {
         ModelLib.CancelWithdrawal memory cancel = ModelLib.unmarshalCancelWithdrawal(RLPDecoder.toRLPItem(data, true));
         uint currentEon = currentEon();
         require(cancel.update.upData.eon >= 0 && cancel.update.upData.eon == currentEon);
@@ -200,7 +207,7 @@ contract SiriusService is Sirius {
         balances[0].bucMeta.balanceChallenges[key] = cs;
     }
 
-    function closeBalanceUpdateChallenge(bytes calldata data) external recovery {
+    function closeBalanceUpdateChallenge(bytes calldata data) external onlyOwner {
         ModelLib.CloseBalanceUpdateChallenge memory close = ModelLib.unmarshalCloseBalanceUpdateChallenge(RLPDecoder.toRLPItem(data, true));
 
         ModelLib.HubRoot memory root = balances[1].root;
@@ -274,7 +281,7 @@ contract SiriusService is Sirius {
         balances[0].tdcMeta.transferChallenges[hash] = challenge;
     }
 
-    function closeTransferDeliveryChallenge(bytes calldata data) external recovery {
+    function closeTransferDeliveryChallenge(bytes calldata data) external onlyOwner {
         ModelLib.CloseTransferDeliveryChallenge memory close = ModelLib.unmarshalCloseTransferDeliveryChallenge(RLPDecoder.toRLPItem(data, true));
 
         bytes32 key = close.txHash;
@@ -340,6 +347,14 @@ contract SiriusService is Sirius {
         return true;
     }
 
+    function hubInfo() external view returns (bytes memory) {
+        ModelLib.ContractHubInfo memory chi;
+        chi.startBlockNum = startHeight;
+        chi.hubAddress = ip;
+        chi.blocksPerEon = blocksPerEon;
+        return ModelLib.marshalContractHubInfo(chi);
+    }
+
     /** private methods **/
 
     function newBalance(uint newEon) private pure returns(GlobleLib.Balance memory latest) {
@@ -379,7 +394,7 @@ contract SiriusService is Sirius {
     }
 
     function latestRoot() private view returns (ModelLib.HubRoot memory) {
-        return balances[1].root;
+        return balances[0].root;
     }
 
     function currentEon() private view returns (uint) {
