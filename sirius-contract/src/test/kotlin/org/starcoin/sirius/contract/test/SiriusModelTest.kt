@@ -15,8 +15,8 @@ class SiriusModelTest : ContractTestBase("model_test.sol", "test_all") {
         val data = obj.toRLP()
         val callResult = contract.callConstFunction(functionName, data)[0] as ByteArray
         val obj1 = companion.parseFromRLP(callResult)
-        Assert.assertArrayEquals("expect ${data.toHEXString()} but get ${callResult.toHEXString()}", data, callResult)
         Assert.assertEquals(obj, obj1)
+        Assert.assertArrayEquals("expect ${data.toHEXString()} but get ${callResult.toHEXString()}", data, callResult)
     }
 
     @Test
@@ -59,7 +59,7 @@ class SiriusModelTest : ContractTestBase("model_test.sol", "test_all") {
 
     @Test
     fun testOpenTransferDeliveryChallengeRequest() {
-        doTest(OpenTransferDeliveryChallenge::class, "open_transfer_delivery_challenge_request_test")
+        doTest(TransferDeliveryChallenge::class, "open_transfer_delivery_challenge_request_test")
     }
 
     @Test

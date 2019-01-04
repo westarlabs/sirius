@@ -194,12 +194,6 @@ message CloseTransferDeliveryChallenge {
     required bytes txHash = 5;
 }
 
-message OpenTransferDeliveryChallenge {
-    required Update update = 1;
-    required OffchainTransaction tx = 2;
-    required MerklePath path = 3;
-}
-
 message MerklePath {
     repeated MerklePathNode nodes = 1;
 }
