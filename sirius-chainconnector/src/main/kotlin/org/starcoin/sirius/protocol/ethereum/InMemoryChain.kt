@@ -74,4 +74,7 @@ class InMemoryChain(autoGenblock: Boolean) : Chain<EthereumTransaction, Ethereum
         TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
     }
 
+    fun getNumber():Long?{
+        return inMemoryEthereumListener.currentNumber
+    }
 }

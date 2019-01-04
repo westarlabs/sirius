@@ -22,10 +22,14 @@ import kotlin.properties.Delegates
 class InMemoryEthereumListener : EthereumListener {
 
     internal val blocks: MutableList<EthereumBlock> = mutableListOf()
+
+    internal val transactions : MutableMap<ByteArray,EthereumTransaction> = mutableMapOf()
     internal var blockChannel :kotlinx.coroutines.channels.Channel<EthereumBlock> by Delegates.notNull()
     internal var transactionChannel : kotlinx.coroutines.channels.Channel<TransactionResult<EthereumTransaction>> by Delegates.notNull()
 
     internal var transactionFilter : (TransactionResult<EthereumTransaction>) -> Boolean by Delegates.notNull()
+
+    internal var currentNumber :Long?=0
 
     override fun onSyncDone(state: EthereumListener.SyncState?) {
         TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
@@ -36,7 +40,7 @@ class InMemoryEthereumListener : EthereumListener {
     }
 
     override fun onPendingStateChanged(pendingState: PendingState?) {
-        println(pendingState)
+        //println(pendingState)
     }
 
     override fun onRecvMessage(channel: Channel?, message: Message?) {
@@ -52,7 +56,8 @@ class InMemoryEthereumListener : EthereumListener {
     }
 
     override fun onVMTraceCreated(transactionHash: String?, trace: String?) {
-        TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
+        //println(transactionHash)
+        //println(trace)
     }
 
     override fun onBlock(blockSummary: BlockSummary?) {
@@ -70,15 +75,18 @@ class InMemoryEthereumListener : EthereumListener {
                 it.gasPrice.toBigIntString(),it.gasLimit.toBigIntString(),it.data?.toString(),blockSummary?.block?.timestamp.toString(),
                 it.key?.pubKey?.toHEXString(),it.encodedRaw.toString(),it.signature.r.toString(),it.signature.s.toString(),it.signature.v.toInt())
         }*/
+        currentNumber=blockSummary?.block?.number
         GlobalScope.launch {
             //blockChannel.send(EthereumBlock(w3jBlock))
             blockSummary?.block?.transactionsList?.forEachIndexed{ index,it->
-                val transactionResult=TransactionResult(EthereumTransaction(it), Receipt(it.hash,BigInteger.valueOf(index.toLong()),
+                var ethereumTransaction=EthereumTransaction(it)
+                val transactionResult=TransactionResult(ethereumTransaction, Receipt(it.hash,BigInteger.valueOf(index.toLong()),
                     blockSummary.block.hash, BigInteger.valueOf(blockSummary.block.number),null,it.sender,it.receiveAddress,
                     BigInteger.valueOf(blockSummary.block.header.gasUsed), blockSummary.block.header.logsBloom.toHEXString(),
                     BigInteger.valueOf(0),blockSummary.block.header.receiptsRoot.toHEXString(),true))
                 if(transactionFilter(transactionResult))
                     transactionChannel.send(transactionResult)
+                transactions.put(it.hash,ethereumTransaction)
             }
         }
     }
@@ -104,7 +112,7 @@ class InMemoryEthereumListener : EthereumListener {
     }
 
     override fun onTransactionExecuted(summary: TransactionExecutionSummary?) {
-        TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
+        println(summary)
     }
 
     override fun onNodeDiscovered(node: Node?) {
@@ -120,7 +128,7 @@ class InMemoryEthereumListener : EthereumListener {
     }
 
     override fun trace(output: String?) {
-        println(output)
+        //println(output)
     }
 
     override fun onNoConnections() {
@@ -136,6 +144,6 @@ class InMemoryEthereumListener : EthereumListener {
     }
 
     fun findTransaction(hash: Hash): EthereumTransaction? {
-        return blocks.flatMap { it.getTransactions() }.first { it.equals(hash) }
+        return transactions.get(hash.toBytes())
     }
 }

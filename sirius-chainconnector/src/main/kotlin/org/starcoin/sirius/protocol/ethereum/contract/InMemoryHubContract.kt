@@ -1,14 +1,19 @@
 package org.starcoin.sirius.protocol.ethereum.contract
 
+import org.ethereum.core.CallTransaction
+import org.ethereum.crypto.ECKey
 import org.ethereum.util.blockchain.SolidityContract
 import org.ethereum.util.blockchain.StandaloneBlockchain
 import org.starcoin.sirius.core.*
 import org.starcoin.sirius.protocol.HubContract
+import org.starcoin.sirius.serialization.rlp.RLP
 import java.math.BigInteger
 
-class InMemoryHubContract(contract: SolidityContract) : HubContract{
+class InMemoryHubContract(contract: SolidityContract,owner : ECKey) : HubContract{
 
     private var contract =contract
+
+    internal var owner = owner
 
     override fun getContractAddr():ByteArray{
         return contract.address
@@ -39,7 +44,17 @@ class InMemoryHubContract(contract: SolidityContract) : HubContract{
     }
 
     override fun initiateWithdrawal(request: Withdrawal): Hash {
-        TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
+        val withdrawalData = RLP.dump(Withdrawal.serializer(), request)
+        val setResult = contract.callFunction("initiateWithdrawal", withdrawalData)
+        setResult.receipt.logInfoList.forEach { logInfo ->
+            val contract = CallTransaction.Contract(contract.abi)
+            val invocation = contract.parseEvent(logInfo)
+            println("event:$invocation")
+        }
+        if(setResult.isSuccessful)
+            return Hash.of(setResult.receipt.transaction.hash)
+        else
+            return Hash.ZERO_HASH
     }
 
     override fun cancelWithdrawal(request: CancelWithdrawal): Hash {
@@ -55,7 +70,20 @@ class InMemoryHubContract(contract: SolidityContract) : HubContract{
     }
 
     override fun commit(request: HubRoot): Hash {
-        TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
+        return callContract("commit",RLP.dump(HubRoot.serializer(), request))
+    }
+
+    private fun  callContract(funcName :String,data :ByteArray):Hash{
+        val setResult = contract.callFunction(funcName, data)
+        setResult.receipt.logInfoList.forEach { logInfo ->
+            val contract = CallTransaction.Contract(contract.abi)
+            val invocation = contract.parseEvent(logInfo)
+            println("event:$invocation")
+        }
+        if(setResult.isSuccessful)
+            return Hash.of(setResult.receipt.transaction.hash)
+        else
+            return Hash.ZERO_HASH
     }
 
     override fun openTransferDeliveryChallenge(request: TransferDeliveryChallenge): Hash {
