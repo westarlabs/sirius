@@ -4,15 +4,17 @@ import kotlinx.serialization.Optional
 import kotlinx.serialization.SerialId
 import kotlinx.serialization.Serializable
 import org.starcoin.proto.Starcoin
+import org.starcoin.sirius.serialization.BigIntegerSerializer
 import org.starcoin.sirius.serialization.ProtobufSchema
 import org.starcoin.sirius.util.MockUtils
+import java.math.BigInteger
 
 
 abstract class AMTreePathNode : SiriusObject() {
     abstract val nodeInfo: AMTreeNodeInfo
     abstract val direction: PathDirection
-    abstract val offset: Long
-    abstract val allotment: Long
+    abstract val offset: BigInteger
+    abstract val allotment: BigInteger
 }
 
 @ProtobufSchema(Starcoin.AMTreePathInternalNode::class)
@@ -20,18 +22,31 @@ abstract class AMTreePathNode : SiriusObject() {
 data class AMTreePathInternalNode(
     @SerialId(1) override val nodeInfo: AMTreeInternalNodeInfo,
     @SerialId(2) override val direction: PathDirection,
-    @SerialId(3) override val offset: Long,
-    @SerialId(4) override val allotment: Long
+    @SerialId(3) @Serializable(with = BigIntegerSerializer::class) override val offset: BigInteger,
+    @SerialId(4) @Serializable(with = BigIntegerSerializer::class) override val allotment: BigInteger
 ) : AMTreePathNode() {
+    constructor(nodeInfo: AMTreeInternalNodeInfo, direction: PathDirection, offset: Long, allotment: Long) : this(
+        nodeInfo,
+        direction,
+        offset.toBigInteger(),
+        allotment.toBigInteger()
+    )
+
     companion object :
         SiriusObjectCompanion<AMTreePathInternalNode, Starcoin.AMTreePathInternalNode>(AMTreePathInternalNode::class) {
-        val DUMMY_NODE = AMTreePathInternalNode(AMTreeInternalNodeInfo.DUMMY_NODE, PathDirection.ROOT, 0, 0)
+        val DUMMY_NODE = AMTreePathInternalNode(
+            AMTreeInternalNodeInfo.DUMMY_NODE,
+            PathDirection.ROOT,
+            BigInteger.ZERO,
+            BigInteger.ZERO
+        )
+
         override fun mock(): AMTreePathInternalNode {
             return AMTreePathInternalNode(
                 AMTreeInternalNodeInfo.mock(),
                 PathDirection.random(),
-                MockUtils.nextLong(),
-                MockUtils.nextLong()
+                MockUtils.nextBigInteger(),
+                MockUtils.nextBigInteger()
             )
         }
     }
@@ -45,19 +60,30 @@ data class AMTreePathLeafNode(
     @SerialId(2)
     override val direction: PathDirection,
     @SerialId(3)
-    override val offset: Long,
+    @Serializable(with = BigIntegerSerializer::class)
+    override val offset: BigInteger,
     @SerialId(4)
-    override val allotment: Long
+    @Serializable(with = BigIntegerSerializer::class)
+    override val allotment: BigInteger
 ) : AMTreePathNode() {
+    constructor(nodeInfo: AMTreeLeafNodeInfo, direction: PathDirection, offset: Long, allotment: Long) : this(
+        nodeInfo,
+        direction,
+        offset.toBigInteger(),
+        allotment.toBigInteger()
+    )
+
     companion object :
         SiriusObjectCompanion<AMTreePathLeafNode, Starcoin.AMTreePathLeafNode>(AMTreePathLeafNode::class) {
-        val DUMMY_NODE = AMTreePathLeafNode(AMTreeLeafNodeInfo.DUMMY_NODE, PathDirection.ROOT, 0, 0)
+        val DUMMY_NODE =
+            AMTreePathLeafNode(AMTreeLeafNodeInfo.DUMMY_NODE, PathDirection.ROOT, BigInteger.ZERO, BigInteger.ZERO)
+
         override fun mock(): AMTreePathLeafNode {
             return AMTreePathLeafNode(
                 AMTreeLeafNodeInfo.mock(),
                 PathDirection.random(),
-                MockUtils.nextLong(),
-                MockUtils.nextLong()
+                MockUtils.nextBigInteger(),
+                MockUtils.nextBigInteger()
             )
         }
     }

@@ -1,6 +1,7 @@
 package org.starcoin.sirius.wallet.core
 
 import org.starcoin.sirius.core.*
+import java.math.BigInteger
 import kotlin.properties.Delegates
 
 class EonStatus() {
@@ -19,9 +20,9 @@ class EonStatus() {
 
     var deposit: Long = 0
 
-    var allotment: Long = 0
+    var allotment: BigInteger = BigInteger.ZERO
 
-    constructor(eon: Eon, allotment: Long) : this() {
+    constructor(eon: Eon, allotment: BigInteger) : this() {
         this.eon = eon
         this.allotment = allotment
     }

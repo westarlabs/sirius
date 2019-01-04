@@ -3,8 +3,10 @@ package org.starcoin.sirius.core
 import kotlinx.serialization.SerialId
 import kotlinx.serialization.Serializable
 import org.starcoin.proto.Starcoin
+import org.starcoin.sirius.serialization.BigIntegerSerializer
 import org.starcoin.sirius.serialization.ProtobufSchema
 import org.starcoin.sirius.util.MockUtils
+import java.math.BigInteger
 import java.util.*
 import java.util.stream.Collectors
 
@@ -14,17 +16,17 @@ sealed class AMTreeNodeInfo : SiriusObject()
 @Serializable
 data class AMTreeInternalNodeInfo(
     @SerialId(1) val left: Hash,
-    @SerialId(2) val offset: Long,
+    @SerialId(2) @Serializable(with = BigIntegerSerializer::class) val offset: BigInteger,
     @SerialId(3) val right: Hash
 ) : AMTreeNodeInfo() {
-    constructor(left: Hashable, offset: Long, right: Hashable) : this(left.hash(), offset, right.hash())
-
+    constructor(left: Hashable, offset: BigInteger, right: Hashable) : this(left.hash(), offset, right.hash())
+    constructor(left: Hash, offset: Long, right: Hash) : this(left, offset.toBigInteger(), right)
     companion object :
         SiriusObjectCompanion<AMTreeInternalNodeInfo, Starcoin.AMTreeInternalNodeInfo>(AMTreeInternalNodeInfo::class) {
-        val DUMMY_NODE = AMTreeInternalNodeInfo(Hash.EMPTY_DADA_HASH, 0, Hash.EMPTY_DADA_HASH)
+        val DUMMY_NODE = AMTreeInternalNodeInfo(Hash.EMPTY_DADA_HASH, BigInteger.ZERO, Hash.EMPTY_DADA_HASH)
 
         override fun mock(): AMTreeInternalNodeInfo {
-            return AMTreeInternalNodeInfo(Hash.random(), MockUtils.nextLong(), Hash.random())
+            return AMTreeInternalNodeInfo(Hash.random(), MockUtils.nextBigInteger(), Hash.random())
         }
     }
 }
@@ -64,10 +66,10 @@ class AMTree(
 ) {
 
 
-    val offset: Long
+    val offset: BigInteger
         get() = this.root.offset
 
-    val allotment: Long
+    val allotment: BigInteger
         get() = this.root.allotment
 
     val info: AMTreeNodeInfo?
@@ -275,9 +277,9 @@ class AMTree(
 }
 
 class AMTreeNode(
-    val offset: Long = 0,
+    val offset: BigInteger = BigInteger.ZERO,
     val info: AMTreeNodeInfo = AMTreeLeafNodeInfo.DUMMY_NODE,
-    val allotment: Long = 0
+    val allotment: BigInteger = BigInteger.ZERO
 ) : CachedHashable() {
 
     var parent: AMTreeNode? = null
@@ -293,12 +295,12 @@ class AMTreeNode(
     constructor(
         prev: AMTreeNode?,
         info: AMTreeLeafNodeInfo,
-        allotment: Long
-    ) : this(if (prev == null) 0 else prev.offset + prev.allotment, info, allotment)
+        allotment: BigInteger
+    ) : this(prev?.let { prev.offset + prev.allotment }.let { BigInteger.ZERO }, info, allotment)
 
     constructor(
         left: AMTreeNode, right: AMTreeNode = AMTreeNode(
-            left.offset + left.allotment, AMTreeLeafNodeInfo.DUMMY_NODE, 0
+            left.offset + left.allotment, AMTreeLeafNodeInfo.DUMMY_NODE, BigInteger.ZERO
         )
     ) : this(left.offset, AMTreeInternalNodeInfo(left, right.offset, right), left.allotment + right.allotment) {
         left.parent = this

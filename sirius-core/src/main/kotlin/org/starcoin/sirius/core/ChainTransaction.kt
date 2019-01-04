@@ -1,6 +1,8 @@
 package org.starcoin.sirius.core
 
-abstract class ChainTransaction(val to: Address, val amount: Long) :
+import java.math.BigInteger
+
+abstract class ChainTransaction(val to: Address, val amount: BigInteger) :
     CachedHashable() {
 
     abstract val from: Address?

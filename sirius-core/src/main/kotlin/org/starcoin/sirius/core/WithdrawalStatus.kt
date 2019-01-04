@@ -5,6 +5,7 @@ import kotlinx.serialization.Serializable
 import kotlinx.serialization.Transient
 import org.starcoin.proto.Starcoin
 import org.starcoin.sirius.serialization.ProtobufSchema
+import java.math.BigInteger
 
 @ProtobufSchema(Starcoin.WithdrawalStatus::class)
 @Serializable
@@ -16,7 +17,7 @@ data class WithdrawalStatus(
 ) : SiriusObject() {
 
     @Transient
-    val withdrawalAmount: Long
+    val withdrawalAmount: BigInteger
         get() = this.withdrawal.amount
 
     @Transient

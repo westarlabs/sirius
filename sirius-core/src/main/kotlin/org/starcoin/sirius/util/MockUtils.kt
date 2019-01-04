@@ -21,6 +21,10 @@ object MockUtils {
         return RandomUtils.nextLong().toBigInteger()
     }
 
+    fun nextBigInteger(startInclusive: BigInteger, endExclusive: BigInteger): BigInteger {
+        return RandomUtils.nextLong(startInclusive.longValueExact(), endExclusive.longValueExact()).toBigInteger()
+    }
+
     fun nextInt(): Int {
         return RandomUtils.nextInt(0, MAX_INT)
     }

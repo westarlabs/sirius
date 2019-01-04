@@ -5,6 +5,7 @@ import org.junit.Assert
 import org.junit.Test
 import org.starcoin.sirius.crypto.CryptoService
 import org.starcoin.sirius.util.MockUtils
+import java.math.BigInteger
 import java.util.*
 
 class AMTreeTest {
@@ -18,15 +19,15 @@ class AMTreeTest {
 
         for (i in 0 until count) {
             val a = HubAccount(
-                CryptoService.generateCryptoKey().keyPair.public, Update(eon, 0, 5, 10, Hash.random()), 5
+                CryptoService.generateCryptoKey().keyPair.public, Update(eon, 0, 5, 10, Hash.random()), 5.toBigInteger()
             )
             accounts.add(a)
         }
 
         val tree = AMTree(eon, accounts)
         Assert.assertNotNull(tree.hash())
-        Assert.assertEquals(0, tree.offset)
-        Assert.assertEquals(10 * count.toLong(), tree.allotment)
+        Assert.assertEquals(BigInteger.ZERO, tree.offset)
+        Assert.assertEquals(10.toBigInteger() * count.toBigInteger(), tree.allotment)
     }
 
     //TODO random exception org.starcoin.sirius.core.AMTreePathLeafNode cannot be cast to org.starcoin.sirius.core.AMTreePathInternalNode

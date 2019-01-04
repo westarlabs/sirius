@@ -43,7 +43,7 @@ class DefaultCryptoKey(override val keyPair: KeyPair) : CryptoKey() {
     }
 
     override fun verify(data: SiriusObject, sign: Signature): Boolean {
-        return this.verify(data.toProtobuf(), sign)
+        return this.verify(data.hash(), sign)
     }
 
     override fun sign(data: Hash): Signature = this.sign(data.toBytes())

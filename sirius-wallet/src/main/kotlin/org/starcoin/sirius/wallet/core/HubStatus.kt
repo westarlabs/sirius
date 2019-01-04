@@ -2,11 +2,13 @@ package org.starcoin.sirius.wallet.core
 
 import org.starcoin.proto.Starcoin
 import org.starcoin.sirius.core.*
+import org.starcoin.sirius.lang.toBigInteger
+import java.math.BigInteger
 import java.security.KeyPair
 
 class HubStatus {
 
-    var allotment: Long = 0
+    var allotment: BigInteger = BigInteger.ZERO
 
     var eonStatuses = arrayListOf<EonStatus>()
 
@@ -35,7 +37,7 @@ class HubStatus {
     var height: Int = 0
 
     fun HubStatus(eon: Eon) {
-        val eonStatus = EonStatus(eon, 0)
+        val eonStatus = EonStatus(eon, BigInteger.ZERO)
         this.eonStatuses[currentEonStatusIndex] = eonStatus
     }
 
@@ -44,7 +46,7 @@ class HubStatus {
     }
 
     internal fun cancelWithDrawal() {
-        this.allotment += this.withdrawalStatus?.withdrawalAmount?:0
+        this.allotment += this.withdrawalStatus?.withdrawalAmount ?: BigInteger.ZERO
         this.withdrawalStatus = null
     }
 
@@ -123,14 +125,13 @@ class HubStatus {
         this.allotment += this.eonStatuses[currentEonStatusIndex]
             .confirmedTransactions
             .stream()
-            .mapToLong { t -> t.amount }
-            .sum()
+            .map { it.amount }.reduce(BigInteger.ZERO) { a, b -> a.add(b) }
         this.allotment += this.currentUpdate(eon).receiveAmount
         this.allotment -= this.currentUpdate(eon).sendAmount
         if ((this.withdrawalStatus?.status == Starcoin.WithdrawalStatusType.WITHDRAWAL_STATUS_PASSED_VALUE || this.withdrawalStatus?.status === Starcoin.WithdrawalStatusType.WITHDRAWAL_STATUS_CLIENT_CONFIRMED_VALUE)
             && this.withdrawalStatus?.eon === eon.id - 2
         ) {
-            this.allotment -= this.withdrawalStatus?.withdrawalAmount?:0
+            this.allotment -= this.withdrawalStatus?.withdrawalAmount ?: BigInteger.ZERO
             this.withdrawalStatus?.clientConfirm()
         }
 
@@ -160,8 +161,8 @@ class HubStatus {
     }
 
     internal fun syncAllotment(accountInfo: Starcoin.HubAccount) {
-        this.allotment += accountInfo.deposit
-        this.allotment += accountInfo.allotment
+        this.allotment += accountInfo.deposit.toByteArray().toBigInteger()
+        this.allotment += accountInfo.allotment.toByteArray().toBigInteger()
     }
 
     @Synchronized

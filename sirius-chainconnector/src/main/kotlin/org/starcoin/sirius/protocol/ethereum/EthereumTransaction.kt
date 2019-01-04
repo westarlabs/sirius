@@ -12,7 +12,7 @@ import java.math.BigInteger
 // TODO use BigInteger to replace Long?
 class EthereumTransaction(val ethTx: Transaction) : ChainTransaction(
     Address.wrap(ethTx.receiveAddress),
-    BigInteger(1, ethTx.value).toLong()
+    BigInteger(1, ethTx.value)
 ) {
     override val from: Address?
         get() = when {

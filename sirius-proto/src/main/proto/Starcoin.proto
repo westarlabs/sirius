@@ -36,7 +36,7 @@ message OffchainTransactionData{
     required uint32 eon = 1;
     required bytes from = 2;
     required bytes to = 3;
-    required uint64 amount = 4;
+    required bytes amount = 4;
     required uint64 timestamp = 5;
 }
 
@@ -47,7 +47,7 @@ message OffchainTransaction {
 
 message AMTreeInternalNodeInfo{
     required bytes left = 1;
-    required uint64 offset = 2;
+    required bytes offset = 2;
     required bytes right = 3;
 }
 
@@ -59,7 +59,7 @@ message AMTreeLeafNodeInfo{
 message Withdrawal {
     required bytes address = 1;
     required AMTreePath path = 2;
-    required uint64 amount = 3;
+    required bytes amount = 3;
 }
 
 enum WithdrawalStatusType {
@@ -84,15 +84,15 @@ enum PathDirection {
 message AMTreePathInternalNode {
     required AMTreeInternalNodeInfo nodeInfo = 1;
     required PathDirection direction = 2;
-    required uint64 offset = 3;
-    required uint64 allotment = 4;
+    required bytes offset = 3;
+    required bytes allotment = 4;
 }
 
 message AMTreePathLeafNode {
     required AMTreeLeafNodeInfo nodeInfo = 1;
     required PathDirection direction = 2;
-    required uint64 offset = 3;
-    required uint64 allotment = 4;
+    required bytes offset = 3;
+    required bytes allotment = 4;
 }
 
 message AMTreePath {
@@ -110,8 +110,8 @@ message AMTreeProof {
 message UpdateData {
     required uint32 eon = 1;
     required uint64 version = 2;
-    required uint64 sendAmount = 3;
-    required uint64 receiveAmount = 4;
+    required bytes sendAmount = 3;
+    required bytes receiveAmount = 4;
     required bytes root = 5;
 }
 
@@ -217,9 +217,9 @@ message BalanceUpdateChallengeStatus {
 message HubAccount {
     required bytes publicKey = 1;
     required Update update = 2;
-    required uint64 allotment = 3;
-    required uint64 deposit = 4;
-    required uint64 withdraw = 5;
+    required bytes allotment = 3;
+    required bytes deposit = 4;
+    required bytes withdraw = 5;
     repeated OffchainTransaction transactions = 6;
 }
 

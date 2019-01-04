@@ -6,6 +6,7 @@ import org.starcoin.proto.Starcoin
 import org.starcoin.sirius.crypto.CryptoKey
 import org.starcoin.sirius.crypto.CryptoService
 import org.starcoin.sirius.serialization.ProtobufSchema
+import java.math.BigInteger
 import java.security.PrivateKey
 import java.security.PublicKey
 
@@ -25,6 +26,23 @@ data class Update(
         version: Long,
         sendAmount: Long,
         receiveAmount: Long,
+        root: Hash = Hash.EMPTY_DADA_HASH
+    ) : this(
+        UpdateData(
+            eon,
+            version,
+            sendAmount.toBigInteger(),
+            receiveAmount.toBigInteger(),
+            root
+        )
+    )
+
+    @JvmOverloads
+    constructor(
+        eon: Int,
+        version: Long,
+        sendAmount: BigInteger,
+        receiveAmount: BigInteger,
         root: Hash = Hash.EMPTY_DADA_HASH
     ) : this(
         UpdateData(
@@ -53,11 +71,11 @@ data class Update(
         get() = data.version
 
     @kotlinx.serialization.Transient
-    val sendAmount: Long
+    val sendAmount: BigInteger
         get() = data.sendAmount
 
     @kotlinx.serialization.Transient
-    val receiveAmount: Long
+    val receiveAmount: BigInteger
         get() = data.receiveAmount
 
     @kotlinx.serialization.Transient

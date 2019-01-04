@@ -11,6 +11,7 @@ import org.starcoin.sirius.crypto.CryptoService
 import org.starcoin.sirius.protocol.Chain
 import org.starcoin.sirius.protocol.HubContract
 import org.starcoin.sirius.protocol.QueryContractParameter
+import java.math.BigInteger
 import java.util.*
 import java.util.concurrent.ArrayBlockingQueue
 import java.util.concurrent.BlockingQueue
@@ -107,7 +108,7 @@ class HubImpl<T : ChainTransaction>(
     override fun registerParticipant(participant: Participant, initUpdate: Update): Update {
         this.checkReady()
         Preconditions.checkArgument(initUpdate.verifySig(participant.publicKey))
-        if (this.getHubAccount(participant.address!!) != null) {
+        if (this.getHubAccount(participant.address) != null) {
             throw StatusRuntimeException(Status.ALREADY_EXISTS)
         }
         initUpdate.signHub(this.hubKey)
@@ -137,8 +138,8 @@ class HubImpl<T : ChainTransaction>(
 
     override fun transfer(transaction: OffchainTransaction, fromUpdate: Update, toUpdate: Update): Array<Update> {
         this.checkReady()
-        Preconditions.checkArgument(transaction.amount > 0, "transaction amount should > 0")
-        val from = this.getHubAccount(transaction.from!!)!!
+        Preconditions.checkArgument(transaction.amount > BigInteger.ZERO, "transaction amount should > 0")
+        val from = this.getHubAccount(transaction.from)!!
         this.checkBalance(from, transaction.amount)
         this.processOffchainTransaction(transaction, fromUpdate, toUpdate)
         return arrayOf(fromUpdate, toUpdate)
@@ -175,21 +176,21 @@ class HubImpl<T : ChainTransaction>(
 
     }
 
-    private fun checkBalance(account: HubAccount, amount: Long) {
+    private fun checkBalance(account: HubAccount, amount: BigInteger) {
         Preconditions.checkState(account.balance >= amount)
     }
 
     fun checkIOU(iou: IOU, isSender: Boolean) {
         this.checkReady()
-        val transaction = iou.transaction!!
-        Preconditions.checkArgument(transaction.amount!! > 0, "transaction amount should > 0")
-        val sender = this.getHubAccount(transaction.from!!)!!
+        val transaction = iou.transaction
+        Preconditions.checkArgument(transaction.amount > BigInteger.ZERO, "transaction amount should > 0")
+        val sender = this.getHubAccount(transaction.from)
         Preconditions.checkArgument(
-            transaction.verify(sender.publicKey), "transaction verify fail."
+            transaction.verify(sender!!.publicKey), "transaction verify fail."
         )
-        val recipient = this.getHubAccount(transaction.to!!)!!
+        val recipient = this.getHubAccount(transaction.to)!!
 
-        this.checkBalance(sender, transaction.amount!!)
+        this.checkBalance(sender, transaction.amount)
         if (isSender) {
             checkUpdate(sender, iou)
         } else {
@@ -198,10 +199,10 @@ class HubImpl<T : ChainTransaction>(
     }
 
     override fun sendNewTransfer(iou: IOU) {
-        if (this.eonState.getIOUByFrom(iou.transaction!!.to!!) != null) {
+        if (this.eonState.getIOUByFrom(iou.transaction.to) != null) {
             throw StatusRuntimeException(Status.ALREADY_EXISTS)
         }
-        if (this.eonState.getIOUByTo(iou.transaction!!.to!!) != null) {
+        if (this.eonState.getIOUByTo(iou.transaction.to) != null) {
             throw StatusRuntimeException(Status.ALREADY_EXISTS)
         }
         this.checkIOU(iou, true)

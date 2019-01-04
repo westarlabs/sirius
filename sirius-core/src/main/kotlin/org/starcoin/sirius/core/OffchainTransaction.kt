@@ -8,6 +8,7 @@ import org.starcoin.sirius.crypto.CryptoKey
 import org.starcoin.sirius.crypto.CryptoService
 import org.starcoin.sirius.serialization.ProtobufSchema
 import org.starcoin.sirius.util.MockUtils
+import java.math.BigInteger
 import java.security.PrivateKey
 import java.security.PublicKey
 
@@ -16,8 +17,7 @@ import java.security.PublicKey
 data class OffchainTransaction(@SerialId(1) val data: OffchainTransactionData, @SerialId(2) var sign: Signature = Signature.ZERO_SIGN) :
     SiriusObject() {
 
-
-    constructor(eon: Int, from: Address, to: Address, amount: Long) : this(
+    constructor(eon: Int, from: Address, to: Address, amount: BigInteger) : this(
         OffchainTransactionData(
             eon,
             from,
@@ -25,6 +25,8 @@ data class OffchainTransaction(@SerialId(1) val data: OffchainTransactionData, @
             amount
         )
     )
+
+    constructor(eon: Int, from: Address, to: Address, amount: Long) : this(eon, from, to, amount.toBigInteger())
 
     @kotlinx.serialization.Transient
     val eon: Int
@@ -39,7 +41,7 @@ data class OffchainTransaction(@SerialId(1) val data: OffchainTransactionData, @
         get() = data.to
 
     @kotlinx.serialization.Transient
-    val amount: Long
+    val amount: BigInteger
         get() = data.amount
 
     @kotlinx.serialization.Transient
