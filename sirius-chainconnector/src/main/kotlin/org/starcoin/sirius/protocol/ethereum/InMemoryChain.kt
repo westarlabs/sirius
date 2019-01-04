@@ -8,9 +8,12 @@ import org.starcoin.sirius.core.Receipt
 import org.starcoin.sirius.crypto.CryptoKey
 import org.starcoin.sirius.crypto.eth.EthCryptoKey
 import org.starcoin.sirius.protocol.*
+import org.starcoin.sirius.protocol.ethereum.contract.InMemoryHubContract
 import java.math.BigInteger
+import kotlin.properties.Delegates
 
 class InMemoryChain(autoGenblock: Boolean) : Chain<EthereumTransaction, EthereumBlock, HubContract> {
+
     override fun watchEvents(
         contract: Address,
         topic: EventTopic,
@@ -18,6 +21,7 @@ class InMemoryChain(autoGenblock: Boolean) : Chain<EthereumTransaction, Ethereum
     ): Channel<TransactionResult<EthereumTransaction>> {
         TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
     }
+
 
     override fun watchTransactions(filter: (TransactionResult<EthereumTransaction>) -> Boolean): Channel<TransactionResult<EthereumTransaction>> {
         var transactionChannel = Channel<TransactionResult<EthereumTransaction>>()
@@ -38,6 +42,12 @@ class InMemoryChain(autoGenblock: Boolean) : Chain<EthereumTransaction, Ethereum
     val sb = StandaloneBlockchain().withAutoblock(autoGenblock).withGasLimit(500000000)
 
     private val inMemoryEthereumListener = InMemoryEthereumListener()
+
+    internal var hubContract:InMemoryHubContract?=null
+        set(value) {
+            field = value
+            inMemoryEthereumListener.contract=value?.contract
+        }
 
     override fun getBlock(height: BigInteger): EthereumBlock? {
         return inMemoryEthereumListener.blocks.get(height.toInt())

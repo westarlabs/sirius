@@ -11,7 +11,7 @@ import java.math.BigInteger
 
 class InMemoryHubContract(contract: SolidityContract,owner : ECKey) : HubContract{
 
-    private var contract =contract
+    internal var contract =contract
 
     internal var owner = owner
 

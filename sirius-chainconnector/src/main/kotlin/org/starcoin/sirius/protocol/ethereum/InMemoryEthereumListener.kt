@@ -18,6 +18,9 @@ import org.starcoin.sirius.protocol.TransactionResult
 import org.web3j.utils.Numeric
 import java.math.BigInteger
 import kotlin.properties.Delegates
+import org.ethereum.core.CallTransaction
+import org.ethereum.util.blockchain.SolidityContract
+
 
 class InMemoryEthereumListener : EthereumListener {
 
@@ -30,6 +33,8 @@ class InMemoryEthereumListener : EthereumListener {
     internal var transactionFilter : (TransactionResult<EthereumTransaction>) -> Boolean by Delegates.notNull()
 
     internal var currentNumber :Long?=0
+
+    internal var contract: SolidityContract? = null
 
     override fun onSyncDone(state: EthereumListener.SyncState?) {
         TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
@@ -112,7 +117,15 @@ class InMemoryEthereumListener : EthereumListener {
     }
 
     override fun onTransactionExecuted(summary: TransactionExecutionSummary?) {
-        println(summary)
+//        val abi =
+//            "[{\"anonymous\":false,\"inputs\":[{\"indexed\":true,\"name\":\"from\",\"type\":\"address\"},{\"indexed\":true,\"name\":\"to\",\"type\":\"address\"},{\"indexed\":false,\"name\":\"amount\",\"type\":\"uint128\"}],\"name\":\"Transfer\",\"type\":\"event\"}]\n"
+        //contract?.
+        summary?.logs?.forEach {
+            //val contract = CallTransaction.Contract(abi)
+            //val invocation = contract.parseEvent(it)
+            //println(invocation)
+            println(it)
+        }
     }
 
     override fun onNodeDiscovered(node: Node?) {

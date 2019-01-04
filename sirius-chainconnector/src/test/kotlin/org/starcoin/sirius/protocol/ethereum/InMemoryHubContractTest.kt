@@ -70,7 +70,7 @@ class InMemoryHubContractTest {
 
         //var con= result.getContract(contractName)
         contract = InMemoryHubContract(chain.sb.submitNewContract(result.getContract(contractName)),chain.sb.sender)
-
+        chain.hubContract = contract
     }
 
     @Test
