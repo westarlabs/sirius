@@ -21,6 +21,7 @@ data class AMTreeInternalNodeInfo(
 ) : AMTreeNodeInfo() {
     constructor(left: Hashable, offset: BigInteger, right: Hashable) : this(left.hash(), offset, right.hash())
     constructor(left: Hash, offset: Long, right: Hash) : this(left, offset.toBigInteger(), right)
+
     companion object :
         SiriusObjectCompanion<AMTreeInternalNodeInfo, Starcoin.AMTreeInternalNodeInfo>(AMTreeInternalNodeInfo::class) {
         val DUMMY_NODE = AMTreeInternalNodeInfo(Hash.EMPTY_DADA_HASH, BigInteger.ZERO, Hash.EMPTY_DADA_HASH)
@@ -296,7 +297,7 @@ class AMTreeNode(
         prev: AMTreeNode?,
         info: AMTreeLeafNodeInfo,
         allotment: BigInteger
-    ) : this(prev?.let { prev.offset + prev.allotment }.let { BigInteger.ZERO }, info, allotment)
+    ) : this(prev?.let { prev.offset + prev.allotment } ?: BigInteger.ZERO, info, allotment)
 
     constructor(
         left: AMTreeNode, right: AMTreeNode = AMTreeNode(
