@@ -70,7 +70,6 @@ class InMemoryHubContractTest {
 
         //var con= result.getContract(contractName)
         contract = InMemoryHubContract(chain.sb.submitNewContract(result.getContract(contractName)),chain.sb.sender)
-        chain.hubContract = contract
     }
 
     @Test
@@ -107,7 +106,7 @@ class InMemoryHubContractTest {
             var transaction=transactionChannel.receive()
             Assert.assertEquals(transaction.tx.from,alice.address)
             Assert.assertEquals(transaction.tx.to,Address.wrap(contract.getContractAddr()))
-            Assert.assertEquals(transaction.tx.amount,amount)
+            Assert.assertEquals(transaction.tx.amount.toLong(),amount)
         }
     }
 
@@ -130,7 +129,7 @@ class InMemoryHubContractTest {
             var transaction=transactionChannel.receive()
             Assert.assertEquals(transaction.tx.from,alice.address)
             Assert.assertEquals(transaction.tx.to,Address.wrap(contract.getContractAddr()))
-            Assert.assertEquals(transaction.tx.amount,amount)
+            Assert.assertEquals(transaction.tx.amount.toLong(),amount)
         }
 
         amount  = 100
@@ -185,12 +184,13 @@ class InMemoryHubContractTest {
             var transaction=transactionChannel.receive()
             Assert.assertEquals(transaction.tx.from,alice.address)
             Assert.assertEquals(transaction.tx.to,Address.wrap(contract.getContractAddr()))
-            Assert.assertEquals(transaction.tx.amount,amount)
+            Assert.assertEquals(transaction.tx.amount.toLong(),amount)
         }
 
         var hash=commitHubRoot(0,amount)
         var transaction=chain.findTransaction(hash)
-        println(transaction)
+        Assert.assertEquals(transaction?.to,Address.wrap(contract.getContractAddr()))
+        Assert.assertEquals(transaction?.from,Address.wrap(chain.sb.sender.address))
     }
 
     private fun createEon(eon: Int, flag: Boolean,deposit: Long) {

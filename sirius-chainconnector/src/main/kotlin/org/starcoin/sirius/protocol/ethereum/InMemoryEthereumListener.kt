@@ -26,15 +26,13 @@ class InMemoryEthereumListener : EthereumListener {
 
     internal val blocks: MutableList<EthereumBlock> = mutableListOf()
 
-    internal val transactions : MutableMap<ByteArray,EthereumTransaction> = mutableMapOf()
+    internal val transactions : MutableMap<Hash,EthereumTransaction> = mutableMapOf()
     internal var blockChannel :kotlinx.coroutines.channels.Channel<EthereumBlock> by Delegates.notNull()
     internal var transactionChannel : kotlinx.coroutines.channels.Channel<TransactionResult<EthereumTransaction>> by Delegates.notNull()
 
     internal var transactionFilter : (TransactionResult<EthereumTransaction>) -> Boolean by Delegates.notNull()
 
     internal var currentNumber :Long?=0
-
-    internal var contract: SolidityContract? = null
 
     override fun onSyncDone(state: EthereumListener.SyncState?) {
         TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
@@ -91,7 +89,7 @@ class InMemoryEthereumListener : EthereumListener {
                     BigInteger.valueOf(0),blockSummary.block.header.receiptsRoot.toHEXString(),true))
                 if(transactionFilter(transactionResult))
                     transactionChannel.send(transactionResult)
-                transactions.put(it.hash,ethereumTransaction)
+                transactions.put(Hash.of(it.hash),ethereumTransaction)
             }
         }
     }
@@ -157,6 +155,6 @@ class InMemoryEthereumListener : EthereumListener {
     }
 
     fun findTransaction(hash: Hash): EthereumTransaction? {
-        return transactions.get(hash.toBytes())
+        return transactions.get(hash)
     }
 }

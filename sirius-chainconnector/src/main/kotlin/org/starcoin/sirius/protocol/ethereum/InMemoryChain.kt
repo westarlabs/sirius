@@ -43,12 +43,6 @@ class InMemoryChain(autoGenblock: Boolean) : Chain<EthereumTransaction, Ethereum
 
     private val inMemoryEthereumListener = InMemoryEthereumListener()
 
-    internal var hubContract:InMemoryHubContract?=null
-        set(value) {
-            field = value
-            inMemoryEthereumListener.contract=value?.contract
-        }
-
     override fun getBlock(height: BigInteger): EthereumBlock? {
         return inMemoryEthereumListener.blocks.get(height.toInt())
     }
