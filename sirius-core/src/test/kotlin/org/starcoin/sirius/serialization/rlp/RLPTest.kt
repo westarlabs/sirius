@@ -88,6 +88,15 @@ class RLPTest {
     }
 
     @Test
+    fun testBigIntegerRLP() {
+        val int = 10835967.toBigInteger()
+        val rlp = int.toRLP()
+        println(rlp.bytes.size)
+        val int1 = rlp.toBigIntegerFromRLP()
+        Assert.assertEquals(int, int1)
+    }
+
+    @Test
     fun testLongRLP() {
         val long = 54408193066555392L
         val rlp = long.toRLP()
