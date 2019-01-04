@@ -2,7 +2,6 @@ package org.starcoin.sirius.protocol.ethereum
 
 import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.runBlocking
 import org.bouncycastle.util.BigIntegers
 import org.ethereum.core.*
 import org.ethereum.listener.EthereumListener
@@ -12,19 +11,21 @@ import org.ethereum.net.p2p.HelloMessage
 import org.ethereum.net.rlpx.Node
 import org.ethereum.net.server.Channel
 import org.starcoin.sirius.core.Hash
+import org.starcoin.sirius.core.Receipt
 import org.starcoin.sirius.lang.toHEXString
 import org.starcoin.sirius.protocol.EthereumTransaction
-import org.web3j.protocol.core.methods.response.EthBlock
+import org.starcoin.sirius.protocol.TransactionResult
 import org.web3j.utils.Numeric
 import java.math.BigInteger
 import kotlin.properties.Delegates
 
 class InMemoryEthereumListener : EthereumListener {
 
-    val ZEROBYTES=ByteArray(0)
+    internal val blocks: MutableList<EthereumBlock> = mutableListOf()
+    internal var blockChannel :kotlinx.coroutines.channels.Channel<EthereumBlock> by Delegates.notNull()
+    internal var transactionChannel : kotlinx.coroutines.channels.Channel<TransactionResult<EthereumTransaction>> by Delegates.notNull()
 
-    val blocks: MutableList<EthereumBlock> = mutableListOf()
-    var blockChannel :kotlinx.coroutines.channels.Channel<EthereumBlock> by Delegates.notNull()
+    internal var transactionFilter : (TransactionResult<EthereumTransaction>) -> Boolean by Delegates.notNull()
 
     override fun onSyncDone(state: EthereumListener.SyncState?) {
         TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
@@ -55,6 +56,7 @@ class InMemoryEthereumListener : EthereumListener {
     }
 
     override fun onBlock(blockSummary: BlockSummary?) {
+        /**
         var w3jBlock = EthBlock.Block()
         w3jBlock.setGasLimit(blockSummary?.block?.gasLimit?.toBigIntString())
         w3jBlock.setDifficulty(blockSummary?.block?.difficultyBI?.toString())
@@ -67,9 +69,17 @@ class InMemoryEthereumListener : EthereumListener {
                 index.toString(),it.sender.toString(),it.receiveAddress.toString(),it.value.toBigIntString(),
                 it.gasPrice.toBigIntString(),it.gasLimit.toBigIntString(),it.data?.toString(),blockSummary?.block?.timestamp.toString(),
                 it.key?.pubKey?.toHEXString(),it.encodedRaw.toString(),it.signature.r.toString(),it.signature.s.toString(),it.signature.v.toInt())
-        }
+        }*/
         GlobalScope.launch {
-            blockChannel.send(EthereumBlock(w3jBlock))
+            //blockChannel.send(EthereumBlock(w3jBlock))
+            blockSummary?.block?.transactionsList?.forEachIndexed{ index,it->
+                val transactionResult=TransactionResult(EthereumTransaction(it), Receipt(it.hash,BigInteger.valueOf(index.toLong()),
+                    blockSummary.block.hash, BigInteger.valueOf(blockSummary.block.number),null,it.sender,it.receiveAddress,
+                    BigInteger.valueOf(blockSummary.block.header.gasUsed), blockSummary.block.header.logsBloom.toHEXString(),
+                    BigInteger.valueOf(0),blockSummary.block.header.receiptsRoot.toHEXString(),true))
+                if(transactionFilter(transactionResult))
+                    transactionChannel.send(transactionResult)
+            }
         }
     }
 

@@ -19,8 +19,15 @@ class InMemoryChain(autoGenblock: Boolean) : Chain<EthereumTransaction, Ethereum
         TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
     }
 
-    override fun watchTransactions(filter: (FilterArguments) -> Boolean): Channel<TransactionResult<EthereumTransaction>> {
-        TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
+    override fun watchTransactions(filter: (TransactionResult<EthereumTransaction>) -> Boolean): Channel<TransactionResult<EthereumTransaction>> {
+        var transactionChannel = Channel<TransactionResult<EthereumTransaction>>()
+        inMemoryEthereumListener.transactionFilter=filter
+        inMemoryEthereumListener.transactionChannel = transactionChannel
+        sb.addEthereumListener(inMemoryEthereumListener)
+        if(autoGenblock){
+            sb.withAutoblock(autoGenblock)
+        }
+        return transactionChannel
     }
 
     override fun getTransactionReceipts(txHashs: List<Hash>): List<Receipt> {

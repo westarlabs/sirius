@@ -33,7 +33,7 @@ interface Chain<T : ChainTransaction, B : Block<T>, C : HubContract> {
 
     fun getTransactionReceipts(txHashs: List<Hash>): List<Receipt>
 
-    fun watchTransactions(filter: (FilterArguments) -> Boolean = { true }): Channel<TransactionResult<T>>
+    fun watchTransactions(filter: (TransactionResult<T>) -> Boolean = { true }): Channel<TransactionResult<T>>
 
     fun watchEvents(
         contract: Address,

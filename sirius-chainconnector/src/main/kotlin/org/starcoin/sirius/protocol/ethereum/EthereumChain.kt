@@ -50,7 +50,7 @@ class EthereumChain constructor(httpUrl: String = defaultHttpUrl, socketPath: St
         if (resp.hasError()) throw NewTxException(resp.error)
     }
 
-    override fun watchTransactions(filter: (FilterArguments) -> Boolean): Channel<TransactionResult<EthereumTransaction>> {
+    override fun watchTransactions(filter: (TransactionResult<EthereumTransaction>) -> Boolean): Channel<TransactionResult<EthereumTransaction>> {
         TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
     }
 
