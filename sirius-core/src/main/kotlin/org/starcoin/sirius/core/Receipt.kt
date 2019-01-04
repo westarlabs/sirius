@@ -20,7 +20,7 @@ data class Receipt(
     ) : this(
         CryptoService.hash(transactionHash.toByteArray()), transactionIndex,
         CryptoService.hash(blockHash.toByteArray()), blockNumber,
-        if (contractAddress!=null) Address.wrap(contractAddress!!) else null, Address.wrap(from), Address.wrap(to),
+        contractAddress?.let { Address.wrap(contractAddress) }, Address.wrap(from), Address.wrap(to),
         gasUsed, logBloom, cumulativeGasUsed, root, status
     )
 
