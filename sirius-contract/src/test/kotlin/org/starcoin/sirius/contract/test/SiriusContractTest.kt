@@ -46,7 +46,7 @@ class SiriusContractTest : ContractTestBase("sirius.sol", "SiriusService") {
     }
 
     fun testDeposit(flag: Boolean) {
-        val callResult = contract.callFunction(deposit, "deposit")
+        val callResult = contract.callFunction(deposit, "")
         if (flag)
             verifyReturn(callResult)
         else

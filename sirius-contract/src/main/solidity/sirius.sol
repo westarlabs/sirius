@@ -4,7 +4,6 @@ import "./lib/model.sol";
 import "./lib/safe_math.sol";
 
 interface Sirius {
-    function deposit() external payable;
     function commit(bytes calldata data) external;
     function initiateWithdrawal(bytes calldata data) external;
     function cancelWithdrawal(bytes calldata data) external;
@@ -17,6 +16,7 @@ interface Sirius {
     function getCurrentEon() external view returns (uint);
     function isRecoveryMode() external view returns (bool);
     function test() external view returns (bool);
+    function testRecovery() external;
     function hubIp(bytes calldata data) external;
     function hubInfo() external view returns (bytes memory);
 }
@@ -64,7 +64,11 @@ contract SiriusService is Sirius {
         ip = string(data);
     }
 
-    function deposit() external payable {
+    function () external payable {
+        deposit();
+    }
+
+    function deposit() private {
         doRecovery();
         require(msg.value > 0);
         if(!recoveryMode) {
@@ -353,6 +357,11 @@ contract SiriusService is Sirius {
         chi.hubAddress = ip;
         chi.blocksPerEon = blocksPerEon;
         return ModelLib.marshalContractHubInfo(chi);
+    }
+
+    function testRecovery() external {
+        require(msg.sender == owner);
+        recoveryMode = true;
     }
 
     /** private methods **/
