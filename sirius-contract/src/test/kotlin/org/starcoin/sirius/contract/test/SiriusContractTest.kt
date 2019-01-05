@@ -32,12 +32,12 @@ class SiriusContractTest : ContractTestBase("sirius.sol", "SiriusService") {
         currentEon()
     }
 
-    private fun currentEon(): Int {
+    private fun currentEon(): Long {
         val callResult = contract.callConstFunction("getCurrentEon")
         val eon = callResult[0] as BigInteger
         LOG.info("eon:$eon")
         Assert.assertTrue(eon.longValueExact() >= 0)
-        return eon.lowestSetBit
+        return eon.longValueExact()
     }
 
     @Test
@@ -151,17 +151,16 @@ class SiriusContractTest : ContractTestBase("sirius.sol", "SiriusService") {
         var eon = 2
         createEon(eon, false)
 
+        eon = ("" + currentEon()).toInt() - 1
+        if(eon < 0)
+            eon = 0
+
         var recovery = contract.callConstFunction("isRecoveryMode")[0] as Boolean
         assert(recovery)
-        eon = if (currentEon() == 0) {
-            0
-        } else {
-            currentEon() - 1
-        }
         val update3 = newUpdate(eon, 3, 0)//other
         val update4 = newUpdate(eon, 4, 0)//mine
         val path = newPath(ethKey2Address(callUser), update3)
-        val leaf3 = newLeaf(ethKey2Address(callUser), update4, 1100, 1000)
+        val leaf3 = newLeaf(ethKey2Address(callUser), update4, 0, 0)
 
         val refund = AMTreeProof(path, leaf3)
         val data = RLP.dump(AMTreeProof.serializer(), refund)

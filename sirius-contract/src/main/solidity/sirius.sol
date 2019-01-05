@@ -166,13 +166,14 @@ contract SiriusService is Sirius {
         ModelLib.BalanceUpdateChallenge memory challenge = ModelLib.unmarshalBalanceUpdateChallenge(RLPDecoder.toRLPItem(data, true));
         require(challenge.proof.hasPath || challenge.proof.hasUp);
 
+        uint leastEon = balances[1].eon;
         bytes32 key = ByteUtilLib.address2hash(msg.sender);
         //bytes32 key = challenge.proof.proof.leaf.nodeInfo.addressHash;
-        if(challenge.proof.hasPath) {//Special case:eon-1 exist a account, evil owner removed it in this eon, so the account only path
+        if(challenge.proof.hasPath) {//Special case:eon-1 exist a account, evil owner removed it in this eon, so the account has only path
             uint tmpEon =  challenge.proof.proof.leaf.nodeInfo.update.upData.eon;
             require(tmpEon >= 0);
             require(balances[1].hasRoot);
-            require(tmpEon == balances[1].eon);
+            require(tmpEon == leastEon);
 
             //require(key == challenge.proof.proof.leaf.nodeInfo.addressHash);
 
@@ -189,7 +190,7 @@ contract SiriusService is Sirius {
 
             uint tmpEon = up.upData.eon;
             require(tmpEon >= 0);
-            require(tmpEon == balances[1].eon);
+            require(tmpEon == leastEon);
 
             //require(msg.sender == ByteUtilLib.pubkey2Address(challenge.publicKey));//TODO
 
@@ -295,7 +296,7 @@ contract SiriusService is Sirius {
         require(proofFlag);
 
         GlobleLib.TransferDeliveryChallengeAndStatus memory challenge = balances[0].tdcMeta.transferChallenges[key];
-        //require(challenge.isVal);
+        require(challenge.isVal);
 
         if(challenge.stat == ModelLib.ChallengeStatus.OPEN) {
             bool signFlag = ModelLib.verifySig4Update(close.fromPublicKey, close.update);
@@ -319,10 +320,11 @@ contract SiriusService is Sirius {
         bytes32 key = ByteUtilLib.address2hash(msg.sender);
         require(proof.leaf.nodeInfo.addressHash == key);
 
-        require(balances[1].eon == proof.leaf.nodeInfo.update.upData.eon);
+        uint preEon = balances[1].eon;
+        require(preEon == proof.leaf.nodeInfo.update.upData.eon);
 
-        ModelLib.HubRoot memory latestRoot = latestRoot();
-        bool proofFlag = ModelLib.verifyMembershipProof4AMTreeProof(latestRoot.node, proof);
+        ModelLib.HubRoot memory preRoot = preRoot();
+        bool proofFlag = ModelLib.verifyMembershipProof4AMTreeProof(preRoot.node, proof);
         require(proofFlag);
 
         uint amount = SafeMath.add(proof.leaf.allotment, balances[0].depositMeta.deposits[key]);
@@ -404,6 +406,15 @@ contract SiriusService is Sirius {
 
     function latestRoot() private view returns (ModelLib.HubRoot memory) {
         return balances[0].root;
+    }
+
+    function preRoot() private view returns (ModelLib.HubRoot memory) {
+        ModelLib.HubRoot memory preRoot = balances[1].root;
+        if(balances[0].eon == 0) {
+            preRoot = latestRoot();
+        }
+
+        return preRoot;
     }
 
     function currentEon() private view returns (uint) {
