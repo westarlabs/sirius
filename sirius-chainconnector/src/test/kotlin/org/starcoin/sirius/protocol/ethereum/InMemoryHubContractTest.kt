@@ -123,14 +123,12 @@ class InMemoryHubContractTest {
         chain.sb.sendEther(alice.address.toBytes(), EtherUtil.convert(100000, EtherUtil.Unit.ETHER))
         chain.sb.createBlock()
 
-        println(1)
         //chain.sb.withAccountBalance(alice.address.toBytes(), EtherUtil.convert(100000, EtherUtil.Unit.ETHER))
         //println(chain.sb.getBlockchain().getRepository().getBalance(alice.address.toBytes()))
 
         var amount= EtherUtil.convert(10, EtherUtil.Unit.ETHER).toLong()
         deposit(alice,nonce,amount)
 
-        println(2)
         runBlocking{
             var transaction=transactionChannel.receive()
             Assert.assertEquals(transaction.tx.from,alice.address)
@@ -154,15 +152,26 @@ class InMemoryHubContractTest {
         var owner=chain.sb.sender
         chain.sb.sender= (alice as EthCryptoKey).ecKey
 
-        amount= EtherUtil.convert(1, EtherUtil.Unit.ETHER).toLong()
+        amount= EtherUtil.convert(8, EtherUtil.Unit.ETHER).toLong()
         val withdrawal = Withdrawal(alice.address, path, amount)
         var hash=contract.initiateWithdrawal(withdrawal)
 
-        chain.sb.createBlock()
         var transaction=chain.findTransaction(hash)
 
-        println(hash)
-        println(transaction)
+        Assert.assertEquals(transaction?.from,alice.address)
+        Assert.assertEquals(transaction?.to,Address.wrap(contractAddr))
+
+
+        chain.sb.sender= owner
+
+        amount= EtherUtil.convert(2, EtherUtil.Unit.ETHER).toLong()
+
+        val update = newUpdate(eon, 2, amount,alice)
+        val cancel =
+            CancelWithdrawal(Participant(alice.keyPair.public), update, path)
+        hash = contract.cancelWithdrawal(cancel)
+        transaction=chain.findTransaction(hash)
+
         Assert.assertEquals(transaction?.from,alice.address)
         Assert.assertEquals(transaction?.to,Address.wrap(contractAddr))
 
@@ -214,6 +223,9 @@ class InMemoryHubContractTest {
         var transaction=chain.findTransaction(hash)
         Assert.assertEquals(transaction?.to,Address.wrap(contract.getContractAddr()))
         Assert.assertEquals(transaction?.from,Address.wrap(chain.sb.sender.address))
+
+        var root=contract.queryLeastHubCommit()
+        println(root)
     }
 
     private fun commitHubRoot(eon: Int, amount: Long):Hash {
@@ -227,6 +239,7 @@ class InMemoryHubContractTest {
         val info = AMTreeInternalNodeInfo(Hash.random(), amount, Hash.random())
         val node = AMTreePathInternalNode(info, PathDirection.ROOT, 0, amount)
         val root = HubRoot(node, eon)
+        println(root)
         val callResult = contract.commit(root)
         return callResult
     }
@@ -240,4 +253,5 @@ class InMemoryHubContractTest {
         var hubInfo=contract.queryHubInfo()
         Assert.assertEquals(hubInfo.hubAddress,ip)
     }
+
 }

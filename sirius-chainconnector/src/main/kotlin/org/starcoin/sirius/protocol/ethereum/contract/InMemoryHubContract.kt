@@ -29,7 +29,8 @@ class InMemoryHubContract(contract: SolidityContract,owner : ECKey) : HubContrac
     }
 
     override fun queryLeastHubCommit(): HubRoot {
-        TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
+        val callResult = contract.callConstFunction("getLatestRoot")
+        return HubRoot.parseFromRLP(callResult[0] as ByteArray)
     }
 
     override fun queryHubCommit(eon: Int): HubRoot {
@@ -63,7 +64,7 @@ class InMemoryHubContract(contract: SolidityContract,owner : ECKey) : HubContrac
     }
 
     override fun cancelWithdrawal(request: CancelWithdrawal): Hash {
-        TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
+        return callContract("cancelWithdrawal",RLP.dump(CancelWithdrawal.serializer(),request))
     }
 
     override fun openBalanceUpdateChallenge(request: BalanceUpdateChallenge): Hash {
