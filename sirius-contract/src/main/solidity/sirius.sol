@@ -4,13 +4,13 @@ import "./lib/model.sol";
 import "./lib/safe_math.sol";
 
 interface Sirius {
-    function commit(bytes calldata data) external;
-    function initiateWithdrawal(bytes calldata data) external;
-    function cancelWithdrawal(bytes calldata data) external;
-    function openBalanceUpdateChallenge(bytes calldata data) external;
-    function closeBalanceUpdateChallenge(bytes calldata data) external;
-    function openTransferDeliveryChallenge(bytes calldata data) external;
-    function closeTransferDeliveryChallenge(bytes calldata data) external;
+    function commit(bytes calldata data) external returns (bool);
+    function initiateWithdrawal(bytes calldata data) external returns (bool);
+    function cancelWithdrawal(bytes calldata data) external returns (bool);
+    function openBalanceUpdateChallenge(bytes calldata data) external returns (bool);
+    function closeBalanceUpdateChallenge(bytes calldata data) external returns (bool);
+    function openTransferDeliveryChallenge(bytes calldata data) external returns (bool);
+    function closeTransferDeliveryChallenge(bytes calldata data) external returns (bool);
     function recoverFunds(bytes calldata data) external;
     function getLatestRoot() external view returns (bytes memory);
     function getCurrentEon() external view returns (uint);
@@ -47,16 +47,12 @@ contract SiriusService is Sirius {
     modifier onlyOwner() {
         require(msg.sender == owner);
         doRecovery();
-        if(!recoveryMode) {
-            _;
-        }
+        _;
     }
 
     modifier recovery() {
         doRecovery();
-        if(!recoveryMode) {
-            _;
-        }
+        _;
     }
 
     /** public methods **/
@@ -87,232 +83,266 @@ contract SiriusService is Sirius {
         }
     }
 
-    function commit(bytes calldata data) external onlyOwner {
-        ModelLib.HubRoot memory root = ModelLib.unmarshalHubRoot(RLPDecoder.toRLPItem(data, true));
-        require(!balances[0].hasRoot);
-        require(root.eon >= 0);
-        require(balances[0].eon == root.eon);
-        require(root.node.allotment >= 0);
-        uint tmp = SafeMath.add(balances[1].root.node.allotment, balances[1].depositMeta.total);
-        emit DepositEvent(2, root.node.allotment);
-        uint allotmentTmp = SafeMath.sub(tmp, balances[1].withdrawalMeta.total);
-        emit DepositEvent(9, allotmentTmp);
-        emit DepositEvent(0, balances[1].depositMeta.total);
-        require(allotmentTmp >= 0 && allotmentTmp == root.node.allotment);
-        balances[0].root = root;
-        balances[0].hasRoot = true;
-        //TODO:add event
-    }
-
-    function initiateWithdrawal(bytes calldata data) external recovery {
-        ModelLib.WithdrawalInfo memory init = ModelLib.unmarshalWithdrawalInfo(RLPDecoder.toRLPItem(data, true));
-        require(init.amount > 0);
-        //ModelLib.verifyAddr4WithdrawalInfo(init, msg.sender);//TODO
-
-        uint currentEon = currentEon();
-        ModelLib.verifyEon4WithdrawalInfo(init, currentEon);
-
-        uint len = init.path.nodes.length;
-        require(len > 0);
-
-        bytes32 key = ByteUtilLib.address2hash(msg.sender);
-        bool processingFlag = withdrawalProcessing(key);
-        require(!processingFlag);
-
-        ModelLib.HubRoot memory latestRoot = latestRoot();
-        bool proofFlag = ModelLib.verifyMembershipProof4AMTreePath(latestRoot.node, init.path);
-        require(proofFlag);
-
-        require(init.path.leaf.allotment >= init.amount);
-
-        GlobleLib.Withdrawal memory with;
-        with.info = data;
-        with.isVal = true;
-        with.stat = GlobleLib.WithdrawalStatusType.INIT;
-
-        balances[0].withdrawalMeta.addrs.push(msg.sender);
-        balances[0].withdrawalMeta.withdrawals[key] = with;
-        balances[0].withdrawalMeta.total += init.amount;
-    }
-
-    function cancelWithdrawal(bytes calldata data) external onlyOwner {
-        ModelLib.CancelWithdrawal memory cancel = ModelLib.unmarshalCancelWithdrawal(RLPDecoder.toRLPItem(data, true));
-        uint currentEon = currentEon();
-        require(cancel.update.upData.eon >= 0 && cancel.update.upData.eon == currentEon);
-
-        bool signFlag = ModelLib.verifySig4Update(cancel.participant.publicKey, cancel.update);
-        require(signFlag);
-
-        ModelLib.HubRoot memory latestRoot = latestRoot();
-        bool proofFlag = ModelLib.verifyMembershipProof4AMTreePath(latestRoot.node, cancel.path);
-        require(proofFlag);
-
-        address addr = ByteUtilLib.pubkey2Address(cancel.participant.publicKey);
-        bytes32 key = ByteUtilLib.address2hash(addr);
-
-        GlobleLib.Withdrawal storage with = balances[0].withdrawalMeta.withdrawals[key];
-        if(with.isVal) {
-            if(with.stat == GlobleLib.WithdrawalStatusType.INIT) {
-                ModelLib.WithdrawalInfo memory tmpInfo = ModelLib.unmarshalWithdrawalInfo(RLPDecoder.toRLPItem(with.info, true));
-                uint tmp = SafeMath.sub(SafeMath.add(cancel.path.leaf.allotment, cancel.update.upData.receiveAmount), cancel.update.upData.sendAmount);
-                if (tmpInfo.amount > tmp) {
-                    with.stat = GlobleLib.WithdrawalStatusType.CANCEL;
-                    balances[0].withdrawalMeta.withdrawals[key] = with;
-                    emit SiriusEvent(ByteUtilLib.address2hash(addr), 1, with.info);
-                }
-            }
+    function commit(bytes calldata data) external onlyOwner returns (bool) {
+        if(!recoveryMode) {
+            ModelLib.HubRoot memory root = ModelLib.unmarshalHubRoot(RLPDecoder.toRLPItem(data, true));
+            require(!balances[0].hasRoot);
+            require(root.eon >= 0);
+            require(balances[0].eon == root.eon);
+            require(root.node.allotment >= 0);
+            uint tmp = SafeMath.add(balances[1].root.node.allotment, balances[1].depositMeta.total);
+            emit DepositEvent(2, root.node.allotment);
+            uint allotmentTmp = SafeMath.sub(tmp, balances[1].withdrawalMeta.total);
+            emit DepositEvent(9, allotmentTmp);
+            emit DepositEvent(0, balances[1].depositMeta.total);
+            require(allotmentTmp >= 0 && allotmentTmp == root.node.allotment);
+            balances[0].root = root;
+            balances[0].hasRoot = true;
+            return true;
+        } else {
+            return false;
         }
     }
 
-    function openBalanceUpdateChallenge(bytes calldata data) external recovery {
-        ModelLib.BalanceUpdateChallenge memory challenge = ModelLib.unmarshalBalanceUpdateChallenge(RLPDecoder.toRLPItem(data, true));
-        require(challenge.proof.hasPath || challenge.proof.hasUp);
+    function initiateWithdrawal(bytes calldata data) external recovery returns (bool) {
+        if(!recoveryMode) {
+            ModelLib.WithdrawalInfo memory init = ModelLib.unmarshalWithdrawalInfo(RLPDecoder.toRLPItem(data, true));
+            require(init.amount > 0);
+            //ModelLib.verifyAddr4WithdrawalInfo(init, msg.sender);//TODO
 
-        uint leastEon = balances[1].eon;
-        bytes32 key = ByteUtilLib.address2hash(msg.sender);
-        //bytes32 key = challenge.proof.proof.leaf.nodeInfo.addressHash;
-        if(challenge.proof.hasPath) {//Special case:eon-1 exist a account, evil owner removed it in this eon, so the account has only path
-            uint tmpEon =  challenge.proof.proof.leaf.nodeInfo.update.upData.eon;
-            require(tmpEon >= 0);
-            require(balances[1].hasRoot);
-            require(tmpEon == leastEon);
+            uint currentEon = currentEon();
+            ModelLib.verifyEon4WithdrawalInfo(init, currentEon);
 
-            //require(key == challenge.proof.proof.leaf.nodeInfo.addressHash);
+            uint len = init.path.nodes.length;
+            require(len > 0);
+
+            bytes32 key = ByteUtilLib.address2hash(msg.sender);
+            bool processingFlag = withdrawalProcessing(key);
+            require(!processingFlag);
+
+            ModelLib.HubRoot memory latestRoot = latestRoot();
+            bool proofFlag = ModelLib.verifyMembershipProof4AMTreePath(latestRoot.node, init.path);
+            require(proofFlag);
+
+            require(init.path.leaf.allotment >= init.amount);
+
+            GlobleLib.Withdrawal memory with;
+            with.info = data;
+            with.isVal = true;
+            with.stat = GlobleLib.WithdrawalStatusType.INIT;
+
+            balances[0].withdrawalMeta.addrs.push(msg.sender);
+            balances[0].withdrawalMeta.withdrawals[key] = with;
+            balances[0].withdrawalMeta.total += init.amount;
+            return true;
+        } else {
+            return false;
+        }
+    }
+
+    function cancelWithdrawal(bytes calldata data) external onlyOwner returns (bool) {
+        if(!recoveryMode) {
+            ModelLib.CancelWithdrawal memory cancel = ModelLib.unmarshalCancelWithdrawal(RLPDecoder.toRLPItem(data, true));
+            uint currentEon = currentEon();
+            require(cancel.update.upData.eon >= 0 && cancel.update.upData.eon == currentEon);
+
+            bool signFlag = ModelLib.verifySig4Update(cancel.participant.publicKey, cancel.update);
+            require(signFlag);
+
+            ModelLib.HubRoot memory latestRoot = latestRoot();
+            bool proofFlag = ModelLib.verifyMembershipProof4AMTreePath(latestRoot.node, cancel.path);
+            require(proofFlag);
+
+            address addr = ByteUtilLib.pubkey2Address(cancel.participant.publicKey);
+            bytes32 key = ByteUtilLib.address2hash(addr);
+
+            GlobleLib.Withdrawal storage with = balances[0].withdrawalMeta.withdrawals[key];
+            if(with.isVal) {
+                if(with.stat == GlobleLib.WithdrawalStatusType.INIT) {
+                    ModelLib.WithdrawalInfo memory tmpInfo = ModelLib.unmarshalWithdrawalInfo(RLPDecoder.toRLPItem(with.info, true));
+                    uint tmp = SafeMath.sub(SafeMath.add(cancel.path.leaf.allotment, cancel.update.upData.receiveAmount), cancel.update.upData.sendAmount);
+                    if (tmpInfo.amount > tmp) {
+                        with.stat = GlobleLib.WithdrawalStatusType.CANCEL;
+                        balances[0].withdrawalMeta.withdrawals[key] = with;
+                        emit SiriusEvent(ByteUtilLib.address2hash(addr), 1, with.info);
+                    }
+                }
+            }
+            return true;
+        } else {
+            return false;
+        }
+    }
+
+    function openBalanceUpdateChallenge(bytes calldata data) external recovery returns (bool) {
+        if(!recoveryMode) {
+            ModelLib.BalanceUpdateChallenge memory challenge = ModelLib.unmarshalBalanceUpdateChallenge(RLPDecoder.toRLPItem(data, true));
+            require(challenge.proof.hasPath || challenge.proof.hasUp);
+
+            uint leastEon = balances[1].eon;
+            bytes32 key = ByteUtilLib.address2hash(msg.sender);
+            //bytes32 key = challenge.proof.proof.leaf.nodeInfo.addressHash;
+            if(challenge.proof.hasPath) {//Special case:eon-1 exist a account, evil owner removed it in this eon, so the account has only path
+                uint tmpEon =  challenge.proof.proof.leaf.nodeInfo.update.upData.eon;
+                require(tmpEon >= 0);
+                require(balances[1].hasRoot);
+                require(tmpEon == leastEon);
+
+                //require(key == challenge.proof.proof.leaf.nodeInfo.addressHash);
+
+                ModelLib.HubRoot memory root = balances[1].root;
+                bool proofFlag = ModelLib.verifyMembershipProof4AMTreeProof(root.node, challenge.proof.proof);
+                require(proofFlag);
+            } else {//once the account had deposit, path must exist
+                GlobleLib.Deposit memory d = all[msg.sender];
+                require(!d.hasVal);
+            }
+
+            if(challenge.proof.hasUp) {//Special case:new account only update
+                ModelLib.Update memory up = challenge.proof.update;
+
+                uint tmpEon = up.upData.eon;
+                require(tmpEon >= 0);
+                require(tmpEon == leastEon);
+
+                //require(msg.sender == ByteUtilLib.pubkey2Address(challenge.publicKey));//TODO
+
+                bool signFlag = ModelLib.verifySig4Update(challenge.publicKey, up);
+                require(signFlag);
+                bool hubSignFlag = ModelLib.verifyHubSig4Update(hubPK, up);
+                require(hubSignFlag);
+            } else {
+
+            }
+
+            GlobleLib.BalanceUpdateChallengeAndStatus memory cs = balances[0].bucMeta.balanceChallenges[key];
+            cs.challenge = data;
+            cs.status = ModelLib.ChallengeStatus.OPEN;
+            if(!cs.isVal) {
+                balances[0].bucMeta.balanceChallengeKeys.push(key);
+            }
+            cs.isVal = true;
+            balances[0].bucMeta.balanceChallenges[key] = cs;
+            return true;
+        }else {
+            return false;
+        }
+    }
+
+    function closeBalanceUpdateChallenge(bytes calldata data) external onlyOwner returns (bool) {
+        if(!recoveryMode) {
+            ModelLib.CloseBalanceUpdateChallenge memory close = ModelLib.unmarshalCloseBalanceUpdateChallenge(RLPDecoder.toRLPItem(data, true));
 
             ModelLib.HubRoot memory root = balances[1].root;
-            bool proofFlag = ModelLib.verifyMembershipProof4AMTreeProof(root.node, challenge.proof.proof);
+            bool proofFlag = ModelLib.verifyMembershipProof4AMTreeProof(root.node, close.proof);
             require(proofFlag);
-        } else {//once the account had deposit, path must exist
-            GlobleLib.Deposit memory d = all[msg.sender];
-            require(!d.hasVal);
-        }
 
-        if(challenge.proof.hasUp) {//Special case:new account only update
-            ModelLib.Update memory up = challenge.proof.update;
+            bytes32 key = close.proof.leaf.nodeInfo.addressHash;
 
-            uint tmpEon = up.upData.eon;
-            require(tmpEon >= 0);
-            require(tmpEon == leastEon);
+            GlobleLib.BalanceUpdateChallengeAndStatus storage tmpStat = balances[0].bucMeta.balanceChallenges[key];
+            require(tmpStat.isVal);
+            ModelLib.BalanceUpdateChallengeStatus memory stat = GlobleLib.change2BalanceUpdateChallengeStatus(tmpStat);
 
-            //require(msg.sender == ByteUtilLib.pubkey2Address(challenge.publicKey));//TODO
-
-            bool signFlag = ModelLib.verifySig4Update(challenge.publicKey, up);
-            require(signFlag);
-            bool hubSignFlag = ModelLib.verifyHubSig4Update(hubPK, up);
-            require(hubSignFlag);
-        } else {
-
-        }
-
-        GlobleLib.BalanceUpdateChallengeAndStatus memory cs = balances[0].bucMeta.balanceChallenges[key];
-        cs.challenge = data;
-        cs.status = ModelLib.ChallengeStatus.OPEN;
-        if(!cs.isVal) {
-            balances[0].bucMeta.balanceChallengeKeys.push(key);
-        }
-        cs.isVal = true;
-        balances[0].bucMeta.balanceChallenges[key] = cs;
-    }
-
-    function closeBalanceUpdateChallenge(bytes calldata data) external onlyOwner {
-        ModelLib.CloseBalanceUpdateChallenge memory close = ModelLib.unmarshalCloseBalanceUpdateChallenge(RLPDecoder.toRLPItem(data, true));
-
-        ModelLib.HubRoot memory root = balances[1].root;
-        bool proofFlag = ModelLib.verifyMembershipProof4AMTreeProof(root.node, close.proof);
-        require(proofFlag);
-
-        bytes32 key = close.proof.leaf.nodeInfo.addressHash;
-
-        GlobleLib.BalanceUpdateChallengeAndStatus storage tmpStat = balances[0].bucMeta.balanceChallenges[key];
-        require(tmpStat.isVal);
-        ModelLib.BalanceUpdateChallengeStatus memory stat = GlobleLib.change2BalanceUpdateChallengeStatus(tmpStat);
-
-        bytes32 hash = ByteUtilLib.address2hash(ByteUtilLib.pubkey2Address(stat.challenge.publicKey));
-        emit DepositEvent2(200, hash);
-        if(stat.status == ModelLib.ChallengeStatus.OPEN) {
-            uint d = balances[1].depositMeta.deposits[hash];
-            if(close.update.upData.sendAmount == 0 && close.update.upData.receiveAmount == 0) {
-                if(d > 0) {
-                    require(d <= close.proof.leaf.allotment);
+            bytes32 hash = ByteUtilLib.address2hash(ByteUtilLib.pubkey2Address(stat.challenge.publicKey));
+            emit DepositEvent2(200, hash);
+            if(stat.status == ModelLib.ChallengeStatus.OPEN) {
+                uint d = balances[1].depositMeta.deposits[hash];
+                if(close.update.upData.sendAmount == 0 && close.update.upData.receiveAmount == 0) {
+                    if(d > 0) {
+                        require(d <= close.proof.leaf.allotment);
+                    }
+                } else {
+                    bool signFlag = ModelLib.verifySig4Update(stat.challenge.publicKey, close.update);
+                    require(signFlag);
+                    bool hubsignFlag = ModelLib.verifyHubSig4Update(hubPK, close.update);
+                    require(hubsignFlag);
+                    require(close.update.upData.version >= stat.challenge.proof.update.upData.version);
                 }
-            } else {
-                bool signFlag = ModelLib.verifySig4Update(stat.challenge.publicKey, close.update);
-                require(signFlag);
-                bool hubsignFlag = ModelLib.verifyHubSig4Update(hubPK, close.update);
-                require(hubsignFlag);
-                require(close.update.upData.version >= stat.challenge.proof.update.upData.version);
+
+                uint preAllotment = 0;
+                if(stat.challenge.proof.hasPath) {
+                    preAllotment = stat.challenge.proof.proof.leaf.allotment;
+                }
+
+                uint t1 = SafeMath.add(close.update.upData.receiveAmount, preAllotment);
+                t1 = SafeMath.add(t1, d);
+                GlobleLib.Withdrawal memory w = balances[1].withdrawalMeta.withdrawals[hash];
+                if(w.isVal) {
+                    ModelLib.WithdrawalInfo memory info = ModelLib.unmarshalWithdrawalInfo(RLPDecoder.toRLPItem(w.info, true));
+                    t1 = SafeMath.sub(t1, info.amount);
+                }
+                uint t2 = close.update.upData.sendAmount;
+                uint allotment = SafeMath.sub(t1, t2);
+                require(allotment == close.proof.leaf.allotment);
+
+                //TODO: require(close.update == close.proof.leaf.nodeInfo.update);
+
+                tmpStat.status == ModelLib.ChallengeStatus.CLOSE;
+                balances[0].bucMeta.balanceChallenges[key] = tmpStat;
+                emit SiriusEvent(key, 2, tmpStat.challenge);
             }
-
-            uint preAllotment = 0;
-            if(stat.challenge.proof.hasPath) {
-                preAllotment = stat.challenge.proof.proof.leaf.allotment;
-            }
-
-            uint t1 = SafeMath.add(close.update.upData.receiveAmount, preAllotment);
-            t1 = SafeMath.add(t1, d);
-            GlobleLib.Withdrawal memory w = balances[1].withdrawalMeta.withdrawals[hash];
-            if(w.isVal) {
-                ModelLib.WithdrawalInfo memory info = ModelLib.unmarshalWithdrawalInfo(RLPDecoder.toRLPItem(w.info, true));
-                t1 = SafeMath.sub(t1, info.amount);
-            }
-            uint t2 = close.update.upData.sendAmount;
-            uint allotment = SafeMath.sub(t1, t2);
-            require(allotment == close.proof.leaf.allotment);
-
-            //TODO: require(close.update == close.proof.leaf.nodeInfo.update);
-
-            tmpStat.status == ModelLib.ChallengeStatus.CLOSE;
-            balances[0].bucMeta.balanceChallenges[key] = tmpStat;
-            emit SiriusEvent(key, 2, tmpStat.challenge);
+            return true;
+        } else {
+            return false;
         }
     }
 
-    function openTransferDeliveryChallenge(bytes calldata data) external recovery {
-        ModelLib.TransferDeliveryChallenge memory open = ModelLib.unmarshalTransferDeliveryChallenge(RLPDecoder.toRLPItem(data, true));
-        require(open.update.upData.eon >= 0 && open.update.upData.eon == balances[1].eon);
-        require(open.tran.offData.eon >= 0 && open.tran.offData.eon == balances[1].eon);
+    function openTransferDeliveryChallenge(bytes calldata data) external recovery returns (bool) {
+        if(!recoveryMode) {
+            ModelLib.TransferDeliveryChallenge memory open = ModelLib.unmarshalTransferDeliveryChallenge(RLPDecoder.toRLPItem(data, true));
+            require(open.update.upData.eon >= 0 && open.update.upData.eon == balances[1].eon);
+            require(open.tran.offData.eon >= 0 && open.tran.offData.eon == balances[1].eon);
 
-        bool signFlag = ModelLib.verifyHubSig4Update(hubPK, open.update);
-        require(signFlag);
-
-        bytes32 hash = ModelLib.hash4OffchainTransaction(open.tran);
-        bool verifyFlag = ModelLib.verifyMembershipProof4Merkle(open.update.upData.root, open.path, hash);
-        require(verifyFlag);
-
-        GlobleLib.TransferDeliveryChallengeAndStatus memory challenge = balances[0].tdcMeta.transferChallenges[hash];
-        challenge.challenge = data;
-        challenge.stat = ModelLib.ChallengeStatus.OPEN;
-        if(!challenge.isVal) {
-            balances[0].tdcMeta.transferChallengeKeys.push(hash);
-        }
-        challenge.isVal = true;
-        balances[0].tdcMeta.transferChallenges[hash] = challenge;
-    }
-
-    function closeTransferDeliveryChallenge(bytes calldata data) external onlyOwner {
-        ModelLib.CloseTransferDeliveryChallenge memory close = ModelLib.unmarshalCloseTransferDeliveryChallenge(RLPDecoder.toRLPItem(data, true));
-
-        bytes32 key = close.txHash;
-
-        ModelLib.HubRoot memory latestRoot = latestRoot();
-        bool proofFlag = ModelLib.verifyMembershipProof4AMTreeProof(latestRoot.node, close.proof);
-        require(proofFlag);
-
-        GlobleLib.TransferDeliveryChallengeAndStatus memory challenge = balances[0].tdcMeta.transferChallenges[key];
-        require(challenge.isVal);
-
-        if(challenge.stat == ModelLib.ChallengeStatus.OPEN) {
-            bool signFlag = ModelLib.verifySig4Update(close.fromPublicKey, close.update);
+            bool signFlag = ModelLib.verifyHubSig4Update(hubPK, open.update);
             require(signFlag);
 
-            //TODO:require(close.proof.leaf.nodeInfo.update == close.update);
-
-            bool verifyFlag = ModelLib.verifyMembershipProof4Merkle(close.update.upData.root, close.txPath, close.txHash);
+            bytes32 hash = ModelLib.hash4OffchainTransaction(open.tran);
+            bool verifyFlag = ModelLib.verifyMembershipProof4Merkle(open.update.upData.root, open.path, hash);
             require(verifyFlag);
 
-            challenge.stat = ModelLib.ChallengeStatus.CLOSE;
-            balances[0].tdcMeta.transferChallenges[key] = challenge;
-            emit SiriusEvent(key, 3, challenge.challenge);
+            GlobleLib.TransferDeliveryChallengeAndStatus memory challenge = balances[0].tdcMeta.transferChallenges[hash];
+            challenge.challenge = data;
+            challenge.stat = ModelLib.ChallengeStatus.OPEN;
+            if(!challenge.isVal) {
+                balances[0].tdcMeta.transferChallengeKeys.push(hash);
+            }
+            challenge.isVal = true;
+            balances[0].tdcMeta.transferChallenges[hash] = challenge;
+            return true;
+        } else {
+            return false;
+        }
+    }
+
+    function closeTransferDeliveryChallenge(bytes calldata data) external onlyOwner returns (bool) {
+        if(!recoveryMode) {
+            ModelLib.CloseTransferDeliveryChallenge memory close = ModelLib.unmarshalCloseTransferDeliveryChallenge(RLPDecoder.toRLPItem(data, true));
+
+            bytes32 key = close.txHash;
+
+            ModelLib.HubRoot memory latestRoot = latestRoot();
+            bool proofFlag = ModelLib.verifyMembershipProof4AMTreeProof(latestRoot.node, close.proof);
+            require(proofFlag);
+
+            GlobleLib.TransferDeliveryChallengeAndStatus memory challenge = balances[0].tdcMeta.transferChallenges[key];
+            require(challenge.isVal);
+
+            if(challenge.stat == ModelLib.ChallengeStatus.OPEN) {
+                bool signFlag = ModelLib.verifySig4Update(close.fromPublicKey, close.update);
+                require(signFlag);
+
+                //TODO:require(close.proof.leaf.nodeInfo.update == close.update);
+
+                bool verifyFlag = ModelLib.verifyMembershipProof4Merkle(close.update.upData.root, close.txPath, close.txHash);
+                require(verifyFlag);
+
+                challenge.stat = ModelLib.ChallengeStatus.CLOSE;
+                balances[0].tdcMeta.transferChallenges[key] = challenge;
+                emit SiriusEvent(key, 3, challenge.challenge);
+            }
+            return true;
+        } else {
+            return false;
         }
     }
 
