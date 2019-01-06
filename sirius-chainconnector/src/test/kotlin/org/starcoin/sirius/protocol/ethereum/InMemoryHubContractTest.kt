@@ -231,7 +231,7 @@ class InMemoryHubContractTest {
     private fun commitHubRoot(eon: Int, amount: Long):Hash {
         var height=chain.getNumber()
         if(height?.rem(4)!=0L){
-            var blockNumber=4-(height?.rem(4)?:0)
+            var blockNumber=4-(height?.rem(4)?:0)-1
             for(i in 0..blockNumber){
                 chain.sb.createBlock()
             }
