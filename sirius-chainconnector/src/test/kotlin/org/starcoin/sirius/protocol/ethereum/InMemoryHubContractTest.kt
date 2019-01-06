@@ -71,6 +71,7 @@ class InMemoryHubContractTest {
 
         //var con= result.getContract(contractName)
         contract = InMemoryHubContract(chain.sb.submitNewContract(result.getContract(contractName)),chain.sb.sender)
+        commitHubRoot(0,0)
     }
 
     @Test
@@ -219,7 +220,7 @@ class InMemoryHubContractTest {
             Assert.assertEquals(transaction.tx.amount.toLong(),amount)
         }
 
-        var hash=commitHubRoot(0,amount)
+        var hash=commitHubRoot(1,amount)
         var transaction=chain.findTransaction(hash)
         Assert.assertEquals(transaction?.to,Address.wrap(contract.getContractAddr()))
         Assert.assertEquals(transaction?.from,Address.wrap(chain.sb.sender.address))

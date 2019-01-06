@@ -87,6 +87,7 @@ class InMemoryHubContract(contract: SolidityContract,owner : ECKey) : HubContrac
             val invocation = contract.parseEvent(logInfo)
             println("event:$invocation")
         }*/
+        assert(setResult.returnValue as Boolean)
         if(setResult.isSuccessful)
             return Hash.of(setResult.receipt.transaction.hash)
         else
