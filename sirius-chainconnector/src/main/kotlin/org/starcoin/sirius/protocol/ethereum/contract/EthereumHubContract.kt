@@ -94,8 +94,7 @@ class EthereumHubContract private constructor(
             caller,
             EthereumTransaction(
                 this.contractAddress, this.chain.getNonce(caller.address),
-                gasPrice, gasLimit, value, data)
-        )
+                gasPrice, gasLimit, value, data))
     }
 
     fun callConstFunction(caller:CryptoKey,name: String,vararg args:Any) :String{

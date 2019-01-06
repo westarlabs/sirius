@@ -19,7 +19,7 @@ enum class EventTopic(val event: String) {
     Deposit("DepositEvent(byte[])")
 }
 
-interface Chain<T : ChainTransaction, B : Block<T>, C : HubContract> {
+interface Chain<T : ChainTransaction, B : Block<T>, HubContract> {
 
     fun findTransaction(hash: Hash): T?
 
@@ -38,13 +38,13 @@ interface Chain<T : ChainTransaction, B : Block<T>, C : HubContract> {
     fun watchEvents(
         contract: Address,
         topic: EventTopic,
-        filter: (FilterArguments) -> Boolean = { true }
+        filter: (TransactionResult<T>) -> Boolean = { true }
     ): Channel<TransactionResult<T>>
 
     fun getBalance(address: Address): BigInteger
 
     fun newTransaction(key: CryptoKey, transaction: T)
 
-    fun getContract(parameter: QueryContractParameter): C
+    fun getContract(parameter: QueryContractParameter): HubContract
 
 }

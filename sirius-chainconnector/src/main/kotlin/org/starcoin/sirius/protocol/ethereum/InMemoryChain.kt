@@ -17,7 +17,7 @@ class InMemoryChain(autoGenblock: Boolean) : Chain<EthereumTransaction, Ethereum
     override fun watchEvents(
         contract: Address,
         topic: EventTopic,
-        filter: (FilterArguments) -> Boolean
+        filter: (TransactionResult<EthereumTransaction>) -> Boolean
     ): Channel<TransactionResult<EthereumTransaction>> {
         TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
     }

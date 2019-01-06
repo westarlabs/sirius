@@ -58,7 +58,7 @@ class EthereumChain constructor(httpUrl: String = defaultHttpUrl, socketPath: St
     fun watchEvents(
         contract: Address,
         topic: EventTopic,
-        filter: (FilterArguments) -> Boolean
+        filter: (TransactionResult<EthereumTransaction>) -> Boolean
     ): Channel<TransactionResult<EthereumTransaction>> {
         val ch = Channel<TransactionResult<EthereumTransaction>>(10)
         val ethFilter = EthFilter(
