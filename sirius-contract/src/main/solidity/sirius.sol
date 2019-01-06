@@ -439,7 +439,11 @@ contract SiriusService is Sirius {
     }
 
     function latestRoot() private view returns (ModelLib.HubRoot memory) {
-        return balances[0].root;
+        if(balances[0].hasRoot) {
+            return balances[0].root;
+        } else {
+            return balances[1].root;
+        }
     }
 
     function preRoot() private view returns (ModelLib.HubRoot memory) {
