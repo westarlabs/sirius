@@ -37,6 +37,7 @@ contract SiriusService is Sirius {
     using SafeMath for uint;
     event DepositEvent(uint indexed i, uint value);
     event DepositEvent2(uint indexed i, bytes32 value);
+    event SiriusEvent(bytes32 indexed hash, uint indexed num, bytes value);
 
     constructor() public {
         GlobleLib.Balance memory initBalance = newBalance(0);
@@ -157,6 +158,7 @@ contract SiriusService is Sirius {
                 if (tmpInfo.amount > tmp) {
                     with.stat = GlobleLib.WithdrawalStatusType.CANCEL;
                     balances[0].withdrawalMeta.withdrawals[key] = with;
+                    emit SiriusEvent(ByteUtilLib.address2hash(addr), 1, with.info);
                 }
             }
         }
@@ -261,6 +263,7 @@ contract SiriusService is Sirius {
 
             tmpStat.status == ModelLib.ChallengeStatus.CLOSE;
             balances[0].bucMeta.balanceChallenges[key] = tmpStat;
+            emit SiriusEvent(key, 2, tmpStat.challenge);
         }
     }
 
@@ -309,6 +312,7 @@ contract SiriusService is Sirius {
 
             challenge.stat = ModelLib.ChallengeStatus.CLOSE;
             balances[0].tdcMeta.transferChallenges[key] = challenge;
+            emit SiriusEvent(key, 3, challenge.challenge);
         }
     }
 
