@@ -117,6 +117,7 @@ contract SiriusService is Sirius {
             require(len > 0);
 
             bytes32 key = ByteUtilLib.address2hash(msg.sender);
+            emit DepositEvent2(2, key);
             bool processingFlag = withdrawalProcessing(key);
             require(!processingFlag);
 
@@ -155,6 +156,7 @@ contract SiriusService is Sirius {
 
             address addr = ByteUtilLib.pubkey2Address(cancel.participant.publicKey);
             bytes32 key = ByteUtilLib.address2hash(addr);
+            emit DepositEvent2(3, key);
 
             GlobleLib.Withdrawal storage with = balances[0].withdrawalMeta.withdrawals[key];
             if(with.isVal) {
@@ -165,13 +167,12 @@ contract SiriusService is Sirius {
                         with.stat = GlobleLib.WithdrawalStatusType.CANCEL;
                         balances[0].withdrawalMeta.withdrawals[key] = with;
                         emit SiriusEvent(ByteUtilLib.address2hash(addr), 1, with.info);
+                        return true;
                     }
                 }
             }
-            return true;
-        } else {
-            return false;
         }
+        return false;
     }
 
     function openBalanceUpdateChallenge(bytes calldata data) external recovery returns (bool) {
@@ -475,6 +476,7 @@ contract SiriusService is Sirius {
         uint tmp2 = SafeMath.add(SafeMath.mul(blocksPerEon, latestEon), SafeMath.div(blocksPerEon, 4));
         uint tmp3 = SafeMath.mul(blocksPerEon, addEon);
         emit DepositEvent(5, tmp2);
+        emit DepositEvent(5, tmp3);
         if ((newEon > addEon) || (newEon == addEon && tmp > tmp3 && !balances[0].hasRoot) || (newEon == latestEon && tmp > tmp2 && !balances[0].hasRoot)) {
             emit DepositEvent(4, 0);
             recoveryMode = true;

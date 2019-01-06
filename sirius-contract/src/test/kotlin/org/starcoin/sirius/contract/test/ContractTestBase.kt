@@ -152,9 +152,11 @@ abstract class ContractTestBase(val contractFile: String, val contractName: Stri
         val data = RLP.dump(HubRoot.serializer(), root)
         val callResult = contract.callFunction("commit", data)
 
-        if (flag)
+
+        if (flag) {
+            assert(callResult.returnValue as Boolean)
             verifyReturn(callResult)
-        else
+        } else
             LOG.warning(callResult.receipt.error)
     }
 

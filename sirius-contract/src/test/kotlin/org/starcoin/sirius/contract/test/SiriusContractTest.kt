@@ -67,6 +67,7 @@ class SiriusContractTest : ContractTestBase("sirius.sol", "SiriusService") {
         val w = Withdrawal(ethKey2Address(callUser), path, amount)
         val data = RLP.dump(Withdrawal.serializer(), w)
         val callResult = contract.callFunction("initiateWithdrawal", data)
+        assert(callResult.returnValue as Boolean)
         verifyReturn(callResult)
     }
 
@@ -74,11 +75,12 @@ class SiriusContractTest : ContractTestBase("sirius.sol", "SiriusService") {
     fun testCancelWithdrawal() {
         val eon = 1
         testInitiateWithdrawal()
-        val update = newUpdate(eon, 2, 950)
+        val update = newUpdate(eon, 2, 950000)
         val cancel =
             CancelWithdrawal(Participant(callUser.keyPair.public), update, newPath(ethKey2Address(callUser), update))
         val data = RLP.dump(CancelWithdrawal.serializer(), cancel)
         val callResult = contract.callFunction("cancelWithdrawal", data)
+        assert(callResult.returnValue as Boolean)
         verifyReturn(callResult)
     }
 
@@ -96,6 +98,7 @@ class SiriusContractTest : ContractTestBase("sirius.sol", "SiriusService") {
         val buc = BalanceUpdateChallenge(bup, callUser.keyPair.public)
         val data = RLP.dump(BalanceUpdateChallenge.serializer(), buc)
         val callResult = contract.callFunction("openBalanceUpdateChallenge", data)
+        assert(callResult.returnValue as Boolean)
         verifyReturn(callResult)
     }
 
@@ -111,6 +114,7 @@ class SiriusContractTest : ContractTestBase("sirius.sol", "SiriusService") {
         val close = CloseBalanceUpdateChallenge(update4, amtp)
         val data = RLP.dump(CloseBalanceUpdateChallenge.serializer(), close)
         val callResult = contract.callFunction("closeBalanceUpdateChallenge", data)
+        assert(callResult.returnValue as Boolean)
         verifyReturn(callResult)
     }
 
@@ -125,6 +129,7 @@ class SiriusContractTest : ContractTestBase("sirius.sol", "SiriusService") {
         val open = TransferDeliveryChallenge(update, tx, MerklePath.mock())
         val data = RLP.dump(TransferDeliveryChallenge.serializer(), open)
         val callResult = contract.callFunction("openTransferDeliveryChallenge", data)
+        assert(callResult.returnValue as Boolean)
         verifyReturn(callResult)
     }
 
@@ -143,6 +148,7 @@ class SiriusContractTest : ContractTestBase("sirius.sol", "SiriusService") {
 
         val data = RLP.dump(CloseTransferDeliveryChallenge.serializer(), close)
         val callResult = contract.callFunction("closeTransferDeliveryChallenge", data)
+        assert(callResult.returnValue as Boolean)
         verifyReturn(callResult)
     }
 
