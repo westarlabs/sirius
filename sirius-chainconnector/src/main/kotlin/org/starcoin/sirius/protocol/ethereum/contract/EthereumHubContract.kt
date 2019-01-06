@@ -9,6 +9,9 @@ import org.starcoin.sirius.crypto.CryptoKey
 import org.starcoin.sirius.protocol.EthereumTransaction
 import org.starcoin.sirius.protocol.HubContract
 import org.starcoin.sirius.protocol.ethereum.EthereumChain
+import org.starcoin.sirius.util.Utils
+import org.web3j.protocol.core.DefaultBlockParameterName
+import org.web3j.protocol.core.methods.request.Transaction
 import java.io.File
 import kotlin.properties.Delegates
 
@@ -79,7 +82,6 @@ class EthereumHubContract private constructor(
 
     fun callFunction(
         caller: CryptoKey,
-        nonce: Long,
         gasPrice: Long,
         gasLimit: Long,
         value: Long,
@@ -90,12 +92,22 @@ class EthereumHubContract private constructor(
         val data = function.encode(args)
         chain.newTransaction(
             caller,
-            EthereumTransaction(this.contractAddress, nonce, gasPrice, gasLimit, value, data)
+            EthereumTransaction(
+                this.contractAddress, this.chain.getNonce(caller.address),
+                gasPrice, gasLimit, value, data)
         )
     }
 
-    fun callConstFunction() {
-        TODO()
+    fun callConstFunction(caller:CryptoKey,name: String,vararg args:Any) :String{
+        val function = this.contract.getByName(name)
+        val data = function.encode(args)
+        val resp = this.chain.web3.ethCall(
+            Transaction.createEthCallTransaction(caller.address.toString(),
+                this.contractAddress.toString(),
+                Utils.HEX.encode(data)
+            ), DefaultBlockParameterName.LATEST).sendAsync().get()
+        if (resp.hasError()) throw RuntimeException(resp.error.message)
+        return resp.value
     }
 
     override fun queryHubInfo(): ContractHubInfo {

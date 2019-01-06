@@ -20,7 +20,7 @@ class EthereumTransaction(val ethTx: Transaction) : ChainTransaction(
             else -> Address.wrap(ethTx.sender)
         }
     // Note: Generate nonce by EthereumChain.getNonce
-    val nonce: Long
+    val nonce: Long?
         get() = ethTx.nonce.toULong()
     val gasPrice: Long
         get() = ethTx.gasPrice.toULong()
@@ -31,18 +31,18 @@ class EthereumTransaction(val ethTx: Transaction) : ChainTransaction(
 
     constructor(
         to: Address?,
-        nonce: Long,
-        gasPrice: Long,
-        gasLimit: Long,
-        value: Long,
+        nonce: Long?,
+        gasPrice: Long?,
+        gasLimit: Long?,
+        value: Long?,
         data: ByteArray?
     ) : this(
         Transaction(
-            ByteUtil.longToBytesNoLeadZeroes(nonce),
-            ByteUtil.longToBytesNoLeadZeroes(gasPrice),
-            ByteUtil.longToBytesNoLeadZeroes(gasLimit),
+            nonce?.let { ByteUtil.longToBytesNoLeadZeroes(it) },
+            gasPrice?.let { ByteUtil.longToBytesNoLeadZeroes(it) },
+            gasLimit?.let { ByteUtil.longToBytesNoLeadZeroes(it) },
             to?.toBytes(),
-            ByteUtil.longToBytesNoLeadZeroes(value),
+            value?.let { ByteUtil.longToBytesNoLeadZeroes(it) },
             data
         )
     )
