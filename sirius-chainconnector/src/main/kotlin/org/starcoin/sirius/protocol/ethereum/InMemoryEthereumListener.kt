@@ -89,6 +89,7 @@ class InMemoryEthereumListener : EthereumListener {
                     BigInteger.valueOf(0),blockSummary.block.header.receiptsRoot.toHEXString(),true))
                 if(transactionFilter(transactionResult))
                     transactionChannel.send(transactionResult)
+
                 transactions.put(Hash.of(it.hash),ethereumTransaction)
             }
         }

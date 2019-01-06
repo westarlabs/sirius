@@ -16,6 +16,7 @@ import org.junit.Test
 import org.starcoin.sirius.core.*
 import org.starcoin.sirius.crypto.CryptoKey
 import org.starcoin.sirius.crypto.CryptoService
+import org.starcoin.sirius.crypto.eth.EthCryptoKey
 import org.starcoin.sirius.protocol.EthereumTransaction
 import org.starcoin.sirius.protocol.EventTopic
 import org.starcoin.sirius.protocol.ethereum.contract.InMemoryHubContract
@@ -112,7 +113,6 @@ class InMemoryHubContractTest {
 
     @Test
     @ImplicitReflectionSerializer
-    @Ignore
     fun testWithDrawal() {
         var nonce = AtomicInteger()
         var alice = CryptoService.generateCryptoKey()
@@ -120,11 +120,17 @@ class InMemoryHubContractTest {
         //var transactions = List<EthereumTransaction>
         var transactionChannel=chain.watchTransactions({it.tx.from==alice.address&&it.tx.to==Address.wrap(contract.getContractAddr())})
 
-        chain.sb.withAccountBalance(alice.address.toBytes(), EtherUtil.convert(123, EtherUtil.Unit.ETHER))
+        chain.sb.sendEther(alice.address.toBytes(), EtherUtil.convert(100000, EtherUtil.Unit.ETHER))
+        chain.sb.createBlock()
 
-        var amount= EtherUtil.convert(1, EtherUtil.Unit.ETHER).toLong()
+        println(1)
+        //chain.sb.withAccountBalance(alice.address.toBytes(), EtherUtil.convert(100000, EtherUtil.Unit.ETHER))
+        //println(chain.sb.getBlockchain().getRepository().getBalance(alice.address.toBytes()))
+
+        var amount= EtherUtil.convert(10, EtherUtil.Unit.ETHER).toLong()
         deposit(alice,nonce,amount)
 
+        println(2)
         runBlocking{
             var transaction=transactionChannel.receive()
             Assert.assertEquals(transaction.tx.from,alice.address)
@@ -132,16 +138,33 @@ class InMemoryHubContractTest {
             Assert.assertEquals(transaction.tx.amount.toLong(),amount)
         }
 
-        amount  = 100
+        /**
+        var hash=commitHubRoot(0,amount)
+
+        println(chain.getNumber())
+        println(contract.getCurrentEon())
+        var transaction=chain.findTransaction(hash)
+        Assert.assertEquals(transaction?.to,Address.wrap(contract.getContractAddr()))
+        Assert.assertEquals(transaction?.from,Address.wrap(chain.sb.sender.address))*/
+
         val eon = 1
         val path = newPath(alice.address, newUpdate(eon, 1, 0,alice))
+        var contractAddr=contract.getContractAddr()
+
+        var owner=chain.sb.sender
+        chain.sb.sender= (alice as EthCryptoKey).ecKey
+
+        amount= EtherUtil.convert(1, EtherUtil.Unit.ETHER).toLong()
         val withdrawal = Withdrawal(alice.address, path, amount)
         var hash=contract.initiateWithdrawal(withdrawal)
 
-        runBlocking{
-            var transaction=transactionChannel.receive()
-            println(transaction)
-        }
+        chain.sb.createBlock()
+        var transaction=chain.findTransaction(hash)
+
+        println(hash)
+        println(transaction)
+        Assert.assertEquals(transaction?.from,alice.address)
+        Assert.assertEquals(transaction?.to,Address.wrap(contractAddr))
 
     }
 
@@ -193,21 +216,6 @@ class InMemoryHubContractTest {
         Assert.assertEquals(transaction?.from,Address.wrap(chain.sb.sender.address))
     }
 
-    private fun createEon(eon: Int, flag: Boolean,deposit: Long) {
-        var ct = 0
-
-        for (i in 0..eon) {
-            val tmp = if (flag) {
-                (4 * (i + 1))
-            } else {
-                (4 * (i + 1)) + 2
-            }
-
-            var total = (ct - 1) * deposit
-            commitHubRoot(i, total)
-        }
-    }
-
     private fun commitHubRoot(eon: Int, amount: Long):Hash {
         var height=chain.getNumber()
         if(height?.rem(4)!=0L){
@@ -223,4 +231,13 @@ class InMemoryHubContractTest {
         return callResult
     }
 
+    @Test
+    @ImplicitReflectionSerializer
+    fun testHubInfo() {
+        var ip = "192.168.0.0.1:80"
+        contract.hubIp(ip)
+
+        var hubInfo=contract.queryHubInfo()
+        Assert.assertEquals(hubInfo.hubAddress,ip)
+    }
 }

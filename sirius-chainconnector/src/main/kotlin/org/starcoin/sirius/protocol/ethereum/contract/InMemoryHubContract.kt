@@ -19,8 +19,13 @@ class InMemoryHubContract(contract: SolidityContract,owner : ECKey) : HubContrac
         return contract.address
     }
 
+    fun hubIp(ip:String){
+        val callResult = contract.callFunction("hubIp", ip.toByteArray())
+    }
+
     override fun queryHubInfo(): ContractHubInfo {
-        TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
+        var res=contract.callConstFunction("hubInfo")
+        return ContractHubInfo.parseFromRLP(res[0] as ByteArray)
     }
 
     override fun queryLeastHubCommit(): HubRoot {

@@ -24,7 +24,7 @@ class InMemoryChain(autoGenblock: Boolean) : Chain<EthereumTransaction, Ethereum
 
 
     override fun watchTransactions(filter: (TransactionResult<EthereumTransaction>) -> Boolean): Channel<TransactionResult<EthereumTransaction>> {
-        var transactionChannel = Channel<TransactionResult<EthereumTransaction>>()
+        var transactionChannel = Channel<TransactionResult<EthereumTransaction>>(200)
         inMemoryEthereumListener.transactionFilter=filter
         inMemoryEthereumListener.transactionChannel = transactionChannel
         sb.addEthereumListener(inMemoryEthereumListener)
@@ -52,7 +52,7 @@ class InMemoryChain(autoGenblock: Boolean) : Chain<EthereumTransaction, Ethereum
         topic: EventTopic,
         filter: (FilterArguments) -> Boolean
     ) :Channel<EthereumBlock>{
-        var blockChannel = Channel<EthereumBlock>()
+        var blockChannel = Channel<EthereumBlock>(200)
         inMemoryEthereumListener.blockChannel = blockChannel
         sb.addEthereumListener(inMemoryEthereumListener)
         if(autoGenblock){
