@@ -472,9 +472,10 @@ contract SiriusService is Sirius {
 
         //recovery
         emit DepositEvent(6, latestEon);
-        uint tmp2 = SafeMath.add(SafeMath.mul(blocksPerEon, newEon), SafeMath.div(blocksPerEon, 4));
+        uint tmp2 = SafeMath.add(SafeMath.mul(blocksPerEon, latestEon), SafeMath.div(blocksPerEon, 4));
+        uint tmp3 = SafeMath.mul(blocksPerEon, addEon);
         emit DepositEvent(5, tmp2);
-        if ((newEon > addEon) || (newEon == addEon && !balances[0].hasRoot) || (newEon == latestEon && tmp > tmp2 && !balances[0].hasRoot)) {
+        if ((newEon > addEon) || (newEon == addEon && tmp > tmp3 && !balances[0].hasRoot) || (newEon == latestEon && tmp > tmp2 && !balances[0].hasRoot)) {
             emit DepositEvent(4, 0);
             recoveryMode = true;
             //TODO: add event
