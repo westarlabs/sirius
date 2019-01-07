@@ -145,7 +145,7 @@ class EthereumHubContract private constructor(
         TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
     }
 
-    override fun closeBalanceUpdateChallenge(request: BalanceUpdateProof): Hash {
+    override fun closeBalanceUpdateChallenge(request: CloseBalanceUpdateChallenge): Hash {
         TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
     }
 

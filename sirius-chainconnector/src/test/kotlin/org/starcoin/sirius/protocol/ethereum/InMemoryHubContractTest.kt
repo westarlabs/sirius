@@ -165,7 +165,6 @@ class InMemoryHubContractTest {
 
         amount = EtherUtil.convert(8, EtherUtil.Unit.GWEI).toLong()
         val withdrawal = Withdrawal(alice.address, path, amount)
-        println(withdrawal)
         var hash = contract.initiateWithdrawal(withdrawal)
 
         var transaction = chain.findTransaction(hash)
@@ -260,7 +259,7 @@ class InMemoryHubContractTest {
         val info = AMTreeInternalNodeInfo(Hash.random(), amount, Hash.random())
         val node = AMTreePathInternalNode(info, PathDirection.ROOT, 0, amount)
         val root = HubRoot(node, eon)
-        println(chain.getNumber())
+        println("current block height is :"+chain.getNumber())
         println(root)
         val callResult = contract.commit(root)
         return callResult
@@ -274,6 +273,54 @@ class InMemoryHubContractTest {
 
         var hubInfo = contract.queryHubInfo()
         Assert.assertEquals(hubInfo.hubAddress, ip)
+    }
+
+    @Test
+    @ImplicitReflectionSerializer
+    fun testBalanceUpdateChallenge() {
+        var nonce = AtomicInteger()
+        var alice = CryptoService.generateCryptoKey()
+
+        var transactionChannel =
+            chain.watchTransactions({ it.tx.from == alice.address && it.tx.to == Address.wrap(contract.getContractAddr()) })
+
+        //var transactions = List<EthereumTransaction>
+        var amount = EtherUtil.convert(100, EtherUtil.Unit.GWEI).toLong()
+
+        chain.sb.sendEther(alice.address.toBytes(), EtherUtil.convert(100000, EtherUtil.Unit.ETHER))
+        chain.sb.createBlock()
+
+        deposit(alice, nonce, amount)
+
+        commitHubRoot(1,amount)
+
+        var owner = chain.sb.sender
+        chain.sb.sender = (alice as EthCryptoKey).ecKey
+
+        val update1 = newUpdate(0, 1, 0,alice)//other
+        val path = newPath(alice.address, update1,0,amount)
+        val update2 = newUpdate(0, 1, 0,alice)//mine
+        val leaf2 = newLeaf(alice.address, update2, 1100, 1000)
+        val amtp = AMTreeProof(path, leaf2)
+        val bup = BalanceUpdateProof(true, update2, true, amtp)
+        val buc = BalanceUpdateChallenge(bup, alice.keyPair.public)
+        var hash=contract.openBalanceUpdateChallenge(buc)
+
+        var transaction = chain.findTransaction(hash)
+        Assert.assertNotNull(transaction)
+
+        chain.sb.sender = owner
+        val update3 = newUpdate(0, 3, 0,alice)//other
+        val update4 = newUpdate(0, 4, 0,alice)//mine
+        val path3 = newPath(alice.address, update3,0,20)
+        val leaf3 = newLeaf(alice.address, update4, 1100, 1000)
+        val amtp2 = AMTreeProof(path, leaf3)
+        val close = CloseBalanceUpdateChallenge(update4, amtp2)
+        hash = contract.closeBalanceUpdateChallenge(close)
+
+        transaction = chain.findTransaction(hash)
+        Assert.assertNotNull(transaction)
+
     }
 
 }

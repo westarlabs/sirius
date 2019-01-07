@@ -62,11 +62,11 @@ class InMemoryHubContract(contract: SolidityContract,owner : ECKey) : HubContrac
     }
 
     override fun openBalanceUpdateChallenge(request: BalanceUpdateChallenge): Hash {
-        TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
+        return callContract("openBalanceUpdateChallenge",RLP.dump(BalanceUpdateChallenge.serializer(),request))
     }
 
-    override fun closeBalanceUpdateChallenge(request: BalanceUpdateProof): Hash {
-        TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
+    override fun closeBalanceUpdateChallenge(request: CloseBalanceUpdateChallenge): Hash {
+        return callContract("closeBalanceUpdateChallenge",RLP.dump(CloseBalanceUpdateChallenge.serializer(),request))
     }
 
     override fun commit(request: HubRoot): Hash {
