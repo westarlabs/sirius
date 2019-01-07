@@ -9,7 +9,6 @@ import org.starcoin.sirius.core.*
 import org.starcoin.sirius.crypto.CryptoKey
 import org.starcoin.sirius.crypto.CryptoService
 import org.starcoin.sirius.protocol.Chain
-import org.starcoin.sirius.protocol.HubContract
 import org.starcoin.sirius.protocol.QueryContractParameter
 import java.math.BigInteger
 import java.util.*
@@ -22,7 +21,7 @@ import java.util.logging.Logger
 class HubImpl<T : ChainTransaction>(
     private val hubKey: CryptoKey,
     private val blocksPerEon: Int,
-    private val chain: Chain<T, Block<T>, HubContract>
+    private val chain: Chain<T, Block<T>>
 ) : Hub {
 
     private val contract = chain.getContract(QueryContractParameter(0))

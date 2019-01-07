@@ -12,9 +12,9 @@ import org.starcoin.sirius.crypto.CryptoKey
 import org.starcoin.sirius.crypto.eth.EthCryptoKey
 import org.starcoin.sirius.protocol.*
 import org.web3j.protocol.Web3j
-import org.web3j.protocol.core.Response.Error
 import org.web3j.protocol.core.DefaultBlockParameter
 import org.web3j.protocol.core.DefaultBlockParameterName
+import org.web3j.protocol.core.Response.Error
 import org.web3j.protocol.core.methods.request.EthFilter
 import org.web3j.protocol.core.methods.response.EthBlock
 import org.web3j.protocol.core.methods.response.EthLog.LogObject
@@ -22,14 +22,13 @@ import org.web3j.protocol.core.methods.response.Transaction
 import org.web3j.protocol.http.HttpService
 import org.web3j.protocol.ipc.UnixIpcService
 import org.web3j.utils.Numeric
-import java.lang.Exception
 import java.math.BigInteger
 
 const val defaultHttpUrl = "http://127.0.0.1:8545"
 
 
 class EthereumChain constructor(httpUrl: String = defaultHttpUrl, socketPath: String? = null) :
-    Chain<EthereumTransaction, EthereumBlock, HubContract> {
+    Chain<EthereumTransaction, EthereumBlock> {
 
 
     val web3: Web3j =

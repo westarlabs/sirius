@@ -19,7 +19,7 @@ enum class EventTopic(val event: String) {
     Deposit("DepositEvent(byte[])")
 }
 
-interface Chain<T : ChainTransaction, B : Block<T>, HubContract> {
+interface Chain<T : ChainTransaction, B : Block<T>> {
 
     fun findTransaction(hash: Hash): T?
 

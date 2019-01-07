@@ -8,11 +8,9 @@ import org.starcoin.sirius.core.Receipt
 import org.starcoin.sirius.crypto.CryptoKey
 import org.starcoin.sirius.crypto.eth.EthCryptoKey
 import org.starcoin.sirius.protocol.*
-import org.starcoin.sirius.protocol.ethereum.contract.InMemoryHubContract
 import java.math.BigInteger
-import kotlin.properties.Delegates
 
-class InMemoryChain(autoGenblock: Boolean) : Chain<EthereumTransaction, EthereumBlock, HubContract> {
+class InMemoryChain(autoGenblock: Boolean) : Chain<EthereumTransaction, EthereumBlock> {
 
     override fun watchEvents(
         contract: Address,

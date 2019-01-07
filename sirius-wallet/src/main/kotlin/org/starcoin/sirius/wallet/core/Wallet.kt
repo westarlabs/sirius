@@ -18,10 +18,10 @@ class Wallet<T:ChainTransaction>{
     private var keyPair: CryptoKey by Delegates.notNull()
 
     //TODO
-    private var chain: Chain<T, *, *> by Delegates.notNull()
+    private var chain: Chain<T, *> by Delegates.notNull()
 
     constructor(contractAddress: Address, channelManager: ChannelManager,
-                chain: Chain<T, *, *>, store: Store<HubStatus>, keypair: CryptoKey
+                chain: Chain<T, *>, store: Store<HubStatus>, keypair: CryptoKey
     ) {
         hub= Hub(contractAddress,address,channelManager,keyPair,null,store)
         this.chain = chain
