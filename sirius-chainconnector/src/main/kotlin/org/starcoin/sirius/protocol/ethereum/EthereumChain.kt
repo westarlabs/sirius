@@ -92,15 +92,11 @@ class EthereumChain constructor(httpUrl: String = defaultHttpUrl, socketPath: St
         return ch
     }
 
-    override fun watchBlock(
-        contract: Address,
-        topic: EventTopic,
-        filter: (FilterArguments) -> Boolean
-    ): Channel<EthereumBlock> {
+    override fun watchBlock(filter: (FilterArguments) -> Boolean): Channel<EthereumBlock> {
+        //TODO support filter.
         val ch = Channel<EthereumBlock>(10)
         web3.blockFlowable(true).subscribe { block -> block.block.blockInfo() }
         return ch
-
     }
 
     override fun getBalance(address: Address): BigInteger {

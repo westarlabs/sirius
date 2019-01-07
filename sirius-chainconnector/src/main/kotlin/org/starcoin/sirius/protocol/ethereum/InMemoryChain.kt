@@ -45,11 +45,8 @@ class InMemoryChain(autoGenblock: Boolean) : Chain<EthereumTransaction, Ethereum
         return inMemoryEthereumListener.blocks.get(height.toInt())
     }
 
-    override fun watchBlock(
-        contract: Address,
-        topic: EventTopic,
-        filter: (FilterArguments) -> Boolean
-    ) :Channel<EthereumBlock>{
+    override fun watchBlock(filter: (FilterArguments) -> Boolean): Channel<EthereumBlock> {
+        //TODO support filter.
         var blockChannel = Channel<EthereumBlock>(200)
         inMemoryEthereumListener.blockChannel = blockChannel
         sb.addEthereumListener(inMemoryEthereumListener)

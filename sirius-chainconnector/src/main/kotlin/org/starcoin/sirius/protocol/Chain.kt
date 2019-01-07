@@ -9,7 +9,7 @@ enum class ChainType {
     ETH
 }
 
-class FilterArguments
+data class FilterArguments(val contract: Address, val topic: EventTopic)
 
 
 data class TransactionResult<T : ChainTransaction>(val tx: T, val receipt: Receipt)
@@ -27,9 +27,10 @@ interface Chain<T : ChainTransaction, B : Block<T>> {
 
     fun watchBlock(
         contract: Address,
-        topic: EventTopic,
-        filter: (FilterArguments) -> Boolean = { true }
-    ): Channel<B>
+        topic: EventTopic
+    ) = watchBlock { it.contract == contract && it.topic == topic }
+
+    fun watchBlock(filter: (FilterArguments) -> Boolean = { true }): Channel<B>
 
     fun getTransactionReceipts(txHashs: List<Hash>): List<Receipt>
 
