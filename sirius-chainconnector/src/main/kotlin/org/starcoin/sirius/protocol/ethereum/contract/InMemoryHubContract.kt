@@ -2,6 +2,7 @@ package org.starcoin.sirius.protocol.ethereum.contract
 
 import org.ethereum.core.CallTransaction
 import org.ethereum.crypto.ECKey
+import org.ethereum.util.blockchain.SolidityCallResult
 import org.ethereum.util.blockchain.SolidityContract
 import org.ethereum.util.blockchain.StandaloneBlockchain
 import org.starcoin.sirius.core.*
@@ -41,15 +42,18 @@ class InMemoryHubContract(contract: SolidityContract,owner : ECKey) : HubContrac
     }
 
     override fun queryCurrentBalanceUpdateChallenge(address: Address): BalanceUpdateChallenge {
-        TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
+        val response=this.contract.callConstFunction("queryBalance")
+        return BalanceUpdateChallenge.parseFromRLP(response[0] as ByteArray)
     }
 
     override fun queryCurrentTransferDeliveryChallenge(address: Address): TransferDeliveryChallenge {
-        TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
+        val response=this.contract.callConstFunction("queryTransfer")
+        return TransferDeliveryChallenge.parseFromRLP(response[0] as ByteArray)
     }
 
     override fun queryWithdrawalStatus(address: Address): WithdrawalStatus {
-        TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
+        val response=this.contract.callConstFunction("queryWithdrawal")
+        return WithdrawalStatus.parseFromRLP(response[0] as ByteArray)
     }
 
     override fun initiateWithdrawal(request: Withdrawal): Hash {
@@ -73,8 +77,14 @@ class InMemoryHubContract(contract: SolidityContract,owner : ECKey) : HubContrac
         return callContract("commit",RLP.dump(HubRoot.serializer(), request))
     }
 
-    private fun  callContract(funcName :String,data :ByteArray):Hash{
-        val setResult = contract.callFunction(funcName, data)
+    private fun  callContract(funcName :String,data :ByteArray?):Hash{
+        val setResult : SolidityCallResult
+
+        if(data!=null)
+            setResult= contract.callFunction(funcName, data)
+        else
+            setResult= contract.callFunction(funcName)
+
         setResult.receipt.logInfoList.forEach { logInfo ->
             val contract = CallTransaction.Contract(contract.abi)
             val invocation = contract.parseEvent(logInfo)
