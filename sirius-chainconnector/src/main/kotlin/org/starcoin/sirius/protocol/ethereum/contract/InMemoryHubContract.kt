@@ -54,16 +54,7 @@ class InMemoryHubContract(contract: SolidityContract,owner : ECKey) : HubContrac
 
     override fun initiateWithdrawal(request: Withdrawal): Hash {
         val withdrawalData = RLP.dump(Withdrawal.serializer(), request)
-        val setResult = contract.callFunction("initiateWithdrawal", withdrawalData)
-        setResult.receipt.logInfoList.forEach { logInfo ->
-            val contract = CallTransaction.Contract(contract.abi)
-            val invocation = contract.parseEvent(logInfo)
-            println("event:$invocation")
-        }
-        if(setResult.isSuccessful)
-            return Hash.of(setResult.receipt.transaction.hash)
-        else
-            return Hash.ZERO_HASH
+        return callContract("initiateWithdrawal", withdrawalData)
     }
 
     override fun cancelWithdrawal(request: CancelWithdrawal): Hash {

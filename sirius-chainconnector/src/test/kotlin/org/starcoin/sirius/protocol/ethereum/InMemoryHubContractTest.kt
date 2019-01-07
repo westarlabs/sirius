@@ -137,7 +137,7 @@ class InMemoryHubContractTest {
         //chain.sb.withAccountBalance(alice.address.toBytes(), EtherUtil.convert(100000, EtherUtil.Unit.ETHER))
         //println(chain.sb.getBlockchain().getRepository().getBalance(alice.address.toBytes()))
 
-        var amount = EtherUtil.convert(10, EtherUtil.Unit.ETHER).toLong()
+        var amount = EtherUtil.convert(1000, EtherUtil.Unit.GWEI).toLong()
         deposit(alice, nonce, amount)
 
         runBlocking {
@@ -156,22 +156,22 @@ class InMemoryHubContractTest {
         Assert.assertEquals(transaction?.to,Address.wrap(contract.getContractAddr()))
         Assert.assertEquals(transaction?.from,Address.wrap(chain.sb.sender.address))*/
 
-        val eon = 1
-        val path = newPath(alice.address, newUpdate(eon, 1, 0, alice))
+        val eon = 0
+        val path = newPath(alice.address, newUpdate(eon, 1, 0, alice),0,amount)
         var contractAddr = contract.getContractAddr()
 
         var owner = chain.sb.sender
         chain.sb.sender = (alice as EthCryptoKey).ecKey
 
-        amount = EtherUtil.convert(8, EtherUtil.Unit.ETHER).toLong()
+        amount = EtherUtil.convert(8, EtherUtil.Unit.GWEI).toLong()
         val withdrawal = Withdrawal(alice.address, path, amount)
+        println(withdrawal)
         var hash = contract.initiateWithdrawal(withdrawal)
 
         var transaction = chain.findTransaction(hash)
 
         Assert.assertEquals(transaction?.from, alice.address)
         Assert.assertEquals(transaction?.to, Address.wrap(contractAddr))
-
 
         chain.sb.sender = owner
 
@@ -188,9 +188,7 @@ class InMemoryHubContractTest {
 
     }
 
-    private fun newPath(addr: Address, update: Update): AMTreePath {
-        val offset: Long = 100
-        val allotment: Long = 1000
+    private fun newPath(addr: Address, update: Update,offset: Long,allotment: Long): AMTreePath {
         val path = AMTreePath(update.eon, newLeaf(addr, update, offset, allotment))
         for (i in 0..MockUtils.nextInt(0, 10)) {
             path.append(AMTreePathInternalNode.mock())
