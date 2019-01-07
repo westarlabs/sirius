@@ -9,7 +9,9 @@ import org.starcoin.sirius.core.*
 import org.starcoin.sirius.crypto.CryptoKey
 import org.starcoin.sirius.crypto.CryptoService
 import org.starcoin.sirius.protocol.Chain
+import org.starcoin.sirius.protocol.HubContract
 import org.starcoin.sirius.protocol.QueryContractParameter
+import org.starcoin.sirius.util.WithLogging
 import java.math.BigInteger
 import java.util.*
 import java.util.concurrent.ArrayBlockingQueue
@@ -24,9 +26,13 @@ class HubImpl<T : ChainTransaction>(
     private val chain: Chain<T, Block<T>>
 ) : Hub {
 
-    private val contract = chain.getContract(QueryContractParameter(0))
+    companion object : WithLogging() {
 
-    private var eonState: EonState
+    }
+
+    private val contract: HubContract = chain.getContract(QueryContractParameter(0))
+
+    lateinit private var eonState: EonState
 
     private val hubAddress: Address
 
@@ -42,8 +48,9 @@ class HubImpl<T : ChainTransaction>(
     private val strategy: MaliciousStrategy
 
     init {
+
         //TODO
-        eonState = EonState(0)
+
         this.eventBus = EventBus()
         this.hubAddress = hubKey.address
         this.strategy = MaliciousStrategy()
@@ -82,6 +89,10 @@ class HubImpl<T : ChainTransaction>(
     }
 
     override fun start() {
+        val contractHubInfo = contract.queryHubInfo()
+        LOG.info("ContractHubInfo: $contractHubInfo")
+        //TODO load previous status from storage.
+        eonState = EonState(contractHubInfo?.eon ?: 0)
         //TODO
         //this.chain.watchTransactions()
         //connection.watchBlock { this.onBlock(it) }

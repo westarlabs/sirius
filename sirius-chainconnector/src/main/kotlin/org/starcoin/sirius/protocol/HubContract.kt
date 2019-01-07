@@ -4,12 +4,12 @@ import org.starcoin.sirius.core.*
 
 interface HubContract {
 
-    fun queryHubInfo(): ContractHubInfo
-    fun queryLeastHubCommit(): HubRoot
-    fun queryHubCommit(eon: Int): HubRoot
-    fun queryCurrentBalanceUpdateChallenge(address: Address): BalanceUpdateChallenge
-    fun queryCurrentTransferDeliveryChallenge(address: Address): TransferDeliveryChallenge
-    fun queryWithdrawalStatus(address: Address): WithdrawalStatus
+    fun queryHubInfo(): ContractHubInfo?
+    fun queryLeastHubCommit(): HubRoot?
+    fun queryHubCommit(eon: Int): HubRoot?
+    fun queryCurrentBalanceUpdateChallenge(address: Address): BalanceUpdateChallenge?
+    fun queryCurrentTransferDeliveryChallenge(address: Address): TransferDeliveryChallenge?
+    fun queryWithdrawalStatus(address: Address): WithdrawalStatus?
 
     fun initiateWithdrawal(request: Withdrawal): Hash
     fun cancelWithdrawal(request: CancelWithdrawal): Hash
