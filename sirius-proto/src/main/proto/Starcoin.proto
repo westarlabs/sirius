@@ -133,7 +133,7 @@ message ParticipantGang {
 }
 
 message CancelWithdrawal {
-    required Participant participant = 1;
+    required bytes addr = 1;
     required Update update = 2;
     required AMTreePath path = 3;
 }

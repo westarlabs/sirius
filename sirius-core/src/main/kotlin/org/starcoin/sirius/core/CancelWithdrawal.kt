@@ -9,7 +9,7 @@ import org.starcoin.sirius.serialization.ProtobufSchema
 @Serializable
 data class CancelWithdrawal(
     @SerialId(1)
-    var participant: Participant = Participant.DUMMY_PARTICIPANT,
+    var addr: Address = Address.DUMMY_ADDRESS,
     @SerialId(2)
     var update: Update = Update.DUMMY_UPDATE,
     @SerialId(3)
@@ -22,7 +22,7 @@ data class CancelWithdrawal(
         var DUMMY_CANCEL_WITHDRAWAL = CancelWithdrawal()
 
         override fun mock(): CancelWithdrawal {
-            return CancelWithdrawal(Participant.mock(), Update.mock(), AMTreePath.mock())
+            return CancelWithdrawal(Address.random(), Update.mock(), AMTreePath.mock())
         }
     }
 }

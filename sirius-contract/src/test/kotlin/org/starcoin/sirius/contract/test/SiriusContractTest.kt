@@ -75,9 +75,9 @@ class SiriusContractTest : ContractTestBase("sirius.sol", "SiriusService") {
     fun testCancelWithdrawal() {
         val eon = 1
         testInitiateWithdrawal()
-        val update = newUpdate(eon, 2, 950000)
+        val update = newUpdate(eon, 2, 950)
         val cancel =
-            CancelWithdrawal(Participant(callUser.keyPair.public), update, newPath(ethKey2Address(callUser), update))
+            CancelWithdrawal(callUser.address, update, newPath(ethKey2Address(callUser), update))
         val data = RLP.dump(CancelWithdrawal.serializer(), cancel)
         val callResult = contract.callFunction("cancelWithdrawal", data)
         assert(callResult.returnValue as Boolean)

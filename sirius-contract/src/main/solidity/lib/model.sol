@@ -621,7 +621,7 @@ library ModelLib {
     }
 
     struct CancelWithdrawal {
-        Participant participant;
+        address addr;
         Update update;
         AMTreePath path;
     }
@@ -631,7 +631,7 @@ library ModelLib {
         uint idx;
         while(RLPDecoder.hasNext(it)) {
             RLPLib.RLPItem memory r = RLPDecoder.next(it);
-            if(idx == 0) cancel.participant = unmarshalParticipant(r);
+            if(idx == 0) cancel.addr = RLPDecoder.toAddress(r);
             else if(idx == 1) cancel.update = unmarshalUpdate(r);
             else if(idx == 2) cancel.path = unmarshalAMTreePath(r);
             else {}
@@ -641,11 +641,11 @@ library ModelLib {
     }
 
     function marshalCancelWithdrawal(CancelWithdrawal memory cancel) internal pure returns (bytes memory) {
-        bytes memory participant = marshalParticipant(cancel.participant);
+        bytes memory addr = RLPEncoder.encodeAddress(cancel.addr);
         bytes memory update = marshalUpdate(cancel.update);
         bytes memory path = marshalAMTreePath(cancel.path);
 
-        return RLPEncoder.encodeList(ByteUtilLib.append(ByteUtilLib.append(participant, update), path));
+        return RLPEncoder.encodeList(ByteUtilLib.append(ByteUtilLib.append(addr, update), path));
     }
 
     struct BalanceUpdateChallenge {

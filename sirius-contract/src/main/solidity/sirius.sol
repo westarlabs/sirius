@@ -41,6 +41,7 @@ contract SiriusService is Sirius {
     event DepositEvent(uint indexed i, uint value);
     event DepositEvent2(uint indexed i, bytes32 value);
     event DepositEvent3(uint indexed i, bytes value);
+    event DepositEvent4(uint indexed i, address value);
     event SiriusEvent(bytes32 indexed hash, uint indexed num, bytes value);
 
     constructor() public {
@@ -145,22 +146,21 @@ contract SiriusService is Sirius {
         }
     }
 
-    function cancelWithdrawal(bytes calldata data) external onlyOwner returns (bool) {
+    function cancelWithdrawal(bytes calldata data) external returns (bool) {
         if(!recoveryMode) {
             ModelLib.CancelWithdrawal memory cancel = ModelLib.unmarshalCancelWithdrawal(RLPDecoder.toRLPItem(data, true));
             uint currentEon = currentEon();
-            require(cancel.update.upData.eon >= 0 && cancel.update.upData.eon == currentEon);
+            //require(cancel.update.upData.eon >= 0 && cancel.update.upData.eon == currentEon);
 
-            bool signFlag = ModelLib.verifySig4Update(cancel.participant.publicKey, cancel.update);
-            require(signFlag);
+            //bool signFlag = ModelLib.verifySig4Update(cancel.participant.publicKey, cancel.update);
+            //require(signFlag);
 
             ModelLib.HubRoot memory latestRoot = latestRoot();
             bool proofFlag = ModelLib.verifyMembershipProof4AMTreePath(latestRoot.node, cancel.path);
             require(proofFlag);
 
-            address addr = ByteUtilLib.pubkey2Address(cancel.participant.publicKey);
-            bytes32 key = ByteUtilLib.address2hash(addr);
-            emit DepositEvent2(3, key);
+            //address addr = ByteUtilLib.pubkey2Address(cancel.participant.publicKey);
+            bytes32 key = ByteUtilLib.address2hash(cancel.addr);
 
             GlobleLib.Withdrawal storage with = balances[0].withdrawalMeta.withdrawals[key];
             if(with.isVal) {
@@ -170,7 +170,6 @@ contract SiriusService is Sirius {
                     if (tmpInfo.amount > tmp) {
                         with.stat = GlobleLib.WithdrawalStatusType.CANCEL;
                         balances[0].withdrawalMeta.withdrawals[key] = with;
-                        emit SiriusEvent(ByteUtilLib.address2hash(addr), 1, with.info);
                         return true;
                     }
                 }
