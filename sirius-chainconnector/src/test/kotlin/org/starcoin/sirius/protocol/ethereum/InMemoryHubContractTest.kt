@@ -323,4 +323,51 @@ class InMemoryHubContractTest {
 
     }
 
+    @Test
+    @ImplicitReflectionSerializer
+    fun testTransferChallenge() {
+        var nonce = AtomicInteger()
+        var alice = CryptoService.generateCryptoKey()
+
+        var transactionChannel =
+            chain.watchTransactions({ it.tx.from == alice.address && it.tx.to == Address.wrap(contract.getContractAddr()) })
+
+        //var transactions = List<EthereumTransaction>
+        var amount = EtherUtil.convert(100, EtherUtil.Unit.GWEI).toLong()
+
+        chain.sb.sendEther(alice.address.toBytes(), EtherUtil.convert(100000, EtherUtil.Unit.ETHER))
+        chain.sb.createBlock()
+
+        deposit(alice, nonce, amount)
+
+        commitHubRoot(1,amount)
+
+        var owner = chain.sb.sender
+        chain.sb.sender = (alice as EthCryptoKey).ecKey
+
+        val update = newUpdate(0, 1, 0,alice)
+        val txData = OffchainTransactionData(0, alice.address, Address.wrap(owner.address), 10, 1)
+        val tx = OffchainTransaction(txData)
+        tx.sign(alice)
+        val open = TransferDeliveryChallenge(update, tx, MerklePath.mock())
+        var hash = contract.openTransferDeliveryChallenge(open)
+
+        var transaction = chain.findTransaction(hash)
+        Assert.assertNotNull(transaction)
+
+        chain.sb.sender = owner
+
+        val update1 = newUpdate(0, 1, 0,alice)//other
+        val path = newPath(alice.address, update1,0,200)
+        val update2 = newUpdate(0, 1, 0,alice)//mine
+        val leaf2 = newLeaf(alice.address, update2, 1100, 1000)
+        val amtp = AMTreeProof(path, leaf2)
+        val close =
+            CloseTransferDeliveryChallenge(amtp, update2, MerklePath.mock(), alice.keyPair.public, Hash.of(tx))
+
+        hash = contract.closeTransferDeliveryChallenge(close)
+
+        transaction = chain.findTransaction(hash)
+        Assert.assertNotNull(transaction)
+    }
 }
