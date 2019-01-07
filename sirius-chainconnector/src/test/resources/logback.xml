@@ -61,10 +61,10 @@
         <appender-ref ref="TEST"/>
     </logger>>
     <logger name="org.springframework" level="ERROR"/>
-    <logger name="state" level="WARN"/>
+    <logger name="state" level="DEBUG"/>
     <logger name="trie" level="ERROR"/>
     <logger name="net" level="DEBUG"/>
-    <logger name="execute" level="ERROR"/>
+    <logger name="execute" level="DEBUG"/>
     <logger name="VM" level="ERROR"/>
     <logger name="pending" level="DEBUG"/>
     <logger name="sync" level="TRACE"/>
@@ -73,8 +73,8 @@
     <logger name="general" level="DEBUG"/>
     <logger name="TCK-Test" level="ERROR"/>
     <logger name="org.hibernate" level="ERROR"/>
-    <logger name="repository" level="INFO"/>
-    <logger name="blockchain" level="INFO"/>
+    <logger name="repository" level="DEBUG"/>
+    <logger name="blockchain" level="DEBUG"/>
     <logger name="mine" level="DEBUG"/>
     <logger name="blockqueue" level="DEBUG"/>
     <logger name="rlp" level="ERROR"/>

@@ -81,12 +81,11 @@ class InMemoryHubContract(contract: SolidityContract,owner : ECKey) : HubContrac
 
     private fun  callContract(funcName :String,data :ByteArray):Hash{
         val setResult = contract.callFunction(funcName, data)
-        /**
         setResult.receipt.logInfoList.forEach { logInfo ->
             val contract = CallTransaction.Contract(contract.abi)
             val invocation = contract.parseEvent(logInfo)
             println("event:$invocation")
-        }*/
+        }
         assert(setResult.returnValue as Boolean)
         if(setResult.isSuccessful)
             return Hash.of(setResult.receipt.transaction.hash)

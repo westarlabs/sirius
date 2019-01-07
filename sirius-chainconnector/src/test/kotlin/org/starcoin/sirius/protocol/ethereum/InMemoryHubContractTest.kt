@@ -23,33 +23,34 @@ import org.starcoin.sirius.protocol.ethereum.contract.InMemoryHubContract
 import org.starcoin.sirius.serialization.rlp.RLP
 import org.starcoin.sirius.util.MockUtils
 import java.io.File
+import java.math.BigInteger
 import java.net.URL
 import java.util.concurrent.atomic.AtomicInteger
 import kotlin.properties.Delegates
 
 class InMemoryHubContractTest {
 
-    private var chain : InMemoryChain by Delegates.notNull()
-    private var contract : InMemoryHubContract by Delegates.notNull()
+    private var chain: InMemoryChain by Delegates.notNull()
+    private var contract: InMemoryHubContract by Delegates.notNull()
 
-    fun loadResource(name:String): URL {
+    fun loadResource(name: String): URL {
         var resource = this.javaClass::class.java.getResource(name)
-        if(resource==null){
-            var path=File("./out/test/resources"+name)
+        if (resource == null) {
+            var path = File("./out/test/resources" + name)
             //println(path.absolutePath)
-            resource=path.toURL()
+            resource = path.toURL()
         }
         //println(resource)
         return resource
     }
 
     @Before
-    fun beforeTest(){
+    fun beforeTest() {
         chain = InMemoryChain(true)
         //chain.sb.withGasLimit(500000000000000)
         val compiler = SolidityCompiler(SystemProperties.getDefault())
 
-        val solRResource= loadResource("/solidity/sirius.sol")
+        val solRResource = loadResource("/solidity/sirius.sol")
 
         val solUri = solRResource.toURI()
 
@@ -70,25 +71,25 @@ class InMemoryHubContractTest {
         val result = CompilationResult.parse(compileRes.output)
 
         //var con= result.getContract(contractName)
-        contract = InMemoryHubContract(chain.sb.submitNewContract(result.getContract(contractName)),chain.sb.sender)
-        commitHubRoot(0,0)
+        contract = InMemoryHubContract(chain.sb.submitNewContract(result.getContract(contractName)), chain.sb.sender)
+        commitHubRoot(0, 0)
     }
 
     @Test
     @ImplicitReflectionSerializer
-    fun testCurrentEon(){
-        Assert.assertEquals(contract.getCurrentEon(),0)
+    fun testCurrentEon() {
+        Assert.assertEquals(contract.getCurrentEon(), 0)
     }
 
-    fun deposit(alice:CryptoKey,nonce:AtomicInteger,amount: Long){
-        chain.sb.withAccountBalance(alice.address.toBytes(), EtherUtil.convert(123, EtherUtil.Unit.ETHER))
-
+    fun deposit(alice: CryptoKey, nonce: AtomicInteger, amount: Long) {
         var ethereumTransaction = EthereumTransaction(
-            Address.wrap(contract.getContractAddr()),nonce.getAndIncrement().toLong() , 0,
-            0, amount, null)
+            Address.wrap(contract.getContractAddr()), nonce.getAndIncrement().toLong(), 21000,
+            210000, amount, null
+        )
 
-        chain.newTransaction(alice,ethereumTransaction)
+        chain.newTransaction(alice, ethereumTransaction)
 
+        //chain.sb.sendEther(alice.address.toBytes(), BigInteger.valueOf(1))
         chain.sb.createBlock()
     }
 
@@ -100,16 +101,24 @@ class InMemoryHubContractTest {
         var alice = CryptoService.generateCryptoKey()
 
         //var transactions = List<EthereumTransaction>
-        var transactionChannel=chain.watchTransactions({it.tx.from==alice.address&&it.tx.to==Address.wrap(contract.getContractAddr())})
-        var amount= EtherUtil.convert(1, EtherUtil.Unit.ETHER).toLong()
-        deposit(alice,nonce,amount)
+        var transactionChannel =
+            chain.watchTransactions({ it.tx.from == alice.address && it.tx.to == Address.wrap(contract.getContractAddr()) })
+        var amount = EtherUtil.convert(100, EtherUtil.Unit.GWEI).toLong()
 
-        runBlocking{
-            var transaction=transactionChannel.receive()
-            Assert.assertEquals(transaction.tx.from,alice.address)
-            Assert.assertEquals(transaction.tx.to,Address.wrap(contract.getContractAddr()))
-            Assert.assertEquals(transaction.tx.amount.toLong(),amount)
+        chain.sb.sendEther(alice.address.toBytes(), EtherUtil.convert(100000, EtherUtil.Unit.ETHER))
+        chain.sb.createBlock()
+
+        deposit(alice, nonce, amount)
+
+        runBlocking {
+            var transaction = transactionChannel.receive()
+            Assert.assertEquals(transaction.tx.from, alice.address)
+            Assert.assertEquals(transaction.tx.to, Address.wrap(contract.getContractAddr()))
+            Assert.assertEquals(transaction.tx.amount.toLong(), amount)
         }
+
+        Assert.assertEquals(chain.sb.getBlockchain().getRepository().getBalance(contract.getContractAddr()).toLong(),amount)
+
     }
 
     @Test
@@ -119,7 +128,8 @@ class InMemoryHubContractTest {
         var alice = CryptoService.generateCryptoKey()
 
         //var transactions = List<EthereumTransaction>
-        var transactionChannel=chain.watchTransactions({it.tx.from==alice.address&&it.tx.to==Address.wrap(contract.getContractAddr())})
+        var transactionChannel =
+            chain.watchTransactions({ it.tx.from == alice.address && it.tx.to == Address.wrap(contract.getContractAddr()) })
 
         chain.sb.sendEther(alice.address.toBytes(), EtherUtil.convert(100000, EtherUtil.Unit.ETHER))
         chain.sb.createBlock()
@@ -127,14 +137,14 @@ class InMemoryHubContractTest {
         //chain.sb.withAccountBalance(alice.address.toBytes(), EtherUtil.convert(100000, EtherUtil.Unit.ETHER))
         //println(chain.sb.getBlockchain().getRepository().getBalance(alice.address.toBytes()))
 
-        var amount= EtherUtil.convert(10, EtherUtil.Unit.ETHER).toLong()
-        deposit(alice,nonce,amount)
+        var amount = EtherUtil.convert(10, EtherUtil.Unit.ETHER).toLong()
+        deposit(alice, nonce, amount)
 
-        runBlocking{
-            var transaction=transactionChannel.receive()
-            Assert.assertEquals(transaction.tx.from,alice.address)
-            Assert.assertEquals(transaction.tx.to,Address.wrap(contract.getContractAddr()))
-            Assert.assertEquals(transaction.tx.amount.toLong(),amount)
+        runBlocking {
+            var transaction = transactionChannel.receive()
+            Assert.assertEquals(transaction.tx.from, alice.address)
+            Assert.assertEquals(transaction.tx.to, Address.wrap(contract.getContractAddr()))
+            Assert.assertEquals(transaction.tx.amount.toLong(), amount)
         }
 
         /**
@@ -147,34 +157,34 @@ class InMemoryHubContractTest {
         Assert.assertEquals(transaction?.from,Address.wrap(chain.sb.sender.address))*/
 
         val eon = 1
-        val path = newPath(alice.address, newUpdate(eon, 1, 0,alice))
-        var contractAddr=contract.getContractAddr()
+        val path = newPath(alice.address, newUpdate(eon, 1, 0, alice))
+        var contractAddr = contract.getContractAddr()
 
-        var owner=chain.sb.sender
-        chain.sb.sender= (alice as EthCryptoKey).ecKey
+        var owner = chain.sb.sender
+        chain.sb.sender = (alice as EthCryptoKey).ecKey
 
-        amount= EtherUtil.convert(8, EtherUtil.Unit.ETHER).toLong()
+        amount = EtherUtil.convert(8, EtherUtil.Unit.ETHER).toLong()
         val withdrawal = Withdrawal(alice.address, path, amount)
-        var hash=contract.initiateWithdrawal(withdrawal)
+        var hash = contract.initiateWithdrawal(withdrawal)
 
-        var transaction=chain.findTransaction(hash)
+        var transaction = chain.findTransaction(hash)
 
-        Assert.assertEquals(transaction?.from,alice.address)
-        Assert.assertEquals(transaction?.to,Address.wrap(contractAddr))
+        Assert.assertEquals(transaction?.from, alice.address)
+        Assert.assertEquals(transaction?.to, Address.wrap(contractAddr))
 
 
-        chain.sb.sender= owner
+        chain.sb.sender = owner
 
-        amount= EtherUtil.convert(2, EtherUtil.Unit.ETHER).toLong()
+        amount = EtherUtil.convert(2, EtherUtil.Unit.ETHER).toLong()
 
-        val update = newUpdate(eon, 2, amount,alice)
+        val update = newUpdate(eon, 2, amount, alice)
         val cancel =
             CancelWithdrawal(Participant(alice.keyPair.public), update, path)
         hash = contract.cancelWithdrawal(cancel)
-        transaction=chain.findTransaction(hash)
+        transaction = chain.findTransaction(hash)
 
-        Assert.assertEquals(transaction?.from,alice.address)
-        Assert.assertEquals(transaction?.to,Address.wrap(contractAddr))
+        Assert.assertEquals(transaction?.from, alice.address)
+        Assert.assertEquals(transaction?.to, Address.wrap(contractAddr))
 
     }
 
@@ -194,7 +204,7 @@ class InMemoryHubContractTest {
         return AMTreePathLeafNode(nodeInfo, PathDirection.LEFT, offset, allotment)
     }
 
-    private fun newUpdate(eon: Int, version: Long, sendAmount: Long,callUser: CryptoKey): Update {
+    private fun newUpdate(eon: Int, version: Long, sendAmount: Long, callUser: CryptoKey): Update {
         val updateData = UpdateData(eon, version, sendAmount, 0, Hash.random())
         val update = Update(updateData)
         update.sign(callUser)
@@ -209,37 +219,50 @@ class InMemoryHubContractTest {
         var alice = CryptoService.generateCryptoKey()
 
         //var transactions = List<EthereumTransaction>
-        var transactionChannel=chain.watchTransactions({it.tx.from==alice.address&&it.tx.to==Address.wrap(contract.getContractAddr())})
-        var amount= EtherUtil.convert(1, EtherUtil.Unit.ETHER).toLong()
-        deposit(alice,nonce,amount)
+        chain.sb.sendEther(alice.address.toBytes(), EtherUtil.convert(100000, EtherUtil.Unit.ETHER))
+        chain.sb.createBlock()
 
-        runBlocking{
-            var transaction=transactionChannel.receive()
-            Assert.assertEquals(transaction.tx.from,alice.address)
-            Assert.assertEquals(transaction.tx.to,Address.wrap(contract.getContractAddr()))
-            Assert.assertEquals(transaction.tx.amount.toLong(),amount)
+        var transactionChannel =
+            chain.watchTransactions({ it.tx.from == alice.address && it.tx.to == Address.wrap(contract.getContractAddr()) })
+        var amount = EtherUtil.convert(1000, EtherUtil.Unit.GWEI).toLong()
+
+        //println(chain.sb.getBlockchain().getRepository().getBalance(alice.address.toBytes()))
+        deposit(alice, nonce, amount)
+
+        runBlocking {
+            var transaction = transactionChannel.receive()
+            Assert.assertEquals(transaction.tx.from, alice.address)
+            Assert.assertEquals(transaction.tx.to, Address.wrap(contract.getContractAddr()))
+            Assert.assertEquals(transaction.tx.amount.toLong(), amount)
         }
 
-        var hash=commitHubRoot(1,amount)
-        var transaction=chain.findTransaction(hash)
-        Assert.assertEquals(transaction?.to,Address.wrap(contract.getContractAddr()))
-        Assert.assertEquals(transaction?.from,Address.wrap(chain.sb.sender.address))
+        Assert.assertEquals(chain.sb.getBlockchain().getRepository().getBalance(contract.getContractAddr()).toLong(),amount)
 
-        var root=contract.queryLeastHubCommit()
+        //println(chain.sb.getBlockchain().getRepository().getBalance(contract.getContractAddr()))
+        var hash = commitHubRoot(1, amount)
+
+        var transaction = chain.findTransaction(hash)
+        Assert.assertEquals(transaction?.to, Address.wrap(contract.getContractAddr()))
+        Assert.assertEquals(transaction?.from, Address.wrap(chain.sb.sender.address))
+
+        var root = contract.queryLeastHubCommit()
         println(root)
     }
 
-    private fun commitHubRoot(eon: Int, amount: Long):Hash {
-        var height=chain.getNumber()
-        if(height?.rem(4)!=0L){
-            var blockNumber=4-(height?.rem(4)?:0)-1
-            for(i in 0..blockNumber){
-                chain.sb.createBlock()
+    private fun commitHubRoot(eon: Int, amount: Long): Hash {
+        var height = chain.getNumber()
+        if (eon != 0) {
+            if (height?.rem(8) != 0L) {
+                var blockNumber = 8 - (height?.rem(8) ?: 0) - 1
+                for (i in 0..blockNumber) {
+                    chain.sb.createBlock()
+                }
             }
         }
         val info = AMTreeInternalNodeInfo(Hash.random(), amount, Hash.random())
         val node = AMTreePathInternalNode(info, PathDirection.ROOT, 0, amount)
         val root = HubRoot(node, eon)
+        println(chain.getNumber())
         println(root)
         val callResult = contract.commit(root)
         return callResult
@@ -251,8 +274,8 @@ class InMemoryHubContractTest {
         var ip = "192.168.0.0.1:80"
         contract.hubIp(ip)
 
-        var hubInfo=contract.queryHubInfo()
-        Assert.assertEquals(hubInfo.hubAddress,ip)
+        var hubInfo = contract.queryHubInfo()
+        Assert.assertEquals(hubInfo.hubAddress, ip)
     }
 
 }
