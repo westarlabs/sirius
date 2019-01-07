@@ -12,7 +12,7 @@ interface Sirius {
     function openTransferDeliveryChallenge(bytes calldata data) external returns (bool);
     function closeTransferDeliveryChallenge(bytes calldata data) external returns (bool);
     function recoverFunds(bytes calldata data) external;
-    function getLatestRoot() external view returns (bytes memory);
+    function getLatestRoot() external returns (bytes memory);
     function getCurrentEon() external view returns (uint);
     function isRecoveryMode() external view returns (bool);
     function test() external view returns (bool);
@@ -37,6 +37,7 @@ contract SiriusService is Sirius {
     using SafeMath for uint;
     event DepositEvent(uint indexed i, uint value);
     event DepositEvent2(uint indexed i, bytes32 value);
+    event DepositEvent3(uint indexed i, bytes value);
     event SiriusEvent(bytes32 indexed hash, uint indexed num, bytes value);
 
     constructor() public {
@@ -372,8 +373,15 @@ contract SiriusService is Sirius {
         msg.sender.transfer(amount);
     }
 
-    function getLatestRoot() external view returns (bytes memory) {
-        return ModelLib.marshalHubRoot(latestRoot());
+    function getLatestRoot() external returns (bytes memory) {
+        ModelLib.HubRoot memory root = latestRoot();
+        bytes memory t1 = ByteUtilLib.uint2byte(root.node.allotment);
+        emit DepositEvent3(1, t1);
+        uint t2 = RLPDecoder.toUint(RLPDecoder.toRLPItem(RLPEncoder.encodeBytes(t1)));
+        emit DepositEvent(9, t2);
+        bytes memory tmp = ModelLib.marshalHubRoot(root);
+        emit DepositEvent3(2, tmp);
+        return tmp;
     }
 
     function getCurrentEon() external view returns (uint) {

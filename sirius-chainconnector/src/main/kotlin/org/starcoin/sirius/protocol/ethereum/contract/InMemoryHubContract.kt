@@ -29,8 +29,11 @@ class InMemoryHubContract(contract: SolidityContract,owner : ECKey) : HubContrac
     }
 
     override fun queryLeastHubCommit(): HubRoot {
-        val callResult = contract.callConstFunction("getLatestRoot")
-        return HubRoot.parseFromRLP(callResult[0] as ByteArray)
+        val callResult = contract.callFunction("getLatestRoot")
+        callResult.receipt.logInfoList.forEach { logInfo ->
+            println("event:$logInfo")
+        }
+        return HubRoot.parseFromRLP(callResult.returnValue as ByteArray)
     }
 
     override fun queryHubCommit(eon: Int): HubRoot {
