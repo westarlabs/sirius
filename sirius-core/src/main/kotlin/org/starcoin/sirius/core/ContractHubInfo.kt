@@ -17,12 +17,13 @@ data class ContractHubInfo(
     @SerialId(2)
     val hubAddress: String,
     @SerialId(3)
-    @Serializable(with = BigIntegerSerializer::class)
-    val blocksPerEon: BigInteger
+    val blocksPerEon: Int,
+    @SerialId(4)
+    val eon: Int = 0
 ) : SiriusObject() {
     companion object : SiriusObjectCompanion<ContractHubInfo, Starcoin.ContractHubInfo>(ContractHubInfo::class) {
         override fun mock(): ContractHubInfo {
-            return ContractHubInfo(MockUtils.nextBigInteger(), "127.0.0.1:8990", 4.toBigInteger())
+            return ContractHubInfo(MockUtils.nextBigInteger(), "127.0.0.1:8990", 4, MockUtils.nextInt())
         }
     }
 }
