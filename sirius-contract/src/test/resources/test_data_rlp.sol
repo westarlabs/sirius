@@ -20,6 +20,7 @@ contract TestDataRLP {
         int intValue;
         string stringValue;
         address addressValue;
+        uint bigIntegerValue;
     }
 
     function decodeData(bytes memory dataBytes) internal pure returns (Data memory){
@@ -28,7 +29,8 @@ contract TestDataRLP {
             boolValue : rlpList[0].toBool(),
             intValue : rlpList[1].toInt(),
             stringValue : rlpList[2].toAscii(),
-            addressValue : rlpList[3].toAddress()
+            addressValue : rlpList[3].toAddress(),
+            bigIntegerValue: rlpList[4].toUint()
             });
     }
 
@@ -37,7 +39,8 @@ contract TestDataRLP {
         bytes memory intValue = RLPEncoder.encodeInt(_data.intValue);
         bytes memory stringValue = RLPEncoder.encodeString(_data.stringValue);
         bytes memory addressValue = RLPEncoder.encodeAddress(_data.addressValue);
-        bytes memory flattened = ByteUtilLib.append(ByteUtilLib.append(ByteUtilLib.append(boolValue, intValue), stringValue), addressValue);
+        bytes memory bigIntegerValue = RLPEncoder.encodeUint(_data.bigIntegerValue);
+        bytes memory flattened = ByteUtilLib.append(ByteUtilLib.append(ByteUtilLib.append(ByteUtilLib.append(boolValue, intValue), stringValue), addressValue), bigIntegerValue);
         bytes memory encoded = RLPEncoder.encodeList(flattened);
         return encoded;
     }

@@ -5,6 +5,7 @@ import kotlinx.serialization.KSerializer
 import kotlinx.serialization.SerialDescriptor
 import kotlinx.serialization.SerializationException
 import org.starcoin.sirius.serialization.BinaryElementValueEncoder
+import java.math.BigInteger
 
 
 class RLPOutput internal constructor(private val out: RLPList, private var begin: Boolean) :
@@ -49,6 +50,7 @@ class RLPOutput internal constructor(private val out: RLPList, private var begin
             is Char -> out.add(value.toRLP())
             is String -> out.add(value.toRLP())
             is ByteArray -> out.add(value.toRLP())
+            is BigInteger -> out.add(value.toRLP())
             else -> throw SerializationException("unsupported type ${value.javaClass}")
         }
     }

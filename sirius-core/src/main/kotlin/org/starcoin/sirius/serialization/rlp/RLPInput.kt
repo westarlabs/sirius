@@ -5,6 +5,7 @@ import kotlinx.serialization.KSerializer
 import kotlinx.serialization.SerialDescriptor
 import kotlinx.serialization.internal.EnumDescriptor
 import org.starcoin.sirius.serialization.BinaryElementValueDecoder
+import java.math.BigInteger
 
 
 class RLPInput internal constructor(private val input: RLPList, private var begin: Boolean) :
@@ -71,6 +72,10 @@ class RLPInput internal constructor(private val input: RLPList, private var begi
 
     override fun decodeByteArray(): ByteArray {
         return nextElement().bytes
+    }
+
+    override fun decodeBigInteger(): BigInteger {
+        return nextElement().toBigIntegerFromRLP()
     }
 
     override fun decodeCollectionSize(desc: SerialDescriptor): Int {

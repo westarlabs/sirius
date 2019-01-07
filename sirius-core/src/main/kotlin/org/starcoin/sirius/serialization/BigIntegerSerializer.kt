@@ -11,9 +11,7 @@ import java.math.BigInteger
 class BigIntegerSerializer : KSerializer<BigInteger> {
     override fun deserialize(input: Decoder): BigInteger {
         return when (input) {
-            is BinaryDecoder -> BigInteger(
-                input.decodeByteArray()
-            )
+            is BinaryDecoder -> input.decodeBigInteger()
             else -> BigInteger(
                 Utils.HEX.decode(
                     input.decodeString()
@@ -24,9 +22,7 @@ class BigIntegerSerializer : KSerializer<BigInteger> {
 
     override fun serialize(output: Encoder, obj: BigInteger) {
         when (output) {
-            is BinaryEncoder -> output.encodeByteArray(
-                obj.toByteArray()
-            )
+            is BinaryEncoder -> output.encodeBigInteger(obj)
             else -> output.encodeString(
                 Utils.HEX.encode(
                     obj.toByteArray()

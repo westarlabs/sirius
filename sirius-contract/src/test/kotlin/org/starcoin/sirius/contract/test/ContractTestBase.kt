@@ -4,7 +4,7 @@ import kotlinx.serialization.Serializable
 import org.apache.commons.lang3.RandomStringUtils
 import org.apache.commons.lang3.RandomUtils
 import org.ethereum.config.SystemProperties
-import org.ethereum.core.*
+import org.ethereum.core.BlockSummary
 import org.ethereum.crypto.ECKey
 import org.ethereum.listener.EthereumListenerAdapter
 import org.ethereum.solidity.compiler.CompilationResult
@@ -17,13 +17,21 @@ import org.junit.Assert
 import org.junit.Before
 import org.starcoin.sirius.core.*
 import org.starcoin.sirius.crypto.eth.EthCryptoKey
+import org.starcoin.sirius.serialization.BigIntegerSerializer
 import org.starcoin.sirius.serialization.rlp.RLP
+import org.starcoin.sirius.util.MockUtils
 import org.starcoin.sirius.util.WithLogging
 import java.io.File
+import java.math.BigInteger
 import java.util.concurrent.atomic.AtomicLong
 
 @Serializable
-data class Data(val boolean: Boolean, val int: Int, val string: String, val address: Address) {
+data class Data(
+    val boolean: Boolean,
+    val int: Int,
+    val string: String,
+    val address: Address, @Serializable(with = BigIntegerSerializer::class) val bigInteger: BigInteger
+) {
     companion object : WithLogging() {
         fun random(): Data {
             return random(RandomUtils.nextBoolean())
@@ -34,7 +42,8 @@ data class Data(val boolean: Boolean, val int: Int, val string: String, val addr
                 booleanValue,
                 RandomUtils.nextInt(),
                 RandomStringUtils.randomAlphabetic(RandomUtils.nextInt(10, 30)),
-                Address.random()
+                Address.random(),
+                MockUtils.nextBigInteger()
             )
         }
     }

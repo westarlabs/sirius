@@ -5,6 +5,8 @@ import org.junit.Assert
 import org.junit.Test
 import org.starcoin.sirius.core.Address
 import org.starcoin.sirius.serialization.rlp.RLP
+import org.starcoin.sirius.util.Utils
+import java.math.BigInteger
 
 class TestDataRLP : ContractTestBase("test_data_rlp.sol", "TestDataRLP") {
 
@@ -39,7 +41,13 @@ class TestDataRLP : ContractTestBase("test_data_rlp.sol", "TestDataRLP") {
 
     @Test
     fun testDataSetAndGetDefaultValue() {
-        val data = Data(false, 0, "", Address.ZERO_ADDRESS)
+        val data = Data(false, 0, "", Address.ZERO_ADDRESS, BigInteger.ZERO)
+        doTestDataSetAndGet(data)
+    }
+
+    @Test
+    fun testDataSetAndGetSpecialValue() {
+        val data = Data(false, 0, "", Address.ZERO_ADDRESS, 1000000000000.toBigInteger())
         doTestDataSetAndGet(data)
     }
 
@@ -57,11 +65,13 @@ class TestDataRLP : ContractTestBase("test_data_rlp.sol", "TestDataRLP") {
         val callResult = contract.callConstFunction("get")
         Assert.assertTrue(callResult.isNotEmpty())
         val returnDataRLP = callResult[0] as ByteArray
-        Assert.assertArrayEquals(dataRLP, returnDataRLP)
 //        println("${dataRLP.size}:${returnDataRLP.size}")
 //        println(bytesToHexString(dataRLP))
 //        println(bytesToHexString(returnDataRLP))
+        Assert.assertEquals(Utils.HEX.encode(dataRLP), Utils.HEX.encode(returnDataRLP))
+        Assert.assertArrayEquals(dataRLP, returnDataRLP)
         val returnData = RLP.load(Data.serializer(), returnDataRLP)
         Assert.assertEquals(data, returnData)
+
     }
 }

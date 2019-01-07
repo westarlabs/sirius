@@ -25,6 +25,7 @@ message TestData {
     required bytes stringValue = 4;
     required bytes bytesValue = 5;
     optional bytes optionalValue = 6;
+    required bytes bigIntegerValue = 7;
 }
 
 message Deposit{

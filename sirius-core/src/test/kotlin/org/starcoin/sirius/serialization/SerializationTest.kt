@@ -31,6 +31,26 @@ class SerializationTest {
         Assert.assertEquals(data, data3)
     }
 
+
+    @ImplicitReflectionSerializer
+    @Test
+    fun testDataSpecialValue() {
+        val data = TestData.random()
+        data.bigIntegerValue = 1000000000000.toBigInteger()
+        val json = JSON.stringify(data)
+        println(json)
+        val data1 = JSON.parse<TestData>(json)
+        Assert.assertEquals(data, data1)
+
+        val bytes = ProtoBuf.dump(data)
+        val data2 = ProtoBuf.load<TestData>(bytes)
+        Assert.assertEquals(data, data2)
+
+        val rlp = RLP.dump(data)
+        val data3 = RLP.load<TestData>(rlp)
+        Assert.assertEquals(data, data3)
+    }
+
     @ImplicitReflectionSerializer
     @Test
     fun testNamedData() {

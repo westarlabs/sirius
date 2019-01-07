@@ -6,6 +6,7 @@ import org.starcoin.proto.Starcoin
 import org.starcoin.sirius.core.SiriusObject
 import org.starcoin.sirius.core.SiriusObjectCompanion
 import org.starcoin.sirius.util.MockUtils
+import java.math.BigInteger
 
 enum class TestEnum {
     TEST_ENUM_ZERO,
@@ -27,7 +28,10 @@ data class TestData(
     var bytesValue: ByteArrayWrapper,
     @SerialId(6)
     @Optional
-    var optionalValue: String = ""
+    var optionalValue: String = "",
+    @Serializable(with = BigIntegerSerializer::class)
+    @SerialId(7)
+    var bigIntegerValue: BigInteger
 ) : SiriusObject() {
 
     @Serializer(forClass = TestData::class)
@@ -59,7 +63,8 @@ data class TestData(
                 when (MockUtils.nextBoolean()) {
                     true -> ""
                     false -> "not empty"
-                }
+                },
+                MockUtils.nextBigInteger()
             )
         }
     }
