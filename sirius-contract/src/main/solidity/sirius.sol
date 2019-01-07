@@ -19,6 +19,9 @@ interface Sirius {
     function testRecovery() external;
     function hubIp(bytes calldata data) external;
     function hubInfo() external view returns (bytes memory);
+    function queryWithdrawal() external view returns (bytes memory);
+    function queryBalance() external view returns (bytes memory);
+    function queryTransfer() external view returns (bytes memory);
 }
 
 contract SiriusService is Sirius {
@@ -407,6 +410,36 @@ contract SiriusService is Sirius {
     function testRecovery() external {
         require(msg.sender == owner);
         recoveryMode = true;
+    }
+
+    function queryWithdrawal() external view returns (bytes memory) {
+        bytes memory bs = ModelLib.marshalHubRoot(latestRoot());
+        ModelLib.ContractReturn memory cr;
+        cr.hasVal = true;
+        cr.crt = ModelLib.ContractReturnType.CR_HUBROOT;
+        cr.payload = bs;
+
+        return ModelLib.marshalContractReturn(cr);
+    }
+
+    function queryBalance() external view returns (bytes memory) {
+        bytes memory bs = ModelLib.marshalHubRoot(latestRoot());
+        ModelLib.ContractReturn memory cr;
+        cr.hasVal = true;
+        cr.crt = ModelLib.ContractReturnType.CR_HUBROOT;
+        cr.payload = bs;
+
+        return ModelLib.marshalContractReturn(cr);
+    }
+
+    function queryTransfer() external view returns (bytes memory) {
+        bytes memory bs = ModelLib.marshalHubRoot(latestRoot());
+        ModelLib.ContractReturn memory cr;
+        cr.hasVal = true;
+        cr.crt = ModelLib.ContractReturnType.CR_HUBROOT;
+        cr.payload = bs;
+
+        return ModelLib.marshalContractReturn(cr);
     }
 
     /** private methods **/

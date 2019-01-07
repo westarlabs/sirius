@@ -132,3 +132,37 @@ enum class HubEventType(
         }
     }
 }
+
+enum class ContractReturnType(
+    private val payloadClass: KClass<*>
+) : SiriusEnum<Starcoin.ContractReturnType> {
+    CR_WITHDRAWAL(HubRoot::class),
+    CR_BALANCE(Deposit::class),
+    CR_TRANSFER(
+        WithdrawalStatus::class
+    ),
+    CR_HUBROOT(OffchainTransaction::class);
+
+    @Suppress("UNCHECKED_CAST")
+    fun <D : SiriusObject> parsePayload(payloadBytes: ByteArray): D {
+        return (payloadClass.companionObjectInstance as SiriusObjectCompanion<*, *>).parseFromRLP(payloadBytes) as D
+    }
+
+    override fun toProto(): Starcoin.ContractReturnType {
+        return Starcoin.ContractReturnType.forNumber(this.ordinal)
+    }
+
+    companion object {
+
+        fun valueOf(type: Int): ContractReturnType {
+            return ContractReturnType.values()[type]
+        }
+
+        fun random(): ContractReturnType {
+            return ContractReturnType.values()[RandomUtils.nextInt(
+                0,
+                ContractReturnType.values().size
+            )]
+        }
+    }
+}

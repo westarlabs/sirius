@@ -81,4 +81,9 @@ class SiriusModelTest : ContractTestBase("model_test.sol", "test_all") {
     fun testBalanceUpdateProof() {
         doTest(BalanceUpdateProof::class, "balance_update_proof_test")
     }
+
+    @Test
+    fun testContractReturn() {
+        doTest(ContractReturn::class, "contract_return_test")
+    }
 }

@@ -951,4 +951,71 @@ library ModelLib {
 
         return RLPEncoder.encodeList(ByteUtilLib.append(ByteUtilLib.append(startBlockNum, hubAddress), blocksPerEon));
     }
+
+    enum ContractReturnType {
+        CR_WITHDRAWAL,
+        CR_BALANCE,
+        CR_TRANSFER,
+        CR_HUBROOT
+    }
+
+    function unmarshalContractReturnType(RLPLib.RLPItem memory rlp) internal pure returns (ContractReturnType crt) {
+        uint tmp = RLPDecoder.toUint(rlp);
+        if(tmp == 0) {
+            return ContractReturnType.CR_WITHDRAWAL;
+        } else if(tmp == 1) {
+            return ContractReturnType.CR_BALANCE;
+        } else if(tmp == 2) {
+            return ContractReturnType.CR_TRANSFER;
+        } else if(tmp == 3) {
+            return ContractReturnType.CR_HUBROOT;
+        } else {
+            revert();
+        }
+    }
+
+    function marshalContractReturnType(ContractReturnType crt) internal pure returns (bytes memory) {
+        uint tmp;
+        if(crt == ContractReturnType.CR_WITHDRAWAL) {
+            tmp = 0;
+        } else if(crt == ContractReturnType.CR_BALANCE) {
+            tmp = 1;
+        } else if(crt == ContractReturnType.CR_TRANSFER) {
+            tmp = 2;
+        } else if(crt == ContractReturnType.CR_HUBROOT) {
+            tmp = 3;
+        } else {
+            revert();
+        }
+
+        return RLPEncoder.encodeUint(tmp);
+    }
+
+    struct ContractReturn {
+       bool hasVal;
+       ContractReturnType crt;
+       bytes payload;
+    }
+
+    function unmarshalContractReturn(RLPLib.RLPItem memory rlp) internal pure returns (ContractReturn memory cr) {
+        RLPLib.Iterator memory it = RLPDecoder.iterator(rlp);
+        uint idx;
+        while(RLPDecoder.hasNext(it)) {
+            RLPLib.RLPItem memory r = RLPDecoder.next(it);
+            if(idx == 0) cr.hasVal = RLPDecoder.toBool(r);
+            else if(idx == 1) cr.crt = unmarshalContractReturnType(r);
+            else if(idx == 2) cr.payload = RLPLib.toData(r);
+            else {}
+
+            idx++;
+        }
+    }
+
+    function marshalContractReturn(ContractReturn memory cr) internal pure returns (bytes memory) {
+        bytes memory hasVal = RLPEncoder.encodeBool(cr.hasVal);
+        bytes memory crt = marshalContractReturnType(cr.crt);
+        bytes memory payload = RLPEncoder.encodeBytes(cr.payload);
+
+        return RLPEncoder.encodeList(ByteUtilLib.append(ByteUtilLib.append(hasVal, crt), payload));
+    }
 }

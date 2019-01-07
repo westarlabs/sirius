@@ -239,6 +239,19 @@ message HubEvent {
     required bytes address = 3;
 }
 
+enum ContractReturnType {
+    CR_WITHDRAWAL = 0;
+    CR_BALANCE = 1;
+    CR_TRANSFER = 2;
+    CR_HUBROOT = 3;
+}
+
+message ProtoContractReturn {
+    required bool hasVal = 1;
+    required ContractReturnType type = 2;
+    required bytes payload = 3;
+}
+
 message BlockAddressAndEon {
     required bytes address = 1;
     required int32 eon = 2;

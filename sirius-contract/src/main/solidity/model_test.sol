@@ -91,4 +91,10 @@ contract test_all is test_all_interface {
 
         return ModelLib.marshalBalanceUpdateProof(proof);
     }
+
+    function contract_return_test(bytes calldata data) external returns (bytes memory) {
+        ModelLib.ContractReturn memory cr = ModelLib.unmarshalContractReturn(RLPDecoder.toRLPItem(data, true));
+
+        return ModelLib.marshalContractReturn(cr);
+    }
 }
