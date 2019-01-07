@@ -40,7 +40,6 @@ class HubImpl<T : ChainTransaction>(
 
     private val eventBus: EventBus
 
-    @Volatile
     private var ready: Boolean = false
 
     private val txReceipts = ConcurrentHashMap<Hash, CompletableFuture<Receipt>>()
@@ -92,7 +91,9 @@ class HubImpl<T : ChainTransaction>(
         val contractHubInfo = contract.queryHubInfo()
         LOG.info("ContractHubInfo: $contractHubInfo")
         //TODO load previous status from storage.
-        eonState = EonState(contractHubInfo?.eon ?: 0)
+        eonState = EonState(contractHubInfo?.eon)
+        val hubRoot = contract.queryLeastHubCommit()
+
         //TODO
         //this.chain.watchTransactions()
         //connection.watchBlock { this.onBlock(it) }

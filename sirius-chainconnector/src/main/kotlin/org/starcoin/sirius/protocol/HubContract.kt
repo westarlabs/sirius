@@ -4,7 +4,7 @@ import org.starcoin.sirius.core.*
 
 interface HubContract {
 
-    fun queryHubInfo(): ContractHubInfo?
+    fun queryHubInfo(): ContractHubInfo
     fun queryLeastHubCommit(): HubRoot?
     fun queryHubCommit(eon: Int): HubRoot?
     fun queryCurrentBalanceUpdateChallenge(address: Address): BalanceUpdateChallenge?
