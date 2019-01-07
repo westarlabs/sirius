@@ -88,11 +88,11 @@ class InMemoryHubContract(contract: SolidityContract,owner : ECKey) : HubContrac
     }
 
     override fun openTransferDeliveryChallenge(request: TransferDeliveryChallenge): Hash {
-        TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
+        return callContract("openTransferDeliveryChallenge",RLP.dump(TransferDeliveryChallenge.serializer(), request))
     }
 
     override fun closeTransferDeliveryChallenge(request: CloseTransferDeliveryChallenge): Hash {
-        TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
+        return callContract("closeTransferDeliveryChallenge",RLP.dump(CloseTransferDeliveryChallenge.serializer(), request))
     }
 
     override fun recoverFunds(request: AMTreeProof): Hash {
