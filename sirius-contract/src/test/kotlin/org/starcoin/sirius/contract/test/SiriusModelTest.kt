@@ -14,9 +14,9 @@ class SiriusModelTest : ContractTestBase("model_test.sol", "test_all") {
         val obj = companion.mock()
         val data = obj.toRLP()
         val callResult = contract.callConstFunction(functionName, data)[0] as ByteArray
+        Assert.assertArrayEquals("expect ${data.toHEXString()} but get ${callResult.toHEXString()}", data, callResult)
         val obj1 = companion.parseFromRLP(callResult)
         Assert.assertEquals(obj, obj1)
-        Assert.assertArrayEquals("expect ${data.toHEXString()} but get ${callResult.toHEXString()}", data, callResult)
     }
 
     @Test

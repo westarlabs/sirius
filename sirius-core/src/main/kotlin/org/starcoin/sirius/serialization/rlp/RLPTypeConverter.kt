@@ -1,5 +1,6 @@
 package org.starcoin.sirius.serialization.rlp
 
+import kotlinx.serialization.SerializationException
 import java.math.BigInteger
 import java.math.BigInteger.ZERO
 
@@ -16,8 +17,8 @@ fun Int.toMinimalByteArray() = toByteArray().let {
     it.copyOfRange(it.minimalStart(), 4)
 }
 
-private fun ByteArray.minimalStart() = indexOfFirst { it != 0.toByte() }.let { if (it == -1) 3 else it }
-fun ByteArray.removeLeadingZero() = if (first() == 0.toByte()) copyOfRange(1, size) else this
+private fun ByteArray.minimalStart() = indexOfFirst { it != 0.toByte() }.let { if (it == -1) 4 else it }
+fun ByteArray.removeLeadingZero() = if (this.isNotEmpty() && first() == 0.toByte()) copyOfRange(1, size) else this
 
 
 // to RLP
@@ -38,17 +39,47 @@ fun Double.toRLP() =
 fun Short.toRLP() = this.toInt().toRLP()
 fun Char.toRLP() = this.toShort().toRLP()
 
+fun Any.toRLP(): RLPType {
+    return when (this) {
+        is Boolean -> this.toRLP()
+        is Byte -> this.toRLP()
+        is Short -> this.toInt().toRLP()
+        is Int -> this.toRLP()
+        is Long -> this.toRLP()
+        is Float -> this.toRLP()
+        is Double -> this.toRLP()
+        is Char -> this.toRLP()
+        is String -> this.toRLP()
+        is ByteArray -> this.toRLP()
+        is BigInteger -> this.toRLP()
+        is List<*> -> {
+            val rlpList = RLPList(mutableListOf())
+            for (v in this) {
+                v?.toRLP()?.apply { rlpList.add(this) }
+            }
+            rlpList
+        }
+        else -> throw SerializationException("unsupported type ${this.javaClass}")
+    }
+}
+
 // from RLP
 
-fun RLPElement.toIntFromRLP() = bytes
-    .mapIndexed { index, byte -> (byte.toInt() and 0xff).shl((bytes.size - 1 - index) * 8) }
-    .reduce { acc, i -> acc + i }
+fun RLPElement.toIntFromRLP() = if (bytes.isEmpty()) {
+    0
+} else {
+    bytes.mapIndexed { index, byte -> (byte.toInt() and 0xff).shl((bytes.size - 1 - index) * 8) }
+        .reduce { acc, i -> acc + i }
+}
 
 //TODO use UnsignedBigInteger first.
 //fun RLPElement.toBigIntegerFromRLP(): BigInteger = if (bytes.isEmpty()) ZERO else BigInteger(bytes)
 fun RLPElement.toBigIntegerFromRLP() = this.toUnsignedBigIntegerFromRLP()
 fun RLPElement.toUnsignedBigIntegerFromRLP(): BigInteger = if (bytes.isEmpty()) ZERO else BigInteger(1, bytes)
 fun RLPElement.toByteFromRLP(): Byte {
+    if (bytes.isEmpty()) {
+        return OFFSET_SHORT_ITEM.toByte()
+    }
     if (bytes.size != 1) {
         throw IllegalArgumentException("trying to convert RLP with != 1 byte to Byte")
     }

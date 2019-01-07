@@ -13,14 +13,13 @@ private data class DecodeResult(val element: RLPType, val size: Int)
 private data class LengthAndOffset(val length: Int, val offset: Int)
 
 private fun ByteArray.decodeRLPWithSize(offset: Int = 0): DecodeResult {
-
     if (offset >= size) {
         throw IllegalRLPException("Cannot decode RLP at offset=$offset and size=$size")
     }
 
     val value = this[offset].toInt() and 0xFF
     return when {
-        value < ELEMENT_OFFSET -> DecodeResult(value.toRLP(), 1)
+        value < ELEMENT_OFFSET -> DecodeResult(value.toByte().toRLP(), 1)
         value < LIST_OFFSET -> (value - ELEMENT_OFFSET).let {
             val lengthAndOffset = getLengthAndOffset(it, offset)
             DecodeResult(

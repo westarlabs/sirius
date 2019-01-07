@@ -3,7 +3,7 @@ pragma solidity ^0.5.1;
 //byte operat lib
 library ByteUtilLib {
 
-    bytes constant ZERO_BYTES = hex"00";
+    bytes constant ZERO_BYTES = hex"80";
 
     function equal(bytes memory one, bytes memory two) internal pure returns (bool) {
         if (!(one.length == two.length)) {
@@ -108,7 +108,7 @@ library ByteUtilLib {
     function bool2byte(bool self) internal pure returns (bytes memory data) {
         data = new bytes(1);
         //TODO ensure false should use 0x80 or 0x0
-        data[0] = (self ? bytes1(0x01) : bytes1(0x0));
+        data[0] = (self ? bytes1(0x01) : bytes1(0x00));
         return data;
     }
 
