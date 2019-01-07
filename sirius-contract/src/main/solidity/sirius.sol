@@ -25,7 +25,7 @@ contract SiriusService is Sirius {
     address private owner = msg.sender;
     bool private recoveryMode = false;
     uint private startHeight = block.number;
-    uint private blocksPerEon = 4;
+    uint private blocksPerEon = 8;
     bytes private hubPK;
     string ip;
 

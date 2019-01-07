@@ -207,9 +207,9 @@ class SiriusContractTest : ContractTestBase("sirius.sol", "SiriusService") {
 
         for (i in 0..eon) {
             var tmp = if (!flag && i == eon) {
-                (4 * (i + 1)) + 1
+                (8 * (i + 1)) + 2
             } else {
-                (4 * (i + 1)) - 1
+                (8 * (i + 1)) - 1
             }
 
 
