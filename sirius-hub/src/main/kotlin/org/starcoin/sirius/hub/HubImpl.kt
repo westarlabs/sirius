@@ -103,7 +103,7 @@ class HubImpl<T : ChainTransaction, A : ChainAccount>(
         val contractHubInfo = contract.queryHubInfo(owner)
         LOG.info("ContractHubInfo: $contractHubInfo")
         //TODO load previous status from storage.
-        eonState = EonState(contractHubInfo.eon)
+        eonState = EonState(contractHubInfo.latestEon)
         val hubRoot = contract.queryLeastHubCommit(owner)
         //first commit or miss latest commit, should commit root first.
         if (hubRoot == null || hubRoot.eon < eonState.eon) {

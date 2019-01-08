@@ -8,7 +8,7 @@ class BlockChainListener(hub: Hub) {
     private val hub = hub
 
     fun onNewBlock(blockInfo: Block<*>) {
-        blockInfo.getTransactions().forEach {
+        blockInfo.transactions.forEach {
             if (it.from?.equals(hub.walletAddress)!! && it.to?.equals(hub.contractAddress)!!) {
                 //TODO
                 //if (it.action == null) { // 没有action就是正常转账
