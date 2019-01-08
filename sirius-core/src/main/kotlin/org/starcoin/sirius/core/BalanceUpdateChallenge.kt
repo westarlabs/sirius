@@ -32,3 +32,27 @@ data class BalanceUpdateChallenge(
         }
     }
 }
+
+@ProtobufSchema(Starcoin.BalanceUpdateChallengeStatus::class)
+@Serializable
+data class BalanceUpdateChallengeStatus(
+    @SerialId(1) val challenge: BalanceUpdateChallenge = BalanceUpdateChallenge.DUMMY_BALANCE_UPDATE_CHALLENGE, @SerialId(
+        2
+    ) val status: WithdrawalStatus = WithdrawalStatus.DUMMY_WITHDRAWAL_STATUS
+) :
+    SiriusObject() {
+    companion object :
+        SiriusObjectCompanion<BalanceUpdateChallengeStatus, Starcoin.BalanceUpdateChallengeStatus>(
+            BalanceUpdateChallengeStatus::class
+        ) {
+
+        var DUMMY_BALANCE_UPDATE_CHALLENGE = BalanceUpdateChallengeStatus()
+
+        override fun mock(): BalanceUpdateChallengeStatus {
+            return BalanceUpdateChallengeStatus(
+                BalanceUpdateChallenge.mock(),
+                WithdrawalStatus.mock()
+            )
+        }
+    }
+}

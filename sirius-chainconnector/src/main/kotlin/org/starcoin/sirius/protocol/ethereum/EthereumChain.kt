@@ -32,8 +32,10 @@ import org.web3j.protocol.ipc.UnixIpcService
 import org.web3j.utils.Numeric
 import java.math.BigInteger
 
-const val defaultHttpUrl = "http://127.0.0.1:8545"
 
+const val defaultHttpUrl = "http://127.0.0.1:8545"
+const val GAS_LIMIT_BOUND_DIVISOR = 1024
+const val blockGasIncreasePercent = 0
 
 class EthereumChain constructor(httpUrl: String = defaultHttpUrl, socketPath: String? = null) :
     EthereumBaseChain() {
@@ -187,6 +189,14 @@ class EthereumChain constructor(httpUrl: String = defaultHttpUrl, socketPath: St
 
     private fun EthBlock.Block.blockInfo(): EthereumBlock {
         return EthereumBlock(this)
+    }
+
+    fun caculateGasLimit(): BigInteger {
+        return BigInteger.valueOf(10000000000000)
+        /**
+        return ByteUtil.bytesToBigInteger(parent.getGasLimit())
+        .multiply(GAS_LIMIT_BOUND_DIVISOR * 100 + blockGasIncreasePercent)
+        .divide(BigInteger.valueOf((GAS_LIMIT_BOUND_DIVISOR * 100).toLong()))**/
     }
 
     class NewTxException(error: Error) : Exception(error.message)

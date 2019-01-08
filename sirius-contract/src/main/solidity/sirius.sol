@@ -19,9 +19,9 @@ interface Sirius {
     function testRecovery() external;
     function hubIp(bytes calldata data) external;
     function hubInfo() external view returns (bytes memory);
-    function queryWithdrawal() external view returns (bytes memory);
-    function queryBalance() external view returns (bytes memory);
-    function queryTransfer() external view returns (bytes memory);
+    function queryWithdrawal(uint eon) external returns (bytes memory);
+    function queryBalance(uint eon) external view returns (bytes memory);
+    function queryTransfer(uint eon, bytes32 txHash) external view returns (bytes memory);
 }
 
 contract SiriusService is Sirius {
@@ -403,6 +403,7 @@ contract SiriusService is Sirius {
         chi.startBlockNum = startHeight;
         chi.hubAddress = ip;
         chi.blocksPerEon = blocksPerEon;
+        chi.latestEon = currentEon();
         return ModelLib.marshalContractHubInfo(chi);
     }
 
@@ -411,37 +412,73 @@ contract SiriusService is Sirius {
         recoveryMode = true;
     }
 
-    function queryWithdrawal() external view returns (bytes memory) {
-        bytes memory bs = ModelLib.marshalHubRoot(latestRoot());
+    function queryWithdrawal(uint eon) external returns (bytes memory) {
+        GlobleLib.Withdrawal memory tmp;
         ModelLib.ContractReturn memory cr;
-        cr.hasVal = true;
-        cr.crt = ModelLib.ContractReturnType.CR_HUBROOT;
-        cr.payload = bs;
+        bytes32 key = ByteUtilLib.address2hash(msg.sender);
+        for (uint i=0; i < balances.length; i++) {
+            if(balances[i].eon == eon) {
+                tmp = balances[i].withdrawalMeta.withdrawals[key];
+                break;
+            }
+        }
+        if(tmp.isVal) {
+            cr.hasVal = true;
+            cr.payload = GlobleLib.marshalWithdrawal(tmp);
+        }
 
         return ModelLib.marshalContractReturn(cr);
     }
 
-    function queryBalance() external view returns (bytes memory) {
-        bytes memory bs = ModelLib.marshalHubRoot(latestRoot());
+    function queryBalance(uint eon) external view returns (bytes memory) {
+        GlobleLib.BalanceUpdateChallengeAndStatus memory tmp;
         ModelLib.ContractReturn memory cr;
-        cr.hasVal = true;
-        cr.crt = ModelLib.ContractReturnType.CR_HUBROOT;
-        cr.payload = bs;
+        bytes32 key = ByteUtilLib.address2hash(msg.sender);
+        for (uint i=0; i < balances.length; i++) {
+            if(balances[i].eon == eon) {
+                tmp = balances[i].bucMeta.balanceChallenges[key];
+                break;
+            }
+        }
+        if(tmp.isVal) {
+            ModelLib.BalanceUpdateChallengeStatus memory cs = GlobleLib.change2BalanceUpdateChallengeStatus(tmp);
+            cr.hasVal = true;
+            cr.payload = ModelLib.marshalBalanceUpdateChallengeStatus(cs);
+        }
 
         return ModelLib.marshalContractReturn(cr);
     }
 
-    function queryTransfer() external view returns (bytes memory) {
-        bytes memory bs = ModelLib.marshalHubRoot(latestRoot());
+    function queryTransfer(uint eon, bytes32 txHash) external view returns (bytes memory) {
+        GlobleLib.TransferDeliveryChallengeAndStatus memory tmp;
         ModelLib.ContractReturn memory cr;
-        cr.hasVal = true;
-        cr.crt = ModelLib.ContractReturnType.CR_HUBROOT;
-        cr.payload = bs;
+        for (uint i=0; i < balances.length; i++) {
+            if(balances[i].eon == eon) {
+                tmp = balances[i].tdcMeta.transferChallenges[txHash];
+                break;
+            }
+        }
+        if(tmp.isVal) {
+            cr.hasVal = true;
+            cr.payload = GlobleLib.marshalTransferDeliveryChallengeAndStatus(tmp);
+        }
 
         return ModelLib.marshalContractReturn(cr);
     }
 
     /** private methods **/
+
+    function findBalanceByEon(uint eon) private view returns(GlobleLib.Balance memory latest) {
+        GlobleLib.Balance memory tmp;
+        for (uint i =0; i < balances.length; i++) {
+            if(balances[i].eon == eon) {
+                tmp = balances[i];
+                break;
+            }
+        }
+
+        return tmp;
+    }
 
     function newBalance(uint newEon) private pure returns(GlobleLib.Balance memory latest) {
         GlobleLib.DepositMeta memory depositMeta;
