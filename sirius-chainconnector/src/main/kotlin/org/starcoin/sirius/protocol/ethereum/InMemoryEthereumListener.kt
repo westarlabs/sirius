@@ -82,11 +82,21 @@ class InMemoryEthereumListener : EthereumListener {
             blockSummary?.block?.transactionsList?.forEachIndexed{ index,it->
                 var ethereumTransaction=EthereumTransaction(it)
                 val txReceipt = blockSummary.receipts[index]
-                val transactionResult=TransactionResult(ethereumTransaction, Receipt(it.hash,BigInteger.valueOf(index.toLong()),
-                    blockSummary.block.hash, BigInteger.valueOf(blockSummary.block.number),null,it.sender,it.receiveAddress,
-                    BigInteger.valueOf(blockSummary.block.header.gasUsed), blockSummary.block.header.logsBloom.toHEXString(),
-                    BigInteger.valueOf(0), blockSummary.block.header.receiptsRoot.toHEXString(), txReceipt.isTxStatusOK
-                )
+                val transactionResult = TransactionResult(
+                    ethereumTransaction, Receipt(
+                        it.hash,
+                        BigInteger.valueOf(index.toLong()),
+                        blockSummary.block.hash,
+                        BigInteger.valueOf(blockSummary.block.number),
+                        null,
+                        it.sender,
+                        it.receiveAddress,
+                        BigInteger.valueOf(blockSummary.block.header.gasUsed),
+                        blockSummary.block.header.logsBloom.toHEXString(),
+                        BigInteger.valueOf(0),
+                        blockSummary.block.header.receiptsRoot.toHEXString(),
+                        txReceipt.isTxStatusOK
+                    )
                 )
                 if(transactionFilter(transactionResult))
                     transactionChannel.send(transactionResult)

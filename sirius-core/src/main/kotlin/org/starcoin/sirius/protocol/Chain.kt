@@ -5,9 +5,6 @@ import org.starcoin.sirius.core.*
 import java.io.File
 import java.math.BigInteger
 
-enum class ChainType {
-    ETH
-}
 
 data class FilterArguments(val contract: Address, val topic: EventTopic)
 

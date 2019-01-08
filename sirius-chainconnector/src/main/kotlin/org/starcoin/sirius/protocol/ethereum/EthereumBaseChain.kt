@@ -12,7 +12,8 @@ import org.starcoin.sirius.util.WithLogging
 import java.io.File
 import java.math.BigInteger
 
-abstract class EthereumBaseChain : Chain<EthereumTransaction, EthereumBlock, EthereumAccount> {
+abstract class EthereumBaseChain :
+    Chain<EthereumTransaction, EthereumBlock, EthereumAccount> {
 
     companion object : WithLogging() {
 
