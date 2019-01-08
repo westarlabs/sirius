@@ -1,12 +1,12 @@
 package org.starcoin.sirius.core
 
-import java.util.*
 import java.util.stream.Collectors
 
-abstract class Block<T : ChainTransaction>(
-    val height: Long,
-    private val transactions: MutableList<T> = mutableListOf()
-) : CachedHashable() {
+abstract class Block<T : ChainTransaction> : CachedHashable() {
+
+    abstract val height: Long
+
+    abstract val transactions: MutableList<T>
 
     override fun doHash(): Hash {
         return this.blockHash()
@@ -16,10 +16,6 @@ abstract class Block<T : ChainTransaction>(
 
     fun addTransaction(tx: T) {
         this.transactions.add(tx)
-    }
-
-    fun getTransactions(): List<T> {
-        return Collections.unmodifiableList(transactions)
     }
 
 

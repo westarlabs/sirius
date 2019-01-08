@@ -1,22 +1,31 @@
 package org.starcoin.sirius.protocol.ethereum
 
-import org.ethereum.core.Transaction
 import org.starcoin.sirius.core.Block
 import org.starcoin.sirius.core.Hash
+import org.starcoin.sirius.core.toHash
 import org.starcoin.sirius.protocol.EthereumTransaction
 import org.web3j.protocol.core.methods.response.EthBlock
 import java.util.stream.Collectors
 
-class EthereumBlock(val ethBlock: EthBlock.Block) : Block<EthereumTransaction>(
-    ethBlock.number.toLong(),
-    //TODO
-    ethBlock.transactions.stream().map { EthereumTransaction(it.get() as Transaction) }.collect(
-        Collectors.toList()
-    )
-) {
+class EthereumBlock(override val height: Long, val hash: Hash) : Block<EthereumTransaction>() {
+
+    override lateinit var transactions: MutableList<EthereumTransaction>
+
+    constructor(ethBlock: EthBlock.Block) : this(ethBlock.number.toLong(), ethBlock.hash.toHash()) {
+        transactions =
+            ethBlock.transactions.map { EthereumTransaction(it.get() as org.web3j.protocol.core.methods.response.Transaction) }
+                .stream()
+                .collect(
+                    Collectors.toList()
+                )
+    }
+
+    constructor(ethBlock: org.ethereum.core.Block) : this(ethBlock.number, ethBlock.hash.toHash()) {
+        transactions = ethBlock.transactionsList.map { EthereumTransaction(it) }.stream().collect(Collectors.toList())
+    }
 
     override fun blockHash(): Hash {
-        return Hash.wrap(ethBlock.hash)
+        return hash
     }
 
 }

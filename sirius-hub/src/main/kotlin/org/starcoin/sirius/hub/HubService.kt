@@ -4,14 +4,15 @@ import org.starcoin.sirius.core.*
 import org.starcoin.sirius.crypto.CryptoKey
 import org.starcoin.sirius.hub.Hub.HubMaliciousFlag
 import org.starcoin.sirius.protocol.Chain
+import org.starcoin.sirius.protocol.ChainAccount
 import java.security.PublicKey
 import java.util.*
 import java.util.concurrent.BlockingQueue
 
-class HubService<T : ChainTransaction>(
+class HubService<T : ChainTransaction, A : ChainAccount>(
     private val hubKey: CryptoKey,
     blocksPerEon: Int,
-    chain: Chain<T, Block<T>>
+    chain: Chain<T, out Block<T>, out A>
 ) {
 
     var hubMaliciousFlag: EnumSet<HubMaliciousFlag>

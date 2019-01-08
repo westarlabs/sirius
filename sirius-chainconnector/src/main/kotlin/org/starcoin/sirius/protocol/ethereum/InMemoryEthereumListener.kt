@@ -18,8 +18,6 @@ import org.starcoin.sirius.protocol.TransactionResult
 import org.web3j.utils.Numeric
 import java.math.BigInteger
 import kotlin.properties.Delegates
-import org.ethereum.core.CallTransaction
-import org.ethereum.util.blockchain.SolidityContract
 
 
 class InMemoryEthereumListener : EthereumListener {
@@ -83,10 +81,13 @@ class InMemoryEthereumListener : EthereumListener {
             //blockChannel.send(EthereumBlock(w3jBlock))
             blockSummary?.block?.transactionsList?.forEachIndexed{ index,it->
                 var ethereumTransaction=EthereumTransaction(it)
+                val txReceipt = blockSummary.receipts[index]
                 val transactionResult=TransactionResult(ethereumTransaction, Receipt(it.hash,BigInteger.valueOf(index.toLong()),
                     blockSummary.block.hash, BigInteger.valueOf(blockSummary.block.number),null,it.sender,it.receiveAddress,
                     BigInteger.valueOf(blockSummary.block.header.gasUsed), blockSummary.block.header.logsBloom.toHEXString(),
-                    BigInteger.valueOf(0),blockSummary.block.header.receiptsRoot.toHEXString(),true))
+                    BigInteger.valueOf(0), blockSummary.block.header.receiptsRoot.toHEXString(), txReceipt.isTxStatusOK
+                )
+                )
                 if(transactionFilter(transactionResult))
                     transactionChannel.send(transactionResult)
 

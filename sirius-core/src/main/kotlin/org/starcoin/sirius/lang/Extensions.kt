@@ -9,7 +9,8 @@ fun ByteArray.toULong() = BigInteger(1, this).toLong()
 fun ByteArray.toHEXString() = Utils.HEX.encode(this)
 
 fun ByteArray.toBigInteger(offset: Int, length: Int) = BigInteger(1, Arrays.copyOfRange(this, offset, offset + length))
-fun ByteArray.toBigInteger() = BigInteger(1, this)
+fun ByteArray.toBigInteger() = BigInteger(this)
+fun ByteArray.toUnsignedBigInteger() = BigInteger(1, this)
 
 fun String.hexToByteArray(): ByteArray {
     if (length % 2 != 0)

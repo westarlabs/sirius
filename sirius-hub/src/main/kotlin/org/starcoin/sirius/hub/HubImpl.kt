@@ -4,13 +4,17 @@ import com.google.common.base.Preconditions
 import com.google.common.eventbus.EventBus
 import io.grpc.Status
 import io.grpc.StatusRuntimeException
+import kotlinx.coroutines.GlobalScope
+import kotlinx.coroutines.channels.Channel
+import kotlinx.coroutines.launch
 import org.starcoin.proto.Starcoin
 import org.starcoin.sirius.core.*
 import org.starcoin.sirius.crypto.CryptoKey
 import org.starcoin.sirius.crypto.CryptoService
 import org.starcoin.sirius.protocol.Chain
+import org.starcoin.sirius.protocol.ChainAccount
 import org.starcoin.sirius.protocol.HubContract
-import org.starcoin.sirius.protocol.QueryContractParameter
+import org.starcoin.sirius.protocol.TransactionResult
 import org.starcoin.sirius.util.WithLogging
 import java.math.BigInteger
 import java.util.*
@@ -19,20 +23,24 @@ import java.util.concurrent.BlockingQueue
 import java.util.concurrent.CompletableFuture
 import java.util.concurrent.ConcurrentHashMap
 import java.util.logging.Logger
+import kotlin.properties.Delegates
 
-class HubImpl<T : ChainTransaction>(
+class HubImpl<T : ChainTransaction, A : ChainAccount>(
     private val hubKey: CryptoKey,
     private val blocksPerEon: Int,
-    private val chain: Chain<T, Block<T>>
+    private val chain: Chain<T, out Block<T>, out A>
 ) : Hub {
 
     companion object : WithLogging() {
 
     }
 
-    private val contract: HubContract = chain.getContract(QueryContractParameter(0))
+    private lateinit var contract: HubContract<A>  // = chain.getContract(QueryContractParameter(0))
 
-    lateinit private var eonState: EonState
+
+    private lateinit var eonState: EonState
+
+    private var owner: A by Delegates.notNull()
 
     private val hubAddress: Address
 
@@ -45,6 +53,10 @@ class HubImpl<T : ChainTransaction>(
     private val txReceipts = ConcurrentHashMap<Hash, CompletableFuture<Receipt>>()
 
     private val strategy: MaliciousStrategy
+
+    private lateinit var txChannel: Channel<TransactionResult<T>>
+    private lateinit var blockChannel: Channel<out Block<T>>
+
 
     init {
 
@@ -88,15 +100,26 @@ class HubImpl<T : ChainTransaction>(
     }
 
     override fun start() {
-        val contractHubInfo = contract.queryHubInfo()
+        val contractHubInfo = contract.queryHubInfo(owner)
         LOG.info("ContractHubInfo: $contractHubInfo")
         //TODO load previous status from storage.
-        eonState = EonState(contractHubInfo?.eon)
-        val hubRoot = contract.queryLeastHubCommit()
+        eonState = EonState(contractHubInfo.eon)
+        val hubRoot = contract.queryLeastHubCommit(owner)
+        //first commit or miss latest commit, should commit root first.
+        if (hubRoot == null || hubRoot.eon < eonState.eon) {
+            this.doCommit()
+        }
+        this.txChannel = this.chain.watchTransactions { it.tx.to == hubAddress || it.tx.from == hubAddress }
+        this.blockChannel = this.chain.watchBlock()
+    }
 
-        //TODO
-        //this.chain.watchTransactions()
-        //connection.watchBlock { this.onBlock(it) }
+    private fun processTransactions() {
+        GlobalScope.launch {
+            while (true) {
+                val txResult = txChannel.receive()
+                processTransaction(txResult)
+            }
+        }
     }
 
     fun getEonState(eon: Int): EonState? {
@@ -400,14 +423,14 @@ class HubImpl<T : ChainTransaction>(
                 val hubAccount = this.eonState.getAccount(blockAddress).get()
                 if (!hubAccount.addWithdraw(amount)) {
                     // signed update (e) or update (e − 1), τ (e − 1)
-                    val cancelWithdrawalBuilder = Starcoin.CancelWithdrawal.newBuilder()
-                        .setParticipant(Participant(hubAccount.publicKey!!).toProto() as Starcoin.Participant)
-                        .setUpdate(hubAccount.update!!.toProto() as Starcoin.Update)
-                    if (hubAccount.update!!.isSigned) {
-                        val path = this.eonState.state.getMembershipProof(blockAddress)
-                        //TODO
-                        //cancelWithdrawalBuilder.setPath(path.toProto()).build()
-                    }
+//                    val cancelWithdrawalBuilder = Starcoin.CancelWithdrawal.newBuilder()
+//                        .setParticipant(Participant(hubAccount.publicKey!!).toProto() as Starcoin.Participant)
+//                        .setUpdate(hubAccount.update!!.toProto() as Starcoin.Update)
+//                    if (hubAccount.update!!.isSigned) {
+//                        val path = this.eonState.state.getMembershipProof(blockAddress)
+//                        //TODO
+//                        //cancelWithdrawalBuilder.setPath(path.toProto()).build()
+//                    }
 //                    val chainTransaction = ChainTransaction(
 //                        this.hubAddress,
 //                        Constants.CONTRACT_ADDRESS,
@@ -500,12 +523,13 @@ class HubImpl<T : ChainTransaction>(
 //            }
         }
         // only process contract tx.
-        blockInfo.filterTxByTo(Constants.CONTRACT_ADDRESS).stream().forEach { this.processTransaction(it) }
+        //blockInfo.filterTxByTo(Constants.CONTRACT_ADDRESS).stream().forEach { this.processTransaction(it) }
     }
 
-    private fun processTransaction(tx: ChainTransaction) {
-        val hash = tx.hash()
-//        txReceipts[hash]?.complete(tx.receipt)
+    private fun processTransaction(txResult: TransactionResult<T>) {
+        val hash = txResult.tx.hash()
+        txReceipts[hash]?.complete(txResult.receipt)
+
 //        // default action is Deposit.
 //        if (tx.action == null) {
 //            val deposit = Deposit(tx.from!!, tx.amount!!)

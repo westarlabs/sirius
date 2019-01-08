@@ -1,172 +1,87 @@
 package org.starcoin.sirius.protocol.ethereum.contract
 
-import org.ethereum.config.SystemProperties
-import org.ethereum.core.CallTransaction.Contract
-import org.ethereum.solidity.compiler.CompilationResult
-import org.ethereum.solidity.compiler.SolidityCompiler
-import org.starcoin.sirius.core.*
-import org.starcoin.sirius.crypto.CryptoKey
+import kotlinx.serialization.ImplicitReflectionSerializer
+import kotlinx.serialization.serializer
+import org.ethereum.core.CallTransaction
+import org.starcoin.sirius.core.Address
+import org.starcoin.sirius.core.Hash
+import org.starcoin.sirius.core.SiriusObject
+import org.starcoin.sirius.protocol.ContractFunction
 import org.starcoin.sirius.protocol.EthereumTransaction
 import org.starcoin.sirius.protocol.HubContract
-import org.starcoin.sirius.protocol.ethereum.EthereumChain
-import org.starcoin.sirius.util.Utils
-import org.web3j.protocol.core.DefaultBlockParameterName
-import org.web3j.protocol.core.methods.request.Transaction
-import java.io.File
-import kotlin.properties.Delegates
+import org.starcoin.sirius.protocol.ethereum.EthereumAccount
+import org.starcoin.sirius.protocol.ethereum.EthereumBaseChain
+import org.starcoin.sirius.protocol.ethereum.encode
+import org.starcoin.sirius.serialization.rlp.RLP
+import org.starcoin.sirius.serialization.rlp.RLPElement
+import org.starcoin.sirius.serialization.rlp.decodeRLP
+import org.starcoin.sirius.serialization.rlp.toBigIntegerFromRLP
+import kotlin.reflect.KClass
 
-class EthereumHubContract private constructor(
-    val chain: EthereumChain
-) : HubContract {
-    private val contractName = "SiriusService"
-    private var contractAddress: Address by Delegates.notNull()
-    private var contract: Contract by Delegates.notNull()
-    private var contractResult: CompilationResult by Delegates.notNull()
+class EthereumHubContract internal constructor(
+    override val contractAddress: Address,
+    jsonInterface: String,
+    val chain: EthereumBaseChain
+) : HubContract<EthereumAccount>() {
 
-    constructor(
-        chain: EthereumChain,
-        srcName: String = "solidity/sirius.sol",
-        contractAddress: Address
-    ) : this(chain) {
-        this.contractAddress = contractAddress
-        this.contractResult = compileContract(srcName)
-        this.contract = Contract(contractResult.getContract(contractName).abi)
-    }
-
-    constructor(
-        chain: EthereumChain,
-        srcName: String = "solidity/sirius.sol",
-        key: CryptoKey,
-        gasPrice: Long,
-        gasLimit: Long,
-        value: Long = 0
-    ):this(chain) {
-        this.contractAddress = submitContract(key, gasPrice, gasLimit, value)
-        this.contractResult = compileContract(srcName)
-        this.contract = Contract(contractResult.getContract(contractName).abi)
-    }
-
-    companion object {
-        private val compiler = SolidityCompiler(SystemProperties.getDefault())
-        fun compileContract(srcName: String): CompilationResult {
-            val srcPath = javaClass::class.java.getResource(srcName).toURI()
-            val srcDir = listOf(File(srcPath).parentFile.absolutePath)
-            val compiledResult = compiler.compileSrc(
-                File(srcPath),
-                true,
-                true,
-                SolidityCompiler.Options.ABI,
-                SolidityCompiler.Options.BIN,
-                SolidityCompiler.Options.AllowPaths(srcDir)
-            )
-            if (compiledResult.isFailed) throw RuntimeException("Compile result: " + compiledResult.errors)
-            return CompilationResult.parse(compiledResult.output)
-        }
-    }
-
-    fun submitContract(
-        key: CryptoKey,
-        gasPrice: Long,
-        gasLimit: Long,
-        value: Long = 0
-    ): Address {
-        val tx = EthereumTransaction(
-            null, chain.getNonce(key.address),
-            gasPrice, gasLimit, value,
-            contractResult.getContract(contractName).bin.toByteArray()
-        )
-        chain.newTransaction(key, tx)
-        return Address.wrap(tx.ethTx.contractAddress)
-    }
+    private val contract: CallTransaction.Contract = CallTransaction.Contract(jsonInterface)
 
 
-    fun callFunction(
-        caller: CryptoKey,
-        gasPrice: Long,
-        gasLimit: Long,
-        value: Long,
-        name: String,
-        vararg args: Any
-    ) {
-        val function = this.contract.getByName(name)
-        val data = function.encode(args)
-        chain.newTransaction(
-            caller,
+    override fun <S : SiriusObject> executeContractFunction(
+        account: EthereumAccount,
+        function: ContractFunction,
+        input: S
+    ): Hash {
+        val data = function.encode(input)
+        return chain.submitTransaction(
+            account,
             EthereumTransaction(
-                this.contractAddress, this.chain.getNonce(caller.address),
-                gasPrice, gasLimit, value, data))
+                this.contractAddress, account.getNonce(),
+                //TODO gas calculate
+                EthereumBaseChain.defaultGasPrice, EthereumBaseChain.defaultGasLimit, data
+            )
+        )
     }
 
-    fun callConstFunction(caller:CryptoKey,name: String,vararg args:Any) :String{
-        val function = this.contract.getByName(name)
-        val data = function.encode(args)
-        val resp = this.chain.web3.ethCall(
-            Transaction.createEthCallTransaction(caller.address.toString(),
-                this.contractAddress.toString(),
-                Utils.HEX.encode(data)
-            ), DefaultBlockParameterName.LATEST).sendAsync().get()
-        if (resp.hasError()) throw RuntimeException(resp.error.message)
-        return resp.value
+    @UseExperimental(ImplicitReflectionSerializer::class)
+    override fun <S : SiriusObject> queryContractFunction(
+        account: EthereumAccount,
+        functionName: String,
+        clazz: KClass<S>,
+        vararg args: Any?
+    ): S {
+        val function = this.contract.getByName(functionName)
+        val data = function.encode(*args)
+        val result = this.chain.callConstFunction(account.key, this.contractAddress, data)
+        //TODO check has value flag.
+        return RLP.load(clazz.serializer(), result)
     }
 
-    override fun queryHubInfo(): ContractHubInfo {
-        TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
+    fun callConstFunction(account: EthereumAccount, functionName: String, vararg args: Any?): ByteArray {
+        val function = this.contract.getByName(functionName)
+        val data = function.encode(*args)
+        return this.chain.callConstFunction(account.key, this.contractAddress, data)
     }
 
-    override fun queryLeastHubCommit(): HubRoot {
-        TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
+    fun callFunction(account: EthereumAccount, functionName: String, vararg args: Any?): Hash {
+        val function = this.contract.getByName(functionName)
+        val data = function.encode(*args)
+        return chain.submitTransaction(
+            account,
+            EthereumTransaction(
+                this.contractAddress, account.getNonce(),
+                //TODO
+                EthereumBaseChain.defaultGasPrice, EthereumBaseChain.defaultGasLimit, data
+            )
+        )
     }
 
-    override fun queryHubCommit(eon: Int): HubRoot {
-        TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
+    fun getCurrentEon(): Int {
+        val bytes = this.callConstFunction(EthereumAccount.DUMMY_ACCOUNT, "getCurrentEon")
+        return (bytes.decodeRLP() as RLPElement).toBigIntegerFromRLP().intValueExact()
     }
 
-    override fun queryCurrentBalanceUpdateChallenge(address: Address): BalanceUpdateChallenge {
-        TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
+    fun hubIp(ip: String) {
+        val callResult = this.callFunction(EthereumAccount.DUMMY_ACCOUNT, "hubIp", ip.toByteArray())
     }
-
-    override fun queryCurrentTransferDeliveryChallenge(address: Address): TransferDeliveryChallenge {
-        TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
-    }
-
-    override fun queryWithdrawalStatus(address: Address): WithdrawalStatus {
-        TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
-    }
-
-    override fun initiateWithdrawal(request: Withdrawal): Hash {
-        TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
-    }
-
-    override fun cancelWithdrawal(request: CancelWithdrawal): Hash {
-        TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
-    }
-
-    override fun openBalanceUpdateChallenge(request: BalanceUpdateChallenge): Hash {
-        TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
-    }
-
-    override fun closeBalanceUpdateChallenge(request: CloseBalanceUpdateChallenge): Hash {
-        TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
-    }
-
-    override fun commit(request: HubRoot): Hash {
-        TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
-    }
-
-    override fun openTransferDeliveryChallenge(request: TransferDeliveryChallenge): Hash {
-        TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
-    }
-
-    override fun closeTransferDeliveryChallenge(request: CloseTransferDeliveryChallenge): Hash {
-        TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
-    }
-
-    override fun recoverFunds(request: AMTreeProof): Hash {
-        TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
-    }
-
-    override fun getContractAddr(): ByteArray {
-        TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
-    }
-
 }

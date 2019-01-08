@@ -1,16 +1,23 @@
 package org.starcoin.sirius.protocol.ethereum
 
 import kotlinx.coroutines.channels.Channel
+import org.ethereum.core.CallTransaction.createRawTransaction
+import org.ethereum.solidity.compiler.CompilationResult
 import org.ethereum.util.blockchain.StandaloneBlockchain
-import org.starcoin.sirius.core.Address
-import org.starcoin.sirius.core.Hash
-import org.starcoin.sirius.core.Receipt
+import org.starcoin.sirius.core.*
 import org.starcoin.sirius.crypto.CryptoKey
 import org.starcoin.sirius.crypto.eth.EthCryptoKey
-import org.starcoin.sirius.protocol.*
+import org.starcoin.sirius.lang.toHEXString
+import org.starcoin.sirius.protocol.EthereumTransaction
+import org.starcoin.sirius.protocol.EventTopic
+import org.starcoin.sirius.protocol.FilterArguments
+import org.starcoin.sirius.protocol.TransactionResult
+import org.starcoin.sirius.protocol.ethereum.contract.EthereumHubContract
+import org.starcoin.sirius.serialization.rlp.RLPElement
+import org.starcoin.sirius.serialization.rlp.decodeRLP
 import java.math.BigInteger
 
-class InMemoryChain(autoGenblock: Boolean) : Chain<EthereumTransaction, EthereumBlock> {
+class InMemoryChain(autoGenblock: Boolean) : EthereumBaseChain() {
 
     override fun watchEvents(
         contract: Address,
@@ -23,10 +30,10 @@ class InMemoryChain(autoGenblock: Boolean) : Chain<EthereumTransaction, Ethereum
 
     override fun watchTransactions(filter: (TransactionResult<EthereumTransaction>) -> Boolean): Channel<TransactionResult<EthereumTransaction>> {
         var transactionChannel = Channel<TransactionResult<EthereumTransaction>>(200)
-        inMemoryEthereumListener.transactionFilter=filter
+        inMemoryEthereumListener.transactionFilter = filter
         inMemoryEthereumListener.transactionChannel = transactionChannel
         sb.addEthereumListener(inMemoryEthereumListener)
-        if(autoGenblock){
+        if (autoGenblock) {
             sb.withAutoblock(autoGenblock)
         }
         return transactionChannel
@@ -50,7 +57,7 @@ class InMemoryChain(autoGenblock: Boolean) : Chain<EthereumTransaction, Ethereum
         var blockChannel = Channel<EthereumBlock>(200)
         inMemoryEthereumListener.blockChannel = blockChannel
         sb.addEthereumListener(inMemoryEthereumListener)
-        if(autoGenblock){
+        if (autoGenblock) {
             sb.withAutoblock(autoGenblock)
         }
         return blockChannel
@@ -60,20 +67,57 @@ class InMemoryChain(autoGenblock: Boolean) : Chain<EthereumTransaction, Ethereum
         return sb.getBlockchain().getRepository().getBalance(address.toBytes())
     }
 
+    override fun getNonce(address: Address): BigInteger {
+        return sb.getBlockchain().getRepository().getNonce(address.toBytes())
+    }
+
     override fun findTransaction(hash: Hash): EthereumTransaction? {
         return inMemoryEthereumListener.findTransaction(hash)
     }
 
-    override fun newTransaction(key: CryptoKey, transaction: EthereumTransaction) {
-        transaction.ethTx.sign((key as EthCryptoKey).ecKey)
-        sb.submitTransaction(transaction.ethTx)
+    override fun submitTransaction(account: EthereumAccount, transaction: EthereumTransaction): Hash {
+        val ecKey = (account.key as EthCryptoKey).ecKey
+        sb.sender = ecKey
+        transaction.tx.sign(ecKey)
+        sb.submitTransaction(transaction.tx)
+        return transaction.tx.hash.toHash()
     }
 
-    override fun getContract(parameter: QueryContractParameter): HubContract {
-        TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
+    override fun callConstFunction(caller: CryptoKey, contractAddress: Address, data: ByteArray): ByteArray {
+        val tx = createRawTransaction(0, 0, 100000000000000L, contractAddress.toBytes().toHEXString(), 0, data)
+        tx.sign((caller as EthCryptoKey).ecKey)
+        val callBlock = sb.blockchain.bestBlock
+        val repository = this.sb.blockchain.getRepository().getSnapshotTo(callBlock.getStateRoot()).startTracking()
+
+        try {
+            val executor = org.ethereum.core.TransactionExecutor(
+                tx, callBlock.getCoinbase(), repository, sb.blockchain.getBlockStore(),
+                sb.blockchain.getProgramInvokeFactory(), callBlock
+            )
+                .setLocalCall(true)
+
+            executor.init()
+            executor.execute()
+            executor.go()
+            executor.finalization()
+
+            return (executor.result.hReturn.decodeRLP() as RLPElement).bytes
+        } finally {
+            repository.rollback()
+        }
     }
 
-    fun getNumber():Long?{
+    override fun doDeployContract(
+        account: EthereumAccount,
+        contractMetadata: CompilationResult.ContractMetadata
+    ): EthereumHubContract {
+        sb.sender = (account.key as EthCryptoKey).ecKey
+        val contract = sb.submitNewContract(contractMetadata)
+        //TODO wait
+        return this.loadContract(contract.address.toAddress(), contract.abi)
+    }
+
+    fun getNumber(): Long? {
         return inMemoryEthereumListener.currentNumber
     }
 }

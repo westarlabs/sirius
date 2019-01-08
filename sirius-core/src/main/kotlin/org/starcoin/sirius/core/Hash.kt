@@ -230,3 +230,6 @@ class Hash private constructor(internal val bytes: ByteArray) : Comparable<Hash>
         }
     }
 }
+
+fun ByteArray.toHash() = Hash.wrap(this)
+fun String.toHash() = Hash.wrap(this)

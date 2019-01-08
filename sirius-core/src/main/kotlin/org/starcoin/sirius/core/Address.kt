@@ -92,3 +92,6 @@ class Address private constructor(private val bytes: ByteArray) : CachedHashable
         }
     }
 }
+
+fun ByteArray.toAddress() = Address.wrap(this)
+fun String.toAddress() = Address.wrap(this)

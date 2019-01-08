@@ -2,51 +2,122 @@ package org.starcoin.sirius.protocol
 
 
 import org.ethereum.core.Transaction
-import org.ethereum.util.ByteUtil
 import org.starcoin.sirius.core.Address
 import org.starcoin.sirius.core.ChainTransaction
 import org.starcoin.sirius.core.Hash
+import org.starcoin.sirius.core.toAddress
+import org.starcoin.sirius.lang.hexToByteArray
 import org.starcoin.sirius.lang.toULong
+import org.starcoin.sirius.lang.toUnsignedBigInteger
+import org.starcoin.sirius.protocol.ethereum.getFunction
 import java.math.BigInteger
 
-// TODO use BigInteger to replace Long?
-class EthereumTransaction(val ethTx: Transaction) : ChainTransaction(
-    Address.wrap(ethTx.receiveAddress),
-    BigInteger(1, ethTx.value)
-) {
+class EthereumTransaction(val tx: Transaction) : ChainTransaction() {
     override val from: Address?
-        get() = when {
-            ethTx.sender == null -> null
-            else -> Address.wrap(ethTx.sender)
-        }
-    // Note: Generate nonce by EthereumChain.getNonce
-    val nonce: Long?
-        get() = ethTx.nonce.toULong()
-    val gasPrice: Long
-        get() = ethTx.gasPrice.toULong()
-    val gasLimit: Long
-        get() = ethTx.gasLimit.toULong()
+        get() = tx.sender?.toAddress()
+
+    val nonce: Long
+        get() = tx.nonce.toULong()
+    val gasPrice: BigInteger
+        get() = tx.gasPrice.toUnsignedBigInteger()
+    val gasLimit: BigInteger
+        get() = tx.gasLimit.toUnsignedBigInteger()
     val data: ByteArray?
-        get() = ethTx.data
+        get() = tx.data
+
+    override val amount: BigInteger
+        get() = tx.value.toUnsignedBigInteger()
+
+    override val to: Address?
+        get() = tx.receiveAddress?.toAddress()
+
+    override val isContractCall: Boolean
+        get() = this.data?.let { it.size > 4 && this.to != null } ?: false
+
+    override val contractFunction: ContractFunction?
+        get() = if (isContractCall) ContractFunction.getFunction(this.data!!.copyOfRange(0, 4)) else null
+
+    constructor(web3Tx: org.web3j.protocol.core.methods.response.Transaction) : this(
+        Transaction(
+            web3Tx.nonce.toByteArray(),
+            web3Tx.gasPrice.toByteArray(),
+            web3Tx.gas.toByteArray(),
+            web3Tx.to?.toAddress()?.toBytes(),
+            web3Tx.value.toByteArray(),
+            web3Tx.input.hexToByteArray()
+        )
+    )
 
     constructor(
-        to: Address?,
-        nonce: Long?,
-        gasPrice: Long?,
-        gasLimit: Long?,
-        value: Long?,
-        data: ByteArray?
+        toAddress: Address,
+        nonce: Long,
+        gasPrice: BigInteger,
+        gasLimit: BigInteger,
+        value: BigInteger
+
     ) : this(
         Transaction(
-            nonce?.let { ByteUtil.longToBytesNoLeadZeroes(it) },
-            gasPrice?.let { ByteUtil.longToBytesNoLeadZeroes(it) },
-            gasLimit?.let { ByteUtil.longToBytesNoLeadZeroes(it) },
-            to?.toBytes(),
-            value?.let { ByteUtil.longToBytesNoLeadZeroes(it) },
+            nonce.toBigInteger().toByteArray(),
+            gasPrice.toByteArray(),
+            gasLimit.toByteArray(),
+            toAddress.toBytes(),
+            value.toByteArray(),
+            null
+        )
+    )
+
+    constructor(
+        toAddress: Address,
+        nonce: Long,
+        gasPrice: Long,
+        gasLimit: Long,
+        value: Long
+
+    ) : this(
+        Transaction(
+            nonce.toBigInteger().toByteArray(),
+            gasPrice.toBigInteger().toByteArray(),
+            gasLimit.toBigInteger().toByteArray(),
+            toAddress.toBytes(),
+            value.toBigInteger().toByteArray(),
+            null
+        )
+    )
+
+    constructor(
+        contractAddress: Address,
+        nonce: Long,
+        gasPrice: BigInteger,
+        gasLimit: BigInteger,
+        data: ByteArray
+    ) : this(
+        Transaction(
+            nonce.toBigInteger().toByteArray(),
+            gasPrice.toByteArray(),
+            gasLimit.toByteArray(),
+            contractAddress.toBytes(),
+            BigInteger.ZERO.toByteArray(),
             data
         )
     )
+
+    constructor(
+        nonce: Long,
+        gasPrice: BigInteger,
+        gasLimit: BigInteger,
+        data: ByteArray
+    ) : this(
+        Transaction(
+            nonce.toBigInteger().toByteArray(),
+            gasPrice.toByteArray(),
+            gasLimit.toByteArray(),
+            null,
+            BigInteger.ZERO.toByteArray(),
+            data
+        )
+    )
+
     override fun txHash(): Hash {
-        return Hash.wrap(this.ethTx.hash)
+        return Hash.wrap(this.tx.hash)
     }
 }

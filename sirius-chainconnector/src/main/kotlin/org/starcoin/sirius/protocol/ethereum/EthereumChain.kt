@@ -5,12 +5,20 @@ import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.launch
 import kotlinx.io.IOException
 import org.ethereum.crypto.HashUtil
+import org.ethereum.solidity.compiler.CompilationResult
 import org.starcoin.sirius.core.Address
 import org.starcoin.sirius.core.Hash
 import org.starcoin.sirius.core.Receipt
+import org.starcoin.sirius.core.toHash
 import org.starcoin.sirius.crypto.CryptoKey
 import org.starcoin.sirius.crypto.eth.EthCryptoKey
-import org.starcoin.sirius.protocol.*
+import org.starcoin.sirius.lang.hexToByteArray
+import org.starcoin.sirius.protocol.EthereumTransaction
+import org.starcoin.sirius.protocol.EventTopic
+import org.starcoin.sirius.protocol.FilterArguments
+import org.starcoin.sirius.protocol.TransactionResult
+import org.starcoin.sirius.protocol.ethereum.contract.EthereumHubContract
+import org.starcoin.sirius.util.Utils
 import org.web3j.protocol.Web3j
 import org.web3j.protocol.core.DefaultBlockParameter
 import org.web3j.protocol.core.DefaultBlockParameterName
@@ -28,25 +36,27 @@ const val defaultHttpUrl = "http://127.0.0.1:8545"
 
 
 class EthereumChain constructor(httpUrl: String = defaultHttpUrl, socketPath: String? = null) :
-    Chain<EthereumTransaction, EthereumBlock> {
+    EthereumBaseChain() {
 
 
     val web3: Web3j =
         Web3j.build(if (socketPath != null) UnixIpcService(socketPath) else HttpService(httpUrl))
 
 
-    fun getNonce(address: Address): Long {
+    override fun getNonce(address: Address): BigInteger {
+        //TODO use transactionCount is right?
         return web3.ethGetTransactionCount(
             Numeric.toHexString(address.toBytes()),
             DefaultBlockParameterName.LATEST
-        ).send().transactionCount.toLong()
+        ).send().transactionCount
     }
 
-    override fun newTransaction(key: CryptoKey, transaction: EthereumTransaction) {
-        transaction.ethTx.sign((key as EthCryptoKey).ecKey)
-        val hexTx = Numeric.toHexString(transaction.ethTx.encoded)
+    override fun submitTransaction(account: EthereumAccount, transaction: EthereumTransaction): Hash {
+        transaction.tx.sign((account.key as EthCryptoKey).ecKey)
+        val hexTx = Numeric.toHexString(transaction.tx.encoded)
         val resp = web3.ethSendRawTransaction(hexTx).sendAsync().get()
         if (resp.hasError()) throw NewTxException(resp.error)
+        return resp.transactionHash.toHash()
     }
 
     override fun watchTransactions(filter: (TransactionResult<EthereumTransaction>) -> Boolean): Channel<TransactionResult<EthereumTransaction>> {
@@ -147,20 +157,33 @@ class EthereumChain constructor(httpUrl: String = defaultHttpUrl, socketPath: St
         }
     }
 
-    override fun getContract(parameter: QueryContractParameter): HubContract {
-        TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
+    override fun callConstFunction(caller: CryptoKey, contractAddress: Address, data: ByteArray): ByteArray {
+        val resp = this.web3.ethCall(
+            org.web3j.protocol.core.methods.request.Transaction.createEthCallTransaction(
+                caller.address.toString(),
+                contractAddress.toString(),
+                Utils.HEX.encode(data)
+            ), DefaultBlockParameterName.LATEST
+        ).sendAsync().get()
+        if (resp.hasError()) throw RuntimeException(resp.error.message)
+        return resp.value.hexToByteArray()
     }
 
-    private fun Transaction.chainTransaction(): EthereumTransaction {
-        return EthereumTransaction(
-            Address.wrap(this.to),
-            System.currentTimeMillis(),  //timestamp
-            this.gasPrice.longValueExact(),
-            0,
-            this.value.toLong(),
-            this.input.toByteArray()
+    override fun doDeployContract(
+        account: EthereumAccount,
+        contractMetadata: CompilationResult.ContractMetadata
+    ): EthereumHubContract {
+        val tx = EthereumTransaction(
+            account.getNonce(),
+            defaultGasPrice, defaultGasLimit,
+            contractMetadata.bin.hexToByteArray()
         )
+        this.submitTransaction(account, tx)
+        //TODO wait response and block mine
+        return loadContract(Address.wrap(tx.tx.contractAddress), contractMetadata.abi)
     }
+
+    private fun Transaction.chainTransaction() = EthereumTransaction(this)
 
     private fun EthBlock.Block.blockInfo(): EthereumBlock {
         return EthereumBlock(this)

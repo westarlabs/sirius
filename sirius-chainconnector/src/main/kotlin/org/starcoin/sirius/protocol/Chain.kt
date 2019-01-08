@@ -2,7 +2,7 @@ package org.starcoin.sirius.protocol
 
 import kotlinx.coroutines.channels.Channel
 import org.starcoin.sirius.core.*
-import org.starcoin.sirius.crypto.CryptoKey
+import java.io.File
 import java.math.BigInteger
 
 enum class ChainType {
@@ -19,7 +19,7 @@ enum class EventTopic(val event: String) {
     Deposit("DepositEvent(byte[])")
 }
 
-interface Chain<T : ChainTransaction, B : Block<T>> {
+interface Chain<T : ChainTransaction, B : Block<T>, A : ChainAccount> {
 
     fun findTransaction(hash: Hash): T?
 
@@ -44,8 +44,12 @@ interface Chain<T : ChainTransaction, B : Block<T>> {
 
     fun getBalance(address: Address): BigInteger
 
-    fun newTransaction(key: CryptoKey, transaction: T)
+    fun submitTransaction(account: A, transaction: T): Hash
 
-    fun getContract(parameter: QueryContractParameter): HubContract
+    fun loadContract(contractAddress: Address, jsonInterface: String): HubContract<A>
+
+    fun deployContract(account: A): HubContract<A>
+
+    fun deployContract(account: A, contractFile: File): HubContract<A>
 
 }
