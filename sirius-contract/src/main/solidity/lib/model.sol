@@ -942,14 +942,16 @@ library ModelLib {
         uint startBlockNum;
         string hubAddress;
         uint blocksPerEon;
+        uint latestEon;
     }
 
     function marshalContractHubInfo(ContractHubInfo memory chi) internal pure returns (bytes memory) {
         bytes memory startBlockNum = RLPEncoder.encodeUint(chi.startBlockNum);
         bytes memory hubAddress = RLPEncoder.encodeString(chi.hubAddress);
         bytes memory blocksPerEon = RLPEncoder.encodeUint(chi.blocksPerEon);
+        bytes memory latestEon = RLPEncoder.encodeUint(chi.latestEon);
 
-        return RLPEncoder.encodeList(ByteUtilLib.append(ByteUtilLib.append(startBlockNum, hubAddress), blocksPerEon));
+        return RLPEncoder.encodeList(ByteUtilLib.append(ByteUtilLib.append(ByteUtilLib.append(startBlockNum, hubAddress), blocksPerEon), latestEon));
     }
 
     enum ContractReturnType {

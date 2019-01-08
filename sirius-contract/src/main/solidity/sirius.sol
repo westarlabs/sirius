@@ -403,6 +403,7 @@ contract SiriusService is Sirius {
         chi.startBlockNum = startHeight;
         chi.hubAddress = ip;
         chi.blocksPerEon = blocksPerEon;
+        chi.latestEon = currentEon();
         return ModelLib.marshalContractHubInfo(chi);
     }
 

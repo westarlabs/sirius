@@ -19,7 +19,7 @@ data class ContractHubInfo(
     @SerialId(3)
     val blocksPerEon: Int,
     @SerialId(4)
-    val eon: Int = 0
+    val latestEon: Int = 0
 ) : SiriusObject() {
     companion object : SiriusObjectCompanion<ContractHubInfo, Starcoin.ContractHubInfo>(ContractHubInfo::class) {
         override fun mock(): ContractHubInfo {
