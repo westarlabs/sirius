@@ -12,7 +12,7 @@ abstract class ChainTransaction :
 
     abstract val isContractCall: Boolean
 
-    abstract val contractFunction: ContractFunction?
+    abstract val contractFunction: ContractFunction<out SiriusObject>?
 
     override fun doHash(): Hash {
         return this.txHash()

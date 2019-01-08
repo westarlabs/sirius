@@ -29,7 +29,7 @@ class EthereumHubContract internal constructor(
 
     override fun <S : SiriusObject> executeContractFunction(
         account: EthereumAccount,
-        function: ContractFunction,
+        function: ContractFunction<S>,
         input: S
     ): Hash {
         val data = function.encode(input)
@@ -81,7 +81,7 @@ class EthereumHubContract internal constructor(
         return (bytes.decodeRLP() as RLPElement).toBigIntegerFromRLP().intValueExact()
     }
 
-    fun hubIp(ip: String) {
-        val callResult = this.callFunction(EthereumAccount.DUMMY_ACCOUNT, "hubIp", ip.toByteArray())
+    fun hubIp(account: EthereumAccount, ip: String) {
+        val callResult = this.callFunction(account, "hubIp", ip.toByteArray())
     }
 }

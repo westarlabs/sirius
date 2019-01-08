@@ -1,10 +1,11 @@
 package org.starcoin.sirius.protocol.ethereum
 
+import org.ethereum.db.ByteArrayWrapper
 import org.starcoin.sirius.core.Hash
 import org.starcoin.sirius.core.SiriusObject
 import org.starcoin.sirius.protocol.ContractFunction
 
-fun ContractFunction.signature(): ByteArray {
+fun ContractFunction<*>.signature(): ByteArray {
     return doSignature(this.name)
 }
 
@@ -16,11 +17,10 @@ fun formatSignature(functionName: String): String {
     return "$functionName(bytes)"
 }
 
-fun ContractFunction.encode(input: SiriusObject): ByteArray {
+fun ContractFunction<*>.encode(input: SiriusObject): ByteArray {
     return this.signature() + input.toRLP()
 }
 
-fun ContractFunction.Companion.getFunction(signature: ByteArray): ContractFunction? {
-    //TODO optimize
-    return functions.find { it.signature().contentEquals(signature) }
-}
+val ContractFunction.Companion.functionMap: Map<ByteArrayWrapper, ContractFunction<*>>
+    get() = functions.map { ByteArrayWrapper(it.signature()) to it }.toMap()
+

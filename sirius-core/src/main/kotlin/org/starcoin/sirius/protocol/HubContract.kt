@@ -1,9 +1,12 @@
 package org.starcoin.sirius.protocol
 
+import kotlinx.serialization.ImplicitReflectionSerializer
+import kotlinx.serialization.serializer
 import org.starcoin.sirius.core.*
+import org.starcoin.sirius.serialization.rlp.RLP
 import kotlin.reflect.KClass
 
-sealed class ContractFunction(val name: String, val inputClass: KClass<out SiriusObject>) {
+sealed class ContractFunction<S : SiriusObject>(val name: String, val inputClass: KClass<S>) {
     companion object {
         val functions = listOf(
             CommitFunction,
@@ -16,24 +19,33 @@ sealed class ContractFunction(val name: String, val inputClass: KClass<out Siriu
             RecoverFundsFunction
         )
     }
+
+    @UseExperimental(ImplicitReflectionSerializer::class)
+    fun parseInput(input: ByteArray): S {
+        //TODO support other implements.
+        return RLP.load(inputClass.serializer(), input)
+    }
 }
 
-object CommitFunction : ContractFunction("commit", HubRoot::class)
-object InitiateWithdrawalFunction : ContractFunction("initiateWithdrawal", Withdrawal::class)
-object CancelWithdrawalFunction : ContractFunction("cancelWithdrawal", CancelWithdrawal::class)
+object CommitFunction : ContractFunction<HubRoot>("commit", HubRoot::class)
+object InitiateWithdrawalFunction : ContractFunction<Withdrawal>("initiateWithdrawal", Withdrawal::class)
+object CancelWithdrawalFunction : ContractFunction<CancelWithdrawal>("cancelWithdrawal", CancelWithdrawal::class)
 object OpenBalanceUpdateChallengeFunction :
-    ContractFunction("openBalanceUpdateChallenge", BalanceUpdateChallenge::class)
+    ContractFunction<BalanceUpdateChallenge>("openBalanceUpdateChallenge", BalanceUpdateChallenge::class)
 
 object CloseBalanceUpdateChallengeFunction :
-    ContractFunction("closeBalanceUpdateChallenge", CloseBalanceUpdateChallenge::class)
+    ContractFunction<CloseBalanceUpdateChallenge>("closeBalanceUpdateChallenge", CloseBalanceUpdateChallenge::class)
 
 object OpenTransferDeliveryChallengeFunction :
-    ContractFunction("openTransferDeliveryChallenge", TransferDeliveryChallenge::class)
+    ContractFunction<TransferDeliveryChallenge>("openTransferDeliveryChallenge", TransferDeliveryChallenge::class)
 
 object CloseTransferDeliveryChallengeFunction :
-    ContractFunction("closeTransferDeliveryChallenge", CloseTransferDeliveryChallenge::class)
+    ContractFunction<CloseTransferDeliveryChallenge>(
+        "closeTransferDeliveryChallenge",
+        CloseTransferDeliveryChallenge::class
+    )
 
-object RecoverFundsFunction : ContractFunction("recoverFundsFunction", AMTreeProof::class)
+object RecoverFundsFunction : ContractFunction<AMTreeProof>("recoverFundsFunction", AMTreeProof::class)
 
 abstract class HubContract<A : ChainAccount> {
 
@@ -123,7 +135,11 @@ abstract class HubContract<A : ChainAccount> {
         return this.executeContractFunction(account, RecoverFundsFunction, input)
     }
 
-    abstract fun <S : SiriusObject> executeContractFunction(account: A, function: ContractFunction, arguments: S): Hash
+    abstract fun <S : SiriusObject> executeContractFunction(
+        account: A,
+        function: ContractFunction<S>,
+        arguments: S
+    ): Hash
 
     abstract fun <S : SiriusObject> queryContractFunction(
         account: A,

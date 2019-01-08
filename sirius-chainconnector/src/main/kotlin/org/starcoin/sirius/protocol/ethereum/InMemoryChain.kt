@@ -13,8 +13,6 @@ import org.starcoin.sirius.protocol.EventTopic
 import org.starcoin.sirius.protocol.FilterArguments
 import org.starcoin.sirius.protocol.TransactionResult
 import org.starcoin.sirius.protocol.ethereum.contract.EthereumHubContract
-import org.starcoin.sirius.serialization.rlp.RLPElement
-import org.starcoin.sirius.serialization.rlp.decodeRLP
 import java.math.BigInteger
 
 class InMemoryChain(autoGenblock: Boolean) : EthereumBaseChain() {
@@ -101,7 +99,7 @@ class InMemoryChain(autoGenblock: Boolean) : EthereumBaseChain() {
             executor.go()
             executor.finalization()
 
-            return (executor.result.hReturn.decodeRLP() as RLPElement).bytes
+            return executor.result.hReturn
         } finally {
             repository.rollback()
         }

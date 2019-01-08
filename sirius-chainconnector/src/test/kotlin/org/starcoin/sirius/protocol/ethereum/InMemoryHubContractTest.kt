@@ -234,7 +234,8 @@ class InMemoryHubContractTest {
     @ImplicitReflectionSerializer
     fun testHubInfo() {
         var ip = "192.168.0.0.1:80"
-        contract.hubIp(ip)
+        owner.getAndIncNonce()
+        contract.hubIp(owner, ip)
 
         var hubInfo = contract.queryHubInfo(EthereumAccount.DUMMY_ACCOUNT)
         Assert.assertEquals(hubInfo.hubAddress, ip)
