@@ -1,8 +1,5 @@
 package org.starcoin.sirius.protocol.ethereum
 
-import kotlinx.coroutines.GlobalScope
-import kotlinx.coroutines.delay
-import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
 import kotlinx.serialization.ImplicitReflectionSerializer
 import org.ethereum.config.SystemProperties
@@ -11,19 +8,15 @@ import org.ethereum.solidity.compiler.SolidityCompiler
 import org.ethereum.util.blockchain.EtherUtil
 import org.junit.Assert
 import org.junit.Before
-import org.junit.Ignore
 import org.junit.Test
 import org.starcoin.sirius.core.*
 import org.starcoin.sirius.crypto.CryptoKey
 import org.starcoin.sirius.crypto.CryptoService
 import org.starcoin.sirius.crypto.eth.EthCryptoKey
 import org.starcoin.sirius.protocol.EthereumTransaction
-import org.starcoin.sirius.protocol.EventTopic
 import org.starcoin.sirius.protocol.ethereum.contract.InMemoryHubContract
-import org.starcoin.sirius.serialization.rlp.RLP
 import org.starcoin.sirius.util.MockUtils
 import java.io.File
-import java.math.BigInteger
 import java.net.URL
 import java.util.concurrent.atomic.AtomicInteger
 import kotlin.properties.Delegates
@@ -147,16 +140,9 @@ class InMemoryHubContractTest {
             Assert.assertEquals(transaction.tx.amount.toLong(), amount)
         }
 
-        /**
-        var hash=commitHubRoot(0,amount)
+        val eon = 1
 
-        println(chain.getNumber())
-        println(contract.getCurrentEon())
-        var transaction=chain.findTransaction(hash)
-        Assert.assertEquals(transaction?.to,Address.wrap(contract.getContractAddr()))
-        Assert.assertEquals(transaction?.from,Address.wrap(chain.sb.sender.address))*/
-
-        val eon = 0
+        commitHubRoot(1,amount)
         val path = newPath(alice.address, newUpdate(eon, 1, 0, alice),0,amount)
         var contractAddr = contract.getContractAddr()
 
@@ -174,15 +160,15 @@ class InMemoryHubContractTest {
 
         chain.sb.sender = owner
 
-        amount = EtherUtil.convert(2, EtherUtil.Unit.ETHER).toLong()
+        amount = EtherUtil.convert(1000, EtherUtil.Unit.GWEI).toLong()
 
         val update = newUpdate(eon, 2, amount, alice)
         val cancel =
-            CancelWithdrawal(Participant(alice.keyPair.public), update, path)
+            CancelWithdrawal(alice.address, update, path)
         hash = contract.cancelWithdrawal(cancel)
         transaction = chain.findTransaction(hash)
 
-        Assert.assertEquals(transaction?.from, alice.address)
+        Assert.assertEquals(transaction?.from, Address.wrap(owner.address))
         Assert.assertEquals(transaction?.to, Address.wrap(contractAddr))
 
     }
@@ -243,7 +229,11 @@ class InMemoryHubContractTest {
         Assert.assertEquals(transaction?.from, Address.wrap(chain.sb.sender.address))
 
         var root = contract.queryLeastHubCommit()
+
         println(root)
+        Assert.assertEquals(root.eon, 1)
+        Assert.assertEquals(root.root.allotment.toLong(), amount)
+
     }
 
     private fun commitHubRoot(eon: Int, amount: Long): Hash {
