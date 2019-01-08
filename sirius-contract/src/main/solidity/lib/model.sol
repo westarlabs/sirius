@@ -49,6 +49,13 @@ library GlobleLib {
         bool isVal;
     }
 
+    function marshalWithdrawal(Withdrawal memory w) internal pure returns (bytes memory) {
+        bytes memory stat = marshalWithdrawalStatusType(w.stat);
+        //no need for isVal
+
+        return RLPEncoder.encodeList(ByteUtilLib.append(w.info, stat));
+    }
+
     struct WithdrawalMeta {
         uint total;
         address[] addrs;
@@ -86,8 +93,14 @@ library GlobleLib {
         bool isVal;
     }
 
-    function change2TransferDeliveryChallenge(TransferDeliveryChallengeAndStatus memory tcs) internal pure returns(ModelLib.TransferDeliveryChallenge memory bs) {
-        return ModelLib.unmarshalTransferDeliveryChallenge(RLPDecoder.toRLPItem(tcs.challenge, true));
+    function change2TransferDeliveryChallenge(TransferDeliveryChallengeAndStatus memory tdcas) internal pure returns(ModelLib.TransferDeliveryChallenge memory bs) {
+        return ModelLib.unmarshalTransferDeliveryChallenge(RLPDecoder.toRLPItem(tdcas.challenge, true));
+    }
+
+    function marshalTransferDeliveryChallengeAndStatus(TransferDeliveryChallengeAndStatus memory tdcas) internal pure returns (bytes memory) {
+        bytes memory stat = ModelLib.marshalChallengeStatus(tdcas.stat);
+
+        return RLPEncoder.encodeList(ByteUtilLib.append(tdcas.challenge, stat));
     }
 
     ////////////////////////////////////////Balance challenge
@@ -954,48 +967,8 @@ library ModelLib {
         return RLPEncoder.encodeList(ByteUtilLib.append(ByteUtilLib.append(ByteUtilLib.append(startBlockNum, hubAddress), blocksPerEon), latestEon));
     }
 
-    enum ContractReturnType {
-        CR_WITHDRAWAL,
-        CR_BALANCE,
-        CR_TRANSFER,
-        CR_HUBROOT
-    }
-
-    function unmarshalContractReturnType(RLPLib.RLPItem memory rlp) internal pure returns (ContractReturnType crt) {
-        uint tmp = RLPDecoder.toUint(rlp);
-        if(tmp == 0) {
-            return ContractReturnType.CR_WITHDRAWAL;
-        } else if(tmp == 1) {
-            return ContractReturnType.CR_BALANCE;
-        } else if(tmp == 2) {
-            return ContractReturnType.CR_TRANSFER;
-        } else if(tmp == 3) {
-            return ContractReturnType.CR_HUBROOT;
-        } else {
-            revert();
-        }
-    }
-
-    function marshalContractReturnType(ContractReturnType crt) internal pure returns (bytes memory) {
-        uint tmp;
-        if(crt == ContractReturnType.CR_WITHDRAWAL) {
-            tmp = 0;
-        } else if(crt == ContractReturnType.CR_BALANCE) {
-            tmp = 1;
-        } else if(crt == ContractReturnType.CR_TRANSFER) {
-            tmp = 2;
-        } else if(crt == ContractReturnType.CR_HUBROOT) {
-            tmp = 3;
-        } else {
-            revert();
-        }
-
-        return RLPEncoder.encodeUint(tmp);
-    }
-
     struct ContractReturn {
        bool hasVal;
-       ContractReturnType crt;
        bytes payload;
     }
 
@@ -1005,8 +978,7 @@ library ModelLib {
         while(RLPDecoder.hasNext(it)) {
             RLPLib.RLPItem memory r = RLPDecoder.next(it);
             if(idx == 0) cr.hasVal = RLPDecoder.toBool(r);
-            else if(idx == 1) cr.crt = unmarshalContractReturnType(r);
-            else if(idx == 2) cr.payload = RLPLib.toData(r);
+            else if(idx == 1) cr.payload = RLPLib.toData(r);
             else {}
 
             idx++;
@@ -1015,9 +987,8 @@ library ModelLib {
 
     function marshalContractReturn(ContractReturn memory cr) internal pure returns (bytes memory) {
         bytes memory hasVal = RLPEncoder.encodeBool(cr.hasVal);
-        bytes memory crt = marshalContractReturnType(cr.crt);
         bytes memory payload = RLPEncoder.encodeBytes(cr.payload);
 
-        return RLPEncoder.encodeList(ByteUtilLib.append(ByteUtilLib.append(hasVal, crt), payload));
+        return RLPEncoder.encodeList(ByteUtilLib.append(hasVal, payload));
     }
 }

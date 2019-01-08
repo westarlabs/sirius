@@ -211,6 +211,11 @@ message BalanceUpdateChallengeStatus {
     required ChallengeStatus status = 2;
 }
 
+message TransferDeliveryChallengeStatus {
+    required TransferDeliveryChallenge challenge = 1;
+    required ChallengeStatus status = 2;
+}
+
 message HubAccount {
     required bytes publicKey = 1;
     required Update update = 2;
@@ -239,17 +244,9 @@ message HubEvent {
     required bytes address = 3;
 }
 
-enum ContractReturnType {
-    CR_WITHDRAWAL = 0;
-    CR_BALANCE = 1;
-    CR_TRANSFER = 2;
-    CR_HUBROOT = 3;
-}
-
 message ProtoContractReturn {
     required bool hasVal = 1;
-    required ContractReturnType type = 2;
-    required bytes payload = 3;
+    required bytes payload = 2;
 }
 
 message BlockAddressAndEon {

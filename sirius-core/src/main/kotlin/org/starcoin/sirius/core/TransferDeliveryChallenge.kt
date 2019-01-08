@@ -26,3 +26,22 @@ data class TransferDeliveryChallenge(
         }
     }
 }
+
+@ProtobufSchema(Starcoin.TransferDeliveryChallengeStatus::class)
+@Serializable
+data class TransferDeliveryChallengeStatus(
+    @SerialId(1) val challenge: TransferDeliveryChallenge = TransferDeliveryChallenge.DUMMY_TRAN_DELIVERY_CHALLENGE,
+    @SerialId(2) val status: ChallengeStatus = ChallengeStatus.OPEN
+) :
+    SiriusObject() {
+    companion object : SiriusObjectCompanion<TransferDeliveryChallengeStatus, Starcoin.TransferDeliveryChallengeStatus>(
+        TransferDeliveryChallengeStatus::class
+    ) {
+
+        var DUMMY_TRAN_DELIVERY_CHALLENGE = TransferDeliveryChallengeStatus()
+
+        override fun mock(): TransferDeliveryChallengeStatus {
+            return TransferDeliveryChallengeStatus(TransferDeliveryChallenge.mock(), ChallengeStatus.OPEN)
+        }
+    }
+}
