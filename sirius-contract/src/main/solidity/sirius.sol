@@ -90,29 +90,70 @@ contract SiriusService is Sirius {
 
     function commit(bytes calldata data) external onlyOwner returns (bool) {
         if(!recoveryMode) {
-            //TODO challenge
-            ModelLib.HubRoot memory root = ModelLib.unmarshalHubRoot(RLPDecoder.toRLPItem(data, true));
-            require(!balances[0].hasRoot);
-            require(root.eon >= 0);
-            require(balances[0].eon == root.eon);
-            require(root.node.allotment >= 0);
-            uint tmp = SafeMath.add(balances[1].root.node.allotment, balances[1].depositMeta.total);
-            emit DepositEvent(2, root.node.allotment);
-            uint allotmentTmp = SafeMath.sub(tmp, balances[1].withdrawalMeta.total);
-            emit DepositEvent(9, allotmentTmp);
-            emit DepositEvent(0, balances[1].depositMeta.total);
-            require(allotmentTmp >= 0 && allotmentTmp == root.node.allotment);
-            balances[0].root = root;
-            balances[0].hasRoot = true;
-            //TODO withdrawal
-            return true;
-        } else {
-            return false;
+            bool flag = true;
+            uint bLen = balances[1].bucMeta.balanceChallengeKeys.length;
+            //balance
+            for(uint i=0;i<bLen;i++) {
+                bytes32 bKey = balances[1].bucMeta.balanceChallengeKeys[i];
+                GlobleLib.BalanceUpdateChallengeAndStatus memory s = balances[1].bucMeta.balanceChallenges[bKey];
+                if(s.isVal && s.status != ModelLib.ChallengeStatus.CLOSE) {
+                    flag = false;
+                    break;
+                }
+            }
+
+            //transfer
+            if(flag) {
+                uint tLen = balances[1].tdcMeta.transferChallengeKeys.length;
+                for(uint i=0;i<tLen;i++) {
+                    bytes32 tKey = balances[1].tdcMeta.transferChallengeKeys[i];
+                    GlobleLib.TransferDeliveryChallengeAndStatus memory t = balances[1].tdcMeta.transferChallenges[tKey];
+                   if(t.isVal && t.stat != ModelLib.ChallengeStatus.CLOSE) {
+                       flag = false;
+                       break;
+                   }
+                }
+            }
+
+            if(flag) {
+                ModelLib.HubRoot memory root = ModelLib.unmarshalHubRoot(RLPDecoder.toRLPItem(data, true));
+                require(!balances[0].hasRoot);
+                require(root.eon >= 0);
+                require(balances[0].eon == root.eon);
+                require(root.node.allotment >= 0);
+                uint tmp = SafeMath.add(balances[1].root.node.allotment, balances[1].depositMeta.total);
+                emit DepositEvent(2, root.node.allotment);
+                uint allotmentTmp = SafeMath.sub(tmp, balances[1].withdrawalMeta.total);
+                emit DepositEvent(9, allotmentTmp);
+                emit DepositEvent(0, balances[1].depositMeta.total);
+                require(allotmentTmp >= 0 && allotmentTmp == root.node.allotment);
+                balances[0].root = root;
+                balances[0].hasRoot = true;
+
+                //withdrawal
+                uint wLen = balances[2].withdrawalMeta.addrs.length;
+                for(uint i=0;i<wLen;i++) {
+                    address payable addr = balances[2].withdrawalMeta.addrs[i];
+                    bytes32 wKey = ByteUtilLib.address2hash(addr);
+                    GlobleLib.Withdrawal memory w = balances[2].withdrawalMeta.withdrawals[wKey];
+                   if(w.isVal && w.stat == GlobleLib.WithdrawalStatusType.INIT) {
+                       w.stat = GlobleLib.WithdrawalStatusType.CONFIRMED;
+                       balances[2].withdrawalMeta.withdrawals[wKey] = w;
+                       ModelLib.WithdrawalInfo memory wi = ModelLib.unmarshalWithdrawalInfo(RLPDecoder.toRLPItem(w.info, true));
+                       addr.transfer(wi.amount);
+                   }
+                }
+
+                return true;
+            }
         }
+
+        return false;
     }
 
     function initiateWithdrawal(bytes calldata data) external recovery returns (bool) {
         if(!recoveryMode) {
+            address payable addr = msg.sender;
             ModelLib.WithdrawalInfo memory init = ModelLib.unmarshalWithdrawalInfo(RLPDecoder.toRLPItem(data, true));
             require(init.amount > 0);
             //ModelLib.verifyAddr4WithdrawalInfo(init, msg.sender);//TODO
@@ -123,7 +164,7 @@ contract SiriusService is Sirius {
             uint len = init.path.nodes.length;
             require(len > 0);
 
-            bytes32 key = ByteUtilLib.address2hash(msg.sender);
+            bytes32 key = ByteUtilLib.address2hash(addr);
             emit DepositEvent2(2, key);
             bool processingFlag = withdrawalProcessing(key);
             require(!processingFlag);
@@ -139,7 +180,7 @@ contract SiriusService is Sirius {
             with.isVal = true;
             with.stat = GlobleLib.WithdrawalStatusType.INIT;
 
-            balances[0].withdrawalMeta.addrs.push(msg.sender);
+            balances[0].withdrawalMeta.addrs.push(addr);
             balances[0].withdrawalMeta.withdrawals[key] = with;
             balances[0].withdrawalMeta.total += init.amount;
             return true;

@@ -58,7 +58,7 @@ library GlobleLib {
 
     struct WithdrawalMeta {
         uint total;
-        address[] addrs;
+        address payable[] addrs;
         mapping(bytes32 => Withdrawal) withdrawals;
     }
 
