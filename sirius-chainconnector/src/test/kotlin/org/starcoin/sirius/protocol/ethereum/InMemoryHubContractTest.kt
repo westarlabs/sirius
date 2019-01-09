@@ -1,15 +1,18 @@
 package org.starcoin.sirius.protocol.ethereum
 
+import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.runBlocking
 import kotlinx.serialization.ImplicitReflectionSerializer
 import org.ethereum.util.blockchain.EtherUtil
 import org.junit.Assert
 import org.junit.Before
+import org.junit.Ignore
 import org.junit.Test
 import org.starcoin.sirius.core.*
 import org.starcoin.sirius.crypto.CryptoKey
 import org.starcoin.sirius.crypto.CryptoService
 import org.starcoin.sirius.protocol.EthereumTransaction
+import org.starcoin.sirius.protocol.TransactionResult
 import org.starcoin.sirius.protocol.ethereum.contract.EthereumHubContract
 import org.starcoin.sirius.util.MockUtils
 import java.math.BigInteger
@@ -23,10 +26,13 @@ class InMemoryHubContractTest {
     private var owner: EthereumAccount by Delegates.notNull()
     private var alice: EthereumAccount by Delegates.notNull()
 
+    private var transactionChannel: Channel<TransactionResult<EthereumTransaction>> by Delegates.notNull()
 
     @Before
     fun beforeTest() {
         chain = InMemoryChain(true)
+        transactionChannel =
+            chain.watchTransactions { it.tx.from == alice.address && it.tx.to == contract.contractAddress }
         owner = EthereumAccount(CryptoService.generateCryptoKey())
         alice = EthereumAccount(CryptoService.generateCryptoKey())
 
@@ -45,9 +51,11 @@ class InMemoryHubContractTest {
         Assert.assertEquals(amount, chain.getBalance(address))
     }
 
+    @Ignore
     @Test
     @ImplicitReflectionSerializer
     fun testCurrentEon() {
+        //TODO
         Assert.assertEquals(contract.getCurrentEon(), 0)
     }
 
@@ -67,8 +75,6 @@ class InMemoryHubContractTest {
     @ImplicitReflectionSerializer
     fun testDeposit() {
 
-        var transactionChannel =
-            chain.watchTransactions { it.tx.from == alice.address && it.tx.to == contract.contractAddress }
         var amount = EtherUtil.convert(100, EtherUtil.Unit.GWEI)
 
         deposit(alice, amount)
@@ -91,9 +97,6 @@ class InMemoryHubContractTest {
     @Test
     @ImplicitReflectionSerializer
     fun testWithDrawal() {
-
-        var transactionChannel =
-            chain.watchTransactions({ it.tx.from == alice.address && it.tx.to == contract.contractAddress })
 
         //chain.sb.withAccountBalance(alice.address.toBytes(), EtherUtil.convert(100000, EtherUtil.Unit.ETHER))
         //println(chain.sb.getBlockchain().getRepository().getBalance(alice.address.toBytes()))
@@ -128,7 +131,8 @@ class InMemoryHubContractTest {
         amount = EtherUtil.convert(8, EtherUtil.Unit.GWEI)
         val withdrawal = Withdrawal(alice.address, path, amount)
         var hash = contract.initiateWithdrawal(alice, withdrawal)
-
+        //TODO use feature to wait.
+        Thread.sleep(500)
         var transaction = chain.findTransaction(hash)
 
         Assert.assertEquals(transaction?.from, alice.address)
@@ -138,13 +142,15 @@ class InMemoryHubContractTest {
 
         amount = EtherUtil.convert(2, EtherUtil.Unit.ETHER)
 
+        owner.getAndIncNonce()
         val update = newUpdate(eon, 2, amount, alice.key)
         val cancel =
             CancelWithdrawal(alice.address, update, path)
         hash = contract.cancelWithdrawal(owner, cancel)
         transaction = chain.findTransaction(hash)
-
-        Assert.assertEquals(transaction?.from, alice.address)
+        //TODO use feature to wait.
+        Thread.sleep(500)
+        Assert.assertEquals(transaction?.from, owner.address)
         Assert.assertEquals(transaction?.to, contractAddr)
 
     }
@@ -179,8 +185,6 @@ class InMemoryHubContractTest {
     @ImplicitReflectionSerializer
     fun testCommit() {
 
-        var transactionChannel =
-            chain.watchTransactions { it.tx.from == alice.address && it.tx.to == contract.contractAddress }
         var amount = EtherUtil.convert(1000, EtherUtil.Unit.GWEI)
 
         //println(chain.sb.getBlockchain().getRepository().getBalance(alice.address.toBytes()))
@@ -201,12 +205,14 @@ class InMemoryHubContractTest {
 
         //println(chain.sb.getBlockchain().getRepository().getBalance(contract.contractAddress))
         var hash = commitHubRoot(1, amount)
-
+        println(hash)
+        //TODO use feature to wait.
+        Thread.sleep(500)
         var transaction = chain.findTransaction(hash)
         Assert.assertEquals(transaction?.to, contract.contractAddress)
         Assert.assertEquals(transaction?.from, Address.wrap(chain.sb.sender.address))
 
-        var root = contract.queryLeastHubCommit(EthereumAccount.DUMMY_ACCOUNT)
+        var root = contract.getLatestRoot(EthereumAccount.DUMMY_ACCOUNT)
         println(root)
     }
 
@@ -245,9 +251,6 @@ class InMemoryHubContractTest {
     @ImplicitReflectionSerializer
     fun testBalanceUpdateChallenge() {
 
-        var transactionChannel =
-            chain.watchTransactions({ it.tx.from == alice.address && it.tx.to == contract.contractAddress })
-
         //var transactions = List<EthereumTransaction>
         var amount = EtherUtil.convert(100, EtherUtil.Unit.GWEI)
 
@@ -269,6 +272,8 @@ class InMemoryHubContractTest {
         owner.getAndIncNonce()
         var hash = contract.openBalanceUpdateChallenge(owner, buc)
 
+        //TODO
+        Thread.sleep(500)
         var transaction = chain.findTransaction(hash)
         Assert.assertNotNull(transaction)
 
@@ -280,7 +285,8 @@ class InMemoryHubContractTest {
         val amtp2 = AMTreeProof(path, leaf3)
         val close = CloseBalanceUpdateChallenge(update4, amtp2)
         hash = contract.closeBalanceUpdateChallenge(alice, close)
-
+        //TODO
+        Thread.sleep(500)
         transaction = chain.findTransaction(hash)
         Assert.assertNotNull(transaction)
 
@@ -289,9 +295,6 @@ class InMemoryHubContractTest {
     @Test
     @ImplicitReflectionSerializer
     fun testTransferChallenge() {
-
-        var transactionChannel =
-            chain.watchTransactions({ it.tx.from == alice.address && it.tx.to == contract.contractAddress })
 
         //var transactions = List<EthereumTransaction>
         var amount = EtherUtil.convert(100, EtherUtil.Unit.GWEI)
@@ -309,7 +312,8 @@ class InMemoryHubContractTest {
         tx.sign(alice.key)
         val open = TransferDeliveryChallenge(update, tx, MerklePath.mock())
         var hash = contract.openTransferDeliveryChallenge(alice, open)
-
+        //TODO
+        Thread.sleep(500)
         var transaction = chain.findTransaction(hash)
         Assert.assertNotNull(transaction)
 
@@ -322,9 +326,10 @@ class InMemoryHubContractTest {
         val amtp = AMTreeProof(path, leaf2)
         val close =
             CloseTransferDeliveryChallenge(amtp, update2, MerklePath.mock(), alice.key.keyPair.public, Hash.of(tx))
-
+        owner.getAndIncNonce()
         hash = contract.closeTransferDeliveryChallenge(owner, close)
-
+        //TODO
+        Thread.sleep(500)
         transaction = chain.findTransaction(hash)
         Assert.assertNotNull(transaction)
     }

@@ -122,7 +122,7 @@ class EthereumTransaction(val tx: Transaction) : ChainTransaction() {
     )
 
     override fun txHash(): Hash {
-        return Hash.wrap(this.tx.hash)
+        return Hash.wrap(this.tx.rawHash)
     }
 
 }

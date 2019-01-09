@@ -48,22 +48,23 @@ class EthereumHubContract internal constructor(
         account: EthereumAccount,
         functionName: String,
         clazz: KClass<S>,
-        vararg args: Any?
+        vararg args: Any
     ): S {
         val function = this.contract.getByName(functionName)
+            ?: throw RuntimeException("Can not find function by name:$functionName")
         val data = function.encode(*args)
         val result = this.chain.callConstFunction(account.key, this.contractAddress, data)
         //TODO check has value flag.
         return RLP.load(clazz.serializer(), result)
     }
 
-    fun callConstFunction(account: EthereumAccount, functionName: String, vararg args: Any?): ByteArray {
+    fun callConstFunction(account: EthereumAccount, functionName: String, vararg args: Any): ByteArray {
         val function = this.contract.getByName(functionName)
         val data = function.encode(*args)
         return this.chain.callConstFunction(account.key, this.contractAddress, data)
     }
 
-    fun callFunction(account: EthereumAccount, functionName: String, vararg args: Any?): Hash {
+    fun callFunction(account: EthereumAccount, functionName: String, vararg args: Any): Hash {
         val function = this.contract.getByName(functionName)
         val data = function.encode(*args)
         return chain.submitTransaction(

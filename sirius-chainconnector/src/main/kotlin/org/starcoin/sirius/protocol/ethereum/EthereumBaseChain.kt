@@ -19,10 +19,10 @@ abstract class EthereumBaseChain :
 
         //TODO
         val defaultGasPrice: BigInteger
-            get() = 210000.toBigInteger()
+            get() = 21000000.toBigInteger()
 
         val defaultGasLimit: BigInteger
-            get() = 2100000.toBigInteger()
+            get() = 210000000.toBigInteger()
 
         val contractName: String = "SiriusService"
 

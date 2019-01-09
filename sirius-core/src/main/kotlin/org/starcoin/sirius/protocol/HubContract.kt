@@ -55,9 +55,9 @@ abstract class HubContract<A : ChainAccount> {
         return this.queryContractFunction(account, "hubInfo", ContractHubInfo::class)
     }
 
-    fun queryLeastHubCommit(account: A): HubRoot? {
+    fun getLatestRoot(account: A): HubRoot? {
         //TODO check has value.
-        return this.queryContractFunction(account, "queryLeastHubCommit", HubRoot::class)
+        return this.queryContractFunction(account, "getLatestRoot", HubRoot::class)
     }
 
     fun queryHubCommit(account: A, eon: Int): HubRoot? {
@@ -145,7 +145,7 @@ abstract class HubContract<A : ChainAccount> {
         account: A,
         functionName: String,
         clazz: KClass<S>,
-        vararg args: Any?
+        vararg args: Any
     ): S
 
 }

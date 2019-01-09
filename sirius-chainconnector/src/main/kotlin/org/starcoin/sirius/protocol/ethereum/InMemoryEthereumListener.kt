@@ -101,7 +101,7 @@ class InMemoryEthereumListener : EthereumListener {
                 if(transactionFilter(transactionResult))
                     transactionChannel.send(transactionResult)
 
-                transactions.put(Hash.of(it.hash),ethereumTransaction)
+                transactions[ethereumTransaction.id] = ethereumTransaction
             }
         }
     }

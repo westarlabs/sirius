@@ -2,6 +2,7 @@ package org.starcoin.sirius.protocol.ethereum
 
 import kotlinx.coroutines.channels.Channel
 import org.ethereum.core.CallTransaction.createRawTransaction
+import org.ethereum.solidity.SolidityType
 import org.ethereum.solidity.compiler.CompilationResult
 import org.ethereum.util.blockchain.StandaloneBlockchain
 import org.starcoin.sirius.core.*
@@ -78,8 +79,10 @@ class InMemoryChain(autoGenblock: Boolean) : EthereumBaseChain() {
         sb.sender = ecKey
         transaction.tx.sign(ecKey)
         sb.submitTransaction(transaction.tx)
-        return transaction.tx.hash.toHash()
+        return transaction.tx.rawHash.toHash()
     }
+
+    val bytesType: SolidityType.BytesType = SolidityType.BytesType()
 
     override fun callConstFunction(caller: CryptoKey, contractAddress: Address, data: ByteArray): ByteArray {
         val tx = createRawTransaction(0, 0, 100000000000000L, contractAddress.toBytes().toHEXString(), 0, data)
@@ -98,8 +101,12 @@ class InMemoryChain(autoGenblock: Boolean) : EthereumBaseChain() {
             executor.execute()
             executor.go()
             executor.finalization()
-
-            return executor.result.hReturn
+            if (executor.result.isRevert || executor.result.exception != null) {
+                //TODO define custom error.
+                throw RuntimeException("callConstFunction fail")
+            }
+            val bytes = executor.result.hReturn
+            return bytesType.decode(bytes, SolidityType.IntType.decodeInt(bytes, 0).toInt()) as ByteArray
         } finally {
             repository.rollback()
         }
