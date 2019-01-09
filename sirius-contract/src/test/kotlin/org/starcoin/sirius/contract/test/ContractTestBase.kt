@@ -165,8 +165,12 @@ abstract class ContractTestBase(val contractFile: String, val contractName: Stri
         if (flag) {
             assert(callResult.returnValue as Boolean)
             verifyReturn(callResult)
-        } else
+        } else {
             LOG.warning(callResult.receipt.error)
+            callResult.receipt.logInfoList.forEach { logInfo ->
+                LOG.info("event:$logInfo")
+            }
+        }
     }
 
     fun verifyReturn(callResult: SolidityCallResult) {

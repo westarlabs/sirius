@@ -12,7 +12,8 @@ import kotlin.random.Random
 class SiriusContractTest : ContractTestBase("sirius.sol", "SiriusService") {
 
     private val deposit: Long = 10000
-    var ip = "192.168.0.0.1:80"
+    val ip = "192.168.0.0.1:80"
+    val blocksPerEon = 8
 
     @Before
     fun zeroEonCommit() {
@@ -56,6 +57,30 @@ class SiriusContractTest : ContractTestBase("sirius.sol", "SiriusService") {
     @Test
     fun testCommit() {
         createEon(Random.nextInt(1, 10))
+    }
+
+    @Test
+    fun testCommit2() {
+        createEon(0, false)
+    }
+
+    @Test
+    fun testCommit3() {
+        var ct = 0
+
+        var tmp = (blocksPerEon * 1) + 3
+
+        while (blockHeight.get() < tmp) {
+            if(blockHeight.get() < (blocksPerEon)/2) {
+                testDeposit(true)
+                ct += 1
+            } else {
+                sb.createBlock()
+            }
+        }
+
+        var total = ct * deposit
+        commitData(1, total, false)
     }
 
     @Test
@@ -207,14 +232,13 @@ class SiriusContractTest : ContractTestBase("sirius.sol", "SiriusService") {
 
         for (i in 0..eon) {
             var tmp = if (!flag && i == eon) {
-                (8 * (i + 1)) + 2
+                (blocksPerEon * (i + 1)) + 2
             } else {
-                (8 * (i + 1)) - 1
+                (blocksPerEon * (i + 1)) - 1
             }
 
-
             while (blockHeight.get() < tmp) {
-                testDeposit(flag)
+                testDeposit(true)
                 ct += 1
             }
             var total = ct * deposit

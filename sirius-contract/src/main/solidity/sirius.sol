@@ -39,9 +39,6 @@ contract SiriusService is Sirius {
 
     using SafeMath for uint;
     event DepositEvent(uint indexed i, uint value);
-    event DepositEvent2(uint indexed i, bytes32 value);
-    event DepositEvent3(uint indexed i, bytes value);
-    event DepositEvent4(uint indexed i, address value);
     event SiriusEvent(bytes32 indexed hash, uint indexed num, bytes value);
 
     constructor() public {
@@ -75,14 +72,11 @@ contract SiriusService is Sirius {
         require(msg.value > 0);
         if(!recoveryMode) {
             GlobleLib.deposit(balances[0].depositMeta, msg.sender, msg.value);
-            emit DepositEvent2(100, ByteUtilLib.address2hash(msg.sender));
 
             GlobleLib.Deposit memory d = all[msg.sender];
             d.amount = SafeMath.add(d.amount, msg.value);
             d.hasVal = true;
             all[msg.sender] = d;
-
-            emit DepositEvent(1, balances[0].depositMeta.total);
         } else {
             msg.sender.transfer(msg.value);
         }
@@ -122,10 +116,7 @@ contract SiriusService is Sirius {
                 require(balances[0].eon == root.eon);
                 require(root.node.allotment >= 0);
                 uint tmp = SafeMath.add(balances[1].root.node.allotment, balances[1].depositMeta.total);
-                emit DepositEvent(2, root.node.allotment);
                 uint allotmentTmp = SafeMath.sub(tmp, balances[1].withdrawalMeta.total);
-                emit DepositEvent(9, allotmentTmp);
-                emit DepositEvent(0, balances[1].depositMeta.total);
                 require(allotmentTmp >= 0 && allotmentTmp == root.node.allotment);
                 balances[0].root = root;
                 balances[0].hasRoot = true;
@@ -165,7 +156,6 @@ contract SiriusService is Sirius {
             require(len > 0);
 
             bytes32 key = ByteUtilLib.address2hash(addr);
-            emit DepositEvent2(2, key);
             bool processingFlag = withdrawalProcessing(key);
             require(!processingFlag);
 
@@ -291,7 +281,6 @@ contract SiriusService is Sirius {
             ModelLib.BalanceUpdateChallengeStatus memory stat = GlobleLib.change2BalanceUpdateChallengeStatus(tmpStat);
 
             bytes32 hash = ByteUtilLib.address2hash(ByteUtilLib.pubkey2Address(stat.challenge.publicKey));
-            emit DepositEvent2(200, hash);
             if(stat.status == ModelLib.ChallengeStatus.OPEN) {
                 uint d = balances[1].depositMeta.deposits[hash];
                 if(close.update.upData.sendAmount == 0 && close.update.upData.receiveAmount == 0) {
@@ -420,12 +409,7 @@ contract SiriusService is Sirius {
 
     function getLatestRoot() external returns (bytes memory) {
         ModelLib.HubRoot memory root = latestRoot();
-        bytes memory t1 = ByteUtilLib.uint2byte(root.node.allotment);
-        emit DepositEvent3(1, t1);
-        uint t2 = RLPDecoder.toUint(RLPDecoder.toRLPItem(RLPEncoder.encodeBytes(t1)));
-        emit DepositEvent(9, t2);
         bytes memory tmp = ModelLib.marshalHubRoot(root);
-        emit DepositEvent3(2, tmp);
         return tmp;
     }
 
@@ -511,18 +495,6 @@ contract SiriusService is Sirius {
 
     /** private methods **/
 
-    function findBalanceByEon(uint eon) private view returns(GlobleLib.Balance memory latest) {
-        GlobleLib.Balance memory tmp;
-        for (uint i =0; i < balances.length; i++) {
-            if(balances[i].eon == eon) {
-                tmp = balances[i];
-                break;
-            }
-        }
-
-        return tmp;
-    }
-
     function newBalance(uint newEon) private pure returns(GlobleLib.Balance memory latest) {
         GlobleLib.DepositMeta memory depositMeta;
         GlobleLib.WithdrawalMeta memory withdrawalMeta;
@@ -537,7 +509,7 @@ contract SiriusService is Sirius {
             uint tmp = i - 1;
             if (tmp == 0) {
                 balances[0] = latest;
-            }else {
+            } else {
                 balances[tmp] = balances[tmp - 1];
             }
         }
@@ -587,23 +559,22 @@ contract SiriusService is Sirius {
         uint newEon = SafeMath.div(tmp, blocksPerEon);
         uint latestEon = currentEon();
         uint addEon = SafeMath.add(balances[0].eon, 1);
-        emit DepositEvent(8, tmp);
-        emit DepositEvent(7, newEon);
+        emit DepositEvent(9, tmp);
+        emit DepositEvent(8, newEon);
 
         //recovery
-        emit DepositEvent(6, latestEon);
+        emit DepositEvent(7, latestEon);
         uint tmp2 = SafeMath.add(SafeMath.mul(blocksPerEon, latestEon), SafeMath.div(blocksPerEon, 4));
-        uint tmp3 = SafeMath.mul(blocksPerEon, addEon);
-        emit DepositEvent(5, tmp2);
+        uint tmp3 = SafeMath.add(tmp2, blocksPerEon);
+        emit DepositEvent(6, tmp2);
         emit DepositEvent(5, tmp3);
-        if ((newEon > addEon) || (newEon == addEon && tmp > tmp3 && !balances[0].hasRoot) || (newEon == latestEon && tmp > tmp2 && !balances[0].hasRoot)) {
+        if ((newEon > addEon) || (newEon == addEon && tmp > tmp3 && balances[0].hasRoot) || (newEon == latestEon && tmp > tmp2 && !balances[0].hasRoot)) {
             emit DepositEvent(4, 0);
             recoveryMode = true;
-            //TODO: add event
         }
 
         if (newEon == addEon && !recoveryMode) {// change eon
-            emit DepositEvent(3, 0);
+            emit DepositEvent(1, 0);
             GlobleLib.Balance memory latest = newBalance(newEon);
             checkBalances(latest);
         } else {}
