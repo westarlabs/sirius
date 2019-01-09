@@ -90,6 +90,7 @@ contract SiriusService is Sirius {
 
     function commit(bytes calldata data) external onlyOwner returns (bool) {
         if(!recoveryMode) {
+            //TODO challenge
             ModelLib.HubRoot memory root = ModelLib.unmarshalHubRoot(RLPDecoder.toRLPItem(data, true));
             require(!balances[0].hasRoot);
             require(root.eon >= 0);
@@ -103,6 +104,7 @@ contract SiriusService is Sirius {
             require(allotmentTmp >= 0 && allotmentTmp == root.node.allotment);
             balances[0].root = root;
             balances[0].hasRoot = true;
+            //TODO withdrawal
             return true;
         } else {
             return false;
@@ -494,7 +496,6 @@ contract SiriusService is Sirius {
             uint tmp = i - 1;
             if (tmp == 0) {
                 balances[0] = latest;
-                //TODO: add event
             }else {
                 balances[tmp] = balances[tmp - 1];
             }
