@@ -2,6 +2,7 @@ package org.starcoin.sirius.protocol.ethereum
 
 import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.channels.Channel
+import kotlinx.coroutines.channels.sendBlocking
 import kotlinx.coroutines.launch
 import kotlinx.io.IOException
 import org.ethereum.crypto.HashUtil
@@ -40,10 +41,8 @@ const val blockGasIncreasePercent = 0
 class EthereumChain constructor(httpUrl: String = defaultHttpUrl, socketPath: String? = null) :
     EthereumBaseChain() {
 
-
     val web3: Web3j =
         Web3j.build(if (socketPath != null) UnixIpcService(socketPath) else HttpService(httpUrl))
-
 
     override fun getNonce(address: Address): BigInteger {
         //TODO use transactionCount is right?
@@ -62,7 +61,17 @@ class EthereumChain constructor(httpUrl: String = defaultHttpUrl, socketPath: St
     }
 
     override fun watchTransactions(filter: (TransactionResult<EthereumTransaction>) -> Boolean): Channel<TransactionResult<EthereumTransaction>> {
-        TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
+        val ch = Channel<TransactionResult<EthereumTransaction>>(10)
+        val hx = ArrayList<Hash>(1)
+        GlobalScope.launch {
+            web3.transactionFlowable().subscribe {
+                val txr = TransactionResult(
+                    EthereumTransaction(it), getTransactionReceipts(hx)[0]
+                )
+                if (filter(txr)) ch.sendBlocking(txr)
+            }
+        }
+        return ch
     }
 
     override
@@ -83,29 +92,28 @@ class EthereumChain constructor(httpUrl: String = defaultHttpUrl, socketPath: St
         if (newFilterResp.hasError()) throw NewFilterException(newFilterResp.error)
         val filterChangeResp = web3.ethGetFilterChanges(newFilterResp.filterId).sendAsync().get()
         if (filterChangeResp.hasError()) throw FilterChangeException(filterChangeResp.error)
-        filterChangeResp.logs.map { it as LogObject }.forEach {
-            val recepitResp = web3.ethGetTransactionReceipt(it.transactionHash).sendAsync().get()
-            if (recepitResp.hasError()) throw GetRecepitException(recepitResp.error)
-            val r = recepitResp.transactionReceipt.get()
-            val receipt = Receipt(
-                r.transactionHash, r.transactionIndex,
-                r.blockHash, r.blockNumber, r.contractAddress,
-                r.from, r.to, r.gasUsed, r.logsBloom,
-                r.cumulativeGasUsed, r.root, r.isStatusOK
-            )
-            val txResp = web3.ethGetTransactionByHash(r.transactionHash).sendAsync().get()
-            if (txResp.hasError()) throw GetTransactionException(txResp.error)
-            val tx = txResp.transaction.get().chainTransaction()
-            val txr = TransactionResult(tx, receipt)
-            GlobalScope.launch {
-                ch.send(txr)
+        GlobalScope.launch {
+            filterChangeResp.logs.map { it as LogObject }.forEach {
+                val recepitResp = web3.ethGetTransactionReceipt(it.transactionHash).sendAsync().get()
+                if (recepitResp.hasError()) throw GetRecepitException(recepitResp.error)
+                val r = recepitResp.transactionReceipt.get()
+                val receipt = Receipt(
+                    r.transactionHash, r.transactionIndex,
+                    r.blockHash, r.blockNumber, r.contractAddress,
+                    r.from, r.to, r.gasUsed, r.logsBloom,
+                    r.cumulativeGasUsed, r.root, r.isStatusOK
+                )
+                val txResp = web3.ethGetTransactionByHash(r.transactionHash).sendAsync().get()
+                if (txResp.hasError()) throw GetTransactionException(txResp.error)
+                val tx = txResp.transaction.get().chainTransaction()
+                val txr = TransactionResult(tx, receipt)
+                if (filter(txr)) ch.send(txr)
             }
         }
         return ch
     }
 
     override fun watchBlock(filter: (FilterArguments) -> Boolean): Channel<EthereumBlock> {
-        //TODO support filter.
         val ch = Channel<EthereumBlock>(10)
         web3.blockFlowable(true).subscribe { block -> block.block.blockInfo() }
         return ch
