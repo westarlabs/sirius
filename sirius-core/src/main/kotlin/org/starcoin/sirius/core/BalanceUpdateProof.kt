@@ -17,6 +17,17 @@ data class BalanceUpdateProof(
     @SerialId(4)
     val proof: AMTreeProof = AMTreeProof.DUMMY_PROOF
 ) : SiriusObject() {
+
+    constructor(update: Update?, proof: AMTreeProof?) : this(
+        update != null,
+        update ?: Update.DUMMY_UPDATE,
+        proof != null,
+        proof ?: AMTreeProof.DUMMY_PROOF
+    )
+
+    constructor(update: Update) : this(update, null)
+    constructor(proof: AMTreeProof) : this(null, proof)
+
     companion object :
         SiriusObjectCompanion<BalanceUpdateProof, Starcoin.BalanceUpdateChallenge>(BalanceUpdateProof::class) {
 
