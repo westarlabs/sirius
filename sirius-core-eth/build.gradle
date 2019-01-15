@@ -1,4 +1,0 @@
-dependencies{
-    compile project(":sirius-core")
-    testCompile project(path: ':sirius-core', configuration: 'testOutput')
-}
