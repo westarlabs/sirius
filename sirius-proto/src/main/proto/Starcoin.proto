@@ -30,7 +30,7 @@ message TestData {
 
 message Deposit{
     required bytes address = 1;
-    required uint64 amount = 2;
+    required bytes amount = 2;
 }
 
 message OffchainTransactionData{
@@ -135,7 +135,7 @@ message ParticipantGang {
 message CancelWithdrawal {
     required bytes addr = 1;
     required Update update = 2;
-    required AMTreePath path = 3;
+    required AMTreeProof proof = 3;
 }
 
 message BalanceUpdateChallenge {
