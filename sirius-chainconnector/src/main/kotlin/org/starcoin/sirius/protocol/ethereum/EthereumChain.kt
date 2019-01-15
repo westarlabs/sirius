@@ -44,6 +44,7 @@ class EthereumChain constructor(httpUrl: String = defaultHttpUrl, socketPath: St
 
     override fun getBlockNumber(): BigInteger {
         val resp = web3.ethBlockNumber().sendAsync().get()
+        if (resp.hasError()) throw RuntimeException(resp.error.message)
         return resp.blockNumber
     }
 
@@ -137,7 +138,6 @@ class EthereumChain constructor(httpUrl: String = defaultHttpUrl, socketPath: St
 
         return req.balance
     }
-
 
     override fun findTransaction(hash: Hash): EthereumTransaction? {
         val resp = web3.ethGetTransactionByHash(hash.toString()).send()
