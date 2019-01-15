@@ -29,12 +29,6 @@ class EthereumChainTest {
     private var alice: EthereumAccount by Delegates.notNull()
     private var bob: EthereumAccount by Delegates.notNull()
 
-    private fun newEthTx(): EthereumTransaction {
-        return EthereumTransaction(
-            bob.address, alice.getNonce(), 1000.toBigInteger(),
-            100000.toBigInteger(), 1.toBigInteger()
-        )
-    }
 
     @Before
     fun setUp() {
@@ -55,7 +49,7 @@ class EthereumChainTest {
 
     @Test
     fun testSubmitTransaction() {
-        val tx = newEthTx()
+        val tx = chain.newTransaction(alice, bob.address, 1.toBigInteger())
         val hash = chain.submitTransaction(alice, tx)
         val expectTx = chain.findTransaction(hash)
         Assert.assertEquals(tx, expectTx)
@@ -63,7 +57,6 @@ class EthereumChainTest {
 
     @Test
     fun testWatchTransactions() {
-
     }
 
     @Test
