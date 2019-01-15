@@ -2,35 +2,36 @@ package org.starcoin.sirius.wallet.core
 
 import org.starcoin.sirius.core.*
 import org.starcoin.sirius.crypto.CryptoKey
+import org.starcoin.sirius.protocol.Chain
+import org.starcoin.sirius.protocol.ChainAccount
+import org.starcoin.sirius.protocol.HubContract
 import org.starcoin.sirius.wallet.core.store.Store
 import java.security.KeyPair
 import kotlin.properties.Delegates
 
-class Hub {
+class Hub <T : ChainTransaction, A : ChainAccount> {
 
-    var contractAddress: Address  by Delegates.notNull()
+    private var contract: HubContract<A>  by Delegates.notNull()
 
-    var walletAddress: Address  by Delegates.notNull()
+    private var account: A  by Delegates.notNull()
 
-    var currentEon: Eon  by Delegates.notNull();
+    private var currentEon: Eon  by Delegates.notNull();
 
-    val blocksPerEon: Int = 0
+    private var blocksPerEon: Int = 0
 
-    var hubObserver: HubObserver  by Delegates.notNull()
+    private var channelManager: ChannelManager by Delegates.notNull()
 
-    var channelManager: ChannelManager by Delegates.notNull()
+    private var serverEventHandler: ServerEventHandler?
 
-    var serverEventHandler: ServerEventHandler?
+    private var hubAddr: String by Delegates.notNull()
 
-    var keyPair: CryptoKey by Delegates.notNull()
+    private var hubAccount: HubAccount? = null
 
-    var hubAddr: Address by Delegates.notNull()
+    private var dataStore: Store<HubStatus> by Delegates.notNull()
 
-    var hubAccount: HubAccount? = null
+    private var hubStatus: HubStatus by Delegates.notNull()
 
-    var dataStore: Store<HubStatus> by Delegates.notNull()
-
-    var hubStatus: HubStatus by Delegates.notNull()
+    private var chain: Chain<T, out Block<T>, A> by Delegates.notNull()
 
     // for test lost connect
     var disconnect = true
@@ -38,30 +39,27 @@ class Hub {
     var alreadWatch = false
 
     constructor(
-        contractAddress: Address,
-        walletAddr: Address,
+        contract: HubContract<A>,
+        account: A,
         channelManager: ChannelManager,
-        keyPair: CryptoKey,
         serverEventHandler: ServerEventHandler?,
-        eonStatusStore: Store<HubStatus>
+        eonStatusStore: Store<HubStatus>,
+        chain :Chain<T, out Block<T>, A>
     ) {
-        this.contractAddress = contractAddress
-        this.walletAddress = walletAddr
+        this.contract = contract
+        this.account = account
         this.channelManager = channelManager
         this.serverEventHandler = serverEventHandler
-        this.keyPair = keyPair
         this.dataStore = eonStatusStore
+        this.chain = chain
 
 
-        //val protoHubInfo = hubServiceBlockingStub.getHubInfo(Empty.newBuilder().build())
-        //val hubInfo = HubInfo(protoHubInfo)
-        //this.hubAddr = BlockAddress.genBlockAddressFromPublicKey(hubInfo.getPublicKey())
-
-        //this.blocksPerEon = hubInfo.getBlocksPerEon()
+        var hubInfo=contract.queryHubInfo(account)
+        hubAddr=hubInfo.hubAddress
+        blocksPerEon= hubInfo.blocksPerEon
 
         //this.currentEon = this.getChainEon()
 
-        //this.hubStatusData = HubStatusData(this.currentEon)
     }
 
     private fun onHubRootCommit(hubRoot: HubRoot) {
@@ -118,14 +116,15 @@ class Hub {
     fun sync() {
     }
 
-    fun newTransfer(addr:Address, value:Int, keyPair:KeyPair) :OffchainTransaction?{
+    fun newTransfer(addr:Address, value:Int) :OffchainTransaction?{
         return null
     }
 
-    fun deposit(value :Int,  keyPair:KeyPair) {
+    fun deposit(value :Int) {
+
     }
 
-    fun register( keyPair:KeyPair) : Update? {
+    fun register() : Update? {
         return null
     }
 
@@ -133,17 +132,17 @@ class Hub {
         return null
     }
 
-    fun openTransferChallenge( transactionHash:String,  keyPair:KeyPair) :Boolean?{
+    fun openTransferChallenge( transactionHash:String) :Boolean?{
         return true
     }
 
     fun newTransferChallenge (
-        update: Update, path: MerkleTree, transaction: OffchainTransaction, keyPair: KeyPair
+        update: Update, path: MerkleTree, transaction: OffchainTransaction
     ): ChainTransaction? {
         return null
     }
 
-    fun withDrawal(value: Int,  keyPair:KeyPair) {
+    fun withDrawal(value: Int) {
 
     }
 

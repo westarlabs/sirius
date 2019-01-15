@@ -12,7 +12,7 @@ import kotlin.properties.Delegates
 
 class Wallet<T : ChainTransaction, A : ChainAccount> {
 
-    private var hub: Hub by Delegates.notNull()
+    //private var hub: Hub by Delegates.notNull()
     private var address: Address by Delegates.notNull()
 
     private var blockChainListener :BlockChainListener by Delegates.notNull()
@@ -25,13 +25,10 @@ class Wallet<T : ChainTransaction, A : ChainAccount> {
     constructor(contractAddress: Address, channelManager: ChannelManager,
                 chain: Chain<T, out Block<T>, A>, store: Store<HubStatus>, keypair: CryptoKey
     ) {
-        hub= Hub(contractAddress,address,channelManager,keyPair,null,store)
+        this.keyPair =keypair
         this.chain = chain
 
-        this.blockChainListener = BlockChainListener(hub)
 
-        //chain.watchBlock {
-        //    this.blockChainListener.onNewBlock(it)
-        //}
+        //this.blockChainListener = BlockChainListener(hub)
     }
 }

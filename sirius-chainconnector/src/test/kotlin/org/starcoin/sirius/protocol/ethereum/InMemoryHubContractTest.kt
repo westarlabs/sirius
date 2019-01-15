@@ -55,7 +55,6 @@ class InMemoryHubContractTest {
     @Test
     @ImplicitReflectionSerializer
     fun testCurrentEon() {
-        //TODO
         Assert.assertEquals(contract.getCurrentEon(), 0)
     }
 
