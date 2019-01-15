@@ -23,8 +23,6 @@ interface ChainStrategy {
 
     fun <S : SiriusObject> decode(function: ContractFunction<S>, bytes: ByteArray): S
 
-    fun <A : ChainAccount> newTransaction(accout: A,value: BigInteger,to: Address) : ChainTransaction
-
     companion object : ChainStrategy {
         val instance: ChainStrategy by lazy {
             val loaders = ServiceLoader
@@ -48,7 +46,5 @@ interface ChainStrategy {
 
         override fun <S : SiriusObject> decode(function: ContractFunction<S>, bytes: ByteArray) =
             instance.decode(function, bytes)
-
-        override fun <A : ChainAccount> newTransaction(accout: A,value: BigInteger,to: Address) = instance.newTransaction(accout,value,to)
     }
 }

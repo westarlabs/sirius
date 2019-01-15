@@ -56,15 +56,6 @@ object EthChainStrategy : ChainStrategy {
         return this.decode(result, function.inputClass)
     }
 
-    override fun <A:ChainAccount> newTransaction(account: A,value: BigInteger,to: Address) : ChainTransaction {
-        var ethAccount = account as EthereumAccount
-        var ethereumTransaction = EthereumTransaction(
-            to, ethAccount.getAndIncNonce(), 21000.toBigInteger(),
-            210000.toBigInteger(), value
-        )
-        return ethereumTransaction
-    }
-
 }
 
 class EthChainStrategyProvider : ChainStrategyProvider {

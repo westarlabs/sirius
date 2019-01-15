@@ -128,4 +128,13 @@ class InMemoryChain(autoGenblock: Boolean) : EthereumBaseChain() {
     override fun getBlockNumber(): BigInteger {
         return inMemoryEthereumListener.currentNumber.toBigInteger()
     }
+
+    override fun newTransaction(account: EthereumAccount,to:Address,value:BigInteger):EthereumTransaction {
+        var ethereumTransaction = EthereumTransaction(
+            to, account.getAndIncNonce(), 21000.toBigInteger(),
+            210000.toBigInteger(), value
+        )
+        return ethereumTransaction
+    }
+
 }

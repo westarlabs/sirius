@@ -217,6 +217,10 @@ class EthereumChain constructor(httpUrl: String = defaultHttpUrl, socketPath: St
         .divide(BigInteger.valueOf((GAS_LIMIT_BOUND_DIVISOR * 100).toLong()))**/
     }
 
+    override fun newTransaction(account: EthereumAccount,to:Address,value:BigInteger):EthereumTransaction {
+        TODO()
+    }
+
     class NewTxException(error: Error) : Exception(error.message)
     open class WatchTxExecption(error: Error) : Exception(error.message)
     class NewFilterException(error: Error) : WatchTxExecption(error)

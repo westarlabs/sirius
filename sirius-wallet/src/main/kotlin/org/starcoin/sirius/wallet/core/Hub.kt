@@ -3,6 +3,7 @@ package org.starcoin.sirius.wallet.core
 import io.grpc.StatusRuntimeException
 import org.starcoin.proto.HubServiceGrpc
 import org.starcoin.proto.Starcoin
+import org.starcoin.sirius.chain.ChainStrategy
 import org.starcoin.sirius.core.*
 import org.starcoin.sirius.crypto.CryptoKey
 import org.starcoin.sirius.protocol.Chain
@@ -126,8 +127,9 @@ class Hub <T : ChainTransaction, A : ChainAccount> {
         return null
     }
 
-    fun deposit(value :Int) {
-        //chain.submitTransaction(account,)
+    fun deposit(value :Long) {
+        var chainTransaction=chain.newTransaction(account,contract.contractAddress, BigInteger.valueOf(value))
+        chain.submitTransaction(account,chainTransaction)
     }
 
     fun register() : Update? {
