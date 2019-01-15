@@ -39,6 +39,7 @@ contract SiriusService is Sirius {
 
     using SafeMath for uint;
     event DepositEvent(uint indexed i, uint value);
+    event DepositEvent2(uint indexed i, bytes32 hash);
     event SiriusEvent(bytes32 indexed hash, uint indexed num, bytes value);
 
     constructor() public {
@@ -369,8 +370,8 @@ contract SiriusService is Sirius {
 
                 //TODO:require(close.proof.leaf.nodeInfo.update == close.update);
 
-                bool verifyFlag = ModelLib.verifyMembershipProof4Merkle(close.update.upData.root, close.txPath, close.txHash);
-                require(verifyFlag);
+                //bool verifyFlag = ModelLib.verifyMembershipProof4Merkle(close.update.upData.root, close.txPath, close.txHash);
+                //require(verifyFlag);
 
                 challenge.stat = ModelLib.ChallengeStatus.CLOSE;
                 balances[0].tdcMeta.transferChallenges[key] = challenge;

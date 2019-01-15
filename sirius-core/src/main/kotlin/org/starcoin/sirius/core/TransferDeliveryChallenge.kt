@@ -13,7 +13,7 @@ data class TransferDeliveryChallenge(
     @SerialId(2)
     val tx: OffchainTransaction = OffchainTransaction.DUMMY_OFFCHAIN_TRAN,
     @SerialId(3)
-    val path: MerklePath = MerklePath.DUMMY_PATH
+    val path: MerklePath? = MerklePath.DUMMY_PATH
 ) : SiriusObject() {
     companion object : SiriusObjectCompanion<TransferDeliveryChallenge, Starcoin.TransferDeliveryChallenge>(
         TransferDeliveryChallenge::class

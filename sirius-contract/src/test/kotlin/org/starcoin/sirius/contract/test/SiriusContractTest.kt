@@ -61,7 +61,7 @@ class SiriusContractTest : ContractTestBase("sirius.sol", "SiriusService") {
 
     @Test
     fun testCommit2() {
-        createEon(0, false)
+        createEon(0, false, false)
     }
 
     @Test
@@ -71,7 +71,7 @@ class SiriusContractTest : ContractTestBase("sirius.sol", "SiriusService") {
         var tmp = (blocksPerEon * 1) + 3
 
         while (blockHeight.get() < tmp) {
-            if(blockHeight.get() < (blocksPerEon)/2) {
+            if (blockHeight.get() < (blocksPerEon) / 2) {
                 testDeposit(true)
                 ct += 1
             } else {
@@ -146,12 +146,26 @@ class SiriusContractTest : ContractTestBase("sirius.sol", "SiriusService") {
     @Test
     fun testOpenTransferDeliveryChallenge() {
         val eon = 1
-        createEon(1)
-        val update = newUpdate(eon, 1, 0)
-        val txData = OffchainTransactionData(eon, ethKey2Address(callUser), ethKey2Address(callUser), 10, 1)
-        tx = OffchainTransaction(txData)
-        tx.sign(callUser)
-        val open = TransferDeliveryChallenge(update, tx, MerklePath.mock())
+        createEon(1, true, true)
+        val txs = mutableListOf<OffchainTransaction>()
+        val count = MockUtils.nextLong(10, 20)
+        for (i in 0 until count) {
+            val txData = OffchainTransactionData(eon, ethKey2Address(callUser), ethKey2Address(callUser), 1, 1)
+            val txTmp = OffchainTransaction(txData)
+            txTmp.sign(callUser)
+            txs.add(txTmp)
+        }
+        val tree = MerkleTree(txs)
+        tx = txs[9]
+
+        val updateData = UpdateData(eon, 1, count, count, tree.hash())
+        val update = Update(updateData)
+        update.sign(callUser)
+        update.signHub(callUser)
+
+        commitRealData(eon, update, 6 * deposit, 7 * deposit, true, txs)
+
+        val open = TransferDeliveryChallenge(update, tx, tree.getMembershipProof(tx.hash()))
         val data = RLP.dump(TransferDeliveryChallenge.serializer(), open)
         val callResult = contract.callFunction("openTransferDeliveryChallenge", data)
         assert(callResult.returnValue as Boolean)
@@ -180,10 +194,10 @@ class SiriusContractTest : ContractTestBase("sirius.sol", "SiriusService") {
     @Test
     fun testRecoverFunds() {
         var eon = 2
-        createEon(eon, false)
+        createEon(eon, false, false)
 
         eon = ("" + currentEon()).toInt() - 1
-        if(eon < 0)
+        if (eon < 0)
             eon = 0
 
         var recovery = contract.callConstFunction("isRecoveryMode")[0] as Boolean
@@ -224,10 +238,10 @@ class SiriusContractTest : ContractTestBase("sirius.sol", "SiriusService") {
     }
 
     private fun createEon(eon: Int) {
-        createEon(eon, true)
+        createEon(eon, true, false)
     }
 
-    private fun createEon(eon: Int, flag: Boolean) {
+    private fun createEon(eon: Int, flag: Boolean, realFlag: Boolean) {
         var ct = 0
 
         for (i in 0..eon) {
@@ -242,7 +256,8 @@ class SiriusContractTest : ContractTestBase("sirius.sol", "SiriusService") {
                 ct += 1
             }
             var total = ct * deposit
-            commitData(i + 1, total, flag)
+            if (!realFlag || (realFlag && i < eon))
+                commitData(i + 1, total, flag)
         }
     }
 

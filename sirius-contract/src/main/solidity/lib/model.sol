@@ -486,15 +486,18 @@ library ModelLib {
     }
 
     function verifyMembershipProof4Merkle(bytes32 root, MerklePath memory path, bytes32 txHash) internal pure returns(bool flag) {
-        root;
-        path;
-        txHash;
-        //TODO
-        return true;
-    }
+        bytes32 hash = txHash;
+        for (uint i=0;i<path.nodes.length;i++) {
+            MerklePathNode memory node = path.nodes[i];
 
-    function leaf4MerklePath(MerklePath memory path) internal pure returns (MerklePathNode memory) {
-        return path.nodes[0];
+            if (node.direction == Direction.DIRECTION_LEFT) {
+                hash = keccak256(abi.encodePacked(node.nodeHash, hash));
+            } else if(node.direction == Direction.DIRECTION_RIGTH) {
+                hash = keccak256(abi.encodePacked(hash, node.nodeHash));
+            } else {}
+        }
+
+        return root == hash;
     }
 
 //////////////////////////////////
@@ -827,7 +830,7 @@ library ModelLib {
     }
 
     function hash4OffchainTransaction(OffchainTransaction memory self)  internal pure returns(bytes32) {
-        bytes memory bs = marshalOffchainTransaction(self);
+        bytes memory bs = marshalOffchainTransactionData(self.offData);
         return keccak256(bs);
     }
 

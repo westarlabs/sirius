@@ -15,6 +15,7 @@ import org.ethereum.util.blockchain.SolidityContract
 import org.ethereum.util.blockchain.StandaloneBlockchain
 import org.junit.Assert
 import org.junit.Before
+import org.starcoin.proto.Starcoin
 import org.starcoin.sirius.core.*
 import org.starcoin.sirius.crypto.eth.EthCryptoKey
 import org.starcoin.sirius.serialization.BigIntegerSerializer
@@ -158,6 +159,29 @@ abstract class ContractTestBase(val contractFile: String, val contractName: Stri
         val info = AMTreeInternalNodeInfo(Hash.random(), amount, Hash.random())
         val node = AMTreePathInternalNode(info, PathDirection.ROOT, 0, amount)
         val root = HubRoot(node, eon)
+        val data = RLP.dump(HubRoot.serializer(), root)
+        val callResult = contract.callFunction("commit", data)
+
+
+        if (flag) {
+            assert(callResult.returnValue as Boolean)
+            verifyReturn(callResult)
+        } else {
+            LOG.warning(callResult.receipt.error)
+            callResult.receipt.logInfoList.forEach { logInfo ->
+                LOG.info("event:$logInfo")
+            }
+        }
+    }
+
+    fun commitRealData(eon: Int, up: Update,  allotment : Long,  amount: Long, flag: Boolean, txs:MutableList<OffchainTransaction>) {
+        val accounts = mutableListOf<HubAccount>()
+        val realEon = eon + 1
+        accounts.add(HubAccount(callUser.keyPair.public, up, allotment, amount, 0, txs))
+        val tree = AMTree(realEon, accounts)
+        val node = tree.root.toAMTreePathNode() as AMTreePathInternalNode
+
+        val root = HubRoot(node, realEon)
         val data = RLP.dump(HubRoot.serializer(), root)
         val callResult = contract.callFunction("commit", data)
 
