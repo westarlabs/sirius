@@ -216,7 +216,7 @@ class InMemoryHubContractTest {
     }
 
     private fun commitHubRoot(eon: Int, amount: BigInteger): Hash {
-        var height = chain.getNumber()
+        var height = chain.getBlockNumber().toLong()
         if (eon != 0) {
             if (height?.rem(8) != 0L) {
                 var blockNumber = 8 - (height?.rem(8) ?: 0) - 1
@@ -228,7 +228,7 @@ class InMemoryHubContractTest {
         val info = AMTreeInternalNodeInfo(Hash.random(), amount, Hash.random())
         val node = AMTreePathInternalNode(info, PathDirection.ROOT, 0.toBigInteger(), amount)
         val root = HubRoot(node, eon)
-        println("current block height is :" + chain.getNumber())
+        println("current block height is :" + chain.getBlockNumber())
         println(root)
         owner.getAndIncNonce()
         val callResult = contract.commit(owner, root)

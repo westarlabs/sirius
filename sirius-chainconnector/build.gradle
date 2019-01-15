@@ -1,10 +1,11 @@
 dependencies{
     compile project(":sirius-core")
-    compile project(":sirius-core-eth")
     compile project(":sirius-proto")
     compile project(":sirius-contract")
 
     compile ('org.web3j:core:4.0.0')
+
+    testCompile project(path: ':sirius-core', configuration: 'testOutput')
 }
 
 task copySolidity(type: Copy) {

@@ -5,5 +5,4 @@ sourceSets {
 
 dependencies{
     compile project(":sirius-core")
-    compile project(":sirius-core-eth")
 }
