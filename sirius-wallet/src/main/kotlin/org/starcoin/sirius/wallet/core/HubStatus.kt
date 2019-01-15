@@ -8,18 +8,21 @@ import java.security.KeyPair
 
 class HubStatus {
 
-    var allotment: BigInteger = BigInteger.ZERO
+    private var allotment: BigInteger = BigInteger.ZERO
 
-    var eonStatuses = arrayListOf<EonStatus>()
+    private var eonStatuses = arrayListOf<EonStatus>()
+
+    var blocksPerEon: Int = 0
+        internal set
 
     @Volatile
-    var currentEonStatusIndex = 0
+    private var currentEonStatusIndex = 0
 
-    val lastIndex = -1
+    private val lastIndex = -1
 
-    var depositingTransactions: MutableMap<Hash, ChainTransaction> = mutableMapOf()
+    private var depositingTransactions: MutableMap<Hash, ChainTransaction> = mutableMapOf()
 
-    var withdrawalStatus: WithdrawalStatus? = null
+    private var withdrawalStatus: WithdrawalStatus? = null
         set(value) {
             if (withdrawalStatus == null) {
                 this.withdrawalStatus = null
@@ -50,9 +53,12 @@ class HubStatus {
         this.withdrawalStatus = null
     }
 
-    internal fun confirmDeposit(chainTransaction: ChainTransaction) {
-        this.eonStatuses[currentEonStatusIndex].confirmedTransactions.add(chainTransaction)
-        this.depositingTransactions.remove(chainTransaction.hash())
+    internal fun confirmDeposit(hash: Hash) {
+        this.depositingTransactions.remove(hash)
+    }
+
+    internal fun addDepositTransaction(hash:Hash,transaction: ChainTransaction){
+        this.depositingTransactions.put(hash,transaction)
     }
 
     internal fun addUpdate(update: Update) {

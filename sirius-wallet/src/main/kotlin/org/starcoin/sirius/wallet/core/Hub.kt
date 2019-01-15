@@ -22,8 +22,6 @@ class Hub <T : ChainTransaction, A : ChainAccount> {
 
     private var currentEon: Eon  by Delegates.notNull();
 
-    private var blocksPerEon: Int = 0
-
     private var channelManager: ChannelManager by Delegates.notNull()
 
     private var serverEventHandler: ServerEventHandler?
@@ -49,7 +47,8 @@ class Hub <T : ChainTransaction, A : ChainAccount> {
         channelManager: ChannelManager,
         serverEventHandler: ServerEventHandler?,
         eonStatusStore: Store<HubStatus>,
-        chain :Chain<T, out Block<T>, A>
+        chain :Chain<T, out Block<T>, A>,
+        hubStatus: HubStatus
     ) {
         this.contract = contract
         this.account = account
@@ -57,6 +56,7 @@ class Hub <T : ChainTransaction, A : ChainAccount> {
         this.serverEventHandler = serverEventHandler
         this.dataStore = eonStatusStore
         this.chain = chain
+        this.hubStatus = hubStatus
 
         this.currentEon = this.getChainEon()
 
@@ -65,8 +65,8 @@ class Hub <T : ChainTransaction, A : ChainAccount> {
     private fun getChainEon():Eon{
         var hubInfo=contract.queryHubInfo(account)
         hubAddr=hubInfo.hubAddress
-        blocksPerEon= hubInfo.blocksPerEon
-        return Eon.calculateEon(blocksPerEon = blocksPerEon,blockHeight = chain.getBlockNumber().toLong())
+        hubStatus.blocksPerEon= hubInfo.blocksPerEon
+        return Eon.calculateEon(blocksPerEon = hubInfo.blocksPerEon,blockHeight = chain.getBlockNumber().toLong())
     }
 
     private fun onHubRootCommit(hubRoot: HubRoot) {
@@ -129,7 +129,8 @@ class Hub <T : ChainTransaction, A : ChainAccount> {
 
     fun deposit(value :Long) {
         var chainTransaction=chain.newTransaction(account,contract.contractAddress, BigInteger.valueOf(value))
-        chain.submitTransaction(account,chainTransaction)
+        var hash=chain.submitTransaction(account,chainTransaction)
+        this.hubStatus.addDepositTransaction(hash,chainTransaction)
     }
 
     fun register() : Update? {
@@ -188,8 +189,8 @@ class Hub <T : ChainTransaction, A : ChainAccount> {
     private fun checkChallengeStatus() {
     }
 
-    fun confirmDeposit(chainTransaction: ChainTransaction,height :Int){
-        this.hubStatus.confirmDeposit(chainTransaction)
+    fun confirmDeposit(hash:Hash,height :Int){
+        this.hubStatus.confirmDeposit(hash)
         hubStatus.height=height
         //dataStore.save(this.hubStatus)
     }
