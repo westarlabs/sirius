@@ -217,8 +217,14 @@ class EthereumChain constructor(httpUrl: String = defaultHttpUrl, socketPath: St
         .divide(BigInteger.valueOf((GAS_LIMIT_BOUND_DIVISOR * 100).toLong()))**/
     }
 
-    override fun newTransaction(account: EthereumAccount,to:Address,value:BigInteger):EthereumTransaction {
-        TODO()
+    override fun newTransaction(account: EthereumAccount, to: Address, value: BigInteger): EthereumTransaction {
+        return EthereumTransaction(
+            to,
+            account.getNonce(),
+            EthereumBaseChain.defaultGasPrice,
+            EthereumBaseChain.defaultGasLimit,
+            value
+        )
     }
 
     class NewTxException(error: Error) : Exception(error.message)

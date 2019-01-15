@@ -36,12 +36,12 @@ interface Chain<T : ChainTransaction, B : Block<T>, A : ChainAccount> {
     fun loadContract(contractAddress: Address, jsonInterface: String): HubContract<A>
 
     fun loadContract(contractAddress: Address): HubContract<A>
-    
+
     fun deployContract(account: A): HubContract<A>
 
     fun deployContract(account: A, contractFile: File): HubContract<A>
 
     fun getBlockNumber(): BigInteger
 
-    fun newTransaction(account: A,to:Address,value:BigInteger):T
+    fun newTransaction(account: A, to: Address, value: BigInteger): T
 }
