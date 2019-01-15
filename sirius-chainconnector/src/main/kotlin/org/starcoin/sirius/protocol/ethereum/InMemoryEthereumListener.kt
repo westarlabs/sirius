@@ -30,7 +30,7 @@ class InMemoryEthereumListener : EthereumListener {
 
     internal var transactionFilter : (TransactionResult<EthereumTransaction>) -> Boolean by Delegates.notNull()
 
-    internal var currentNumber :Long?=0
+    internal var currentNumber :Long=0
 
     override fun onSyncDone(state: EthereumListener.SyncState?) {
         TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
@@ -76,7 +76,7 @@ class InMemoryEthereumListener : EthereumListener {
                 it.gasPrice.toBigIntString(),it.gasLimit.toBigIntString(),it.data?.toString(),blockSummary?.block?.timestamp.toString(),
                 it.key?.pubKey?.toHEXString(),it.encodedRaw.toString(),it.signature.r.toString(),it.signature.s.toString(),it.signature.v.toInt())
         }*/
-        currentNumber=blockSummary?.block?.number
+        currentNumber= blockSummary?.block?.number!!
         GlobalScope.launch {
             //blockChannel.send(EthereumBlock(w3jBlock))
             blockSummary?.block?.transactionsList?.forEachIndexed{ index,it->

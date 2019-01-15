@@ -11,12 +11,15 @@ import org.starcoin.sirius.crypto.eth.EthCryptoKey
 import org.starcoin.sirius.lang.toHEXString
 import org.starcoin.sirius.protocol.EthereumTransaction
 import org.starcoin.sirius.protocol.EventTopic
-import org.starcoin.sirius.protocol.FilterArguments
+import org.starcoin.sirius.protocol.HubContract
 import org.starcoin.sirius.protocol.TransactionResult
 import org.starcoin.sirius.protocol.ethereum.contract.EthereumHubContract
 import java.math.BigInteger
 
 class InMemoryChain(autoGenblock: Boolean) : EthereumBaseChain() {
+    override fun loadContract(contractAddress: Address): HubContract<EthereumAccount> {
+        TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
+    }
 
     override fun watchEvents(
         contract: Address,
@@ -51,7 +54,7 @@ class InMemoryChain(autoGenblock: Boolean) : EthereumBaseChain() {
         return inMemoryEthereumListener.blocks.get(height.toInt())
     }
 
-    override fun watchBlock(filter: (FilterArguments) -> Boolean): Channel<EthereumBlock> {
+    override fun watchBlock(filter: (EthereumBlock) -> Boolean): Channel<EthereumBlock> {
         //TODO support filter.
         var blockChannel = Channel<EthereumBlock>(200)
         inMemoryEthereumListener.blockChannel = blockChannel
@@ -122,7 +125,7 @@ class InMemoryChain(autoGenblock: Boolean) : EthereumBaseChain() {
         return this.loadContract(contract.address.toAddress(), contract.abi)
     }
 
-    fun getNumber(): Long? {
-        return inMemoryEthereumListener.currentNumber
+    override fun getBlockNumber(): BigInteger {
+        return inMemoryEthereumListener.currentNumber.toBigInteger()
     }
 }

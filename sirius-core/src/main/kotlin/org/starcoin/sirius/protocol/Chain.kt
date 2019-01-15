@@ -5,12 +5,7 @@ import org.starcoin.sirius.core.*
 import java.io.File
 import java.math.BigInteger
 
-
-data class FilterArguments(val contract: Address, val topic: EventTopic)
-
-
 data class TransactionResult<T : ChainTransaction>(val tx: T, val receipt: Receipt)
-
 
 enum class EventTopic(val event: String) {
     Deposit("DepositEvent(byte[])")
@@ -22,12 +17,7 @@ interface Chain<T : ChainTransaction, B : Block<T>, A : ChainAccount> {
 
     fun getBlock(height: BigInteger = BigInteger.valueOf(-1)): B?
 
-    fun watchBlock(
-        contract: Address,
-        topic: EventTopic
-    ) = watchBlock { it.contract == contract && it.topic == topic }
-
-    fun watchBlock(filter: (FilterArguments) -> Boolean = { true }): Channel<B>
+    fun watchBlock(filter: (B) -> Boolean = { true }): Channel<B>
 
     fun getTransactionReceipts(txHashs: List<Hash>): List<Receipt>
 
@@ -45,8 +35,11 @@ interface Chain<T : ChainTransaction, B : Block<T>, A : ChainAccount> {
 
     fun loadContract(contractAddress: Address, jsonInterface: String): HubContract<A>
 
+    fun loadContract(contractAddress: Address): HubContract<A>
+    
     fun deployContract(account: A): HubContract<A>
 
     fun deployContract(account: A, contractFile: File): HubContract<A>
 
+    fun getBlockNumber(): BigInteger
 }

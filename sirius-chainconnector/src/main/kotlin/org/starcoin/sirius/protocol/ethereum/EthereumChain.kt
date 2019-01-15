@@ -7,16 +7,13 @@ import kotlinx.coroutines.launch
 import kotlinx.io.IOException
 import org.ethereum.crypto.HashUtil
 import org.ethereum.solidity.compiler.CompilationResult
-import org.starcoin.sirius.core.Address
-import org.starcoin.sirius.core.Hash
-import org.starcoin.sirius.core.Receipt
-import org.starcoin.sirius.core.toHash
+import org.starcoin.sirius.core.*
 import org.starcoin.sirius.crypto.CryptoKey
 import org.starcoin.sirius.crypto.eth.EthCryptoKey
 import org.starcoin.sirius.lang.hexToByteArray
 import org.starcoin.sirius.protocol.EthereumTransaction
 import org.starcoin.sirius.protocol.EventTopic
-import org.starcoin.sirius.protocol.FilterArguments
+import org.starcoin.sirius.protocol.HubContract
 import org.starcoin.sirius.protocol.TransactionResult
 import org.starcoin.sirius.protocol.ethereum.contract.EthereumHubContract
 import org.starcoin.sirius.util.Utils
@@ -40,6 +37,15 @@ const val blockGasIncreasePercent = 0
 
 class EthereumChain constructor(httpUrl: String = defaultHttpUrl, socketPath: String? = null) :
     EthereumBaseChain() {
+
+    override fun loadContract(contractAddress: Address): HubContract<EthereumAccount> {
+        TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
+    }
+
+    override fun getBlockNumber(): BigInteger {
+        val resp = web3.ethBlockNumber().sendAsync().get()
+        return resp.blockNumber
+    }
 
     val web3: Web3j =
         Web3j.build(if (socketPath != null) UnixIpcService(socketPath) else HttpService(httpUrl))
@@ -113,9 +119,13 @@ class EthereumChain constructor(httpUrl: String = defaultHttpUrl, socketPath: St
         return ch
     }
 
-    override fun watchBlock(filter: (FilterArguments) -> Boolean): Channel<EthereumBlock> {
+    override fun watchBlock(filter: (EthereumBlock) -> Boolean): Channel<EthereumBlock> {
         val ch = Channel<EthereumBlock>(10)
-        web3.blockFlowable(true).subscribe { block -> block.block.blockInfo() }
+        GlobalScope.launch {
+            web3.blockFlowable(true).subscribe {
+                if (filter(it.block.blockInfo())) ch.sendBlocking(it.block.blockInfo())
+            }
+        }
         return ch
     }
 
