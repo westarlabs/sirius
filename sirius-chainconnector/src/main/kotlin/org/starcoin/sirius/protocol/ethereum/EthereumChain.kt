@@ -124,7 +124,9 @@ class EthereumChain constructor(httpUrl: String = DEFAULT_URL, socketPath: Strin
         val ch = Channel<EthereumBlock>(10)
         GlobalScope.launch {
             web3.blockFlowable(true).subscribe {
-                if (filter(it.block.blockInfo())) ch.sendBlocking(it.block.blockInfo())
+                it.block.blockInfo()
+                if (filter(it.block.blockInfo()))
+                    ch.sendBlocking(EthereumBlock(it.block.number.longValueExact(), it.block.hash.toHash()))
             }
         }
         return ch
