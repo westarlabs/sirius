@@ -7,7 +7,6 @@ import io.grpc.StatusRuntimeException
 import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.launch
-import org.starcoin.proto.Starcoin
 import org.starcoin.sirius.core.*
 import org.starcoin.sirius.crypto.CryptoKey
 import org.starcoin.sirius.crypto.CryptoService
@@ -19,7 +18,6 @@ import java.util.concurrent.ArrayBlockingQueue
 import java.util.concurrent.BlockingQueue
 import java.util.concurrent.CompletableFuture
 import java.util.concurrent.ConcurrentHashMap
-import java.util.logging.Logger
 import kotlin.properties.Delegates
 
 class HubImpl<T : ChainTransaction, A : ChainAccount>(
@@ -28,9 +26,7 @@ class HubImpl<T : ChainTransaction, A : ChainAccount>(
     private val chain: Chain<T, out Block<T>, out A>
 ) : Hub {
 
-    companion object : WithLogging() {
-
-    }
+    companion object : WithLogging()
 
     private lateinit var contract: HubContract<A>  // = chain.getContract(QueryContractParameter(0))
 
@@ -39,30 +35,19 @@ class HubImpl<T : ChainTransaction, A : ChainAccount>(
 
     private var owner: A by Delegates.notNull()
 
-    private val hubAddress: Address
+    private val hubAddress: Address = hubKey.address
 
-    private val logger = Logger.getLogger(Hub::class.java.name)
-
-    private val eventBus: EventBus
+    private val eventBus: EventBus = EventBus()
 
     private var ready: Boolean = false
 
     private val txReceipts = ConcurrentHashMap<Hash, CompletableFuture<Receipt>>()
 
-    private val strategy: MaliciousStrategy
+    private val strategy: MaliciousStrategy = MaliciousStrategy()
 
     private lateinit var txChannel: Channel<TransactionResult<T>>
     private lateinit var blockChannel: Channel<out Block<T>>
 
-
-    init {
-
-        //TODO
-
-        this.eventBus = EventBus()
-        this.hubAddress = hubKey.address
-        this.strategy = MaliciousStrategy()
-    }
 
     override val hubInfo: HubInfo
         get() {
@@ -97,17 +82,21 @@ class HubImpl<T : ChainTransaction, A : ChainAccount>(
     }
 
     override fun start() {
+        val currentHeight = chain.getBlockNumber()
         val contractHubInfo = contract.queryHubInfo(owner)
+        val currentEon = Eon.calculateEon(currentHeight, contractHubInfo.blocksPerEon)
         LOG.info("ContractHubInfo: $contractHubInfo")
         //TODO load previous status from storage.
-        eonState = EonState(contractHubInfo.latestEon)
-        val hubRoot = contract.getLatestRoot(owner)
-        //first commit or miss latest commit, should commit root first.
-        if (hubRoot == null || hubRoot.eon < eonState.eon) {
+        eonState = EonState(currentEon.id)
+        //first commit create by contract construct.
+        // if miss latest commit, should commit root first.
+        if (contractHubInfo.latestEon < currentEon.id) {
             this.doCommit()
         }
         this.txChannel = this.chain.watchTransactions { it.tx.to == hubAddress || it.tx.from == hubAddress }
         this.blockChannel = this.chain.watchBlock()
+        this.processTransactions()
+        this.processBlocks()
     }
 
     private fun processTransactions() {
@@ -115,6 +104,15 @@ class HubImpl<T : ChainTransaction, A : ChainAccount>(
             while (true) {
                 val txResult = txChannel.receive()
                 processTransaction(txResult)
+            }
+        }
+    }
+
+    private fun processBlocks() {
+        GlobalScope.launch {
+            while (true) {
+                val block = blockChannel.receive()
+                onBlock(block)
             }
         }
     }
@@ -149,8 +147,8 @@ class HubImpl<T : ChainTransaction, A : ChainAccount>(
     }
 
     override fun deposit(participant: Address, amount: Long) {
-        val account = this.eonState.getAccount(participant)
-        account.get().addDeposit(amount)
+        val account = this.eonState.getAccount(participant) ?: assertAccountNotNull(participant)
+        account.addDeposit(amount)
     }
 
     override fun getHubAccount(address: Address): HubAccount? {
@@ -159,18 +157,18 @@ class HubImpl<T : ChainTransaction, A : ChainAccount>(
 
     override fun getHubAccount(eon: Int, address: Address): HubAccount? {
         this.checkReady()
-        return this.getEonState(eon)!!.getAccount(address).orElse(null)
+        return this.getEonState(eon)?.getAccount(address)
     }
 
     fun getHubAccount(predicate: (HubAccount) -> Boolean): HubAccount? {
         this.checkReady()
-        return this.eonState.getAccount(predicate).orElse(null)
+        return this.eonState.getAccount(predicate)
     }
 
     override fun transfer(transaction: OffchainTransaction, fromUpdate: Update, toUpdate: Update): Array<Update> {
         this.checkReady()
         Preconditions.checkArgument(transaction.amount > BigInteger.ZERO, "transaction amount should > 0")
-        val from = this.getHubAccount(transaction.from)!!
+        val from = this.getHubAccount(transaction.from) ?: assertAccountNotNull(transaction.from)
         this.checkBalance(from, transaction.amount)
         this.processOffchainTransaction(transaction, fromUpdate, toUpdate)
         return arrayOf(fromUpdate, toUpdate)
@@ -179,11 +177,11 @@ class HubImpl<T : ChainTransaction, A : ChainAccount>(
     private fun processOffchainTransaction(
         transaction: OffchainTransaction, fromUpdate: Update, toUpdate: Update
     ) {
-        logger.info(
+        LOG.info(
             "processOffchainTransaction from:" + transaction.from + ", to:" + transaction.to
         )
-        val from = this.getHubAccount(transaction.from!!)!!
-        val to = this.getHubAccount(transaction.to!!)!!
+        val from = this.getHubAccount(transaction.from) ?: assertAccountNotNull(transaction.from)
+        val to = this.getHubAccount(transaction.to) ?: assertAccountNotNull(transaction.from)
         strategy.processOffchainTransaction(
             {
                 from.appendTransaction(transaction, fromUpdate)
@@ -199,7 +197,7 @@ class HubImpl<T : ChainTransaction, A : ChainAccount>(
 
     private fun fireEvent(event: HubEvent) {
         try {
-            logger.info("fireEvent:$event")
+            LOG.info("fireEvent:$event")
             this.eventBus.post(event)
         } catch (e: Exception) {
             e.printStackTrace()
@@ -215,17 +213,16 @@ class HubImpl<T : ChainTransaction, A : ChainAccount>(
         this.checkReady()
         val transaction = iou.transaction
         Preconditions.checkArgument(transaction.amount > BigInteger.ZERO, "transaction amount should > 0")
-        val sender = this.getHubAccount(transaction.from)
+        val sender = this.getHubAccount(transaction.from) ?: assertAccountNotNull(transaction.from)
+        val to = this.getHubAccount(transaction.to) ?: assertAccountNotNull(transaction.from)
         Preconditions.checkArgument(
-            transaction.verify(sender!!.publicKey), "transaction verify fail."
+            transaction.verify(sender.publicKey), "transaction verify fail."
         )
-        val recipient = this.getHubAccount(transaction.to)!!
-
         this.checkBalance(sender, transaction.amount)
         if (isSender) {
             checkUpdate(sender, iou)
         } else {
-            checkUpdate(recipient, iou)
+            checkUpdate(to, iou)
         }
     }
 
@@ -251,7 +248,7 @@ class HubImpl<T : ChainTransaction, A : ChainAccount>(
     }
 
     override fun receiveNewTransfer(receiverIOU: IOU) {
-        if (this.eonState.getIOUByTo(receiverIOU.transaction!!.to!!) == null) {
+        if (this.eonState.getIOUByTo(receiverIOU.transaction.to) == null) {
             throw StatusRuntimeException(Status.NOT_FOUND)
         }
         val iou = this.eonState.getIOUByFrom(receiverIOU.transaction.from) ?: throw StatusRuntimeException(
@@ -259,35 +256,35 @@ class HubImpl<T : ChainTransaction, A : ChainAccount>(
         )
         this.checkIOU(receiverIOU, false)
         this.processOffchainTransaction(
-            receiverIOU.transaction!!, iou.update!!, receiverIOU.update!!
+            receiverIOU.transaction, iou.update, receiverIOU.update
         )
         this.eonState.removeIOU(receiverIOU)
     }
 
     override fun queryNewTransfer(address: Address): OffchainTransaction? {
         val iou = this.eonState.getIOUByTo(address)
-        return if (iou == null) null else iou.transaction!!
+        return if (iou == null) null else iou.transaction
     }
 
     private fun checkUpdate(account: HubAccount, iou: IOU) {
         Preconditions.checkState(
-            iou.update!!.verifySig(account.publicKey), "Update signature miss match."
+            iou.update.verifySig(account.publicKey), "Update signature miss match."
         )
-        logger.info(
+        LOG.info(
             String.format(
                 "iou version %d,server version %d ",
-                iou.update!!.version, account.update!!.version
+                iou.update.version, account.update.version
             )
         )
         Preconditions.checkState(
-            iou.update!!.version > account.update!!.version,
+            iou.update.version > account.update.version,
             "Update version should > previous version"
         )
         val txs = ArrayList(account.getTransactions())
         txs.add(iou.transaction)
         val merkleTree = MerkleTree(txs)
         Preconditions.checkState(
-            iou.update!!.root!!.equals(merkleTree.hash()), "Merkle root miss match."
+            iou.update.root.equals(merkleTree.hash()), "Merkle root miss match."
         )
     }
 
@@ -336,130 +333,102 @@ class HubImpl<T : ChainTransaction, A : ChainAccount>(
     private fun doCommit(): CompletableFuture<Receipt> {
         val hubRoot =
             HubRoot(this.eonState.state.root.toAMTreePathNode() as AMTreePathInternalNode, this.eonState.eon)
-        logger.info("doCommit:" + hubRoot.toJSON())
-        TODO()
-//        val chainTransaction = ChainTransaction(
-//            this.hubAddress,
-//            Constants.CONTRACT_ADDRESS,
-//            //TODO
-//            "Commit",
-//            hubRoot.toProto()
-//        )
-//        chainTransaction.sign(this.hubKeyPair)
-//        this.connection.submitTransaction(chainTransaction)
-//        val future = CompletableFuture<Receipt>()
-//        this.txReceipts[chainTransaction.hash()] = future
-//        return future
+        LOG.info("doCommit:" + hubRoot.toJSON())
+        val txHash = this.contract.commit(owner, hubRoot)
+        val future = CompletableFuture<Receipt>()
+        future.whenComplete { receipt, throwable ->
+            if (!receipt.status) {
+                // TODO
+                LOG.severe("commit tx receipt is failure.")
+            } else {
+                // TODO only
+                this.ready = true
+                this.fireEvent(
+                    HubEvent(
+                        HubEventType.NEW_HUB_ROOT,
+                        HubRoot(
+                            this.eonState.state.root.toAMTreePathNode() as AMTreePathInternalNode,
+                            this.eonState.eon
+                        )
+                    )
+                )
+            }
+        }
+        this.txReceipts[txHash] = future
+        return future
     }
 
-//    private fun processTransferDeliveryChallenge(challenge: Starcoin.OpenTransferDeliveryChallengeRequest) {
-//        val tx = OffchainTransaction.parseFromProtoMessage(challenge.transaction)
-//
-//        val to = tx.to!!
-//        val accountProof = this.eonState.state.getMembershipProof(to)
-//        val previousAccount = this.eonState.previous!!.getAccount(to).get()
-//
-//        var txProof: MerklePath? = null
-//        val txs = previousAccount.getTransactions()
-//        if (!txs.isEmpty()) {
-//            val merkleTree = MerkleTree(txs)
-//            txProof = merkleTree.getMembershipProof(tx.hash())
-//        }
-//        if (txProof != null) {
-//            val closeChallenge = CloseTransferDeliveryChallengeRequest.newBuilder()
-                //TODO
-//                .setBalancePath(accountProof?.path.toProto())
-//                .setTransPath(txProof.toProto<ProtoMerklePath>())
-//                .setUpdate(accountProof.leaf!!.account!!.update!!.toProto() as Starcoin.Update)
-//                .setToUserPublicKey(
-//                    ByteString.copyFrom(KeyPairUtil.encodePublicKey(previousAccount!!.publicKey!!))
-//                )
-    //.build()
+    fun assertAccountNotNull(to: Address): Nothing =
+        throw RuntimeException("Can not find account by address: $to")
 
-//            val chainTransaction = ChainTransaction(
-//                this.hubAddress,
-//                Constants.CONTRACT_ADDRESS,
-//                "CloseTransferDeliveryChallenge",
-//                //LiquidityContractServiceGrpc.getCloseTransferDeliveryChallengeMethod()
-//                //    .getFullMethodName(),
-//                closeChallenge
-//            )
-//            chainTransaction.sign(this.hubKeyPair)
-//            this.connection.submitTransaction(chainTransaction)
-//        } else {
-//            logger.warning("Can not find tx Proof with challenge:" + challenge.toString())
-//        }
-//    }
+    private fun processTransferDeliveryChallenge(challenge: TransferDeliveryChallenge) {
+        val tx = challenge.tx
 
-    private fun processBalanceUpdateChallenge(challenge: Starcoin.BalanceUpdateChallenge) {
-        val address = Address.getAddress(
-            CryptoService.loadPublicKey(challenge.publicKey.toByteArray())
-        )
-        val proofPath = this.eonState.state.getMembershipProof(address)
+        val to = tx.to
+        val currentAccount = this.eonState.getAccount(to) ?: assertAccountNotNull(to)
+        val accountProof = this.eonState.state.getMembershipProof(to) ?: assertAccountNotNull(to)
+        val previousAccount = this.eonState.previous?.getAccount(to)
 
-        //TODO
-        val proof = BalanceUpdateProof()//(proofPath.leaf!!.account!!.update!!, proofPath)
-        val closeBalanceUpdateChallengeRequest = proof.toProto<Starcoin.BalanceUpdateProof>()
+        var txProof: MerklePath? = null
+        val txs = previousAccount?.getTransactions() ?: emptyList()
+        if (!txs.isEmpty()) {
+            val merkleTree = MerkleTree(txs)
+            txProof = merkleTree.getMembershipProof(tx.hash())
+        }
+        if (txProof != null) {
+            val closeChallenge =
+                CloseTransferDeliveryChallenge(accountProof, currentAccount.update, txProof, currentAccount.publicKey)
+            this.contract.closeTransferDeliveryChallenge(owner, closeChallenge)
+        } else {
+            LOG.warning("Can not find tx Proof with challenge:" + challenge.toString())
+        }
+    }
 
-//        val chainTransaction = ChainTransaction(
-//            this.hubAddress,
-//            Constants.CONTRACT_ADDRESS,
-//            "CloseBalanceUpdateChallenge",
-//            //LiquidityContractServiceGrpc.getCloseBalanceUpdateChallengeMethod().getFullMethodName(),
-//            closeBalanceUpdateChallengeRequest
-//        )
-//        chainTransaction.sign(this.hubKeyPair)
-        //this.connection.submitTransaction(chainTransaction)
+    private fun processBalanceUpdateChallenge(challenge: BalanceUpdateChallenge) {
+        val address = CryptoService.generateAddress(challenge.publicKey)
+        //TODO is nullable
+        val proofPath = this.eonState.state.getMembershipProof(address) ?: assertAccountNotNull(address)
+
+        //val proof = BalanceUpdateProof(proofPath?.leaf?.nodeInfo?.update, proofPath)
+        val closeBalanceUpdateChallengeRequest = CloseBalanceUpdateChallenge(proofPath.leaf.nodeInfo.update, proofPath)
+        this.contract.closeBalanceUpdateChallenge(owner, closeBalanceUpdateChallengeRequest)
     }
 
     private fun processWithdrawal(withdrawal: Withdrawal) {
         this.strategy.processWithdrawal(
             {
-                val blockAddress = withdrawal.address!!
+                val address = withdrawal.address
                 val amount = withdrawal.amount
-                val hubAccount = this.eonState.getAccount(blockAddress).get()
+                val hubAccount = this.eonState.getAccount(address) ?: assertAccountNotNull(address)
                 if (!hubAccount.addWithdraw(amount)) {
-                    // signed update (e) or update (e − 1), τ (e − 1)
-//                    val cancelWithdrawalBuilder = Starcoin.CancelWithdrawal.newBuilder()
-//                        .setParticipant(Participant(hubAccount.publicKey!!).toProto() as Starcoin.Participant)
-//                        .setUpdate(hubAccount.update!!.toProto() as Starcoin.Update)
-//                    if (hubAccount.update!!.isSigned) {
-//                        val path = this.eonState.state.getMembershipProof(blockAddress)
-//                        //TODO
-//                        //cancelWithdrawalBuilder.setPath(path.toProto()).build()
-//                    }
-//                    val chainTransaction = ChainTransaction(
-//                        this.hubAddress,
-//                        Constants.CONTRACT_ADDRESS,
-//                        "CancelWithdrawal",
-//                        //LiquidityContractServiceGrpc.getCancelWithdrawalMethod().getFullMethodName(),
-//                        cancelWithdrawalBuilder.build()
-//                    )
-//                    chainTransaction.sign(this.hubKeyPair)
-//                    this.connection.submitTransaction(chainTransaction)
-//                    val future = CompletableFuture<Receipt>()
-//                    this.txReceipts[chainTransaction.hash()] = future
-//                    future.whenComplete { _, _ ->
-//                        // TODO ensure cancel success.
-//                        logger.info(
-//                            ("CancelWithdrawal:"
-//                                    + blockAddress
-//                                    + ", amount:"
-//                                    + amount
-//                                    + ", result:"
-//                                    + future.getNow(null))
-//                        )
+                    //signed update (e) or update (e − 1), τ (e − 1)
+                    //TODO path is nullable?
+                    val path = this.eonState.state.getMembershipProof(address)
+                    val cancelWithdrawal = CancelWithdrawal(address, hubAccount.update, path ?: AMTreeProof.DUMMY_PROOF)
+                    val txHash = contract.cancelWithdrawal(owner, cancelWithdrawal)
+                    val future = CompletableFuture<Receipt>()
+                    this.txReceipts[txHash] = future
+                    future.whenComplete { _, _ ->
+                        // TODO ensure cancel success.
+                        LOG.info(
+                            ("CancelWithdrawal:"
+                                    + address
+                                    + ", amount:"
+                                    + amount
+                                    + ", result:"
+                                    + future.getNow(null))
+                        )
 
-//                        val withdrawalStatus = WithdrawalStatus(WithdrawalStatusType.INIT, withdrawal)
-//                        withdrawalStatus.cancel()
-//                        this.fireEvent(
-//                            HubEvent(HubEventType.WITHDRAWAL, blockAddress, withdrawalStatus)
-//                        )
-//                    }
+                        val withdrawalStatus = WithdrawalStatus(WithdrawalStatusType.INIT, withdrawal)
+                        withdrawalStatus.cancel()
+                        this.fireEvent(
+                            HubEvent(HubEventType.WITHDRAWAL, withdrawalStatus, address)
+                        )
+                    }
                 } else {
                     val withdrawalStatus = WithdrawalStatus(WithdrawalStatusType.INIT, withdrawal)
                     withdrawalStatus.pass()
-                    this.fireEvent(HubEvent(HubEventType.WITHDRAWAL, withdrawalStatus, blockAddress))
+                    this.fireEvent(HubEvent(HubEventType.WITHDRAWAL, withdrawalStatus, address))
                 }
             },
             withdrawal
@@ -469,7 +438,7 @@ class HubImpl<T : ChainTransaction, A : ChainAccount>(
     private fun processDeposit(deposit: Deposit) {
         this.strategy.processDeposit(
             {
-                val hubAccount = this.eonState.getAccount(deposit!!.address!!).get()
+                val hubAccount = this.eonState.getAccount(deposit.address) ?: assertAccountNotNull(deposit.address)
                 hubAccount.addDeposit(deposit.amount)
                 this.fireEvent(
                     HubEvent(
@@ -484,13 +453,9 @@ class HubImpl<T : ChainTransaction, A : ChainAccount>(
     }
 
     override fun onBlock(blockInfo: Block<*>) {
-        logger.info("onBlock:$blockInfo")
+        LOG.info("onBlock:$blockInfo")
         val eon = Eon.calculateEon(blockInfo.height, this.blocksPerEon)
         var newEon = false
-        if (this.eonState == null) {
-            this.eonState = EonState(eon.id)
-            newEon = true
-        }
         this.eonState.setEpoch(eon.epoch)
         if (eon.id != this.eonState.eon) {
             val eonState = EonState(eon.id, this.eonState)
@@ -498,66 +463,43 @@ class HubImpl<T : ChainTransaction, A : ChainAccount>(
             newEon = true
         }
         if (newEon) {
-            val future = this.doCommit()
-            // TODO only start new eon after commit success.
-//            future.whenComplete { receipt, throwable ->
-//                if (!receipt.success) {
-//                    // TODO
-//                    logger.severe("commit tx receipt is failure.")
-//                } else {
-//                    // TODO only
-//                    this.ready = true
-//                    this.fireEvent(
-//                        HubEvent(
-//                            HubEventType.NEW_HUB_ROOT,
-//                            HubRoot(
-//                                this.eonState.state.root.toAMTreePathNode() as AMTreePathInternalNode,
-//                                this.eonState.eon
-//                            )
-//                        )
-//                    )
-//                }
-//            }
+            this.doCommit()
         }
-        // only process contract tx.
-        //blockInfo.filterTxByTo(Constants.CONTRACT_ADDRESS).stream().forEach { this.processTransaction(it) }
     }
 
     private fun processTransaction(txResult: TransactionResult<T>) {
-        val hash = txResult.tx.hash()
+        val tx = txResult.tx
+        val hash = tx.hash()
         txReceipts[hash]?.complete(txResult.receipt)
-        val contractFunction = txResult.tx.contractFunction
+        val contractFunction = tx.contractFunction
         when (contractFunction) {
-            is CommitFunction -> contractFunction.decode(txResult.tx.data)
+            null -> {
+                val deposit = Deposit(tx.from!!, tx.amount)
+                LOG.info("Deposit:" + deposit.toJSON())
+                this.processDeposit(deposit)
+            }
+            is CommitFunction -> {
+                contractFunction.decode(tx.data)
+            }
             is InitiateWithdrawalFunction -> {
-                val withdrawal = contractFunction.decode(txResult.tx.data)
-                    ?: throw RuntimeException("decode $contractFunction fail.")
-                this.processWithdrawal(withdrawal)
+                val input = contractFunction.decode(tx.data)
+                    ?: throw RuntimeException("$contractFunction decode tx:${txResult.tx} fail.")
+                LOG.info("$contractFunction: $input")
+                this.processWithdrawal(input)
+            }
+            is OpenTransferDeliveryChallengeFunction -> {
+                val input = contractFunction.decode(tx.data)
+                    ?: throw RuntimeException("$contractFunction decode tx:${txResult.tx} fail.")
+                LOG.info("$contractFunction: $input")
+                this.processTransferDeliveryChallenge(input)
+            }
+            is OpenBalanceUpdateChallengeFunction -> {
+                val input = contractFunction.decode(tx.data)
+                    ?: throw RuntimeException("$contractFunction decode tx:${txResult.tx} fail.")
+                LOG.info("$contractFunction: $input")
+                this.processBalanceUpdateChallenge(input)
             }
         }
-
-//        // default action is Deposit.
-//        if (tx.action == null) {
-//            val deposit = Deposit(tx.from!!, tx.amount!!)
-//            logger.info("Deposit:" + deposit.toJSON())
-//            this.processDeposit(deposit)
-//        } else if (tx.action == "InitiateWithdrawal") {
-//            val arguments = tx.getArguments(InitiateWithdrawalRequest::class.java)!!
-//            //TODO
-//            val withdrawal = Withdrawal.parseFromProtoMessage(arguments)
-//            logger.info(tx.action + ":" + withdrawal.toString())
-//            this.processWithdrawal(withdrawal)
-//        } else if (tx.action == "OpenTransferDeliveryChallenge") {
-//            //TODO
-//            val arguments = tx.getArguments(Starcoin.OpenTransferDeliveryChallengeRequest::class.java)!!
-//            logger.info(tx.action + ":" + arguments.toString())
-//            this.processTransferDeliveryChallenge(arguments)
-//        } else if (tx.action == "OpenBalanceUpdateChallenge") {
-//            //TODO
-//            val arguments = tx.getArguments(ProtoBalanceUpdateChallenge::class.java)!!
-//            logger.info(tx.action + ":" + arguments.toString())
-//            this.processBalanceUpdateChallenge(arguments)
-//        }
     }
 
     override fun resetHubMaliciousFlag(): EnumSet<Hub.HubMaliciousFlag> {
@@ -572,12 +514,13 @@ class HubImpl<T : ChainTransaction, A : ChainAccount>(
         fun processDeposit(normalAction: () -> Unit, deposit: Deposit) {
             // steal deposit to a hub gang Participant
             if (maliciousFlags.contains(Hub.HubMaliciousFlag.STEAL_DEPOSIT)) {
-                logger.info(
+                LOG.info(
                     gang.participant.address.toString()
                             + " steal deposit from "
                             + deposit.address.toString()
                 )
-                val hubAccount = eonState.getAccount(gang.participant.address).get()
+                val hubAccount =
+                    eonState.getAccount(gang.participant.address) ?: assertAccountNotNull(gang.participant.address)
                 hubAccount.addDeposit(deposit.amount)
             } else {
                 normalAction()
@@ -591,7 +534,7 @@ class HubImpl<T : ChainTransaction, A : ChainAccount>(
                     getHubAccount { account -> (account.address != withdrawal.address && account.balance >= withdrawal.amount) }
                 if (hubAccount != null) {
                     hubAccount.addWithdraw(withdrawal.amount)
-                    logger.info(
+                    LOG.info(
                         (withdrawal.address.toString()
                                 + " steal withdrawal from "
                                 + hubAccount.address.toString())
@@ -607,7 +550,7 @@ class HubImpl<T : ChainTransaction, A : ChainAccount>(
         fun processOffchainTransaction(normalAction: () -> Unit, tx: OffchainTransaction) {
             // steal transaction, not real update account's tx.
             if (maliciousFlags.contains(Hub.HubMaliciousFlag.STEAL_TRANSACTION)) {
-                logger.info("steal transaction:" + tx.toJSON())
+                LOG.info("steal transaction:" + tx.toJSON())
                 // do nothing
             } else {
                 normalAction()
@@ -616,7 +559,7 @@ class HubImpl<T : ChainTransaction, A : ChainAccount>(
 
         fun processSendNewTransaction(normalAction: () -> Unit, sendIOU: IOU) {
             if (maliciousFlags.contains(Hub.HubMaliciousFlag.STEAL_TRANSACTION_IOU)) {
-                logger.info("steal transaction iou from:" + sendIOU.transaction!!.from)
+                LOG.info("steal transaction iou from:" + sendIOU.transaction.from)
                 checkIOU(sendIOU, true)
                 val tx = OffchainTransaction(
                     sendIOU.transaction.eon,
@@ -625,9 +568,9 @@ class HubImpl<T : ChainTransaction, A : ChainAccount>(
                     sendIOU.transaction.amount
                 )
 
-                val from = getHubAccount(sendIOU.transaction.from)!!
+                val from = getHubAccount(sendIOU.transaction.from) ?: assertAccountNotNull(sendIOU.transaction.from)
 
-                val to = getHubAccount(gang.participant.address)!!
+                val to = getHubAccount(gang.participant.address) ?: assertAccountNotNull(gang.participant.address)
                 val sendTxs = ArrayList(to.getTransactions())
                 sendTxs.add(tx)
                 val toUpdate = Update.newUpdate(

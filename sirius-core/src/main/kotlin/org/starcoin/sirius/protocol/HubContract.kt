@@ -53,6 +53,11 @@ sealed class ContractFunction<S : SiriusObject>(val name: String, val inputClass
     fun encode(input: S): ByteArray {
         return ChainStrategy.encode(this, input)
     }
+
+    override fun toString(): String {
+        return name
+    }
+
 }
 
 object CommitFunction : ContractFunction<HubRoot>("commit", HubRoot::class)

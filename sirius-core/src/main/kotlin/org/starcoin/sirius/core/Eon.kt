@@ -1,5 +1,7 @@
 package org.starcoin.sirius.core
 
+import java.math.BigInteger
+
 class Eon(val id: Int, val epoch: Epoch) {
 
     constructor(id: Long, epoch: Epoch) : this(id.toInt(), epoch)
@@ -18,6 +20,10 @@ class Eon(val id: Int, val epoch: Epoch) {
                 blockHeight / blocksPerEon.toLong(),
                 Epoch.values()[(blockHeight % blocksPerEon / (blocksPerEon / 4)).toInt()]
             )
+        }
+
+        fun calculateEon(blockHeight: BigInteger, blocksPerEon: Int): Eon {
+            return calculateEon(blockHeight.longValueExact(), blocksPerEon)
         }
     }
 }

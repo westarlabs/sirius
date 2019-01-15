@@ -28,12 +28,12 @@ class EonState(val eon: Int, val previous: EonState? = null) {
         this.receiverIOUs = ConcurrentHashMap()
     }
 
-    fun getAccount(address: Address): Optional<HubAccount> {
+    fun getAccount(address: Address): HubAccount? {
         return this.getAccount { hubAccount -> hubAccount.address == address }
     }
 
-    fun getAccount(predicate: (HubAccount) -> Boolean): Optional<HubAccount> {
-        return accounts.stream().filter(predicate).findFirst()
+    fun getAccount(predicate: (HubAccount) -> Boolean): HubAccount? {
+        return accounts.firstOrNull(predicate)
     }
 
     fun addAccount(account: HubAccount) {
