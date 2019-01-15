@@ -6,11 +6,14 @@ import org.ethereum.core.CallTransaction
 import org.ethereum.solidity.SolidityType
 import org.starcoin.sirius.chain.ChainStrategy
 import org.starcoin.sirius.chain.ChainStrategyProvider
+import org.starcoin.sirius.core.Address
 import org.starcoin.sirius.core.ChainTransaction
 import org.starcoin.sirius.core.SiriusObject
 import org.starcoin.sirius.protocol.ChainAccount
 import org.starcoin.sirius.protocol.ContractFunction
+import org.starcoin.sirius.protocol.EthereumTransaction
 import org.starcoin.sirius.protocol.FunctionSignature
+import org.starcoin.sirius.protocol.ethereum.EthereumAccount
 import org.starcoin.sirius.serialization.rlp.RLP
 import java.math.BigInteger
 import kotlin.reflect.KClass
@@ -53,9 +56,14 @@ object EthChainStrategy : ChainStrategy {
         return this.decode(result, function.inputClass)
     }
 
-    //override fun <T : ChainTransaction,A:ChainAccount> newTransaction(account: A,value: BigInteger) : T {
-    //
-    //}
+    override fun <A:ChainAccount> newTransaction(account: A,value: BigInteger,to: Address) : ChainTransaction {
+        var ethAccount = account as EthereumAccount
+        var ethereumTransaction = EthereumTransaction(
+            to, ethAccount.getAndIncNonce(), 21000.toBigInteger(),
+            210000.toBigInteger(), value
+        )
+        return ethereumTransaction
+    }
 
 }
 
