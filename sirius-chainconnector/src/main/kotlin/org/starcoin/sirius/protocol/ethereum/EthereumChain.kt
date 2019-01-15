@@ -31,11 +31,11 @@ import org.web3j.utils.Numeric
 import java.math.BigInteger
 
 
-const val defaultHttpUrl = "http://127.0.0.1:8545"
+const val DEFAULT_URL = "http://127.0.0.1:8545"
 const val GAS_LIMIT_BOUND_DIVISOR = 1024
 const val blockGasIncreasePercent = 0
 
-class EthereumChain constructor(httpUrl: String = defaultHttpUrl, socketPath: String? = null) :
+class EthereumChain constructor(httpUrl: String = DEFAULT_URL, socketPath: String? = null) :
     EthereumBaseChain() {
 
     override fun loadContract(contractAddress: Address): HubContract<EthereumAccount> {
