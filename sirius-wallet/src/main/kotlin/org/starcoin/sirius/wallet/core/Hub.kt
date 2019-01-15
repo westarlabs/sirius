@@ -1,11 +1,15 @@
 package org.starcoin.sirius.wallet.core
 
+import io.grpc.StatusRuntimeException
+import org.starcoin.proto.HubServiceGrpc
+import org.starcoin.proto.Starcoin
 import org.starcoin.sirius.core.*
 import org.starcoin.sirius.crypto.CryptoKey
 import org.starcoin.sirius.protocol.Chain
 import org.starcoin.sirius.protocol.ChainAccount
 import org.starcoin.sirius.protocol.HubContract
 import org.starcoin.sirius.wallet.core.store.Store
+import java.math.BigInteger
 import java.security.KeyPair
 import kotlin.properties.Delegates
 
@@ -53,13 +57,15 @@ class Hub <T : ChainTransaction, A : ChainAccount> {
         this.dataStore = eonStatusStore
         this.chain = chain
 
+        this.currentEon = this.getChainEon()
 
+    }
+
+    private fun getChainEon():Eon{
         var hubInfo=contract.queryHubInfo(account)
         hubAddr=hubInfo.hubAddress
         blocksPerEon= hubInfo.blocksPerEon
-
-        //this.currentEon = this.getChainEon()
-
+        return Eon.calculateEon(blocksPerEon = blocksPerEon,blockHeight = chain.getBlockNumber().toLong())
     }
 
     private fun onHubRootCommit(hubRoot: HubRoot) {
@@ -121,11 +127,32 @@ class Hub <T : ChainTransaction, A : ChainAccount> {
     }
 
     fun deposit(value :Int) {
-
+        //chain.submitTransaction(account,)
     }
 
     fun register() : Update? {
-        return null
+        val hubServiceBlockingStub = HubServiceGrpc.newBlockingStub(channelManager.hubChannel)
+
+        val builder = Starcoin.RegisterParticipantRequest.newBuilder()
+        val participant = Participant(account.key.keyPair.public)
+
+        builder.setParticipant(Participant.toProtoMessage(participant))
+        val update = Update(getChainEon().id, 0, BigInteger.valueOf(0), BigInteger.valueOf(0), Hash.EMPTY_DADA_HASH)
+        update.sign(this.account.key)
+        builder.setUpdate(Update.toProtoMessage(update))
+
+        try {
+            val updateResponse = hubServiceBlockingStub.registerParticipant(builder.build())
+            val response = Update.parseFromProtoMessage(updateResponse)
+            hubStatus.addUpdate(response)
+            this.accountInfo()
+            watchHubEnvent()
+            this.disconnect = false
+            return response
+        } catch (e: StatusRuntimeException) {
+            throw e
+        }
+
     }
 
     fun  accountInfo():HubAccount ?{

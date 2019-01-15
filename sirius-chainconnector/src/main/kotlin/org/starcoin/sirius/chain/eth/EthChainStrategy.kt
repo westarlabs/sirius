@@ -6,10 +6,13 @@ import org.ethereum.core.CallTransaction
 import org.ethereum.solidity.SolidityType
 import org.starcoin.sirius.chain.ChainStrategy
 import org.starcoin.sirius.chain.ChainStrategyProvider
+import org.starcoin.sirius.core.ChainTransaction
 import org.starcoin.sirius.core.SiriusObject
+import org.starcoin.sirius.protocol.ChainAccount
 import org.starcoin.sirius.protocol.ContractFunction
 import org.starcoin.sirius.protocol.FunctionSignature
 import org.starcoin.sirius.serialization.rlp.RLP
+import java.math.BigInteger
 import kotlin.reflect.KClass
 
 class EthFunctionSignature(
@@ -49,6 +52,11 @@ object EthChainStrategy : ChainStrategy {
         val result = (function.signature as EthFunctionSignature).ethFunction.decode(bytes)[0] as ByteArray
         return this.decode(result, function.inputClass)
     }
+
+    //override fun <T : ChainTransaction,A:ChainAccount> newTransaction(account: A,value: BigInteger) : T {
+    //
+    //}
+
 }
 
 class EthChainStrategyProvider : ChainStrategyProvider {

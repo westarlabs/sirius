@@ -1,9 +1,12 @@
 package org.starcoin.sirius.chain
 
 import org.starcoin.sirius.chain.fallback.DefaultChainStrategy
+import org.starcoin.sirius.core.ChainTransaction
 import org.starcoin.sirius.core.SiriusObject
+import org.starcoin.sirius.protocol.ChainAccount
 import org.starcoin.sirius.protocol.ContractFunction
 import org.starcoin.sirius.protocol.FunctionSignature
+import java.math.BigInteger
 import java.util.*
 import kotlin.reflect.KClass
 
@@ -18,6 +21,8 @@ interface ChainStrategy {
     fun <S : SiriusObject> encode(function: ContractFunction<S>, input: S): ByteArray
 
     fun <S : SiriusObject> decode(function: ContractFunction<S>, bytes: ByteArray): S
+
+    //fun <T : ChainTransaction,A : ChainAccount> newTransaction(accout: A,value: BigInteger) : T
 
     companion object : ChainStrategy {
         val instance: ChainStrategy by lazy {
@@ -42,5 +47,7 @@ interface ChainStrategy {
 
         override fun <S : SiriusObject> decode(function: ContractFunction<S>, bytes: ByteArray) =
             instance.decode(function, bytes)
+
+        //override fun <T : ChainTransaction,A : ChainAccount> newTransaction(accout: A,value: BigInteger) = instance.newTransaction(accout,value)
     }
 }
