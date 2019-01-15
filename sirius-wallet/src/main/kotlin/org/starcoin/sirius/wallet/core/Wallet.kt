@@ -14,7 +14,7 @@ class Wallet<T : ChainTransaction, A : ChainAccount> {
 
     private var hub: Hub<T,A> by Delegates.notNull()
 
-    private var blockChainListener :BlockChainListener by Delegates.notNull()
+    private var blockChainListener :BlockChainListener<T,A> by Delegates.notNull()
 
     private var account: A by Delegates.notNull()
 

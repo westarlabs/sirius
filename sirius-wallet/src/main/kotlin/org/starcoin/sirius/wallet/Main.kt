@@ -56,9 +56,9 @@ class Main {
             val key = generateKey(name)
             val chain = EthereumChain(chainAddr)
             var store = FileStore(this.getWalletDir(name).path, HubStatus::class.java)
-            var wallet=Wallet(Address.wrap(contractAddress),channelManager,chain,store,key)
+            //var wallet=Wallet(Address.wrap(contractAddress),channelManager,chain,store,key)
 
-            cmd.addSubcommand("wallet", WalletCommand(wallet))
+            //cmd.addSubcommand("wallet", WalletCommand(wallet))
 
             var line: String
 
