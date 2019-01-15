@@ -102,7 +102,7 @@ class SiriusContractTest : ContractTestBase("sirius.sol", "SiriusService") {
         testInitiateWithdrawal()
         val update = newUpdate(eon, 2, 950)
         val cancel =
-            CancelWithdrawal(callUser.address, update, newPath(ethKey2Address(callUser), update))
+            CancelWithdrawal(callUser.address, update, newProof(ethKey2Address(callUser), update))
         val data = RLP.dump(CancelWithdrawal.serializer(), cancel)
         val callResult = contract.callFunction("cancelWithdrawal", data)
         assert(callResult.returnValue as Boolean)
@@ -219,6 +219,10 @@ class SiriusContractTest : ContractTestBase("sirius.sol", "SiriusService") {
         update.sign(callUser)
         update.signHub(callUser)
         return update
+    }
+
+    private fun newProof(addr: Address, update: Update): AMTreeProof {
+        return AMTreeProof(newPath(addr,update),AMTreePathLeafNode.DUMMY_NODE)
     }
 
     private fun newPath(addr: Address, update: Update): AMTreePath {

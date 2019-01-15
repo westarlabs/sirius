@@ -15,7 +15,6 @@ import org.ethereum.util.blockchain.SolidityContract
 import org.ethereum.util.blockchain.StandaloneBlockchain
 import org.junit.Assert
 import org.junit.Before
-import org.starcoin.proto.Starcoin
 import org.starcoin.sirius.core.*
 import org.starcoin.sirius.crypto.eth.EthCryptoKey
 import org.starcoin.sirius.serialization.BigIntegerSerializer

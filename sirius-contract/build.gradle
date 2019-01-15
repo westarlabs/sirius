@@ -5,4 +5,7 @@ sourceSets {
 
 dependencies{
     compile project(":sirius-core")
+
+    testCompile project(":sirius-chainconnector")
+
 }

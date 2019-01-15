@@ -122,6 +122,7 @@ class InMemoryHubContractTest {
 
         val eon = 1
         val path = newPath(alice.address, newUpdate(eon, 1, BigInteger.ZERO, alice), BigInteger.ZERO, amount)
+
         var contractAddr = contract.contractAddress
 
         //var owner = chain.sb.sender
@@ -143,8 +144,10 @@ class InMemoryHubContractTest {
 
         owner.getAndIncNonce()
         val update = newUpdate(eon, 2, amount, alice.key)
+        val proof = newProof(alice.address, newUpdate(eon, 1, BigInteger.ZERO, alice), BigInteger.ZERO, amount)
+
         val cancel =
-            CancelWithdrawal(alice.address, update, path)
+            CancelWithdrawal(alice.address, update, proof)
         hash = contract.cancelWithdrawal(owner, cancel)
         transaction = chain.findTransaction(hash)
         //TODO use feature to wait.
@@ -161,6 +164,10 @@ class InMemoryHubContractTest {
         }
 
         return path
+    }
+
+    private fun newProof(addr: Address, update: Update, offset: BigInteger, allotment: BigInteger): AMTreeProof {
+        return  AMTreeProof(newPath(addr,update,offset,allotment),newLeaf(addr,update,offset,allotment))
     }
 
     private fun newLeaf(addr: Address, update: Update, offset: BigInteger, allotment: BigInteger): AMTreePathLeafNode {
