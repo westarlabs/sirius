@@ -21,8 +21,8 @@ class ContractFunctionTest {
 
     @Test
     fun testContractFunctionSignature() {
-        val sign = CommitFunction.signature()
-        Assert.assertArrayEquals(sign, function.encodeSignature())
+        val sign = CommitFunction.signature
+        Assert.assertArrayEquals(sign.value, function.encodeSignature())
     }
 
     @Test

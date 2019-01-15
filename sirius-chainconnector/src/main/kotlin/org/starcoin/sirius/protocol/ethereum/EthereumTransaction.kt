@@ -2,12 +2,10 @@ package org.starcoin.sirius.protocol
 
 
 import org.ethereum.core.Transaction
-import org.ethereum.db.ByteArrayWrapper
 import org.starcoin.sirius.core.*
 import org.starcoin.sirius.lang.hexToByteArray
 import org.starcoin.sirius.lang.toULong
 import org.starcoin.sirius.lang.toUnsignedBigInteger
-import org.starcoin.sirius.protocol.ethereum.functionMap
 import java.math.BigInteger
 
 class EthereumTransaction(val tx: Transaction) : ChainTransaction() {
@@ -20,7 +18,7 @@ class EthereumTransaction(val tx: Transaction) : ChainTransaction() {
         get() = tx.gasPrice.toUnsignedBigInteger()
     val gasLimit: BigInteger
         get() = tx.gasLimit.toUnsignedBigInteger()
-    val data: ByteArray?
+    override val data: ByteArray?
         get() = tx.data
 
     override val amount: BigInteger
@@ -33,7 +31,7 @@ class EthereumTransaction(val tx: Transaction) : ChainTransaction() {
         get() = this.data?.let { it.size > 4 && this.to != null } ?: false
 
     override val contractFunction: ContractFunction<out SiriusObject>?
-        get() = if (isContractCall) ContractFunction.functionMap[ByteArrayWrapper(
+        get() = if (isContractCall) ContractFunction.functions[FunctionSignature(
             this.data!!.copyOfRange(
                 0,
                 4

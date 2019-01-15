@@ -1,29 +1,57 @@
 package org.starcoin.sirius.protocol
 
-import kotlinx.serialization.ImplicitReflectionSerializer
-import kotlinx.serialization.serializer
+import org.starcoin.sirius.chain.ChainStrategy
 import org.starcoin.sirius.core.*
-import org.starcoin.sirius.serialization.rlp.RLP
 import kotlin.reflect.KClass
 
-sealed class ContractFunction<S : SiriusObject>(val name: String, val inputClass: KClass<S>) {
-    companion object {
-        val functions = listOf(
-            CommitFunction,
-            InitiateWithdrawalFunction,
-            CancelWithdrawalFunction,
-            OpenBalanceUpdateChallengeFunction,
-            CloseBalanceUpdateChallengeFunction,
-            OpenTransferDeliveryChallengeFunction,
-            CloseTransferDeliveryChallengeFunction,
-            RecoverFundsFunction
-        )
+open class FunctionSignature(val value: ByteArray) {
+
+    final override fun equals(other: Any?): Boolean {
+        if (this === other) return true
+        if (other !is FunctionSignature) return false
+
+        if (!value.contentEquals(other.value)) return false
+
+        return true
     }
 
-    @UseExperimental(ImplicitReflectionSerializer::class)
-    fun parseInput(input: ByteArray): S {
-        //TODO support other implements.
-        return RLP.load(inputClass.serializer(), input)
+    final override fun hashCode(): Int {
+        return value.contentHashCode()
+    }
+}
+
+sealed class ContractFunction<S : SiriusObject>(val name: String, val inputClass: KClass<S>) {
+    val signature by lazy { ChainStrategy.signature(this) }
+
+    companion object {
+        val functions by lazy {
+            mapOf(
+                CommitFunction.signature to
+                        CommitFunction,
+                InitiateWithdrawalFunction.signature to
+                        InitiateWithdrawalFunction,
+                CancelWithdrawalFunction.signature to
+                        CancelWithdrawalFunction,
+                OpenBalanceUpdateChallengeFunction.signature to
+                        OpenBalanceUpdateChallengeFunction,
+                CloseBalanceUpdateChallengeFunction.signature to
+                        CloseBalanceUpdateChallengeFunction,
+                OpenTransferDeliveryChallengeFunction.signature to
+                        OpenTransferDeliveryChallengeFunction,
+                CloseTransferDeliveryChallengeFunction.signature to
+                        CloseTransferDeliveryChallengeFunction,
+                RecoverFundsFunction.signature to
+                        RecoverFundsFunction
+            )
+        }
+    }
+
+    fun decode(data: ByteArray?): S? {
+        return data?.let { ChainStrategy.decode(this, data) }
+    }
+
+    fun encode(input: S): ByteArray {
+        return ChainStrategy.encode(this, input)
     }
 }
 

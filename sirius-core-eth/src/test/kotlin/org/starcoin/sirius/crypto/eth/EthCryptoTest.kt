@@ -86,7 +86,7 @@ class EthCryptoTest : CryptoTestBase() {
         val addressBytes = ECKey.signatureToAddress(hash, sign)
         Assert.assertNotNull(addressBytes)
         Assert.assertArrayEquals(key.address, addressBytes)
-        Assert.assertEquals(key, ECKey.recoverFromSignature(sign.v.toInt(), sign, hash))
+        Assert.assertEquals(key.pubKeyPoint, ECKey.signatureToKey(hash, sign).pubKeyPoint)
     }
 
     @Test

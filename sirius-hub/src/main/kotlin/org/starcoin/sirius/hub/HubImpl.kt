@@ -11,10 +11,7 @@ import org.starcoin.proto.Starcoin
 import org.starcoin.sirius.core.*
 import org.starcoin.sirius.crypto.CryptoKey
 import org.starcoin.sirius.crypto.CryptoService
-import org.starcoin.sirius.protocol.Chain
-import org.starcoin.sirius.protocol.ChainAccount
-import org.starcoin.sirius.protocol.HubContract
-import org.starcoin.sirius.protocol.TransactionResult
+import org.starcoin.sirius.protocol.*
 import org.starcoin.sirius.util.WithLogging
 import java.math.BigInteger
 import java.util.*
@@ -529,6 +526,15 @@ class HubImpl<T : ChainTransaction, A : ChainAccount>(
     private fun processTransaction(txResult: TransactionResult<T>) {
         val hash = txResult.tx.hash()
         txReceipts[hash]?.complete(txResult.receipt)
+        val contractFunction = txResult.tx.contractFunction
+        when (contractFunction) {
+            is CommitFunction -> contractFunction.decode(txResult.tx.data)
+            is InitiateWithdrawalFunction -> {
+                val withdrawal = contractFunction.decode(txResult.tx.data)
+                    ?: throw RuntimeException("decode $contractFunction fail.")
+                this.processWithdrawal(withdrawal)
+            }
+        }
 
 //        // default action is Deposit.
 //        if (tx.action == null) {

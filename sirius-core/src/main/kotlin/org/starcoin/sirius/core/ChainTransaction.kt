@@ -14,6 +14,8 @@ abstract class ChainTransaction :
 
     abstract val contractFunction: ContractFunction<out SiriusObject>?
 
+    abstract val data: ByteArray?
+
     override fun doHash(): Hash {
         return this.txHash()
     }

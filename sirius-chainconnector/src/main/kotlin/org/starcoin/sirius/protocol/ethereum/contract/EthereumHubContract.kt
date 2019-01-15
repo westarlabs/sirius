@@ -11,7 +11,6 @@ import org.starcoin.sirius.protocol.EthereumTransaction
 import org.starcoin.sirius.protocol.HubContract
 import org.starcoin.sirius.protocol.ethereum.EthereumAccount
 import org.starcoin.sirius.protocol.ethereum.EthereumBaseChain
-import org.starcoin.sirius.protocol.ethereum.encode
 import org.starcoin.sirius.serialization.rlp.RLP
 import org.starcoin.sirius.serialization.rlp.RLPElement
 import org.starcoin.sirius.serialization.rlp.decodeRLP
