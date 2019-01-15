@@ -3,19 +3,12 @@ package org.starcoin.sirius.chain.eth
 import kotlinx.serialization.ImplicitReflectionSerializer
 import kotlinx.serialization.serializer
 import org.ethereum.core.CallTransaction
-import org.ethereum.solidity.SolidityType
 import org.starcoin.sirius.chain.ChainStrategy
 import org.starcoin.sirius.chain.ChainStrategyProvider
-import org.starcoin.sirius.core.Address
-import org.starcoin.sirius.core.ChainTransaction
 import org.starcoin.sirius.core.SiriusObject
-import org.starcoin.sirius.protocol.ChainAccount
 import org.starcoin.sirius.protocol.ContractFunction
-import org.starcoin.sirius.protocol.EthereumTransaction
 import org.starcoin.sirius.protocol.FunctionSignature
-import org.starcoin.sirius.protocol.ethereum.EthereumAccount
 import org.starcoin.sirius.serialization.rlp.RLP
-import java.math.BigInteger
 import kotlin.reflect.KClass
 
 class EthFunctionSignature(
@@ -28,8 +21,6 @@ class EthFunctionSignature(
 ) : FunctionSignature(ethFunction.encodeSignature())
 
 object EthChainStrategy : ChainStrategy {
-
-    val bytesType = SolidityType.getType("bytes")
 
     override fun <S : SiriusObject> encode(obj: S): ByteArray {
         return obj.toRLP()
