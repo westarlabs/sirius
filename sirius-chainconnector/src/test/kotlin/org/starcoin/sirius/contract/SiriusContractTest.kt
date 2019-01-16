@@ -1,4 +1,4 @@
-package org.starcoin.sirius.contract.test
+package org.starcoin.sirius.contract
 
 import org.junit.Assert
 import org.junit.Before
@@ -9,7 +9,7 @@ import org.starcoin.sirius.util.MockUtils
 import java.math.BigInteger
 import kotlin.random.Random
 
-class SiriusContractTest : ContractTestBase("sirius.sol", "SiriusService") {
+class SiriusContractTest : ContractTestBase("/solidity/sirius.sol", "SiriusService") {
 
     private val deposit: Long = 10000
     val ip = "192.168.0.0.1:80"
@@ -102,7 +102,10 @@ class SiriusContractTest : ContractTestBase("sirius.sol", "SiriusService") {
         testInitiateWithdrawal()
         val update = newUpdate(eon, 2, 950)
         val cancel =
-            CancelWithdrawal(callUser.address, update, newProof(ethKey2Address(callUser), update))
+            CancelWithdrawal(callUser.address, update, newProof(
+                ethKey2Address(
+                    callUser
+                ), update))
         val data = RLP.dump(CancelWithdrawal.serializer(), cancel)
         val callResult = contract.callFunction("cancelWithdrawal", data)
         assert(callResult.returnValue as Boolean)
@@ -150,7 +153,9 @@ class SiriusContractTest : ContractTestBase("sirius.sol", "SiriusService") {
         val txs = mutableListOf<OffchainTransaction>()
         val count = MockUtils.nextLong(10, 20)
         for (i in 0 until count) {
-            val txData = OffchainTransactionData(eon, ethKey2Address(callUser), ethKey2Address(callUser), 1, 1)
+            val txData = OffchainTransactionData(eon,
+                ethKey2Address(callUser),
+                ethKey2Address(callUser), 1, 1)
             val txTmp = OffchainTransaction(txData)
             txTmp.sign(callUser)
             txs.add(txTmp)

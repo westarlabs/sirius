@@ -4,7 +4,7 @@ dependencies{
     compile project(":sirius-contract")
 
     compile ('org.web3j:core:4.0.0')
-
+    
     testCompile project(path: ':sirius-core', configuration: 'testOutput')
 }
 

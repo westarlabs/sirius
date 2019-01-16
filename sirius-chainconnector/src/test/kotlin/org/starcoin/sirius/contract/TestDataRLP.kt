@@ -1,4 +1,4 @@
-package org.starcoin.sirius.contract.test
+package org.starcoin.sirius.contract
 
 import org.ethereum.core.CallTransaction
 import org.junit.Assert

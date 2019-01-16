@@ -1,4 +1,4 @@
-package org.starcoin.sirius.contract.test
+package org.starcoin.sirius.contract
 
 import kotlinx.serialization.Serializable
 import org.apache.commons.lang3.RandomStringUtils
@@ -93,7 +93,7 @@ abstract class ContractTestBase(val contractFile: String, val contractName: Stri
     fun deployContract(): ContractData {
         val sb = StandaloneBlockchain().withAutoblock(true).withGasLimit(2147483647).withGasPrice(2147483647)
 
-        val url = this.javaClass::class.java.getResource("/$contractFile")
+        val url = this.javaClass::class.java.getResource("$contractFile")
         val compiler = SolidityCompiler(SystemProperties.getDefault())
 
         val path = File(url.toURI()).parentFile.absolutePath
