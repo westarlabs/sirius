@@ -15,6 +15,15 @@ class SiriusContractTest : ContractTestBase("/solidity/sirius.sol", "SiriusServi
     val ip = "192.168.0.0.1:80"
     val blocksPerEon = 8
 
+
+    override fun getContractConstructArg(): Any? {
+        val info = AMTreeInternalNodeInfo(Hash.random(), 0, Hash.random())
+        val node = AMTreePathInternalNode(info, PathDirection.ROOT, 0, 0)
+        val root = HubRoot(node, 0)
+        val data = RLP.dump(HubRoot.serializer(), root)
+        return data
+    }
+
     @Before
     fun zeroEonCommit() {
         //commitData(0, 0, true)

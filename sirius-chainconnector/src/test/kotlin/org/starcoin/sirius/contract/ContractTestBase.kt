@@ -89,6 +89,10 @@ abstract class ContractTestBase(val contractFile: String, val contractName: Stri
         callUser = EthCryptoKey(tmp.owner)
     }
 
+    open fun getContractConstructArg():Any?{
+        return null;
+    }
+
     @Suppress("INACCESSIBLE_TYPE")
     fun deployContract(): ContractData {
         val sb = StandaloneBlockchain().withAutoblock(true).withGasLimit(2147483647).withGasPrice(2147483647)
@@ -113,12 +117,8 @@ abstract class ContractTestBase(val contractFile: String, val contractName: Stri
         LOG.info("$contractFile compile abi ${contractMetadata.abi}")
         LOG.info("$contractFile compile bin ${contractMetadata.bin}")
 
-        val info = AMTreeInternalNodeInfo(Hash.random(), 0, Hash.random())
-        val node = AMTreePathInternalNode(info, PathDirection.ROOT, 0, 0)
-        val root = HubRoot(node, 0)
-        val data = RLP.dump(HubRoot.serializer(), root)
-
-        val contract = sb.submitNewContract(contractMetadata, data) as StandaloneBlockchain.SolidityContractImpl
+        val arg = getContractConstructArg()
+        val contract = (arg?.let{sb.submitNewContract(contractMetadata, arg)} ?: sb.submitNewContract(contractMetadata)) as StandaloneBlockchain.SolidityContractImpl
 
         val lastSummary = StandaloneBlockchain::class.java.getDeclaredField("lastSummary")
         lastSummary.setAccessible(true)

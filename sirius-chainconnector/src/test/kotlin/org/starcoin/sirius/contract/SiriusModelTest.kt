@@ -7,7 +7,7 @@ import org.starcoin.sirius.lang.toHEXString
 import kotlin.reflect.KClass
 import kotlin.reflect.full.companionObjectInstance
 
-class SiriusModelTest : ContractTestBase("model_test.sol", "test_all") {
+class SiriusModelTest : ContractTestBase("/solidity/model_test.sol", "test_all") {
 
     fun <T : SiriusObject> doTest(siriusClass: KClass<T>, functionName: String) {
         val companion = siriusClass.companionObjectInstance as SiriusObjectCompanion<*, *>
