@@ -377,11 +377,77 @@ library ModelLib {
         return true;
     }
 
+    struct AMTreeNode4Hash {
+        uint offset;
+        AMTreeInternalNodeInfo info;
+        uint allotment;
+    }
+
+    function marshalAMTreeNode4Hash(AMTreeNode4Hash memory node) internal pure returns (bytes memory) {
+        bytes memory offset = RLPEncoder.encodeUint(node.offset);
+        bytes memory info = marshalAMTreeInternalNodeInfo(node.info);
+        bytes memory allotment = RLPEncoder.encodeUint(node.allotment);
+
+        return RLPEncoder.encodeList(ByteUtilLib.append(ByteUtilLib.append(offset, info), allotment));
+    }
+
     function verifyMembershipProof4AMTreeProof(AMTreePathInternalNode memory root, AMTreeProof memory proof) internal pure returns(bool) {
-        //TODO
-        root;
-        proof;
-        return true;
+        AMTreePath memory path = proof.path;
+        AMTreePathLeafNode memory leaf = proof.leaf;
+
+        AMTreeNode4Hash memory computeNode = combineAMTreePathLeafNode(leaf, path.leaf);
+
+        AMTreeNode4Hash memory rootNode = changeAMTreePathInternalNode2AMTreeNode4Hash(root);
+
+        for (uint i=0;i<path.nodes.length;i++) {
+            AMTreePathInternalNode memory node = path.nodes[i];
+            AMTreeNode4Hash memory tmp = changeAMTreePathInternalNode2AMTreeNode4Hash(node);
+            if (node.direction == Direction.DIRECTION_LEFT) {
+                computeNode = combineAMTreeNode4Hash(tmp, computeNode);
+            } else if(node.direction == Direction.DIRECTION_RIGTH) {
+                computeNode = combineAMTreeNode4Hash(computeNode, tmp);
+            } else {}
+        }
+
+        return (keccak256(marshalAMTreeNode4Hash(rootNode)) == keccak256(marshalAMTreeNode4Hash(computeNode)) && rootNode.offset == computeNode.offset && rootNode.allotment == computeNode.allotment);
+    }
+
+    function changeAMTreePathInternalNode2AMTreeNode4Hash(AMTreePathInternalNode memory iNode)private pure returns(AMTreeNode4Hash memory node) {
+        node.offset = iNode.offset;
+        node.info = iNode.nodeInfo;
+        node.allotment = iNode.allotment;
+    }
+
+    function combineAMTreePathLeafNode(AMTreePathLeafNode memory first, AMTreePathLeafNode memory second) private pure returns(AMTreeNode4Hash memory node) {
+        AMTreeInternalNodeInfo memory internalNodeInfo;
+        if(first.direction == Direction.DIRECTION_LEFT) {
+            internalNodeInfo.left = keccak256(marshalAMTreeLeafNodeInfo(first.nodeInfo));
+            internalNodeInfo.offset = second.offset;
+            internalNodeInfo.right = keccak256(marshalAMTreeLeafNodeInfo(second.nodeInfo));
+
+            node.offset = first.offset;
+            node.info = internalNodeInfo;
+            node.allotment = SafeMath.add(first.allotment, second.allotment);
+        } else {
+            internalNodeInfo.left = keccak256(marshalAMTreeLeafNodeInfo(second.nodeInfo));
+            internalNodeInfo.offset = first.offset;
+            internalNodeInfo.right = keccak256(marshalAMTreeLeafNodeInfo(first.nodeInfo));
+
+            node.offset = second.offset;
+            node.info = internalNodeInfo;
+            node.allotment = SafeMath.add(first.allotment, second.allotment);
+        }
+    }
+
+    function combineAMTreeNode4Hash(AMTreeNode4Hash memory left, AMTreeNode4Hash memory right) private pure returns(AMTreeNode4Hash memory combine) {
+        AMTreeInternalNodeInfo memory nodeInfo;
+        nodeInfo.left = keccak256(marshalAMTreeNode4Hash(left));
+        nodeInfo.offset = SafeMath.add(left.offset, left.allotment);
+        nodeInfo.right = keccak256(marshalAMTreeNode4Hash(right));
+
+        combine.offset = left.offset;
+        combine.info = nodeInfo;
+        combine.allotment = SafeMath.add(left.allotment, right.allotment);
     }
 
     function unmarshalAMTreePath(RLPLib.RLPItem memory rlp) internal pure returns (AMTreePath memory path) {
