@@ -17,7 +17,7 @@ class SiriusContractTest : ContractTestBase("/solidity/sirius.sol", "SiriusServi
 
     @Before
     fun zeroEonCommit() {
-        commitData(0, 0, true)
+        //commitData(0, 0, true)
     }
 
     @Test

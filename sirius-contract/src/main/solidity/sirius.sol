@@ -42,9 +42,19 @@ contract SiriusService is Sirius {
     event DepositEvent2(uint indexed i, bytes32 hash);
     event SiriusEvent(bytes32 indexed hash, uint indexed num, bytes value);
 
-    constructor() public {
+    constructor(bytes memory data) public {
         GlobleLib.Balance memory initBalance = newBalance(0);
         checkBalances(initBalance);
+
+        ModelLib.HubRoot memory root = ModelLib.unmarshalHubRoot(RLPDecoder.toRLPItem(data, true));
+        require(root.eon == 0);
+        require(root.node.allotment == 0);
+        require(root.node.offset == 0);
+        require(root.node.nodeInfo.offset == 0);
+
+        balances[0].root = root;
+        balances[0].hasRoot = true;
+        emit DepositEvent2(11, root.node.nodeInfo.left);
     }
 
     modifier onlyOwner() {

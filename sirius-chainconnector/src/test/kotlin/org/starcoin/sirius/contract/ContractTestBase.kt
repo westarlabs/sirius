@@ -112,7 +112,13 @@ abstract class ContractTestBase(val contractFile: String, val contractName: Stri
         val contractMetadata = result.getContract(contractName)
         LOG.info("$contractFile compile abi ${contractMetadata.abi}")
         LOG.info("$contractFile compile bin ${contractMetadata.bin}")
-        val contract = sb.submitNewContract(contractMetadata) as StandaloneBlockchain.SolidityContractImpl
+
+        val info = AMTreeInternalNodeInfo(Hash.random(), 0, Hash.random())
+        val node = AMTreePathInternalNode(info, PathDirection.ROOT, 0, 0)
+        val root = HubRoot(node, 0)
+        val data = RLP.dump(HubRoot.serializer(), root)
+
+        val contract = sb.submitNewContract(contractMetadata, data) as StandaloneBlockchain.SolidityContractImpl
 
         val lastSummary = StandaloneBlockchain::class.java.getDeclaredField("lastSummary")
         lastSummary.setAccessible(true)
