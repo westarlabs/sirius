@@ -9,10 +9,7 @@ import org.starcoin.sirius.core.*
 import org.starcoin.sirius.crypto.CryptoKey
 import org.starcoin.sirius.crypto.eth.EthCryptoKey
 import org.starcoin.sirius.lang.toHEXString
-import org.starcoin.sirius.protocol.EthereumTransaction
-import org.starcoin.sirius.protocol.EventTopic
-import org.starcoin.sirius.protocol.HubContract
-import org.starcoin.sirius.protocol.TransactionResult
+import org.starcoin.sirius.protocol.*
 import org.starcoin.sirius.protocol.ethereum.contract.EthereumHubContract
 import java.math.BigInteger
 import kotlin.properties.Delegates
@@ -121,10 +118,11 @@ class InMemoryChain(autoGenblock: Boolean) : EthereumBaseChain() {
 
     override fun doDeployContract(
         account: EthereumAccount,
-        contractMetadata: CompilationResult.ContractMetadata
+        contractMetadata: CompilationResult.ContractMetadata,
+        args: ContractConstructArgs
     ): EthereumHubContract {
         sb.sender = (account.key as EthCryptoKey).ecKey
-        val contract = sb.submitNewContract(contractMetadata)
+        val contract = sb.submitNewContract(contractMetadata, args.hubRoot.toRLP())
         //TODO wait
         ethereumHubContract=this.loadContract(contract.address.toAddress(), contract.abi)
         return ethereumHubContract

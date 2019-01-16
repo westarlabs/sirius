@@ -53,6 +53,7 @@ class AMTreeTest {
         val tree0 = AMTree(0, mutableListOf())
         val tree1 = AMTree(0, mutableListOf())
         Assert.assertNotNull(tree0.root)
+        Assert.assertTrue(tree0.root.isInternalNode)
         Assert.assertNotNull(tree0.root.info)
         Assert.assertEquals(tree0.root, tree1.root)
     }
@@ -73,5 +74,13 @@ class AMTreeTest {
         val proof1 = AMTreeProof.parseFromProtobuf(proof.toProtobuf())
         Assert.assertEquals(proof, proof1)
         Assert.assertTrue(AMTree.verifyMembershipProof(root, proof1))
+    }
+
+    @Test
+    fun testEmptyTree() {
+        val tree = AMTree()
+        Assert.assertNotNull(tree.root)
+        Assert.assertTrue(tree.root.isInternalNode)
+        Assert.assertNull(tree.getMembershipProof(Address.random()))
     }
 }

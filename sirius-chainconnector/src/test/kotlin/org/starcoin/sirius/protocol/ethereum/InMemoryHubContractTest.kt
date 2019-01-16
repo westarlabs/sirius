@@ -9,8 +9,10 @@ import org.junit.Before
 import org.junit.Ignore
 import org.junit.Test
 import org.starcoin.sirius.core.*
+import org.starcoin.sirius.core.HubRoot.Companion.EMPTY_TREE_HUBROOT
 import org.starcoin.sirius.crypto.CryptoKey
 import org.starcoin.sirius.crypto.CryptoService
+import org.starcoin.sirius.protocol.ContractConstructArgs
 import org.starcoin.sirius.protocol.EthereumTransaction
 import org.starcoin.sirius.protocol.TransactionResult
 import org.starcoin.sirius.protocol.ethereum.contract.EthereumHubContract
@@ -39,9 +41,8 @@ class InMemoryHubContractTest {
         val amount = EtherUtil.convert(100000, EtherUtil.Unit.ETHER)
         this.sendEther(owner.address, amount)
         this.sendEther(alice.address, amount)
-
-
-        this.contract = chain.deployContract(owner)
+        val args = ContractConstructArgs(EMPTY_TREE_HUBROOT)
+        this.contract = chain.deployContract(owner, args)
         commitHubRoot(0, BigInteger.ZERO)
     }
 

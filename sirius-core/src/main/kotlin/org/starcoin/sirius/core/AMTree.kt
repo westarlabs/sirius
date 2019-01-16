@@ -80,6 +80,7 @@ class AMTree(
     val randommProof: AMTreeProof?
         get() = this.getMembershipProof((this.randomLeafNode()?.info as AMTreeLeafNodeInfo?)?.addressHash)
 
+    constructor() : this(0, AMTreeNode.DUMMY_NODE)
 
     constructor(eon: Int, accounts: List<HubAccount>) : this(
         eon,
@@ -177,7 +178,7 @@ class AMTree(
 
         private fun buildRoot(leaves: List<AMTreeNode>): AMTreeNode {
             if (leaves.isEmpty()) {
-                return AMTreeNode()
+                return AMTreeNode.DUMMY_NODE
             }
             val mergedLeaves = ArrayList<AMTreeNode>()
             var i = 0
@@ -383,6 +384,10 @@ class AMTreeNode(
                 this.allotment
             )
         }
+    }
+
+    companion object {
+        val DUMMY_NODE = AMTreeNode(BigInteger.ZERO, AMTreeInternalNodeInfo.DUMMY_NODE, BigInteger.ZERO)
     }
 
 }

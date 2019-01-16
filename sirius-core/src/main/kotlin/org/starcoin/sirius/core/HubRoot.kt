@@ -16,7 +16,8 @@ data class HubRoot(
 ) : SiriusObject() {
     companion object : SiriusObjectCompanion<HubRoot, Starcoin.HubRoot>(HubRoot::class) {
 
-        var DUMMY_HUB_ROOT = HubRoot()
+        val DUMMY_HUB_ROOT = HubRoot()
+        val EMPTY_TREE_HUBROOT = HubRoot(AMTree().root.toAMTreePathNode() as AMTreePathInternalNode, 0)
 
         override fun mock(): HubRoot {
             return HubRoot(

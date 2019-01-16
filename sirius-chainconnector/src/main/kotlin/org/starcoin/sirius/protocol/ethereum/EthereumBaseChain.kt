@@ -6,6 +6,7 @@ import org.ethereum.solidity.compiler.SolidityCompiler
 import org.starcoin.sirius.core.Address
 import org.starcoin.sirius.crypto.CryptoKey
 import org.starcoin.sirius.protocol.Chain
+import org.starcoin.sirius.protocol.ContractConstructArgs
 import org.starcoin.sirius.protocol.EthereumTransaction
 import org.starcoin.sirius.protocol.ethereum.contract.EthereumHubContract
 import org.starcoin.sirius.util.WithLogging
@@ -49,21 +50,27 @@ abstract class EthereumBaseChain :
         return EthereumHubContract(address, jsonInterface, this)
     }
 
-    override fun deployContract(account: EthereumAccount): EthereumHubContract {
-        return deployContract(account, File(this.javaClass.getResource("/solidity/sirius.sol").toURI()))
+    override fun deployContract(account: EthereumAccount, args: ContractConstructArgs): EthereumHubContract {
+        return deployContract(account, File(this.javaClass.getResource("/solidity/sirius.sol").toURI()), args)
     }
 
-    override fun deployContract(account: EthereumAccount, contractFile: File): EthereumHubContract {
+    override fun deployContract(
+        account: EthereumAccount,
+        contractFile: File,
+        args: ContractConstructArgs
+    ): EthereumHubContract {
         val compilationResult = compileContract(contractFile)
         return this.doDeployContract(
             account,
-            compilationResult.getContract(contractName)
+            compilationResult.getContract(contractName),
+            args
         )
     }
 
     abstract fun doDeployContract(
         account: EthereumAccount,
-        contractMetadata: CompilationResult.ContractMetadata
+        contractMetadata: CompilationResult.ContractMetadata,
+        args: ContractConstructArgs
     ): EthereumHubContract
 
     abstract fun getNonce(address: Address): BigInteger

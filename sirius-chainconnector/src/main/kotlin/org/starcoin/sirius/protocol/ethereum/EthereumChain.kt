@@ -7,14 +7,14 @@ import kotlinx.coroutines.launch
 import kotlinx.io.IOException
 import org.ethereum.crypto.HashUtil
 import org.ethereum.solidity.compiler.CompilationResult
-import org.starcoin.sirius.core.*
+import org.starcoin.sirius.core.Address
+import org.starcoin.sirius.core.Hash
+import org.starcoin.sirius.core.Receipt
+import org.starcoin.sirius.core.toHash
 import org.starcoin.sirius.crypto.CryptoKey
 import org.starcoin.sirius.crypto.eth.EthCryptoKey
 import org.starcoin.sirius.lang.hexToByteArray
-import org.starcoin.sirius.protocol.EthereumTransaction
-import org.starcoin.sirius.protocol.EventTopic
-import org.starcoin.sirius.protocol.HubContract
-import org.starcoin.sirius.protocol.TransactionResult
+import org.starcoin.sirius.protocol.*
 import org.starcoin.sirius.protocol.ethereum.contract.EthereumHubContract
 import org.starcoin.sirius.util.Utils
 import org.web3j.protocol.Web3j
@@ -193,8 +193,10 @@ class EthereumChain constructor(httpUrl: String = DEFAULT_URL, socketPath: Strin
 
     override fun doDeployContract(
         account: EthereumAccount,
-        contractMetadata: CompilationResult.ContractMetadata
+        contractMetadata: CompilationResult.ContractMetadata,
+        args: ContractConstructArgs
     ): EthereumHubContract {
+        //TODO merge construct arg to data.
         val tx = EthereumTransaction(
             account.getNonce(),
             defaultGasPrice, defaultGasLimit,

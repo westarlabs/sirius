@@ -7,6 +7,8 @@ import java.math.BigInteger
 
 data class TransactionResult<T : ChainTransaction>(val tx: T, val receipt: Receipt)
 
+data class ContractConstructArgs(val hubRoot: HubRoot)
+
 enum class EventTopic(val event: String) {
     Deposit("DepositEvent(byte[])")
 }
@@ -37,9 +39,9 @@ interface Chain<T : ChainTransaction, B : Block<T>, A : ChainAccount> {
 
     fun loadContract(contractAddress: Address): HubContract<A>
 
-    fun deployContract(account: A): HubContract<A>
+    fun deployContract(account: A, args: ContractConstructArgs): HubContract<A>
 
-    fun deployContract(account: A, contractFile: File): HubContract<A>
+    fun deployContract(account: A, contractFile: File, args: ContractConstructArgs): HubContract<A>
 
     fun getBlockNumber(): BigInteger
 
