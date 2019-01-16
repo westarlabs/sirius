@@ -66,6 +66,18 @@ class WalletTest {
         Assert.assertEquals(walletAlice.balance().toLong(),amount)
     }
 
+    @Test
+    fun testWithdrawal() {
+        testDeposit()
+
+        val amount = 20L
+        walletAlice.withdrawal(amount)
+
+        chain.sb.createBlock()
+
+        Assert.assertTrue(!walletAlice.hub.hubStatus.couldWithDrawal())
+    }
+
     private fun commitHubRoot(eon: Int, amount: BigInteger): Hash {
         var height = chain.getBlockNumber().toLong()
         if (eon != 0) {

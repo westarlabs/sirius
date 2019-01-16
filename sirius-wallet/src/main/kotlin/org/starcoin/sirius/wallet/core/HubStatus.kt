@@ -38,6 +38,7 @@ class HubStatus {
                 this.withdrawalStatus = withdrawalStatus
         }
 
+
     var height: Int = 0
 
     internal constructor(eon: Eon) {
@@ -200,5 +201,9 @@ class HubStatus {
             }
         }
         return maxEonStatus.eon
+    }
+
+    fun couldWithDrawal():Boolean {
+        if (this.withdrawalStatus == null) return true else return false
     }
 }

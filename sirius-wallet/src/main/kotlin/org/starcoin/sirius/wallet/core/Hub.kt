@@ -7,11 +7,14 @@ import org.starcoin.sirius.core.*
 import org.starcoin.sirius.protocol.Chain
 import org.starcoin.sirius.protocol.ChainAccount
 import org.starcoin.sirius.protocol.HubContract
+import org.starcoin.sirius.util.WithLogging
 import org.starcoin.sirius.wallet.core.store.Store
 import java.math.BigInteger
 import kotlin.properties.Delegates
 
 class Hub <T : ChainTransaction, A : ChainAccount> {
+
+    companion object : WithLogging()
 
     private var contract: HubContract<A>  by Delegates.notNull()
 
@@ -29,7 +32,8 @@ class Hub <T : ChainTransaction, A : ChainAccount> {
 
     private var dataStore: Store<HubStatus>?
 
-    private var hubStatus: HubStatus by Delegates.notNull()
+    internal var hubStatus: HubStatus by Delegates.notNull()
+        private set
 
     private var chain: Chain<T, out Block<T>, A> by Delegates.notNull()
 
@@ -72,10 +76,28 @@ class Hub <T : ChainTransaction, A : ChainAccount> {
 
     }
 
-    private fun onDeposit(deposit: Deposit) {
+    internal fun onDeposit(deposit: Deposit) {
+        serverEventHandler?.onDeposit(deposit)
     }
 
-    private fun onWithdrawal(withdrawalStatus: WithdrawalStatus) {
+    internal fun onWithdrawal(withdrawalStatus: WithdrawalStatus) {
+        if (withdrawalStatus.withdrawal.address.equals(account.address)) {
+            when (withdrawalStatus.status) {
+                WithdrawalStatusType.INIT.number -> {
+                    this.hubStatus.syncWithDrawal(withdrawalStatus)
+                }
+                WithdrawalStatusType.CANCEL.number -> {
+                    this.hubStatus.cancelWithDrawal()
+                    LOG.info("cancel")
+                }
+                WithdrawalStatusType.PASSED.number -> {
+                    this.hubStatus.syncWithDrawal(withdrawalStatus)
+                    LOG.info("pass")
+                }
+                else -> System.out.println(withdrawalStatus)
+            }
+        }
+        serverEventHandler?.onWithdrawal(withdrawalStatus)
     }
 
     private fun onNewTransaction(offchainTransaction: OffchainTransaction) {
@@ -114,9 +136,6 @@ class Hub <T : ChainTransaction, A : ChainAccount> {
         return 0;
     }
 
-    fun couldWithDrawal():Boolean {
-        return false
-    }
 
     @Synchronized
     fun sync() {
@@ -172,12 +191,12 @@ class Hub <T : ChainTransaction, A : ChainAccount> {
     }
 
     fun withDrawal(value: Long) {
-        if (!couldWithDrawal()) {
-            println("already have withdrawal in progress.")
+        if (!hubStatus.couldWithDrawal()) {
+            LOG.info("already have withdrawal in progress.")
             return
         }
         if (hubStatus.currentEonProof() == null) {
-            println("last eon path doesn't exists.")
+            LOG.info("last eon path doesn't exists.")
             return
         }
 
@@ -205,4 +224,5 @@ class Hub <T : ChainTransaction, A : ChainAccount> {
     internal fun getBalance():BigInteger{
         return hubStatus.allotment
     }
+
 }

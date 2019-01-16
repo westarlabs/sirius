@@ -2,9 +2,7 @@ package org.starcoin.sirius.wallet.core.blockchain
 
 import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.launch
-import org.starcoin.sirius.core.Block
-import org.starcoin.sirius.core.ChainTransaction
-import org.starcoin.sirius.core.Deposit
+import org.starcoin.sirius.core.*
 import org.starcoin.sirius.protocol.*
 import org.starcoin.sirius.util.WithLogging
 import org.starcoin.sirius.wallet.core.Hub
@@ -44,7 +42,8 @@ class BlockChain <T : ChainTransaction, A : ChainAccount> (chain: Chain<T, out B
                         val input = contractFunction.decode(tx.data)
                             ?: throw RuntimeException("$contractFunction decode tx:${txResult.tx} fail.")
                         LOG.info("$contractFunction: $input")
-                        //hubStatus.processWithdrawal(input)
+                        val withdrawalStatus = WithdrawalStatus( WithdrawalStatusType.INIT,input)
+                        hub.onWithdrawal(withdrawalStatus)
                     }
                     is OpenTransferDeliveryChallengeFunction -> {
                         val input = contractFunction.decode(tx.data)

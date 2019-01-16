@@ -12,7 +12,8 @@ import kotlin.properties.Delegates
 
 class Wallet<T : ChainTransaction, A : ChainAccount> {
 
-    private var hub: Hub<T,A> by Delegates.notNull()
+    internal var hub: Hub<T,A> by Delegates.notNull()
+        private set
 
     private var blockChain: BlockChain<T,A> by Delegates.notNull()
 
@@ -45,6 +46,6 @@ class Wallet<T : ChainTransaction, A : ChainAccount> {
     }
 
     fun withdrawal(value:Long){
-
+        return hub.withDrawal(value)
     }
 }
