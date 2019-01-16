@@ -98,4 +98,13 @@ class WalletTest {
         return callResult
     }
 
+    private fun waitToNextEon() {
+        var height = chain.getBlockNumber().toLong()
+        if (height?.rem(8) != 0L) {
+            var blockNumber = 8 - (height?.rem(8) ?: 0) - 1
+            for (i in 0..blockNumber) {
+                chain.sb.createBlock()
+            }
+        }
+    }
 }
