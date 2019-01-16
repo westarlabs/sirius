@@ -4,18 +4,20 @@ import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.launch
 import org.starcoin.sirius.core.Block
 import org.starcoin.sirius.core.ChainTransaction
-import org.starcoin.sirius.protocol.Chain
-import org.starcoin.sirius.protocol.ChainAccount
-import org.starcoin.sirius.protocol.HubContract
-import org.starcoin.sirius.wallet.core.HubStatus
+import org.starcoin.sirius.core.Deposit
+import org.starcoin.sirius.protocol.*
+import org.starcoin.sirius.util.WithLogging
+import org.starcoin.sirius.wallet.core.Hub
 
-class BlockChain <T : ChainTransaction, A : ChainAccount> (chain: Chain<T, out Block<T>, A>,hubStatus: HubStatus,hubContract: HubContract<A>,account: A){
+class BlockChain <T : ChainTransaction, A : ChainAccount> (chain: Chain<T, out Block<T>, A>, hub: Hub<T,A>, hubContract: HubContract<A>, account: A){
 
     private val chain = chain
-    private val hubStatus = hubStatus
+    private val hub = hub
     private val contract = hubContract
     private val account = account
     internal var startWatch = false
+
+    companion object : WithLogging()
 
     fun watchTransaction(){
         GlobalScope.launch {
@@ -24,7 +26,40 @@ class BlockChain <T : ChainTransaction, A : ChainAccount> (chain: Chain<T, out B
                         || it.tx.to?.equals(account.address) ?: false || it.tx.to?.equals(contract.contractAddress) ?: false
             }
             while (startWatch) {
-                val transactionResult = channnel.receive()
+                val txResult = channnel.receive()
+                val tx = txResult.tx
+                //val hash = tx.hash()
+                //txReceipts[hash]?.complete(txResult.receipt)
+                val contractFunction = tx.contractFunction
+                when (contractFunction) {
+                    null -> {
+                        val deposit = Deposit(tx.from!!, tx.amount)
+                        LOG.info("Deposit:" + deposit.toJSON())
+                        hub.confirmDeposit(tx)
+                    }
+                    is CommitFunction -> {
+                        contractFunction.decode(tx.data)
+                    }
+                    is InitiateWithdrawalFunction -> {
+                        val input = contractFunction.decode(tx.data)
+                            ?: throw RuntimeException("$contractFunction decode tx:${txResult.tx} fail.")
+                        LOG.info("$contractFunction: $input")
+                        //hubStatus.processWithdrawal(input)
+                    }
+                    is OpenTransferDeliveryChallengeFunction -> {
+                        val input = contractFunction.decode(tx.data)
+                            ?: throw RuntimeException("$contractFunction decode tx:${txResult.tx} fail.")
+                        LOG.info("$contractFunction: $input")
+                        //hubStatus.processTransferDeliveryChallenge(input)
+                    }
+                    is OpenBalanceUpdateChallengeFunction -> {
+                        val input = contractFunction.decode(tx.data)
+                            ?: throw RuntimeException("$contractFunction decode tx:${txResult.tx} fail.")
+                        LOG.info("$contractFunction: $input")
+                        //hubStatus.processBalanceUpdateChallenge(input)
+                    }
+                }
+
             }
         }
     }

@@ -7,6 +7,7 @@ import org.starcoin.sirius.protocol.Chain
 import org.starcoin.sirius.protocol.ChainAccount
 import org.starcoin.sirius.wallet.core.blockchain.BlockChain
 import org.starcoin.sirius.wallet.core.store.Store
+import java.math.BigInteger
 import kotlin.properties.Delegates
 
 class Wallet<T : ChainTransaction, A : ChainAccount> {
@@ -21,16 +22,25 @@ class Wallet<T : ChainTransaction, A : ChainAccount> {
     private var chain: Chain<T, out Block<T>, A> by Delegates.notNull()
 
     constructor(contractAddress: Address, channelManager: ChannelManager,
-                chain: Chain<T, out Block<T>, A>, store: Store<HubStatus>, account: A
+                chain: Chain<T, out Block<T>, A>, store: Store<HubStatus>?, account: A
     ) {
         this.chain = chain
         this.account = account
 
         val contract=chain.loadContract(contractAddress)
-        val hubStatus = HubStatus()
-        hub = Hub(contract,account,channelManager,null,store,chain,hubStatus)
-        blockChain = BlockChain(chain,hubStatus,contract,account)
+        hub = Hub(contract,account,channelManager,null,store,chain)
+        blockChain = BlockChain(chain,hub,contract,account)
+
+        blockChain.startWatch=true
+        blockChain.watchTransaction()
 
     }
 
+    fun deposit(value:Long){
+        this.hub.deposit(value)
+    }
+
+    fun balance():BigInteger{
+        return hub.getBalance()
+    }
 }

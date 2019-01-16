@@ -9,3 +9,15 @@ dependencies{
 
     testCompile group: 'junit', name: 'junit', version: '4.12'
 }
+
+task copySolidity(type: Copy) {
+    delete "out/test/resources/solidity"
+    from ("${project(':sirius-contract').projectDir}/src/main"){
+        include "**/*.sol"
+    }
+    into "out/test/resources"
+}
+
+compileTestJava {
+    copySolidity.execute()
+}

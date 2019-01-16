@@ -8,9 +8,10 @@ import java.security.KeyPair
 
 class HubStatus {
 
-    private var allotment: BigInteger = BigInteger.ZERO
+    var allotment: BigInteger = BigInteger.ZERO
+        private set
 
-    private var eonStatuses = arrayListOf<EonStatus>()
+    private var eonStatuses = Array(3){EonStatus()}
 
     var blocksPerEon: Int = 0
         internal set
@@ -39,8 +40,9 @@ class HubStatus {
 
     var height: Int = 0
 
-    fun HubStatus(eon: Eon) {
+    internal constructor(eon: Eon) {
         val eonStatus = EonStatus(eon, BigInteger.ZERO)
+
         this.eonStatuses[currentEonStatusIndex] = eonStatus
     }
 
@@ -53,8 +55,10 @@ class HubStatus {
         this.withdrawalStatus = null
     }
 
-    internal fun confirmDeposit(hash: Hash) {
-        this.depositingTransactions.remove(hash)
+    internal fun confirmDeposit(transaction: ChainTransaction) {
+        this.allotment+=transaction.amount
+        this.eonStatuses[currentEonStatusIndex].addDeposit(transaction)
+        this.depositingTransactions.remove(transaction.hash())
     }
 
     internal fun addDepositTransaction(hash:Hash,transaction: ChainTransaction){
@@ -185,7 +189,7 @@ class HubStatus {
         }
     }
 
-    fun findMaxEon(): Eon {
+    internal fun findMaxEon(): Eon {
         var maxEonStatus = this.eonStatuses[0]
         for (eonStatus in this.eonStatuses) {
             if (eonStatus == null) {
@@ -197,6 +201,4 @@ class HubStatus {
         }
         return maxEonStatus.eon
     }
-
-
 }

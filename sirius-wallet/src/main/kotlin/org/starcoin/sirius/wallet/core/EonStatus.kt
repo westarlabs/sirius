@@ -6,24 +6,32 @@ import kotlin.properties.Delegates
 
 class EonStatus() {
 
-    var eon: Eon by Delegates.notNull()
+    internal var eon: Eon by Delegates.notNull()
 
-    var treeProof: AMTreeProof? = null
+    internal var treeProof: AMTreeProof? = null
 
-    var transactionHistory: MutableList<OffchainTransaction> = mutableListOf()
+    internal var transactionHistory: MutableList<OffchainTransaction> = mutableListOf()
 
-    var updateHistory: MutableList<Update> = mutableListOf()
+    internal var updateHistory: MutableList<Update> = mutableListOf()
 
-    var transactionMap: MutableMap<String, OffchainTransaction> = mutableMapOf()
+    internal var transactionMap: MutableMap<String, OffchainTransaction> = mutableMapOf()
 
-    var confirmedTransactions: MutableList<ChainTransaction> = mutableListOf()
+    internal var confirmedTransactions: MutableList<ChainTransaction> = mutableListOf()
 
-    var deposit: Long = 0
+    internal var deposit: BigInteger = BigInteger.ZERO
 
-    var allotment: BigInteger = BigInteger.ZERO
+    internal var allotment: BigInteger = BigInteger.ZERO
 
     constructor(eon: Eon, allotment: BigInteger) : this() {
         this.eon = eon
         this.allotment = allotment
     }
+
+    internal fun addDeposit(transaction: ChainTransaction){
+        this.deposit = deposit.add(transaction.amount)
+        this.allotment = allotment.add(transaction.amount)
+
+        confirmedTransactions.add(transaction)
+    }
+
 }

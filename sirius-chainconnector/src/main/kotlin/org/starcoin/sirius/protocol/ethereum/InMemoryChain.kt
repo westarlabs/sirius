@@ -15,10 +15,14 @@ import org.starcoin.sirius.protocol.HubContract
 import org.starcoin.sirius.protocol.TransactionResult
 import org.starcoin.sirius.protocol.ethereum.contract.EthereumHubContract
 import java.math.BigInteger
+import kotlin.properties.Delegates
 
 class InMemoryChain(autoGenblock: Boolean) : EthereumBaseChain() {
+
+    private var ethereumHubContract : EthereumHubContract by Delegates.notNull()
+
     override fun loadContract(contractAddress: Address): HubContract<EthereumAccount> {
-        TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
+        return ethereumHubContract
     }
 
     override fun watchEvents(
@@ -122,7 +126,8 @@ class InMemoryChain(autoGenblock: Boolean) : EthereumBaseChain() {
         sb.sender = (account.key as EthCryptoKey).ecKey
         val contract = sb.submitNewContract(contractMetadata)
         //TODO wait
-        return this.loadContract(contract.address.toAddress(), contract.abi)
+        ethereumHubContract=this.loadContract(contract.address.toAddress(), contract.abi)
+        return ethereumHubContract
     }
 
     override fun getBlockNumber(): BigInteger {

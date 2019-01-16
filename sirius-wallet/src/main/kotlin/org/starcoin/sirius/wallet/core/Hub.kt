@@ -30,7 +30,7 @@ class Hub <T : ChainTransaction, A : ChainAccount> {
 
     private var hubAccount: HubAccount? = null
 
-    private var dataStore: Store<HubStatus> by Delegates.notNull()
+    private var dataStore: Store<HubStatus>?
 
     private var hubStatus: HubStatus by Delegates.notNull()
 
@@ -46,9 +46,8 @@ class Hub <T : ChainTransaction, A : ChainAccount> {
         account: A,
         channelManager: ChannelManager,
         serverEventHandler: ServerEventHandler?,
-        eonStatusStore: Store<HubStatus>,
-        chain :Chain<T, out Block<T>, A>,
-        hubStatus: HubStatus
+        eonStatusStore: Store<HubStatus>?,
+        chain :Chain<T, out Block<T>, A>
     ) {
         this.contract = contract
         this.account = account
@@ -56,16 +55,19 @@ class Hub <T : ChainTransaction, A : ChainAccount> {
         this.serverEventHandler = serverEventHandler
         this.dataStore = eonStatusStore
         this.chain = chain
-        this.hubStatus = hubStatus
 
-        this.currentEon = this.getChainEon()
+        var hubInfo=contract.queryHubInfo(account)
+        hubAddr=hubInfo.hubAddress
+
+        this.currentEon=Eon.calculateEon(blocksPerEon = hubInfo.blocksPerEon,blockHeight = chain.getBlockNumber().toLong())
+
+        this.hubStatus = HubStatus(this.currentEon)
+        hubStatus.blocksPerEon= hubInfo.blocksPerEon
 
     }
 
     private fun getChainEon():Eon{
         var hubInfo=contract.queryHubInfo(account)
-        hubAddr=hubInfo.hubAddress
-        hubStatus.blocksPerEon= hubInfo.blocksPerEon
         return Eon.calculateEon(blocksPerEon = hubInfo.blocksPerEon,blockHeight = chain.getBlockNumber().toLong())
     }
 
@@ -189,9 +191,11 @@ class Hub <T : ChainTransaction, A : ChainAccount> {
     private fun checkChallengeStatus() {
     }
 
-    fun confirmDeposit(hash:Hash,height :Int){
-        this.hubStatus.confirmDeposit(hash)
-        hubStatus.height=height
-        //dataStore.save(this.hubStatus)
+    internal fun confirmDeposit(transaction: ChainTransaction){
+        this.hubStatus.confirmDeposit(transaction)
+    }
+
+    internal fun getBalance():BigInteger{
+        return hubStatus.allotment
     }
 }
