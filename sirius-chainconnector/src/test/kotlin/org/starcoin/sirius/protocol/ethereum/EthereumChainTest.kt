@@ -34,7 +34,7 @@ class EthereumChainTest {
     fun setUp() {
         /* Test Depend on the remove rpc server*/
         val ethchain = EthereumChain(RPC_URL)
-        val chain = ethchain as Chain<ChainTransaction, Block<ChainTransaction>, ChainAccount>
+        chain = ethchain as Chain<ChainTransaction, Block<ChainTransaction>, ChainAccount>
         val genAcount = { prvKey: String ->
             CryptoService.loadCryptoKey(Numeric.hexStringToByteArray(prvKey)).let {
                 EthereumAccount(
@@ -57,6 +57,7 @@ class EthereumChainTest {
 
     @Test
     fun testWatchTransactions() {
+
     }
 
     @Test
