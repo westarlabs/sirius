@@ -1,9 +1,8 @@
-#!/usr/bin/env bash
+#!/usr/bin/env sh
 set -euo pipefail
 
 datadir=./geth_data
 init_account_passwd="starcoinmakeworldbetter"
-
 
 new_account(){
     echo -e "$init_account_passwd"> ./pass
