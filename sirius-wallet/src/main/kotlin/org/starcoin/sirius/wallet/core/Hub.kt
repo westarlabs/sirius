@@ -3,15 +3,12 @@ package org.starcoin.sirius.wallet.core
 import io.grpc.StatusRuntimeException
 import org.starcoin.proto.HubServiceGrpc
 import org.starcoin.proto.Starcoin
-import org.starcoin.sirius.chain.ChainStrategy
 import org.starcoin.sirius.core.*
-import org.starcoin.sirius.crypto.CryptoKey
 import org.starcoin.sirius.protocol.Chain
 import org.starcoin.sirius.protocol.ChainAccount
 import org.starcoin.sirius.protocol.HubContract
 import org.starcoin.sirius.wallet.core.store.Store
 import java.math.BigInteger
-import java.security.KeyPair
 import kotlin.properties.Delegates
 
 class Hub <T : ChainTransaction, A : ChainAccount> {
@@ -174,8 +171,18 @@ class Hub <T : ChainTransaction, A : ChainAccount> {
         return null
     }
 
-    fun withDrawal(value: Int) {
+    fun withDrawal(value: Long) {
+        if (!couldWithDrawal()) {
+            println("already have withdrawal in progress.")
+            return
+        }
+        if (hubStatus.currentEonProof() == null) {
+            println("last eon path doesn't exists.")
+            return
+        }
 
+        val withdrawal = Withdrawal(account.address, hubStatus.currentEonProof()!!, value)
+        this.contract.initiateWithdrawal(account,withdrawal)
     }
 
     fun cheat(flag:Int){

@@ -88,7 +88,7 @@ class SiriusContractTest : ContractTestBase("/solidity/sirius.sol", "SiriusServi
         createEon(0)
         val amount: Long = 100
         val eon = 1
-        val path = newPath(ethKey2Address(callUser), newUpdate(eon, 1, 0))
+        val path = newProof(ethKey2Address(callUser), newUpdate(eon, 1, 0))
         val w = Withdrawal(ethKey2Address(callUser), path, amount)
         val data = RLP.dump(Withdrawal.serializer(), w)
         val callResult = contract.callFunction("initiateWithdrawal", data)

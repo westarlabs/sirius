@@ -43,4 +43,8 @@ class Wallet<T : ChainTransaction, A : ChainAccount> {
     fun balance():BigInteger{
         return hub.getBalance()
     }
+
+    fun withdrawal(value:Long){
+
+    }
 }

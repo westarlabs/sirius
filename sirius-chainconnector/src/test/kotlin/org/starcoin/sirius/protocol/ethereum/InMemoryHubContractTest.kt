@@ -121,7 +121,7 @@ class InMemoryHubContractTest {
         Assert.assertEquals(transaction?.from,Address.wrap(chain.sb.sender.address))*/
 
         val eon = 1
-        val path = newPath(alice.address, newUpdate(eon, 1, BigInteger.ZERO, alice), BigInteger.ZERO, amount)
+        val path = newProof(alice.address, newUpdate(eon, 1, BigInteger.ZERO, alice), BigInteger.ZERO, amount)
 
         var contractAddr = contract.contractAddress
 

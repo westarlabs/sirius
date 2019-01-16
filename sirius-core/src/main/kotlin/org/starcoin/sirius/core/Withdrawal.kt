@@ -14,20 +14,20 @@ data class Withdrawal(
     @SerialId(1)
     val address: Address = Address.DUMMY_ADDRESS,
     @SerialId(2)
-    val path: AMTreePath = AMTreePath.DUMMY_PATH,
+    val proof:AMTreeProof = AMTreeProof.DUMMY_PROOF,
     @SerialId(3)
     @Serializable(with = BigIntegerSerializer::class)
     val amount: BigInteger = BigInteger.ZERO
 ) : SiriusObject() {
 
-    constructor(address: Address, path: AMTreePath, amount: Long) : this(address, path, amount.toBigInteger())
+    constructor(address: Address, proof: AMTreeProof, amount: Long) : this(address, proof, amount.toBigInteger())
 
     companion object : SiriusObjectCompanion<Withdrawal, Starcoin.Withdrawal>(Withdrawal::class) {
 
         var DUMMY_WITHDRAWAL = Withdrawal()
 
         override fun mock(): Withdrawal {
-            return Withdrawal(Address.random(), AMTreePath.mock(), MockUtils.nextBigInteger())
+            return Withdrawal(Address.random(), AMTreeProof.mock(), MockUtils.nextBigInteger())
         }
     }
 }

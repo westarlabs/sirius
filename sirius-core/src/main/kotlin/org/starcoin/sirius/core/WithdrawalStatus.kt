@@ -30,7 +30,7 @@ data class WithdrawalStatus(
 
     @Transient
     val eon: Int
-        get() = this.withdrawal.path.eon
+        get() = this.withdrawal.proof.path.eon
 
     fun pass() {
         if (isInit) {
