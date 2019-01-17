@@ -1,7 +1,6 @@
 package org.starcoin.sirius.hub
 
 import org.starcoin.sirius.core.*
-import org.starcoin.sirius.crypto.CryptoKey
 import org.starcoin.sirius.hub.Hub.HubMaliciousFlag
 import org.starcoin.sirius.protocol.Chain
 import org.starcoin.sirius.protocol.ChainAccount
@@ -10,7 +9,7 @@ import java.util.*
 import java.util.concurrent.BlockingQueue
 
 class HubService<T : ChainTransaction, A : ChainAccount>(
-    private val hubKey: CryptoKey,
+    private val owner: A,
     blocksPerEon: Int,
     chain: Chain<T, out Block<T>, out A>
 ) {
@@ -27,7 +26,7 @@ class HubService<T : ChainTransaction, A : ChainAccount>(
         get() = hub.currentEon()
 
     val hubPublicKey: PublicKey
-        get() = this.hubKey.keyPair.public
+        get() = this.owner.key.keyPair.public
 
     val stateRoot: AMTreeNode
         get() = this.hub.stateRoot
@@ -37,7 +36,7 @@ class HubService<T : ChainTransaction, A : ChainAccount>(
 
     init {
 
-        this.hub = HubImpl(hubKey, blocksPerEon, chain)
+        this.hub = HubImpl(owner, blocksPerEon, chain)
     }
 
     fun start() {

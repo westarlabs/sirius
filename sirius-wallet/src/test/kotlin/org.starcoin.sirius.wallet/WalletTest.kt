@@ -2,9 +2,12 @@ package org.starcoin.sirius.wallet
 
 import io.grpc.inprocess.InProcessChannelBuilder
 import org.ethereum.util.blockchain.EtherUtil
-import org.junit.*
+import org.junit.Assert
+import org.junit.Before
+import org.junit.Test
 import org.starcoin.sirius.core.*
 import org.starcoin.sirius.crypto.CryptoService
+import org.starcoin.sirius.protocol.ContractConstructArgs
 import org.starcoin.sirius.protocol.EthereumTransaction
 import org.starcoin.sirius.protocol.ethereum.EthereumAccount
 import org.starcoin.sirius.protocol.ethereum.InMemoryChain
@@ -39,7 +42,7 @@ class WalletTest {
         this.sendEther(owner.address, amount)
         this.sendEther(alice.address, amount)
 
-        this.contract = chain.deployContract(owner)
+        this.contract = chain.deployContract(owner, ContractConstructArgs(HubRoot.EMPTY_TREE_HUBROOT))
 
         val hubChannel = InProcessChannelBuilder.forName("").build()
 

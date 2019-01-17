@@ -8,7 +8,6 @@ import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.launch
 import org.starcoin.sirius.core.*
-import org.starcoin.sirius.crypto.CryptoKey
 import org.starcoin.sirius.crypto.CryptoService
 import org.starcoin.sirius.protocol.*
 import org.starcoin.sirius.util.WithLogging
@@ -18,10 +17,9 @@ import java.util.concurrent.ArrayBlockingQueue
 import java.util.concurrent.BlockingQueue
 import java.util.concurrent.CompletableFuture
 import java.util.concurrent.ConcurrentHashMap
-import kotlin.properties.Delegates
 
 class HubImpl<T : ChainTransaction, A : ChainAccount>(
-    private val hubKey: CryptoKey,
+    private val owner: A,
     private val blocksPerEon: Int,
     private val chain: Chain<T, out Block<T>, out A>
 ) : Hub {
@@ -33,9 +31,8 @@ class HubImpl<T : ChainTransaction, A : ChainAccount>(
 
     private lateinit var eonState: EonState
 
-    private var owner: A by Delegates.notNull()
 
-    private val hubAddress: Address = hubKey.address
+    private val hubAddress: Address = owner.address
 
     private val eventBus: EventBus = EventBus()
 
@@ -59,7 +56,7 @@ class HubImpl<T : ChainTransaction, A : ChainAccount>(
                 blocksPerEon,
                 eonState.eon,
                 stateRoot.toAMTreePathNode() as AMTreePathInternalNode,
-                hubKey.keyPair.public
+                owner.key.keyPair.public
             )
         }
 
@@ -140,7 +137,7 @@ class HubImpl<T : ChainTransaction, A : ChainAccount>(
         if (this.getHubAccount(participant.address) != null) {
             throw StatusRuntimeException(Status.ALREADY_EXISTS)
         }
-        initUpdate.signHub(this.hubKey)
+        initUpdate.signHub(this.owner.key)
         val account = HubAccount(participant.publicKey, initUpdate, 0)
         this.eonState.addAccount(account)
         return initUpdate
@@ -189,8 +186,8 @@ class HubImpl<T : ChainTransaction, A : ChainAccount>(
             },
             transaction
         )
-        fromUpdate.signHub(this.hubKey)
-        toUpdate.signHub(this.hubKey)
+        fromUpdate.signHub(this.owner.key)
+        toUpdate.signHub(this.owner.key)
         this.fireEvent(HubEvent(HubEventType.NEW_UPDATE, fromUpdate, from.address))
         this.fireEvent(HubEvent(HubEventType.NEW_UPDATE, toUpdate, to.address))
     }
@@ -583,8 +580,8 @@ class HubImpl<T : ChainTransaction, A : ChainAccount>(
                 from.appendTransaction(sendIOU.transaction, fromUpdate)
                 to.appendTransaction(tx, toUpdate)
 
-                fromUpdate.signHub(hubKey)
-                toUpdate.signHub(hubKey)
+                fromUpdate.signHub(owner.key)
+                toUpdate.signHub(owner.key)
                 // only notice from.
                 fireEvent(HubEvent(HubEventType.NEW_UPDATE, fromUpdate, from.address))
             } else {
