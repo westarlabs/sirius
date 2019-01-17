@@ -5,24 +5,24 @@ import org.junit.Before
 import org.junit.Test
 import org.starcoin.sirius.core.Block
 import org.starcoin.sirius.core.ChainTransaction
+import org.starcoin.sirius.crypto.CryptoKey
 import org.starcoin.sirius.crypto.CryptoService
 import org.starcoin.sirius.protocol.Chain
 import org.starcoin.sirius.protocol.ChainAccount
-import org.web3j.utils.Numeric
-import java.util.concurrent.atomic.AtomicLong
+import org.web3j.crypto.WalletUtils
+import java.io.File
 import kotlin.properties.Delegates
 
 
 /* XXX: Move those properties to test configure*/
-const val ALICE_KEY = "2b9221b2df843566d8292f7c3c2157144d4ca4e9c87c4c5dc4b055c1129dec3e"
-const val BOB_KEY = "eccb6cf0a844702f35f212ac899c75ed22e3674c2938691dd7d528cbf6db4510"
 const val RPC_URL = "http://127.0.0.1:8545"
+const val ETHERBASE_PASSWD = "starcoinmakeworldbetter"
 
 class EthereumChainTest {
     private var chain: Chain<ChainTransaction, Block<ChainTransaction>, ChainAccount> by Delegates.notNull()
-    private var alice: EthereumAccount by Delegates.notNull()
-    private var bob: EthereumAccount by Delegates.notNull()
-
+    private val alice = EthereumAccount(CryptoService.generateCryptoKey())
+    private val bob = EthereumAccount(CryptoService.generateCryptoKey())
+    private val etherbase = EthereumAccount(etherbase())
 
     @Before
     fun setUp() {
@@ -30,32 +30,30 @@ class EthereumChainTest {
          XXX: Setup go-etheruem container here. For now, required started outside by
          running `scrips/docker.sh build && script/docker.sh run`.
         */
-
         val ethchain = EthereumChain(RPC_URL)
         chain = ethchain as Chain<ChainTransaction, Block<ChainTransaction>, ChainAccount>
-        val genAcount = { prvKey: String ->
-            CryptoService.loadCryptoKey(Numeric.hexStringToByteArray(prvKey)).let {
-                EthereumAccount(
-                    it,
-                    AtomicLong(ethchain.getNonce(it.address).longValueExact())
-                )
-            }
-        }
-        alice = genAcount(ALICE_KEY)
-        bob = genAcount(BOB_KEY)
+
     }
 
     @Test
     fun testSubmitTransaction() {
-        val tx = chain.newTransaction(alice, bob.address, 1.toBigInteger())
-        val hash = chain.submitTransaction(alice, tx)
-        val expectTx = chain.findTransaction(hash)
-        Assert.assertEquals(tx, expectTx)
+        val balance = chain.getBalance(etherbase.address)
+        Assert.assertNotSame(0.toBigInteger(), balance)
+        val tx = chain.newTransaction(etherbase, alice.address, 1.toBigInteger())
+        val hash = chain.submitTransaction(etherbase, tx)
     }
 
     @Test
     fun testWatchTransactions() {
 
+    }
+
+    private fun etherbase(): CryptoKey {
+        val credentials = WalletUtils.loadCredentials(
+            ETHERBASE_PASSWD,
+            File(this.javaClass.getResource("/keystore").toURI()).listFiles().first()
+        )
+        return CryptoService.loadCryptoKey(credentials.ecKeyPair.privateKey.toByteArray())
     }
 
     @Test

@@ -17,7 +17,7 @@ ARG VERSION=1.8.21
 RUN apk add --no-cache ca-certificates
 COPY --from=builder /$DISTRO_NAME-$VERSION/build/bin/geth /usr/local/bin/
 RUN mkdir /ethereum
-COPY env.sh init.sh start.sh genesis.json.template /ethereum/
+#COPY env.sh init.sh start.sh genesis.json.template /ethereum/
 
 EXPOSE 8545 8546 30303 30303/udp
 WORKDIR /ethereum

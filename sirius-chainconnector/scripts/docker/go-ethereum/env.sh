@@ -3,10 +3,8 @@ set -euo pipefail
 
 datadir=./geth_data
 etherbase_passwd="starcoinmakeworldbetter"
-alice_passwd="alicefromstarcoin"
-bob_passwd="bobfromstarcoin"
 new_account(){
-    echo -e "$1"> ./pass
+    echo  "$1"> ./pass
     account=$(geth --verbosity 0 account new --datadir $datadir --password pass |awk -F'[{}]' '{print $2}'|sed -n "1p")
     rm -f ./pass
     echo $account
@@ -21,7 +19,7 @@ clear(){
 }
 
 init_genesis(){
-    etherbase=$(new_account etherbase_passwd)
+    etherbase=$(new_account $etherbase_passwd)
     sed  "s/ETHERBASE/${etherbase}/" genesis.json.template > genesis.json
 }
 

@@ -23,7 +23,7 @@ abstract class EthereumBaseChain :
 
         //TODO
         val defaultGasPrice: BigInteger
-            get() = 21000000.toBigInteger()
+            get() = 1000.toBigInteger()
 
         val defaultGasLimit: BigInteger
             get() = 8000000.toBigInteger()

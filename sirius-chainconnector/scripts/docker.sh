@@ -1,5 +1,4 @@
 #!/usr/bin/env bash
-
 usage(){
     echo "Usage $(basename $0) [clean, build, run, start, stop, logs, attach, geth]"
 }
@@ -16,8 +15,16 @@ case $"$1" in
     build)
 	docker build  -f $(dirname $0)/docker/go-ethereum/Dockerfile -t starcoin/go-etherum $(dirname $0)/docker/go-ethereum/
 	;;
+    rebuild)
+	docker build --no-cache -f $(dirname $0)/docker/go-ethereum/Dockerfile -t starcoin/go-etherum $(dirname $0)/docker/go-ethereum/ 
+	;;
+    
     run)
-	docker run -d --name go-ethereum -p 127.0.0.1:8545:8545 -p 30303:30303 starcoin/go-etherum 
+	docker run -d --name go-ethereum -p 127.0.0.1:8545:8545 -p 30303:30303  -v $PWD/docker/go-ethereum:/ethereum starcoin/go-etherum
+	;;
+    copy)
+	rm  $PWD/../build/resources/test/keystore/*
+	cp  $PWD/docker/go-ethereum/geth_data/keystore/* $PWD/../build/resources/test/keystore/
 	;;
     logs)
 	docker logs $(docker ps -a |grep go-ethereum|awk '{print $1}') -f
