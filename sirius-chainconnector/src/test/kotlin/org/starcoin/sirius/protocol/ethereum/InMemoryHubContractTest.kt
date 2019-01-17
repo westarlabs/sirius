@@ -9,7 +9,6 @@ import org.junit.Before
 import org.junit.Ignore
 import org.junit.Test
 import org.starcoin.sirius.core.*
-import org.starcoin.sirius.core.HubRoot.Companion.EMPTY_TREE_HUBROOT
 import org.starcoin.sirius.crypto.CryptoKey
 import org.starcoin.sirius.crypto.CryptoService
 import org.starcoin.sirius.protocol.ContractConstructArgs
@@ -17,10 +16,13 @@ import org.starcoin.sirius.protocol.EthereumTransaction
 import org.starcoin.sirius.protocol.TransactionResult
 import org.starcoin.sirius.protocol.ethereum.contract.EthereumHubContract
 import org.starcoin.sirius.util.MockUtils
+import org.starcoin.sirius.util.WithLogging
 import java.math.BigInteger
 import kotlin.properties.Delegates
 
 class InMemoryHubContractTest {
+
+    companion object : WithLogging()
 
     private var chain: InMemoryChain by Delegates.notNull()
     private var contract: EthereumHubContract by Delegates.notNull()
@@ -28,22 +30,31 @@ class InMemoryHubContractTest {
     private var owner: EthereumAccount by Delegates.notNull()
     private var alice: EthereumAccount by Delegates.notNull()
 
-    private var transactionChannel: Channel<TransactionResult<EthereumTransaction>> by Delegates.notNull()
+    private var ownerChannel: Channel<TransactionResult<EthereumTransaction>> by Delegates.notNull()
+    private var aliceChannel: Channel<TransactionResult<EthereumTransaction>> by Delegates.notNull()
+
+    private var blocksPerEon = ContractConstructArgs.DEFAULT_ARG.blocksPerEon
+
+    private var startBlockNumber: BigInteger by Delegates.notNull()
 
     @Before
     fun beforeTest() {
         chain = InMemoryChain(true)
-        transactionChannel =
-            chain.watchTransactions { it.tx.from == alice.address && it.tx.to == contract.contractAddress }
+
         owner = EthereumAccount(CryptoService.generateCryptoKey())
         alice = EthereumAccount(CryptoService.generateCryptoKey())
 
         val amount = EtherUtil.convert(100000, EtherUtil.Unit.ETHER)
         this.sendEther(owner.address, amount)
         this.sendEther(alice.address, amount)
-        val args = ContractConstructArgs(8, EMPTY_TREE_HUBROOT)
-        this.contract = chain.deployContract(owner, args)
-        commitHubRoot(0, BigInteger.ZERO)
+
+        this.contract = chain.deployContract(owner, ContractConstructArgs.DEFAULT_ARG)
+        aliceChannel =
+            chain.watchTransactions { it.tx.from == alice.address && it.tx.to == contract.contractAddress }
+        ownerChannel =
+            chain.watchTransactions { it.tx.from == owner.address && it.tx.to == contract.contractAddress }
+        val hubInfo = this.contract.queryHubInfo(owner)
+        startBlockNumber = hubInfo.startBlockNumber
     }
 
     fun sendEther(address: Address, amount: BigInteger) {
@@ -80,7 +91,7 @@ class InMemoryHubContractTest {
         deposit(alice, amount)
 
         runBlocking {
-            var transaction = transactionChannel.receive()
+            var transaction = aliceChannel.receive()
             Assert.assertTrue(transaction.receipt.status)
             Assert.assertEquals(transaction.tx.from, alice.address)
             Assert.assertEquals(transaction.tx.to, contract.contractAddress)
@@ -105,7 +116,7 @@ class InMemoryHubContractTest {
         deposit(alice, amount)
 
         runBlocking {
-            var transaction = transactionChannel.receive()
+            var transaction = aliceChannel.receive()
             Assert.assertTrue(transaction.receipt.status)
             Assert.assertEquals(transaction.tx.from, alice.address)
             Assert.assertEquals(transaction.tx.to, contract.contractAddress)
@@ -167,7 +178,7 @@ class InMemoryHubContractTest {
     }
 
     private fun newProof(addr: Address, update: Update, offset: BigInteger, allotment: BigInteger): AMTreeProof {
-        return  AMTreeProof(newPath(addr,update,offset,allotment),newLeaf(addr,update,offset,allotment))
+        return AMTreeProof(newPath(addr, update, offset, allotment), newLeaf(addr, update, offset, allotment))
     }
 
     private fun newLeaf(addr: Address, update: Update, offset: BigInteger, allotment: BigInteger): AMTreePathLeafNode {
@@ -191,13 +202,12 @@ class InMemoryHubContractTest {
     @ImplicitReflectionSerializer
     fun testCommit() {
 
-        var amount = EtherUtil.convert(1000, EtherUtil.Unit.GWEI)
+        val amount = EtherUtil.convert(1000, EtherUtil.Unit.GWEI)
 
-        //println(chain.sb.getBlockchain().getRepository().getBalance(alice.address.toBytes()))
         deposit(alice, amount)
 
         runBlocking {
-            var txResult = transactionChannel.receive()
+            val txResult = aliceChannel.receive()
             Assert.assertTrue(txResult.receipt.status)
             Assert.assertEquals(txResult.tx.from, alice.address)
             Assert.assertEquals(txResult.tx.to, contract.contractAddress)
@@ -208,37 +218,47 @@ class InMemoryHubContractTest {
             amount,
             chain.getBalance(contract.contractAddress)
         )
+        val eon = 1
+        val root = newHubRoot(eon, amount)
+        commitHubRoot(1, root)
 
-        //println(chain.sb.getBlockchain().getRepository().getBalance(contract.contractAddress))
-        var hash = commitHubRoot(1, amount)
-        println(hash)
-        //TODO use feature to wait.
-        Thread.sleep(500)
-        var transaction = chain.findTransaction(hash)
-        Assert.assertEquals(transaction?.to, contract.contractAddress)
-        Assert.assertEquals(transaction?.from, Address.wrap(chain.sb.sender.address))
+        val root1 = contract.getLatestRoot(EthereumAccount.DUMMY_ACCOUNT)
+        Assert.assertEquals(root, root1)
+    }
 
-        var root = contract.getLatestRoot(EthereumAccount.DUMMY_ACCOUNT)
-        println(root)
+    fun newHubRoot(eon: Int, amount: BigInteger): HubRoot {
+        val info = AMTreeInternalNodeInfo(Hash.random(), amount, Hash.random())
+        val node = AMTreePathInternalNode(info, PathDirection.ROOT, 0.toBigInteger(), amount)
+        return HubRoot(node, eon)
+    }
+
+    fun waitToEon(eon: Int) {
+        if (eon == 0) {
+            return
+        }
+        val currentBlockNumber = chain.getBlockNumber()
+        for (i in 0..Eon.waitToEon(startBlockNumber, currentBlockNumber, blocksPerEon, eon)) {
+            chain.sb.createBlock()
+        }
     }
 
     private fun commitHubRoot(eon: Int, amount: BigInteger): Hash {
-        var height = chain.getBlockNumber().toLong()
-        if (eon != 0) {
-            if (height?.rem(8) != 0L) {
-                var blockNumber = 8 - (height?.rem(8) ?: 0) - 1
-                for (i in 0..blockNumber) {
-                    chain.sb.createBlock()
-                }
-            }
+        return commitHubRoot(eon, newHubRoot(eon, amount))
+    }
+
+    private fun commitHubRoot(eon: Int, root: HubRoot): Hash {
+        LOG.info("current block height is :${chain.getBlockNumber()}, commit root: $root")
+        waitToEon(eon)
+        val hash = contract.commit(owner, root)
+        runBlocking {
+            val txResult = ownerChannel.receive()
+            Assert.assertTrue(txResult.receipt.status)
+            Assert.assertEquals(hash, txResult.tx.hash())
+            val transaction = txResult.tx
+            Assert.assertEquals(contract.contractAddress, transaction.to)
+            Assert.assertEquals(owner.address, transaction.from)
         }
-        val info = AMTreeInternalNodeInfo(Hash.random(), amount, Hash.random())
-        val node = AMTreePathInternalNode(info, PathDirection.ROOT, 0.toBigInteger(), amount)
-        val root = HubRoot(node, eon)
-        println("current block height is :" + chain.getBlockNumber())
-        println(root)
-        val callResult = contract.commit(owner, root)
-        return callResult
+        return hash
     }
 
     @Test

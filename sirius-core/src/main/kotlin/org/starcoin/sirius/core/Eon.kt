@@ -25,5 +25,9 @@ class Eon(val id: Int, val epoch: Epoch) {
         fun calculateEon(blockHeight: BigInteger, blocksPerEon: Int): Eon {
             return calculateEon(blockHeight.longValueExact(), blocksPerEon)
         }
+
+        fun waitToEon(startBlockNumber: BigInteger, currentBlockNumber: BigInteger, blocksPerEon: Int, eon: Int): Int {
+            return blocksPerEon * eon - (currentBlockNumber - startBlockNumber).intValueExact()
+        }
     }
 }
