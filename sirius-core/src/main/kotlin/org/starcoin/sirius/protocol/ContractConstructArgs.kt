@@ -10,7 +10,8 @@ import org.starcoin.sirius.serialization.ProtobufSchema
 
 @Serializable
 @ProtobufSchema(Starcoin.ContractConstructArgs::class)
-data class ContractConstructArgs(@SerialId(1) val blocks: Long, @SerialId(2) val hubRoot: HubRoot) : SiriusObject() {
+data class ContractConstructArgs(@SerialId(1) val blocksPerEon: Int, @SerialId(2) val hubRoot: HubRoot) :
+    SiriusObject() {
     companion object :
         SiriusObjectCompanion<ContractConstructArgs, Starcoin.ContractConstructArgs>(
             ContractConstructArgs::class
