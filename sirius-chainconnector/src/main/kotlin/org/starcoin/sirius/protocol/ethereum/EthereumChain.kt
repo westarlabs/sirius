@@ -6,7 +6,6 @@ import kotlinx.coroutines.channels.sendBlocking
 import kotlinx.coroutines.launch
 import kotlinx.io.IOException
 import org.ethereum.crypto.HashUtil
-import org.ethereum.solidity.compiler.CompilationResult
 import org.starcoin.sirius.core.Address
 import org.starcoin.sirius.core.Hash
 import org.starcoin.sirius.core.Receipt
@@ -14,8 +13,9 @@ import org.starcoin.sirius.core.toHash
 import org.starcoin.sirius.crypto.CryptoKey
 import org.starcoin.sirius.crypto.eth.EthCryptoKey
 import org.starcoin.sirius.lang.hexToByteArray
-import org.starcoin.sirius.protocol.*
-import org.starcoin.sirius.protocol.ethereum.contract.EthereumHubContract
+import org.starcoin.sirius.protocol.EthereumTransaction
+import org.starcoin.sirius.protocol.EventTopic
+import org.starcoin.sirius.protocol.TransactionResult
 import org.starcoin.sirius.util.Utils
 import org.web3j.protocol.Web3j
 import org.web3j.protocol.core.DefaultBlockParameter
@@ -37,10 +37,6 @@ const val blockGasIncreasePercent = 0
 
 class EthereumChain constructor(httpUrl: String = DEFAULT_URL, socketPath: String? = null) :
     EthereumBaseChain() {
-
-    override fun loadContract(contractAddress: Address): HubContract<EthereumAccount> {
-        TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
-    }
 
     override fun getBlockNumber(): BigInteger {
         val resp = web3.ethBlockNumber().sendAsync().get()
@@ -64,6 +60,7 @@ class EthereumChain constructor(httpUrl: String = DEFAULT_URL, socketPath: Strin
         val hexTx = Numeric.toHexString(transaction.tx.encoded)
         val resp = web3.ethSendRawTransaction(hexTx).sendAsync().get()
         if (resp.hasError()) throw NewTxException(resp.error)
+        account.getAndIncNonce()
         return resp.transactionHash.toHash()
     }
 
@@ -189,22 +186,6 @@ class EthereumChain constructor(httpUrl: String = DEFAULT_URL, socketPath: Strin
         ).sendAsync().get()
         if (resp.hasError()) throw RuntimeException(resp.error.message)
         return resp.value.hexToByteArray()
-    }
-
-    override fun doDeployContract(
-        account: EthereumAccount,
-        contractMetadata: CompilationResult.ContractMetadata,
-        args: ContractConstructArgs
-    ): EthereumHubContract {
-        //TODO merge construct arg to data.
-        val tx = EthereumTransaction(
-            account.getNonce(),
-            defaultGasPrice, defaultGasLimit,
-            contractMetadata.bin.hexToByteArray()
-        )
-        this.submitTransaction(account, tx)
-        //TODO wait response and block mine
-        return loadContract(Address.wrap(tx.tx.contractAddress), contractMetadata.abi)
     }
 
     private fun Transaction.chainTransaction() = EthereumTransaction(this)

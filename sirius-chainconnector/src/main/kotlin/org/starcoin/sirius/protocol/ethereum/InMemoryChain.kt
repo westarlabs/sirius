@@ -3,24 +3,20 @@ package org.starcoin.sirius.protocol.ethereum
 import kotlinx.coroutines.channels.Channel
 import org.ethereum.core.CallTransaction.createRawTransaction
 import org.ethereum.solidity.SolidityType
-import org.ethereum.solidity.compiler.CompilationResult
 import org.ethereum.util.blockchain.StandaloneBlockchain
-import org.starcoin.sirius.core.*
+import org.starcoin.sirius.core.Address
+import org.starcoin.sirius.core.Hash
+import org.starcoin.sirius.core.Receipt
+import org.starcoin.sirius.core.toHash
 import org.starcoin.sirius.crypto.CryptoKey
 import org.starcoin.sirius.crypto.eth.EthCryptoKey
 import org.starcoin.sirius.lang.toHEXString
-import org.starcoin.sirius.protocol.*
-import org.starcoin.sirius.protocol.ethereum.contract.EthereumHubContract
+import org.starcoin.sirius.protocol.EthereumTransaction
+import org.starcoin.sirius.protocol.EventTopic
+import org.starcoin.sirius.protocol.TransactionResult
 import java.math.BigInteger
-import kotlin.properties.Delegates
 
 class InMemoryChain(autoGenblock: Boolean = true) : EthereumBaseChain() {
-
-    private var ethereumHubContract : EthereumHubContract by Delegates.notNull()
-
-    override fun loadContract(contractAddress: Address): HubContract<EthereumAccount> {
-        return ethereumHubContract
-    }
 
     override fun watchEvents(
         contract: Address,
@@ -83,6 +79,7 @@ class InMemoryChain(autoGenblock: Boolean = true) : EthereumBaseChain() {
         sb.sender = ecKey
         transaction.tx.sign(ecKey)
         sb.submitTransaction(transaction.tx)
+        account.getAndIncNonce()
         return transaction.tx.rawHash.toHash()
     }
 
@@ -116,25 +113,13 @@ class InMemoryChain(autoGenblock: Boolean = true) : EthereumBaseChain() {
         }
     }
 
-    override fun doDeployContract(
-        account: EthereumAccount,
-        contractMetadata: CompilationResult.ContractMetadata,
-        args: ContractConstructArgs
-    ): EthereumHubContract {
-        sb.sender = (account.key as EthCryptoKey).ecKey
-        val contract = sb.submitNewContract(contractMetadata, args.toRLP())
-        //TODO wait
-        ethereumHubContract=this.loadContract(contract.address.toAddress(), contract.abi)
-        return ethereumHubContract
-    }
-
     override fun getBlockNumber(): BigInteger {
         return inMemoryEthereumListener.currentNumber.toBigInteger()
     }
 
     override fun newTransaction(account: EthereumAccount,to:Address,value:BigInteger):EthereumTransaction {
         var ethereumTransaction = EthereumTransaction(
-            to, account.getAndIncNonce(), 21000.toBigInteger(),
+            to, account.getNonce(), 21000.toBigInteger(),
             210000.toBigInteger(), value
         )
         return ethereumTransaction

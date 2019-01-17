@@ -61,7 +61,7 @@ class InMemoryHubContractTest {
 
     fun deposit(alice: EthereumAccount, amount: BigInteger) {
         var ethereumTransaction = EthereumTransaction(
-            contract.contractAddress, alice.getAndIncNonce(), 21000.toBigInteger(),
+            contract.contractAddress, alice.getNonce(), 21000.toBigInteger(),
             210000.toBigInteger(), amount
         )
 
@@ -143,7 +143,6 @@ class InMemoryHubContractTest {
 
         amount = EtherUtil.convert(2, EtherUtil.Unit.ETHER)
 
-        owner.getAndIncNonce()
         val update = newUpdate(eon, 2, amount, alice.key)
         val proof = newProof(alice.address, newUpdate(eon, 1, BigInteger.ZERO, alice), BigInteger.ZERO, amount)
 
@@ -238,7 +237,6 @@ class InMemoryHubContractTest {
         val root = HubRoot(node, eon)
         println("current block height is :" + chain.getBlockNumber())
         println(root)
-        owner.getAndIncNonce()
         val callResult = contract.commit(owner, root)
         return callResult
     }
@@ -247,7 +245,6 @@ class InMemoryHubContractTest {
     @ImplicitReflectionSerializer
     fun testHubInfo() {
         var ip = "192.168.0.0.1:80"
-        owner.getAndIncNonce()
         contract.setHubIp(owner, ip)
 
         var hubInfo = contract.queryHubInfo(EthereumAccount.DUMMY_ACCOUNT)
@@ -277,7 +274,6 @@ class InMemoryHubContractTest {
         val bup = BalanceUpdateProof(true, update2, true, amtp)
         val buc = BalanceUpdateChallenge(bup, alice.key.keyPair.public)
 
-        owner.getAndIncNonce()
         var hash = contract.openBalanceUpdateChallenge(owner, buc)
 
         //TODO
@@ -334,7 +330,6 @@ class InMemoryHubContractTest {
         val amtp = AMTreeProof(path, leaf2)
         val close =
             CloseTransferDeliveryChallenge(amtp, update2, MerklePath.mock(), alice.key.keyPair.public, Hash.of(tx))
-        owner.getAndIncNonce()
         hash = contract.closeTransferDeliveryChallenge(owner, close)
         //TODO
         Thread.sleep(500)

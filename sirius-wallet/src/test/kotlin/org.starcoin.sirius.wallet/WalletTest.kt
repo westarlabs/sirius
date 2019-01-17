@@ -42,7 +42,7 @@ class WalletTest {
         this.sendEther(owner.address, amount)
         this.sendEther(alice.address, amount)
 
-        val args = ContractConstructArgs(HubRoot.EMPTY_TREE_HUBROOT)
+        val args = ContractConstructArgs(8, HubRoot.EMPTY_TREE_HUBROOT)
         this.contract = chain.deployContract(owner,args)
 
         val hubChannel = InProcessChannelBuilder.forName("").build()
@@ -97,7 +97,6 @@ class WalletTest {
         val root = HubRoot(node, eon)
         logger.info("current block height is :" + chain.getBlockNumber())
         logger.info(root.toJSON())
-        owner.getAndIncNonce()
         val callResult = contract.commit(owner, root)
         return callResult
     }
