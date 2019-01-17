@@ -41,7 +41,7 @@ class InMemoryHubContractTest {
         val amount = EtherUtil.convert(100000, EtherUtil.Unit.ETHER)
         this.sendEther(owner.address, amount)
         this.sendEther(alice.address, amount)
-        val args = ContractConstructArgs(EMPTY_TREE_HUBROOT)
+        val args = ContractConstructArgs(8, EMPTY_TREE_HUBROOT)
         this.contract = chain.deployContract(owner, args)
         commitHubRoot(0, BigInteger.ZERO)
     }

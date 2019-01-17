@@ -1,13 +1,27 @@
 package org.starcoin.sirius.protocol
 
 import kotlinx.coroutines.channels.Channel
+import kotlinx.serialization.SerialId
+import kotlinx.serialization.Serializable
+import org.starcoin.proto.Starcoin
 import org.starcoin.sirius.core.*
+import org.starcoin.sirius.serialization.ProtobufSchema
 import java.io.File
 import java.math.BigInteger
 
 data class TransactionResult<T : ChainTransaction>(val tx: T, val receipt: Receipt)
 
-data class ContractConstructArgs(val hubRoot: HubRoot)
+@Serializable
+@ProtobufSchema(Starcoin.ContractConstructArgs::class)
+data class ContractConstructArgs(@SerialId(1) val blocks: Long, @SerialId(2) val hubRoot: HubRoot) : SiriusObject() {
+    companion object :
+        SiriusObjectCompanion<ContractConstructArgs, Starcoin.ContractConstructArgs>(ContractConstructArgs::class) {
+
+        override fun mock(): ContractConstructArgs {
+            return ContractConstructArgs(8, HubRoot.mock())
+        }
+    }
+}
 
 enum class EventTopic(val event: String) {
     Deposit("DepositEvent(byte[])")

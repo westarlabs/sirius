@@ -4,6 +4,7 @@ import org.junit.Assert
 import org.junit.Before
 import org.junit.Test
 import org.starcoin.sirius.core.*
+import org.starcoin.sirius.protocol.ContractConstructArgs
 import org.starcoin.sirius.serialization.rlp.RLP
 import org.starcoin.sirius.util.MockUtils
 import java.math.BigInteger
@@ -20,7 +21,8 @@ class SiriusContractTest : ContractTestBase("/solidity/sirius.sol", "SiriusServi
         val info = AMTreeInternalNodeInfo(Hash.random(), 0, Hash.random())
         val node = AMTreePathInternalNode(info, PathDirection.ROOT, 0, 0)
         val root = HubRoot(node, 0)
-        val data = RLP.dump(HubRoot.serializer(), root)
+
+        val data = RLP.dump(ContractConstructArgs.serializer(), ContractConstructArgs(8, root))
         return data
     }
 
@@ -111,10 +113,13 @@ class SiriusContractTest : ContractTestBase("/solidity/sirius.sol", "SiriusServi
         testInitiateWithdrawal()
         val update = newUpdate(eon, 2, 950)
         val cancel =
-            CancelWithdrawal(callUser.address, update, newProof(
-                ethKey2Address(
-                    callUser
-                ), update))
+            CancelWithdrawal(
+                callUser.address, update, newProof(
+                    ethKey2Address(
+                        callUser
+                    ), update
+                )
+            )
         val data = RLP.dump(CancelWithdrawal.serializer(), cancel)
         val callResult = contract.callFunction("cancelWithdrawal", data)
         assert(callResult.returnValue as Boolean)
@@ -162,9 +167,11 @@ class SiriusContractTest : ContractTestBase("/solidity/sirius.sol", "SiriusServi
         val txs = mutableListOf<OffchainTransaction>()
         val count = MockUtils.nextLong(10, 20)
         for (i in 0 until count) {
-            val txData = OffchainTransactionData(eon,
+            val txData = OffchainTransactionData(
+                eon,
                 ethKey2Address(callUser),
-                ethKey2Address(callUser), 1, 1)
+                ethKey2Address(callUser), 1, 1
+            )
             val txTmp = OffchainTransaction(txData)
             txTmp.sign(callUser)
             txs.add(txTmp)
@@ -236,7 +243,7 @@ class SiriusContractTest : ContractTestBase("/solidity/sirius.sol", "SiriusServi
     }
 
     private fun newProof(addr: Address, update: Update): AMTreeProof {
-        return AMTreeProof(newPath(addr,update),AMTreePathLeafNode.DUMMY_NODE)
+        return AMTreeProof(newPath(addr, update), AMTreePathLeafNode.DUMMY_NODE)
     }
 
     private fun newPath(addr: Address, update: Update): AMTreePath {

@@ -28,7 +28,7 @@ contract SiriusService is Sirius {
     address private owner = msg.sender;
     bool private recoveryMode = false;
     uint private startHeight = block.number;
-    uint private blocksPerEon = 8;
+    uint private blocksPerEon;
     bytes private hubPK;
     string ip;
 
@@ -43,10 +43,15 @@ contract SiriusService is Sirius {
     event SiriusEvent(bytes32 indexed hash, uint indexed num, bytes value);
 
     constructor(bytes memory data) public {
+
         GlobleLib.Balance memory initBalance = newBalance(0);
         checkBalances(initBalance);
 
-        ModelLib.HubRoot memory root = ModelLib.unmarshalHubRoot(RLPDecoder.toRLPItem(data, true));
+        ModelLib.ContractConstructArgs memory args = ModelLib.unmarshalContractConstructArgs(RLPDecoder.toRLPItem(data, true));
+        require(args.blocks >= 4);
+        blocksPerEon = args.blocks;
+
+        ModelLib.HubRoot memory root = args.hubRoot;
         require(root.eon == 0);
         require(root.node.allotment == 0);
         require(root.node.offset == 0);
@@ -54,7 +59,6 @@ contract SiriusService is Sirius {
 
         balances[0].root = root;
         balances[0].hasRoot = true;
-        emit DepositEvent2(11, root.node.nodeInfo.left);
     }
 
     modifier onlyOwner() {

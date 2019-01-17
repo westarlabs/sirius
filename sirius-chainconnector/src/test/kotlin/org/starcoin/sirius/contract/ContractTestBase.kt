@@ -17,6 +17,7 @@ import org.junit.Assert
 import org.junit.Before
 import org.starcoin.sirius.core.*
 import org.starcoin.sirius.crypto.eth.EthCryptoKey
+import org.starcoin.sirius.lang.hexToByteArray
 import org.starcoin.sirius.serialization.BigIntegerSerializer
 import org.starcoin.sirius.serialization.rlp.RLP
 import org.starcoin.sirius.util.MockUtils
@@ -116,7 +117,7 @@ abstract class ContractTestBase(val contractFile: String, val contractName: Stri
         val contractMetadata = result.getContract(contractName)
         LOG.info("$contractFile compile abi ${contractMetadata.abi}")
         LOG.info("$contractFile compile bin ${contractMetadata.bin}")
-
+        LOG.info("Contract bin size: ${contractMetadata.bin.hexToByteArray().size}")
         val arg = getContractConstructArg()
         val contract = (arg?.let{sb.submitNewContract(contractMetadata, arg)} ?: sb.submitNewContract(contractMetadata)) as StandaloneBlockchain.SolidityContractImpl
 

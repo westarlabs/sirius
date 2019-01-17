@@ -169,6 +169,11 @@ message HubRoot {
     required uint32 eon = 2;
 }
 
+message ContractConstructArgs {
+    required uint64 blocks = 1;
+    required HubRoot hubRoot = 2;
+}
+
 message HubInfo {
     required bool ready = 1;
     required uint32 eon = 2;
