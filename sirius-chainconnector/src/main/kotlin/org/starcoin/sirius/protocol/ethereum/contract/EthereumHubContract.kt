@@ -15,6 +15,7 @@ import org.starcoin.sirius.serialization.rlp.RLP
 import org.starcoin.sirius.serialization.rlp.RLPElement
 import org.starcoin.sirius.serialization.rlp.decodeRLP
 import org.starcoin.sirius.serialization.rlp.toBigIntegerFromRLP
+import org.starcoin.sirius.util.WithLogging
 import kotlin.reflect.KClass
 
 class EthereumHubContract internal constructor(
@@ -22,6 +23,8 @@ class EthereumHubContract internal constructor(
     jsonInterface: String,
     val chain: EthereumBaseChain
 ) : HubContract<EthereumAccount>() {
+
+    companion object : WithLogging()
 
     private val contract: CallTransaction.Contract = CallTransaction.Contract(jsonInterface)
 
@@ -31,6 +34,7 @@ class EthereumHubContract internal constructor(
         function: ContractFunction<S>,
         input: S
     ): Hash {
+        LOG.info("executeContractFunction ${function.name}, input:$input")
         val data = function.encode(input)
         return chain.submitTransaction(
             account,

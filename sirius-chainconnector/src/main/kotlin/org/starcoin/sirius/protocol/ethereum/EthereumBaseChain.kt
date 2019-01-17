@@ -67,23 +67,11 @@ abstract class EthereumBaseChain :
         args: ContractConstructArgs
     ): EthereumHubContract {
         val compilationResult = compileContract(contractFile)
-        return this.doDeployContract(
-            account,
-            compilationResult.getContract(contractName),
-            args
-        )
-    }
-
-    fun doDeployContract(
-        account: EthereumAccount,
-        contractMetadata: CompilationResult.ContractMetadata,
-        args: ContractConstructArgs
-    ): EthereumHubContract {
+        val contractMetadata = compilationResult.getContract(contractName)
         val address = submitNewContract(account, contractMetadata, args.toRLP())
         //TODO wait
         return this.loadContract(address, contractMetadata.abi)
     }
-
 
     private fun submitNewContract(
         account: EthereumAccount,
