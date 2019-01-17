@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 
 usage(){
-    echo "Usage $(basename $0) [clean, build, run, start, stop, logs]"
+    echo "Usage $(basename $0) [clean, build, run, start, stop, logs, attach]"
 }
 
 
@@ -29,6 +29,7 @@ case $"$1" in
 	docker start $(docker ps -a |grep go-ethereum|awk '{print $1}')
 	;;
     attach)
-	docker exec -it $(docker ps -a |grep go-ethereum|awk '{print $1}') /bin/sh
+	shift 1
+	docker exec -it $(docker ps -a |grep go-ethereum|awk '{print $1}') $@
 	;;
 esac
