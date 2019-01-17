@@ -27,7 +27,7 @@ class EthereumTransaction(private val tx: Transaction) : ChainTransaction() {
         get() = tx.value.toUnsignedBigInteger()
 
     override val to: Address?
-        get() = tx.receiveAddress?.toAddress()
+        get() = if (tx.receiveAddress != null && tx.receiveAddress.isNotEmpty()) tx.receiveAddress.toAddress() else null
 
     val contractAddress: Address?
         get() = tx.contractAddress?.toAddress()
