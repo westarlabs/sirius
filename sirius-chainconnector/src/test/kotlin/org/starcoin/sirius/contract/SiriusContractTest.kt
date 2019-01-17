@@ -18,12 +18,7 @@ class SiriusContractTest : ContractTestBase("/solidity/sirius.sol", "SiriusServi
 
 
     override fun getContractConstructArg(): Any? {
-        val info = AMTreeInternalNodeInfo(Hash.random(), 0, Hash.random())
-        val node = AMTreePathInternalNode(info, PathDirection.ROOT, 0, 0)
-        val root = HubRoot(node, 0)
-
-        val data = RLP.dump(ContractConstructArgs.serializer(), ContractConstructArgs(8, root))
-        return data
+        return ContractConstructArgs.DEFAULT_ARG.toRLP()
     }
 
     @Before

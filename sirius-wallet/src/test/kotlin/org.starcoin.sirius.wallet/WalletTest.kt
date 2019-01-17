@@ -42,8 +42,7 @@ class WalletTest {
         this.sendEther(owner.address, amount)
         this.sendEther(alice.address, amount)
 
-        val args = ContractConstructArgs(8, HubRoot.EMPTY_TREE_HUBROOT)
-        this.contract = chain.deployContract(owner,args)
+        this.contract = chain.deployContract(owner, ContractConstructArgs.DEFAULT_ARG)
 
         val hubChannel = InProcessChannelBuilder.forName("").build()
 
