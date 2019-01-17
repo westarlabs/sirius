@@ -17,30 +17,34 @@ import java.util.concurrent.ArrayBlockingQueue
 import java.util.concurrent.BlockingQueue
 import java.util.concurrent.CompletableFuture
 import java.util.concurrent.ConcurrentHashMap
+import kotlin.properties.Delegates
 
 class HubImpl<T : ChainTransaction, A : ChainAccount>(
     private val owner: A,
-    private val blocksPerEon: Int,
-    private val chain: Chain<T, out Block<T>, out A>
+    private val chain: Chain<T, out Block<T>, out A>,
+    private val contract: HubContract<A>
 ) : Hub {
 
     companion object : WithLogging()
 
-    private lateinit var contract: HubContract<A>  // = chain.getContract(QueryContractParameter(0))
-
-
     private lateinit var eonState: EonState
 
 
-    private val hubAddress: Address = owner.address
+    private val ownerAddress: Address = owner.address
 
     private val eventBus: EventBus = EventBus()
 
-    private var ready: Boolean = false
+    var ready: Boolean = false
+        private set
 
     private val txReceipts = ConcurrentHashMap<Hash, CompletableFuture<Receipt>>()
 
     private val strategy: MaliciousStrategy = MaliciousStrategy()
+
+    var blocksPerEon = 0
+        private set
+
+    private var startBlockNumber: Long by Delegates.notNull()
 
     private lateinit var txChannel: Channel<TransactionResult<T>>
     private lateinit var blockChannel: Channel<out Block<T>>
@@ -79,21 +83,32 @@ class HubImpl<T : ChainTransaction, A : ChainAccount>(
     }
 
     override fun start() {
-        val currentHeight = chain.getBlockNumber()
+        val currentBlockNumber = chain.getBlockNumber()
+        LOG.info("CurrentBlockNumber: $currentBlockNumber")
+        //contract.setHubIp(owner, "127.0.0.1:8484")
         val contractHubInfo = contract.queryHubInfo(owner)
-        val currentEon = Eon.calculateEon(currentHeight, contractHubInfo.blocksPerEon)
         LOG.info("ContractHubInfo: $contractHubInfo")
+
+        this.blocksPerEon = contractHubInfo.blocksPerEon
+        this.startBlockNumber = contractHubInfo.startBlockNumber.longValueExact()
+        val currentEon = Eon.calculateEon(startBlockNumber, currentBlockNumber, blocksPerEon)
+
         //TODO load previous status from storage.
         eonState = EonState(currentEon.id)
+
+        this.blockChannel = this.chain.watchBlock()
+        this.txChannel =
+            this.chain.watchTransactions { it.tx.to == ownerAddress || it.tx.from == ownerAddress || it.tx.to == contract.contractAddress }
+
+        this.processTransactions()
+        this.processBlocks()
         //first commit create by contract construct.
         // if miss latest commit, should commit root first.
         if (contractHubInfo.latestEon < currentEon.id) {
             this.doCommit()
+        } else {
+            this.ready = true
         }
-        this.txChannel = this.chain.watchTransactions { it.tx.to == hubAddress || it.tx.from == hubAddress }
-        this.blockChannel = this.chain.watchBlock()
-        this.processTransactions()
-        this.processBlocks()
     }
 
     private fun processTransactions() {
@@ -451,7 +466,7 @@ class HubImpl<T : ChainTransaction, A : ChainAccount>(
 
     override fun onBlock(blockInfo: Block<*>) {
         LOG.info("onBlock:$blockInfo")
-        val eon = Eon.calculateEon(blockInfo.height, this.blocksPerEon)
+        val eon = Eon.calculateEon(this.startBlockNumber, blockInfo.height, this.blocksPerEon)
         var newEon = false
         this.eonState.setEpoch(eon.epoch)
         if (eon.id != this.eonState.eon) {
@@ -465,6 +480,7 @@ class HubImpl<T : ChainTransaction, A : ChainAccount>(
     }
 
     private fun processTransaction(txResult: TransactionResult<T>) {
+        LOG.info("Hub process tx: ${txResult.tx.hash()}, result: ${txResult.receipt}")
         val tx = txResult.tx
         val hash = tx.hash()
         txReceipts[hash]?.complete(txResult.receipt)

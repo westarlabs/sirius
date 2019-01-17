@@ -1,9 +1,25 @@
-apply plugin: 'application'
-mainClassName = 'org.starcoin.sirius.hub.MainKt'
+//apply plugin: 'application'
+//mainClassName = 'org.starcoin.sirius.hub.MainKt'
+
+sourceSets {
+    test.resources.includes += ['*.conf',"*.xml"]
+}
 
 dependencies{
     compile project(":sirius-core")
     compile project(":sirius-chainconnector")
     compile "io.ktor:ktor-server-core:$ktor_version"
     compile "io.ktor:ktor-server-netty:$ktor_version"
+}
+
+task copySolidity(type: Copy) {
+    delete "out/test/resources/solidity"
+    from ("${project(':sirius-contract').projectDir}/src/main"){
+        include "**/*.sol"
+    }
+    into "out/test/resources"
+}
+
+compileTestJava { 
+    copySolidity.execute()
 }

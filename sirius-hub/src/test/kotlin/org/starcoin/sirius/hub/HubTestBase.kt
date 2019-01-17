@@ -1,26 +1,36 @@
 package org.starcoin.sirius.hub
 
+import kotlinx.coroutines.GlobalScope
+import kotlinx.coroutines.channels.Channel
+import kotlinx.coroutines.launch
 import org.apache.commons.lang3.RandomUtils
 import org.junit.Assert
 import org.junit.Before
 import org.junit.Test
 import org.starcoin.sirius.core.*
 import org.starcoin.sirius.crypto.CryptoKey
-import org.starcoin.sirius.protocol.ChainAccount
+import org.starcoin.sirius.protocol.*
 import org.starcoin.sirius.util.WithLogging
 import java.math.BigInteger
 import java.util.*
+import java.util.concurrent.CompletableFuture
+import java.util.concurrent.ConcurrentHashMap
+import java.util.concurrent.TimeUnit
 import java.util.concurrent.atomic.AtomicInteger
 import java.util.concurrent.atomic.AtomicLong
 import java.util.concurrent.atomic.AtomicReference
 import kotlin.properties.Delegates
 
-abstract class HubTestBase<T:ChainTransaction, A:ChainAccount> {
-    
-    companion object :WithLogging()
+abstract class HubTestBase<T : ChainTransaction, A : ChainAccount> {
 
+    companion object : WithLogging()
 
-    private lateinit var hub: HubImpl<T, A>
+    //internal var configuration: Configuration
+    private var blocksPerEon: Int by Delegates.notNull()
+
+    abstract val chain: Chain<T, out Block<T>, A>
+
+    private var hub: HubImpl<T, A> by Delegates.notNull()
     private var txs: MutableList<ChainTransaction> = ArrayList()
     private var listenerReference: AtomicReference<(Block<*>) -> Unit>? = null
     private var blockHeight = AtomicInteger()
@@ -34,63 +44,40 @@ abstract class HubTestBase<T:ChainTransaction, A:ChainAccount> {
     private var a0: LocalAccount by Delegates.notNull()
     private var a1: LocalAccount by Delegates.notNull()
 
-    //internal var configuration: Configuration
-    private val blocksPerEon = 4
+    private var hubContract: HubContract<A> by Delegates.notNull()
+    private val txFutures = ConcurrentHashMap<Hash, CompletableFuture<TransactionResult<T>>>()
 
-    abstract fun createChainAccount(): A
+    abstract fun createChainAccount(amount: Long): A
 
-    abstract fun createHubImpl(): HubImpl<T, A>
+    private var txChannel: Channel<TransactionResult<T>> by Delegates.notNull()
 
     @Before
     fun before() {
+        val owner = createChainAccount(10000)
         a0 = LocalAccount()
         a1 = LocalAccount()
-        //this.configuration = Configuration.configurationForUNIT()
-        val owner = this.createChainAccount()
-        //globalBalance = GlobalBalance(hubKeyPair.getPublic())
-
-        listenerReference = AtomicReference()
-        val connection = object : HubChainConnection {
-            override fun watchBlock(blockInfoListener: (Block<*>) -> Unit) {
-                listenerReference!!.set(blockInfoListener)
-            }
-
-            override fun submitTransaction(transaction: ChainTransaction) {
-                txs.add(transaction)
-            }
-        }
-
-        hub = this.createHubImpl()
+        hubContract = chain.deployContract(owner, ContractConstructArgs.DEFAULT_ARG)
+        this.txChannel = chain.watchTransactions()
+        this.processTransactions()
+        //TODO wait
+        hub = HubImpl(owner, chain, hubContract)
         hub.start()
-        newBlock()
+        this.blocksPerEon = hub.blocksPerEon
         waitHubReady()
     }
 
-    private fun processTransaction(tx: ChainTransaction) {
-//        if (tx.action == null && tx.to == Constants.CONTRACT_ADDRESS) {
-//            //TODO
-//            //globalBalance.deposit(Deposit(tx.getFrom(), tx.getAmount()))
-//        } else if (tx.action != null) {
-//            if (tx.action == "Commit") {
-//                //TODO
-////                val hubRoot = sirius.coreContractServiceGrpc.getCommitMethod()
-////                    .getRequestMarshaller()
-////                    .parse(ByteArrayInputStream(tx.getArguments()))
-////                val result = this.globalBalance.commit(HubRoot(hubRoot))
-////                Assert.assertTrue(result)
-//                tx.receipt = Receipt(true)
-//            } else if (tx.action == "InitiateWithdrawal") {
-//                //TODO
-////                val request = sirius.coreContractServiceGrpc.getInitiateWithdrawalMethod()
-////                    .parseRequest(ByteArrayInputStream(tx.getArguments()))
-////                val withdrawal = Withdrawal(request)
-////                this.globalBalance.withdrawal(withdrawal.getAddress(), WithdrawalStatus(withdrawal))
-//            }
-//        }
+    private fun processTransactions() {
+        GlobalScope.launch {
+            while (true) {
+                val result = txChannel.receive()
+                val future = txFutures[result.tx.hash()]
+                future?.run { future.complete(result) }
+            }
+        }
     }
 
     private inner class LocalAccount {
-        val chainAccount = createChainAccount()
+        val chainAccount = createChainAccount(1000)
         val kp: CryptoKey = chainAccount.key
         var p: Participant
         lateinit var update: Update
@@ -230,10 +217,21 @@ abstract class HubTestBase<T:ChainTransaction, A:ChainAccount> {
         this.deposit(account, amount, true)
     }
 
+//    private fun waitTx(hash: Hash) {
+//        LOG.info("wait tx $hash")
+//        val future = CompletableFuture<TransactionResult<T>>()
+//        val oldFuture = txFutures.putIfAbsent(hash, future)
+//        if(oldFuture != null) {
+//            future.get(30, TimeUnit.SECONDS)
+//        }
+//    }
+
     private fun deposit(account: LocalAccount, amount: BigInteger, expectSuccess: Boolean) {
-        //this.txs.add(ChainTransaction(account.address, Constants.CONTRACT_ADDRESS, amount))
         val previousDeposit = hub.getHubAccount(account.address)!!.deposit
-        newBlock()
+        val tx = this.chain.newTransaction(account.chainAccount, hubContract.contractAddress, amount)
+        val txHash = chain.submitTransaction(account.chainAccount, tx)
+        //waitTx(txHash)
+        waitHubEvent(HubEventType.NEW_DEPOSIT)
         account.hubAccount = hub.getHubAccount(account.address)
         if (expectSuccess) {
             Assert.assertEquals(account.hubAccount!!.deposit, previousDeposit + amount)
@@ -277,27 +275,18 @@ abstract class HubTestBase<T:ChainTransaction, A:ChainAccount> {
 //                    .build()
 //            )
 //        )
-        newBlock()
         Assert.assertEquals(amount, hub.getHubAccount(address)!!.withdraw)
         totalHubBalance.addAndGet(-amount)
     }
 
-    private fun newBlock(): Block<*> {
-        TODO()
-        val blockInfo: Block<*> //(blockHeight.getAndIncrement())
-//        if (this.txs.size > 0) {
-//            this.txs.stream().peek { this.processTransaction(it) }
-//                .forEach { blockInfo.addTransaction(it) }
-//            this.txs = ArrayList()
-//        }
-        listenerReference!!.get()(blockInfo)
-        return blockInfo
-    }
+    abstract fun createBlock()
 
     private fun waitHubReady() {
+        if (hub.ready)
+            return
         val queue = hub.watchByFilter { event -> event.type === HubEventType.NEW_HUB_ROOT }
         // generate new block to return hub commit result, and trigger hub ready.
-        newBlock()
+        createBlock()
         try {
             LOG.info("waitHubReady")
             queue.take()
@@ -307,12 +296,18 @@ abstract class HubTestBase<T:ChainTransaction, A:ChainAccount> {
 
     }
 
+    private fun waitHubEvent(type: HubEventType) {
+        val queue = hub.watchByFilter { it.type === type }
+        val event = queue.poll(30, TimeUnit.SECONDS)
+        Assert.assertNotNull(event)
+    }
+
     private fun goToNextEon() {
         val expectEon = this.hub.currentEon().id + 1
         val queue = hub.watchByFilter { event -> event.type === HubEventType.NEW_HUB_ROOT }
         var event: HubEvent? = queue.poll()
         while (event == null || event.getPayload<HubRoot>().eon < expectEon) {
-            this.newBlock()
+            this.createBlock()
             event = queue.poll()
         }
         Assert.assertEquals(expectEon, event.getPayload<HubRoot>().eon)
@@ -321,9 +316,7 @@ abstract class HubTestBase<T:ChainTransaction, A:ChainAccount> {
 
     private fun verifyRoot() {
         val newRoot = hub.stateRoot
-        //TODO
-        //Assert.assertEquals(this.globalBalance.getRoot().hubRoot2AugmentedMerkleTreeNode(), newRoot)
-        Assert.assertEquals(totalHubBalance.get(), newRoot.allotment)
+        Assert.assertEquals(totalHubBalance.get(), newRoot.allotment.longValueExact())
         this.root = newRoot
         if (this.a0.isRegister) {
             this.verifyProof(a0)
