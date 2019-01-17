@@ -11,7 +11,7 @@ class EthereumBlock(override val height: Long, val hash: Hash) : Block<EthereumT
 
     override lateinit var transactions: MutableList<EthereumTransaction>
 
-    constructor(ethBlock: EthBlock.Block) : this(ethBlock.number.toLong(), ethBlock.hash.toHash()) {
+    constructor(ethBlock: EthBlock.Block) : this(ethBlock.number.longValueExact(), ethBlock.hash.toHash()) {
         transactions =
             ethBlock.transactions.map { EthereumTransaction(it.get() as org.web3j.protocol.core.methods.response.Transaction) }
                 .stream()

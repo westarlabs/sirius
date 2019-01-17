@@ -35,7 +35,7 @@ class InMemoryHubContractTest {
 
     private var blocksPerEon = ContractConstructArgs.DEFAULT_ARG.blocksPerEon
 
-    private var startBlockNumber: BigInteger by Delegates.notNull()
+    private var startBlockNumber: Long by Delegates.notNull()
 
     @Before
     fun beforeTest() {
@@ -54,7 +54,7 @@ class InMemoryHubContractTest {
         ownerChannel =
             chain.watchTransactions { it.tx.from == owner.address && it.tx.to == contract.contractAddress }
         val hubInfo = this.contract.queryHubInfo(owner)
-        startBlockNumber = hubInfo.startBlockNumber
+        startBlockNumber = hubInfo.startBlockNumber.longValueExact()
     }
 
     fun sendEther(address: Address, amount: BigInteger) {

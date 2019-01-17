@@ -38,10 +38,10 @@ const val blockGasIncreasePercent = 0
 class EthereumChain constructor(httpUrl: String = DEFAULT_URL, socketPath: String? = null) :
     EthereumBaseChain() {
 
-    override fun getBlockNumber(): BigInteger {
+    override fun getBlockNumber(): Long {
         val resp = web3.ethBlockNumber().sendAsync().get()
         if (resp.hasError()) throw RuntimeException(resp.error.message)
-        return resp.blockNumber
+        return resp.blockNumber.longValueExact()
     }
 
     val web3: Web3j =

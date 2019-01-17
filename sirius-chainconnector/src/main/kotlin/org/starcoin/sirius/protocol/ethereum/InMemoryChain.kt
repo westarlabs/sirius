@@ -105,8 +105,8 @@ class InMemoryChain(autoGenblock: Boolean = true) : EthereumBaseChain() {
         }
     }
 
-    override fun getBlockNumber(): BigInteger {
-        return sb.blockchain.bestBlock.number.toBigInteger()
+    override fun getBlockNumber(): Long {
+        return sb.blockchain.bestBlock.number
     }
 
     override fun newTransaction(account: EthereumAccount,to:Address,value:BigInteger):EthereumTransaction {

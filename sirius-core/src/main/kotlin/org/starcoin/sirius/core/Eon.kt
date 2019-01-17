@@ -15,6 +15,7 @@ class Eon(val id: Int, val epoch: Epoch) {
 
     companion object {
 
+        @Deprecated("")
         fun calculateEon(blockHeight: Long, blocksPerEon: Int): Eon {
             return Eon(
                 blockHeight / blocksPerEon.toLong(),
@@ -22,12 +23,26 @@ class Eon(val id: Int, val epoch: Epoch) {
             )
         }
 
+        @Deprecated("")
         fun calculateEon(blockHeight: BigInteger, blocksPerEon: Int): Eon {
             return calculateEon(blockHeight.longValueExact(), blocksPerEon)
         }
 
-        fun waitToEon(startBlockNumber: BigInteger, currentBlockNumber: BigInteger, blocksPerEon: Int, eon: Int): Int {
-            return blocksPerEon * eon - (currentBlockNumber - startBlockNumber).intValueExact()
+        fun calculateEon(startBlockNumber: Long, currentBlockNumber: Long, blocksPerEon: Int): Eon {
+            val blocks = (currentBlockNumber - startBlockNumber).toInt()
+            return Eon(
+                blocks / blocksPerEon,
+                Epoch.values()[(blocks % blocksPerEon / (blocksPerEon / 4))]
+            )
+        }
+
+        fun waitToEon(
+            startBlockNumber: Long,
+            currentBlockNumber: Long,
+            blocksPerEon: Int,
+            expectEon: Int
+        ): Int {
+            return blocksPerEon * expectEon - (currentBlockNumber - startBlockNumber).toInt()
         }
     }
 }
