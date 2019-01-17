@@ -836,6 +836,24 @@ library ModelLib {
         return RLPEncoder.encodeList(ByteUtilLib.append(node, eon));
     }
 
+    struct ContractConstructArgs {
+        HubRoot hubRoot;
+        uint blocks;
+    }
+
+    function unmarshalContractConstructArgs(RLPLib.RLPItem memory rlp) internal pure returns (ContractConstructArgs memory args) {
+        RLPLib.Iterator memory it = RLPDecoder.iterator(rlp);
+        uint idx;
+        while(RLPDecoder.hasNext(it)) {
+            RLPLib.RLPItem memory r = RLPDecoder.next(it);
+            if(idx == 0) args.blocks = RLPDecoder.toUint(r);
+            else if(idx == 1) args.hubRoot = unmarshalHubRoot(r);
+            else {}
+
+            idx++;
+        }
+    }
+
     struct OffchainTransactionData {
         uint eon;
         address fr;

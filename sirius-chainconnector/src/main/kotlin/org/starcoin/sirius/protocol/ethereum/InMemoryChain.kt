@@ -122,7 +122,7 @@ class InMemoryChain(autoGenblock: Boolean = true) : EthereumBaseChain() {
         args: ContractConstructArgs
     ): EthereumHubContract {
         sb.sender = (account.key as EthCryptoKey).ecKey
-        val contract = sb.submitNewContract(contractMetadata, args.hubRoot.toRLP())
+        val contract = sb.submitNewContract(contractMetadata, args.toRLP())
         //TODO wait
         ethereumHubContract=this.loadContract(contract.address.toAddress(), contract.abi)
         return ethereumHubContract
