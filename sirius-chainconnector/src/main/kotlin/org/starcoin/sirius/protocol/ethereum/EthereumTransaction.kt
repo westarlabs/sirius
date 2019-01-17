@@ -3,12 +3,14 @@ package org.starcoin.sirius.protocol
 
 import org.ethereum.core.Transaction
 import org.starcoin.sirius.core.*
+import org.starcoin.sirius.crypto.eth.EthCryptoKey
 import org.starcoin.sirius.lang.hexToByteArray
+import org.starcoin.sirius.lang.toHEXString
 import org.starcoin.sirius.lang.toULong
 import org.starcoin.sirius.lang.toUnsignedBigInteger
 import java.math.BigInteger
 
-class EthereumTransaction(val tx: Transaction) : ChainTransaction() {
+class EthereumTransaction(private val tx: Transaction) : ChainTransaction() {
     override val from: Address?
         get() = tx.sender?.toAddress()
 
@@ -26,6 +28,9 @@ class EthereumTransaction(val tx: Transaction) : ChainTransaction() {
 
     override val to: Address?
         get() = tx.receiveAddress?.toAddress()
+
+    val contractAddress: Address?
+        get() = tx.contractAddress?.toAddress()
 
     override val isContractCall: Boolean
         get() = this.data?.let { it.size > 4 && this.to != null } ?: false
@@ -119,8 +124,26 @@ class EthereumTransaction(val tx: Transaction) : ChainTransaction() {
         )
     )
 
+    fun sign(key: EthCryptoKey) {
+        this.tx.sign(key.ecKey)
+        //tx hash will change after sign, so reset hash cache.
+        this.resetHash()
+    }
+
     override fun txHash(): Hash {
-        return Hash.wrap(this.tx.rawHash)
+        return Hash.wrap(this.tx.hash)
+    }
+
+    override fun toString(): String {
+        return tx.toString()
+    }
+
+    fun toHEXString(): String {
+        return tx.encoded.toHEXString()
+    }
+
+    fun toEthTransaction(): Transaction {
+        return tx
     }
 
 }

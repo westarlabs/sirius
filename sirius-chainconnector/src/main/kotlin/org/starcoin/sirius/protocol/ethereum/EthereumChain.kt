@@ -56,8 +56,8 @@ class EthereumChain constructor(httpUrl: String = DEFAULT_URL, socketPath: Strin
     }
 
     override fun submitTransaction(account: EthereumAccount, transaction: EthereumTransaction): Hash {
-        transaction.tx.sign((account.key as EthCryptoKey).ecKey)
-        val hexTx = Numeric.toHexString(transaction.tx.encoded)
+        transaction.sign(account.key as EthCryptoKey)
+        val hexTx = transaction.toHEXString()
         val resp = web3.ethSendRawTransaction(hexTx).sendAsync().get()
         if (resp.hasError()) throw NewTxException(resp.error)
         account.getAndIncNonce()

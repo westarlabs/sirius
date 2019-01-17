@@ -26,10 +26,9 @@ class InMemoryEthereumListenerTest {
         )
 
         chain.sb.sender=(alice as EthCryptoKey).ecKey
-        transaction.tx.sign((alice as EthCryptoKey).ecKey)
+        transaction.sign(alice)
         //chain.newTransaction(alice, transaction)
 
-        println(transaction.tx.key)
 
         var tx=chain.sb.createTransaction(0,(bob as EthCryptoKey).ecKey.address, 1, null)
         println(tx.key)

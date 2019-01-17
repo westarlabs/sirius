@@ -5,7 +5,6 @@ import org.ethereum.core.CallTransaction
 import org.ethereum.solidity.compiler.CompilationResult
 import org.ethereum.solidity.compiler.SolidityCompiler
 import org.starcoin.sirius.core.Address
-import org.starcoin.sirius.core.toAddress
 import org.starcoin.sirius.crypto.CryptoKey
 import org.starcoin.sirius.lang.hexToByteArray
 import org.starcoin.sirius.protocol.Chain
@@ -104,7 +103,7 @@ abstract class EthereumBaseChain :
             contractMetaData.bin.hexToByteArray() + argsEncoded
         )
         this.submitTransaction(account, tx)
-        return tx.tx.contractAddress.toAddress()
+        return tx.contractAddress!!
     }
 
     abstract fun getNonce(address: Address): BigInteger
