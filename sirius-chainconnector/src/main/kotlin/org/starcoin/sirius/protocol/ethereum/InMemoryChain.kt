@@ -144,4 +144,9 @@ class InMemoryChain(autoGenblock: Boolean = true) : EthereumBaseChain() {
         val block = this.sb.createBlock()
         return EthereumBlock(block)
     }
+
+    fun miningCoin(address: Address, amount: BigInteger) {
+        this.sb.sendEther(address.toBytes(), amount)
+        this.sb.createBlock()
+    }
 }
