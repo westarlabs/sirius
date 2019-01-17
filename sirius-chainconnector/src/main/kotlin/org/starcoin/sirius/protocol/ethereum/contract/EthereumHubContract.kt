@@ -81,7 +81,7 @@ class EthereumHubContract internal constructor(
         return (bytes.decodeRLP() as RLPElement).toBigIntegerFromRLP().intValueExact()
     }
 
-    fun hubIp(account: EthereumAccount, ip: String) {
+    override fun setHubIp(account: EthereumAccount, ip: String) {
         val callResult = this.callFunction(account, "hubIp", ip.toByteArray())
     }
 }

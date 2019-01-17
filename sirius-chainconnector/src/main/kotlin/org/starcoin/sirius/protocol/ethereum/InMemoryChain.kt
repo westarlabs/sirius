@@ -14,7 +14,7 @@ import org.starcoin.sirius.protocol.ethereum.contract.EthereumHubContract
 import java.math.BigInteger
 import kotlin.properties.Delegates
 
-class InMemoryChain(autoGenblock: Boolean) : EthereumBaseChain() {
+class InMemoryChain(autoGenblock: Boolean = true) : EthereumBaseChain() {
 
     private var ethereumHubContract : EthereumHubContract by Delegates.notNull()
 
@@ -140,4 +140,8 @@ class InMemoryChain(autoGenblock: Boolean) : EthereumBaseChain() {
         return ethereumTransaction
     }
 
+    fun createBlock(): EthereumBlock {
+        val block = this.sb.createBlock()
+        return EthereumBlock(block)
+    }
 }

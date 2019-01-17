@@ -248,9 +248,10 @@ class InMemoryHubContractTest {
     fun testHubInfo() {
         var ip = "192.168.0.0.1:80"
         owner.getAndIncNonce()
-        contract.hubIp(owner, ip)
+        contract.setHubIp(owner, ip)
 
         var hubInfo = contract.queryHubInfo(EthereumAccount.DUMMY_ACCOUNT)
+        Assert.assertNotNull(hubInfo)
         Assert.assertEquals(hubInfo.hubAddress, ip)
     }
 

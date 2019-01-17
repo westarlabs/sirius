@@ -181,4 +181,5 @@ abstract class HubContract<A : ChainAccount> {
         vararg args: Any
     ): S
 
+    abstract fun setHubIp(account: A, ip: String)
 }
