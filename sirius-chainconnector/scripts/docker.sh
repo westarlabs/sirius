@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 
 usage(){
-    echo "Usage $(basename $0) [clean, build, run, start, stop, logs, attach]"
+    echo "Usage $(basename $0) [clean, build, run, start, stop, logs, attach, geth]"
 }
 
 
@@ -11,7 +11,7 @@ fi
 
 case $"$1" in
     clean)
-	docker rm $(docker ps -a |grep go-ethereum|awk '{print $1}')
+	docker rm -f $(docker ps -a |grep go-ethereum|awk '{print $1}')
         ;;
     build)
 	docker build  -f $(dirname $0)/docker/go-ethereum/Dockerfile -t starcoin/go-etherum $(dirname $0)/docker/go-ethereum/
@@ -32,4 +32,8 @@ case $"$1" in
 	shift 1
 	docker exec -it $(docker ps -a |grep go-ethereum|awk '{print $1}') $@
 	;;
+    geth)
+	shift 1
+	docker exec -it $(docker ps -a |grep go-ethereum|awk '{print $1}') \
+	geth --datadir /ethereum/geth_data $@
 esac
