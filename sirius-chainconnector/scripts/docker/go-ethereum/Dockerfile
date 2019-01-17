@@ -3,8 +3,9 @@ FROM golang:1.11-alpine as builder
 RUN apk add --no-cache make gcc musl-dev linux-headers
 ARG DISTRO_NAME=go-ethereum
 ARG VERSION=1.8.21
-ADD v$VERSION.tar.gz /
+ADD https://github.com/ethereum/go-ethereum/archive/v$VERSION.tar.gz /
 RUN set -x \
+    && cd / ; tar -xzvf /v$VERSION.tar.gz \
     && cd /$DISTRO_NAME-$VERSION && make geth 
 
 # Pull Geth into a second stage deploy alpine container
