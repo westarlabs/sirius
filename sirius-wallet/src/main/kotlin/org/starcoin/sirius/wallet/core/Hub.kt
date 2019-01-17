@@ -121,11 +121,10 @@ class Hub <T : ChainTransaction, A : ChainAccount> {
     private fun nextEon() {
     }
 
-    private fun openBalanceUpdateChallenge(lastUpdate:Update ,  lastIndex:Int) {
-    }
-
-    private fun depositTransaction( chainTransaction:ChainTransaction)
-    {
+    internal fun openBalanceUpdateChallenge(){
+        val balanceUpdateProof = BalanceUpdateProof(this.hubStatus.currentUpdate(this.currentEon),this.hubStatus.currentEonProof())
+        var challenge=BalanceUpdateChallenge(balanceUpdateProof,account.key.keyPair.public)
+        this.contract.openBalanceUpdateChallenge(account,challenge)
     }
 
     fun getAvailableCoin():Long {
@@ -135,7 +134,6 @@ class Hub <T : ChainTransaction, A : ChainAccount> {
     fun getWithdrawalCoin():Long {
         return 0;
     }
-
 
     @Synchronized
     fun sync() {
@@ -177,10 +175,10 @@ class Hub <T : ChainTransaction, A : ChainAccount> {
     }
 
     fun  accountInfo():HubAccount ?{
-        return null
+        return hubAccount
     }
 
-    fun openTransferChallenge( transactionHash:String) :Boolean?{
+    fun openTransferChallenge(transactionHash:Hash) :Boolean?{
         return true
     }
 

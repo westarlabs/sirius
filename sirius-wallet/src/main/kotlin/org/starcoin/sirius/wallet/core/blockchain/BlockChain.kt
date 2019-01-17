@@ -49,13 +49,13 @@ class BlockChain <T : ChainTransaction, A : ChainAccount> (chain: Chain<T, out B
                         val input = contractFunction.decode(tx.data)
                             ?: throw RuntimeException("$contractFunction decode tx:${txResult.tx} fail.")
                         LOG.info("$contractFunction: $input")
-                        //hubStatus.processTransferDeliveryChallenge(input)
+                        //hub.processTransferDeliveryChallenge(input)
                     }
                     is OpenBalanceUpdateChallengeFunction -> {
                         val input = contractFunction.decode(tx.data)
                             ?: throw RuntimeException("$contractFunction decode tx:${txResult.tx} fail.")
                         LOG.info("$contractFunction: $input")
-                        //hubStatus.processBalanceUpdateChallenge(input)
+                        //hub.onBalanceUpdateChallenge(input)
                     }
                 }
 
