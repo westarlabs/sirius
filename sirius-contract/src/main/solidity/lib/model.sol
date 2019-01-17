@@ -140,7 +140,7 @@ library ModelLib {
     enum Direction {
         DIRECTION_ROOT,
         DIRECTION_LEFT,
-        DIRECTION_RIGTH
+        DIRECTION_RIGHT
     }
 
     function unmarshalDirection(RLPLib.RLPItem memory rlp) internal pure returns (Direction dir) {
@@ -150,7 +150,7 @@ library ModelLib {
         } else if(tmp == 1) {
             return Direction.DIRECTION_LEFT;
         } else if(tmp == 2) {
-            return Direction.DIRECTION_RIGTH;
+            return Direction.DIRECTION_RIGHT;
         } else {
             revert();
         }
@@ -162,7 +162,7 @@ library ModelLib {
             tmp = 0;
         } else if(dir == Direction.DIRECTION_LEFT) {
             tmp = 1;
-        } else if(dir == Direction.DIRECTION_RIGTH) {
+        } else if(dir == Direction.DIRECTION_RIGHT) {
             tmp = 2;
         } else {
             revert();
@@ -370,13 +370,6 @@ library ModelLib {
         AMTreePathInternalNode[] nodes;
     }
 
-    function verifyMembershipProof4AMTreePath(AMTreePathInternalNode memory root, AMTreePath memory path) internal pure returns(bool) {
-        //TODO
-        root;
-        path;
-        return true;
-    }
-
     struct AMTreeNode4Hash {
         uint offset;
         AMTreeInternalNodeInfo info;
@@ -404,7 +397,7 @@ library ModelLib {
             AMTreeNode4Hash memory tmp = changeAMTreePathInternalNode2AMTreeNode4Hash(node);
             if (node.direction == Direction.DIRECTION_LEFT) {
                 computeNode = combineAMTreeNode4Hash(tmp, computeNode);
-            } else if(node.direction == Direction.DIRECTION_RIGTH) {
+            } else if(node.direction == Direction.DIRECTION_RIGHT) {
                 computeNode = combineAMTreeNode4Hash(computeNode, tmp);
             } else {}
         }
@@ -558,7 +551,7 @@ library ModelLib {
 
             if (node.direction == Direction.DIRECTION_LEFT) {
                 hash = keccak256(abi.encodePacked(node.nodeHash, hash));
-            } else if(node.direction == Direction.DIRECTION_RIGTH) {
+            } else if(node.direction == Direction.DIRECTION_RIGHT) {
                 hash = keccak256(abi.encodePacked(hash, node.nodeHash));
             } else {}
         }
@@ -647,7 +640,7 @@ library ModelLib {
 
     struct WithdrawalInfo {
         address addr;
-        AMTreePath path;
+        AMTreeProof proof;
         uint amount;
     }
 
@@ -657,7 +650,7 @@ library ModelLib {
         while(RLPDecoder.hasNext(it)) {
             RLPLib.RLPItem memory r = RLPDecoder.next(it);
             if(idx == 0) init.addr = RLPDecoder.toAddress(r);
-            else if(idx == 1) init.path = unmarshalAMTreePath(r);
+            else if(idx == 1) init.proof = unmarshalAMTreeProof(r);
             else if(idx == 2) init.amount = RLPDecoder.toUint(r);
             else {}
 
@@ -667,18 +660,18 @@ library ModelLib {
 
     function marshalWithdrawalInfo(WithdrawalInfo memory init) internal pure returns (bytes memory) {
         bytes memory addr = RLPEncoder.encodeAddress(init.addr);
-        bytes memory path = marshalAMTreePath(init.path);
+        bytes memory proof = marshalAMTreeProof(init.proof);
         bytes memory amount = RLPEncoder.encodeUint(init.amount);
 
-        return RLPEncoder.encodeList(ByteUtilLib.append(ByteUtilLib.append(addr, path), amount));
+        return RLPEncoder.encodeList(ByteUtilLib.append(ByteUtilLib.append(addr, proof), amount));
     }
 
     function verifyEon4WithdrawalInfo(WithdrawalInfo memory self, uint eon) internal pure {
-        require(eon == self.path.eon && eon == self.path.leaf.nodeInfo.update.upData.eon);
+        require(eon == self.proof.path.eon && eon == self.proof.path.leaf.nodeInfo.update.upData.eon);
     }
 
     function verifyAddr4WithdrawalInfo(WithdrawalInfo memory self, address addr) internal pure {
-        require(addr == self.addr && ByteUtilLib.address2hash(addr) == self.path.leaf.nodeInfo.addressHash);
+        require(addr == self.addr && ByteUtilLib.address2hash(addr) == self.proof.path.leaf.nodeInfo.addressHash);
     }
 
     struct Participant {
@@ -705,7 +698,7 @@ library ModelLib {
     struct CancelWithdrawal {
         address addr;
         Update update;
-        AMTreePath path;
+        AMTreeProof proof;
     }
 
     function unmarshalCancelWithdrawal(RLPLib.RLPItem memory rlp) internal pure returns (CancelWithdrawal memory cancel) {
@@ -715,7 +708,7 @@ library ModelLib {
             RLPLib.RLPItem memory r = RLPDecoder.next(it);
             if(idx == 0) cancel.addr = RLPDecoder.toAddress(r);
             else if(idx == 1) cancel.update = unmarshalUpdate(r);
-            else if(idx == 2) cancel.path = unmarshalAMTreePath(r);
+            else if(idx == 2) cancel.proof = unmarshalAMTreeProof(r);
             else {}
 
             idx++;
@@ -725,9 +718,9 @@ library ModelLib {
     function marshalCancelWithdrawal(CancelWithdrawal memory cancel) internal pure returns (bytes memory) {
         bytes memory addr = RLPEncoder.encodeAddress(cancel.addr);
         bytes memory update = marshalUpdate(cancel.update);
-        bytes memory path = marshalAMTreePath(cancel.path);
+        bytes memory proof = marshalAMTreeProof(cancel.proof);
 
-        return RLPEncoder.encodeList(ByteUtilLib.append(ByteUtilLib.append(addr, update), path));
+        return RLPEncoder.encodeList(ByteUtilLib.append(ByteUtilLib.append(addr, update), proof));
     }
 
     struct BalanceUpdateChallenge {

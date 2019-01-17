@@ -59,7 +59,7 @@ message AMTreeLeafNodeInfo{
 
 message Withdrawal {
     required bytes address = 1;
-    required AMTreePath path = 2;
+    required AMTreeProof proof = 2;
     required bytes amount = 3;
 }
 
@@ -79,7 +79,7 @@ message WithdrawalStatus {
 enum PathDirection {
     DIRECTION_ROOT = 0;
     DIRECTION_LEFT = 1;
-    DIRECTION_RIGTH = 2;
+    DIRECTION_RIGHT = 2;
 }
 
 message AMTreePathInternalNode {

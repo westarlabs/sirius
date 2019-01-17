@@ -167,7 +167,7 @@ contract SiriusService is Sirius {
             uint currentEon = currentEon();
             ModelLib.verifyEon4WithdrawalInfo(init, currentEon);
 
-            uint len = init.path.nodes.length;
+            uint len = init.proof.path.nodes.length;
             require(len > 0);
 
             bytes32 key = ByteUtilLib.address2hash(addr);
@@ -175,10 +175,10 @@ contract SiriusService is Sirius {
             require(!processingFlag);
 
             ModelLib.HubRoot memory latestRoot = latestRoot();
-            bool proofFlag = ModelLib.verifyMembershipProof4AMTreePath(latestRoot.node, init.path);
+            bool proofFlag = ModelLib.verifyMembershipProof4AMTreeProof(latestRoot.node, init.proof);
             require(proofFlag);
 
-            require(init.path.leaf.allotment >= init.amount);
+            require(init.proof.path.leaf.allotment >= init.amount);
 
             GlobleLib.Withdrawal memory with;
             with.info = data;
@@ -204,7 +204,7 @@ contract SiriusService is Sirius {
             //require(signFlag);
 
             ModelLib.HubRoot memory latestRoot = latestRoot();
-            bool proofFlag = ModelLib.verifyMembershipProof4AMTreePath(latestRoot.node, cancel.path);
+            bool proofFlag = ModelLib.verifyMembershipProof4AMTreeProof(latestRoot.node, cancel.proof);
             require(proofFlag);
 
             //address addr = ByteUtilLib.pubkey2Address(cancel.participant.publicKey);
@@ -214,7 +214,7 @@ contract SiriusService is Sirius {
             if(with.isVal) {
                 if(with.stat == GlobleLib.WithdrawalStatusType.INIT) {
                     ModelLib.WithdrawalInfo memory tmpInfo = ModelLib.unmarshalWithdrawalInfo(RLPDecoder.toRLPItem(with.info, true));
-                    uint tmp = SafeMath.sub(SafeMath.add(cancel.path.leaf.allotment, cancel.update.upData.receiveAmount), cancel.update.upData.sendAmount);
+                    uint tmp = SafeMath.sub(SafeMath.add(cancel.proof.path.leaf.allotment, cancel.update.upData.receiveAmount), cancel.update.upData.sendAmount);
                     if (tmpInfo.amount > tmp) {
                         with.stat = GlobleLib.WithdrawalStatusType.CANCEL;
                         balances[0].withdrawalMeta.withdrawals[key] = with;
