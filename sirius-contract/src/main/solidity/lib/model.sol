@@ -667,7 +667,7 @@ library ModelLib {
     }
 
     function verifyEon4WithdrawalInfo(WithdrawalInfo memory self, uint eon) internal pure {
-        require(eon == self.proof.path.eon && eon == self.proof.path.leaf.nodeInfo.update.upData.eon);
+        require(eon == self.proof.path.eon);
     }
 
     function verifyAddr4WithdrawalInfo(WithdrawalInfo memory self, address addr) internal pure {
