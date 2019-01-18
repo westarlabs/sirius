@@ -1,21 +1,20 @@
 dependencies{
     compile project(":sirius-core")
     compile project(":sirius-proto")
-    compile project(":sirius-contract")
-
+    compile project(path:":sirius-contract", configuration:"solidityOutput")
     compile ('org.web3j:core:4.0.0')
-    
+
     testCompile project(path: ':sirius-core', configuration: 'testOutput')
 }
 
-task copySolidity(type: Copy) {
-    delete "out/test/resources/solidity"
-    from ("${project(':sirius-contract').projectDir}/src/main"){
-        include "**/*.sol"
-    }
-    into "out/test/resources"
-}
-
-compileTestJava {
-    copySolidity.execute()
-}
+//task copySolidity(type: Copy) {
+//    delete "out/test/resources/solidity"
+//    from ("${project(':sirius-contract').projectDir}/src/main"){
+//        include "**/*.sol"
+//    }
+//    into "out/test/resources"
+//}
+//
+//compileTestJava {
+//    copySolidity.execute()
+//}

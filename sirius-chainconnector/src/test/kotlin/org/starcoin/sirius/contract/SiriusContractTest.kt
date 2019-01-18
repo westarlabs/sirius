@@ -10,7 +10,7 @@ import org.starcoin.sirius.util.MockUtils
 import java.math.BigInteger
 import kotlin.random.Random
 
-class SiriusContractTest : ContractTestBase("/solidity/sirius.sol", "SiriusService") {
+class SiriusContractTest : ContractTestBase("solidity/SiriusService", "SiriusService") {
 
     private val deposit: Long = 10000
     val ip = "192.168.0.0.1:80"

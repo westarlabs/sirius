@@ -1,7 +1,9 @@
 package org.starcoin.sirius.lang
 
 import org.starcoin.sirius.util.Utils
+import java.io.InputStream
 import java.math.BigInteger
+import java.nio.charset.Charset
 import java.util.*
 
 fun ByteArray.toULong() = BigInteger(1, this).toLong()
@@ -30,3 +32,12 @@ fun String.hexToByteArray(): ByteArray {
 private fun Char.getNibbleValue() = Character.digit(this, 16).also {
     if (it == -1) throw IllegalArgumentException("Not a valid hex char: $this")
 }
+
+data class ClassPathResource(val path: String) {
+    fun readAsStream(): InputStream = Thread.currentThread().contextClassLoader.getResourceAsStream(path)
+    fun readAsText(): String = this.readAsStream().use { it.readText() }
+}
+
+fun String.toClassPathResource() = ClassPathResource(this)
+
+fun InputStream.readText() = this.readBytes().toString(Charset.defaultCharset())

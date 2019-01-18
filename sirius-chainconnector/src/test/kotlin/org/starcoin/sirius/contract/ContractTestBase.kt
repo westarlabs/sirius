@@ -3,13 +3,10 @@ package org.starcoin.sirius.contract
 import kotlinx.serialization.Serializable
 import org.apache.commons.lang3.RandomStringUtils
 import org.apache.commons.lang3.RandomUtils
-import org.ethereum.config.SystemProperties
 import org.ethereum.core.BlockSummary
 import org.ethereum.crypto.ECKey
 import org.ethereum.listener.EthereumListenerAdapter
 import org.ethereum.solidity.compiler.CompilationResult
-import org.ethereum.solidity.compiler.SolidityCompiler
-import org.ethereum.solidity.compiler.SolidityCompiler.Options
 import org.ethereum.util.blockchain.SolidityCallResult
 import org.ethereum.util.blockchain.SolidityContract
 import org.ethereum.util.blockchain.StandaloneBlockchain
@@ -18,11 +15,11 @@ import org.junit.Before
 import org.starcoin.sirius.core.*
 import org.starcoin.sirius.crypto.eth.EthCryptoKey
 import org.starcoin.sirius.lang.hexToByteArray
+import org.starcoin.sirius.lang.toClassPathResource
 import org.starcoin.sirius.serialization.BigIntegerSerializer
 import org.starcoin.sirius.serialization.rlp.RLP
 import org.starcoin.sirius.util.MockUtils
 import org.starcoin.sirius.util.WithLogging
-import java.io.File
 import java.math.BigInteger
 import java.util.concurrent.atomic.AtomicLong
 
@@ -52,7 +49,7 @@ data class Data(
 
 data class ContractData(val sb: StandaloneBlockchain, val contract: SolidityContract, val owner: ECKey)
 
-abstract class ContractTestBase(val contractFile: String, val contractName: String) {
+abstract class ContractTestBase(val contractPath: String, val contractName: String) {
 
     companion object : WithLogging() {
         fun bytesToHexString(src: ByteArray?): String? {
@@ -98,25 +95,16 @@ abstract class ContractTestBase(val contractFile: String, val contractName: Stri
     fun deployContract(): ContractData {
         val sb = StandaloneBlockchain().withAutoblock(true).withGasLimit(2147483647).withGasPrice(2147483647)
 
-        val url = this.javaClass::class.java.getResource("$contractFile")
-        val compiler = SolidityCompiler(SystemProperties.getDefault())
 
-        val path = File(url.toURI()).parentFile.absolutePath
-        LOG.info("allowed_path:$path")
-        val compileRes = compiler.compileSrc(
-            File(url.toURI()),
-            true,
-            true,
-            Options.ABI,
-            Options.BIN,
-            Options.AllowPaths(listOf(path))
-        )
-        Assert.assertFalse("Compile result: " + compileRes.errors, compileRes.isFailed)
-
-        val result = CompilationResult.parse(compileRes.output)
-        val contractMetadata = result.getContract(contractName)
-        LOG.info("$contractFile compile abi ${contractMetadata.abi}")
-        LOG.info("$contractFile compile bin ${contractMetadata.bin}")
+        val contractMetadata = CompilationResult.ContractMetadata()//result.getContract(contractName)
+        contractMetadata.abi = "$contractPath.abi".toClassPathResource().readAsText()
+        contractMetadata.bin = "$contractPath.bin".toClassPathResource().readAsText()
+        //Thread.currentThread().contextClassLoader.getResourceAsStream("solidity/SiriusService.abi").use {  it.readBytes().toString(
+        //    Charset.defaultCharset())}
+//        contractMetadata.bin = Thread.currentThread().contextClassLoader.getResourceAsStream("solidity/SiriusService.bin").use {  it.readBytes().toString(
+//            Charset.defaultCharset())}
+        LOG.info("$contractPath abi ${contractMetadata.abi}")
+        LOG.info("$contractPath bin ${contractMetadata.bin}")
         LOG.info("Contract bin size: ${contractMetadata.bin.hexToByteArray().size}")
         val arg = getContractConstructArg()
         val contract = (arg?.let{sb.submitNewContract(contractMetadata, arg)} ?: sb.submitNewContract(contractMetadata)) as StandaloneBlockchain.SolidityContractImpl

@@ -8,7 +8,7 @@ import org.starcoin.sirius.serialization.rlp.RLP
 import org.starcoin.sirius.util.Utils
 import java.math.BigInteger
 
-class TestDataRLP : ContractTestBase("/solidity/test_data_rlp.sol", "TestDataRLP") {
+class TestDataRLP : ContractTestBase("solidity/TestDataRLP", "TestDataRLP") {
 
     @Test
     fun testBool() {
