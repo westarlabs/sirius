@@ -1,0 +1,22 @@
+plugins {
+    id "org.web3j.solidity" version "0.1.2"
+}
+
+solidity {
+    outputComponents = ["BIN", "ABI", "METADATA"]
+    optimize = true
+    //optimizeRuns = 500
+}
+
+configurations {
+    solidityOutput.extendsFrom (compileSolidity)
+}
+
+task solidityJar(type:Jar, dependsOn:['compileSolidity']) {
+    from sourceSets.main.output
+    classifier = 'solidity'
+}
+
+artifacts {
+    solidityOutput solidityJar
+}
