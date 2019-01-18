@@ -10,11 +10,11 @@ import org.starcoin.sirius.lang.hexToByteArray
 import org.starcoin.sirius.protocol.Chain
 import org.starcoin.sirius.protocol.ContractConstructArgs
 import org.starcoin.sirius.protocol.EthereumTransaction
-import org.starcoin.sirius.protocol.HubContract
 import org.starcoin.sirius.protocol.ethereum.contract.EthereumHubContract
 import org.starcoin.sirius.util.WithLogging
 import java.io.File
 import java.math.BigInteger
+
 
 abstract class EthereumBaseChain :
     Chain<EthereumTransaction, EthereumBlock, EthereumAccount> {
@@ -49,16 +49,14 @@ abstract class EthereumBaseChain :
 
     abstract fun callConstFunction(caller: CryptoKey, contractAddress: Address, data: ByteArray): ByteArray
 
-    override fun loadContract(contractAddress: Address): HubContract<EthereumAccount> {
-        TODO("not implemented, load json interface from resource.")
-    }
+    override fun loadContract(contractAddress: Address) = this.loadContract(contractAddress, loadContractMetadata().abi)
 
     override fun loadContract(address: Address, jsonInterface: String): EthereumHubContract {
         return EthereumHubContract(address, jsonInterface, this)
     }
 
     override fun deployContract(account: EthereumAccount, args: ContractConstructArgs): EthereumHubContract {
-        return deployContract(account, File(this.javaClass.getResource("/solidity/sirius.sol").toURI()), args)
+        return deployContract(account, loadContractMetadata(), args)
     }
 
     override fun deployContract(
@@ -70,6 +68,14 @@ abstract class EthereumBaseChain :
         val contractMetadata = compilationResult.getContract(contractName)
         val address = submitNewContract(account, contractMetadata, args.toRLP())
         //TODO wait
+        return this.loadContract(address, contractMetadata.abi)
+    }
+
+    private fun deployContract(
+        account: EthereumAccount,
+        contractMetadata: CompilationResult.ContractMetadata, args: ContractConstructArgs
+    ): EthereumHubContract {
+        val address = submitNewContract(account, contractMetadata, args.toRLP())
         return this.loadContract(address, contractMetadata.abi)
     }
 

@@ -6,7 +6,6 @@ import org.apache.commons.lang3.RandomUtils
 import org.ethereum.core.BlockSummary
 import org.ethereum.crypto.ECKey
 import org.ethereum.listener.EthereumListenerAdapter
-import org.ethereum.solidity.compiler.CompilationResult
 import org.ethereum.util.blockchain.SolidityCallResult
 import org.ethereum.util.blockchain.SolidityContract
 import org.ethereum.util.blockchain.StandaloneBlockchain
@@ -15,7 +14,7 @@ import org.junit.Before
 import org.starcoin.sirius.core.*
 import org.starcoin.sirius.crypto.eth.EthCryptoKey
 import org.starcoin.sirius.lang.hexToByteArray
-import org.starcoin.sirius.lang.toClassPathResource
+import org.starcoin.sirius.protocol.ethereum.loadContractMetadata
 import org.starcoin.sirius.serialization.BigIntegerSerializer
 import org.starcoin.sirius.serialization.rlp.RLP
 import org.starcoin.sirius.util.MockUtils
@@ -96,13 +95,7 @@ abstract class ContractTestBase(val contractPath: String, val contractName: Stri
         val sb = StandaloneBlockchain().withAutoblock(true).withGasLimit(2147483647).withGasPrice(2147483647)
 
 
-        val contractMetadata = CompilationResult.ContractMetadata()//result.getContract(contractName)
-        contractMetadata.abi = "$contractPath.abi".toClassPathResource().readAsText()
-        contractMetadata.bin = "$contractPath.bin".toClassPathResource().readAsText()
-        //Thread.currentThread().contextClassLoader.getResourceAsStream("solidity/SiriusService.abi").use {  it.readBytes().toString(
-        //    Charset.defaultCharset())}
-//        contractMetadata.bin = Thread.currentThread().contextClassLoader.getResourceAsStream("solidity/SiriusService.bin").use {  it.readBytes().toString(
-//            Charset.defaultCharset())}
+        val contractMetadata = loadContractMetadata(contractPath)
         LOG.info("$contractPath abi ${contractMetadata.abi}")
         LOG.info("$contractPath bin ${contractMetadata.bin}")
         LOG.info("Contract bin size: ${contractMetadata.bin.hexToByteArray().size}")
