@@ -297,8 +297,6 @@ service HubService {
     rpc watch (ProtoBlockAddress) returns (stream HubEvent);
     rpc watchHubRoot (google.protobuf.Empty) returns (stream HubRoot);
     rpc getHubAccount (ProtoBlockAddress) returns (HubAccount);
-    //just for mock test.
-    rpc deposit (Deposit) returns (SuccResponse);
     //return flags merge result.
     rpc setMaliciousFlags (HubMaliciousFlags) returns (HubMaliciousFlags);
     rpc getMaliciousFlags (google.protobuf.Empty) returns (HubMaliciousFlags);
