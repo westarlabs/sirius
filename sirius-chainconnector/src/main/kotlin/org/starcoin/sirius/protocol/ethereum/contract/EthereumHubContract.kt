@@ -34,9 +34,8 @@ class EthereumHubContract internal constructor(
         function: ContractFunction<S>,
         input: S
     ): Hash {
-        LOG.info("executeContractFunction ${function.name}, input:$input")
         val data = function.encode(input)
-        return chain.submitTransaction(
+        val hash = chain.submitTransaction(
             account,
             EthereumTransaction(
                 this.contractAddress, account.getNonce(),
@@ -44,6 +43,8 @@ class EthereumHubContract internal constructor(
                 EthereumBaseChain.defaultGasPrice, EthereumBaseChain.defaultGasLimit, data
             )
         )
+        LOG.info("executeContractFunction ${function.name}, input:$input, txHash:$hash")
+        return hash
     }
 
     @UseExperimental(ImplicitReflectionSerializer::class)

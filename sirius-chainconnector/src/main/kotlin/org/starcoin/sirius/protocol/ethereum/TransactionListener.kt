@@ -39,6 +39,7 @@ class TransactionListener(
                         txReceipt.isTxStatusOK
                     )
                 )
+                LOG.info("TransactionListener tx:${ethereumTransaction.hash()}")
                 if (transactionFilter(transactionResult)) {
                     transactionChannel.send(transactionResult)
                 }

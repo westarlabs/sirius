@@ -20,6 +20,7 @@ import org.starcoin.sirius.protocol.TransactionResult
 import java.math.BigInteger
 
 sealed class ChainCtlMessage {
+    class NewTransaction(val tx: EthereumTransaction, val response: SendChannel<EthereumBlock?>) : ChainCtlMessage()
     class NewBlock(val response: SendChannel<EthereumBlock?>) : ChainCtlMessage()
 }
 
@@ -33,15 +34,26 @@ class InMemoryChain(val autoGenblock: Boolean = true) : EthereumBaseChain() {
     fun chainActor() = GlobalScope.actor<ChainCtlMessage> {
         for (msg in channel) {
             when (msg) {
-                is ChainCtlMessage.NewBlock -> {
-                    try {
-                        val block = EthereumBlock(sb.createBlock())
-                        msg.response.send(block)
-                    } catch (ex: Exception) {
+                is ChainCtlMessage.NewBlock -> msg.response.send(doCreateBlock())
+                is ChainCtlMessage.NewTransaction -> {
+                    sb.submitTransaction(msg.tx.toEthTransaction())
+                    if (autoGenblock) {
+                        msg.response.send(doCreateBlock())
+                    } else {
                         msg.response.send(null)
                     }
                 }
             }
+        }
+    }
+
+    private fun doCreateBlock(): EthereumBlock? {
+        try {
+            val block = EthereumBlock(sb.createBlock())
+            LOG.info("InMemoryChain create NewBlock: ${block.hash}, txs: ${block.transactions.size}")
+            return block
+        } catch (ex: Exception) {
+            return null
         }
     }
 
@@ -96,10 +108,9 @@ class InMemoryChain(val autoGenblock: Boolean = true) : EthereumBaseChain() {
         val key = account.key as EthCryptoKey
         sb.sender = key.ecKey
         transaction.sign(key)
-        sb.submitTransaction(transaction.toEthTransaction())
         account.getAndIncNonce()
         val response = Channel<EthereumBlock?>(1)
-        chainAcctor.send(ChainCtlMessage.NewBlock(response))
+        chainAcctor.send(ChainCtlMessage.NewTransaction(transaction, response))
         //TODO async, not wait block create.
         response.receive()
         transaction.hash()
