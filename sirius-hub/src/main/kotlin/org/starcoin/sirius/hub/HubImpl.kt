@@ -44,7 +44,9 @@ class HubImpl<T : ChainTransaction, A : ChainAccount>(
     var blocksPerEon = 0
         private set
 
-    private var startBlockNumber: Long by Delegates.notNull()
+    var startBlockNumber: Long by Delegates.notNull()
+        private set
+    var currentBlockNumber: Long by Delegates.notNull()
 
     private lateinit var txChannel: Channel<TransactionResult<T>>
     private lateinit var blockChannel: Channel<out Block<T>>
@@ -83,7 +85,7 @@ class HubImpl<T : ChainTransaction, A : ChainAccount>(
     }
 
     override fun start() {
-        val currentBlockNumber = chain.getBlockNumber()
+        this.currentBlockNumber = chain.getBlockNumber()
         LOG.info("CurrentBlockNumber: $currentBlockNumber")
         //contract.setHubIp(owner, "127.0.0.1:8484")
         val contractHubInfo = contract.queryHubInfo(owner)
@@ -342,32 +344,11 @@ class HubImpl<T : ChainTransaction, A : ChainAccount>(
         return blockingQueue
     }
 
-    private fun doCommit(): CompletableFuture<Receipt> {
+    private fun doCommit() {
         val hubRoot =
             HubRoot(this.eonState.state.root.toAMTreePathNode() as AMTreePathInternalNode, this.eonState.eon)
         LOG.info("doCommit:" + hubRoot.toJSON())
-        val txHash = this.contract.commit(owner, hubRoot)
-        val future = CompletableFuture<Receipt>()
-        future.whenComplete { receipt, throwable ->
-            if (!receipt.status) {
-                // TODO
-                LOG.severe("commit tx receipt is failure.")
-            } else {
-                // TODO only
-                this.ready = true
-                this.fireEvent(
-                    HubEvent(
-                        HubEventType.NEW_HUB_ROOT,
-                        HubRoot(
-                            this.eonState.state.root.toAMTreePathNode() as AMTreePathInternalNode,
-                            this.eonState.eon
-                        )
-                    )
-                )
-            }
-        }
-        this.txReceipts[txHash] = future
-        return future
+        this.contract.commit(owner, hubRoot)
     }
 
     fun assertAccountNotNull(to: Address): Nothing =
@@ -466,6 +447,7 @@ class HubImpl<T : ChainTransaction, A : ChainAccount>(
 
     override fun onBlock(blockInfo: Block<*>) {
         LOG.info("onBlock:$blockInfo")
+        this.currentBlockNumber = blockInfo.height
         val eon = Eon.calculateEon(this.startBlockNumber, blockInfo.height, this.blocksPerEon)
         var newEon = false
         this.eonState.setEpoch(eon.epoch)
@@ -481,6 +463,10 @@ class HubImpl<T : ChainTransaction, A : ChainAccount>(
 
     private fun processTransaction(txResult: TransactionResult<T>) {
         LOG.info("Hub process tx: ${txResult.tx.hash()}, result: ${txResult.receipt}")
+        if (!txResult.receipt.status) {
+            LOG.warning("tx ${txResult.tx.hash()} status is fail, skip.")
+            return
+        }
         val tx = txResult.tx
         val hash = tx.hash()
         txReceipts[hash]?.complete(txResult.receipt)
@@ -492,7 +478,14 @@ class HubImpl<T : ChainTransaction, A : ChainAccount>(
                 this.processDeposit(deposit)
             }
             is CommitFunction -> {
-                contractFunction.decode(tx.data)
+                val hubRoot = contractFunction.decode(tx.data)!!
+                this.ready = true
+                this.fireEvent(
+                    HubEvent(
+                        HubEventType.NEW_HUB_ROOT,
+                        hubRoot
+                    )
+                )
             }
             is InitiateWithdrawalFunction -> {
                 val input = contractFunction.decode(tx.data)

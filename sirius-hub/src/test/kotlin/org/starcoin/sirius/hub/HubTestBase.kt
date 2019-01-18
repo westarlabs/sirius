@@ -127,7 +127,7 @@ abstract class HubTestBase<T : ChainTransaction, A : ChainAccount> {
 
         this.verifyRoot()
 
-        this.withdraw(a1.address, RandomUtils.nextLong(1, a1.hubAccount!!.balance.longValueExact()))
+        this.withdraw(a1.chainAccount, RandomUtils.nextLong(1, a1.hubAccount!!.balance.longValueExact()))
 
         goToNextEon()
         this.verifyRoot()
@@ -228,10 +228,10 @@ abstract class HubTestBase<T : ChainTransaction, A : ChainAccount> {
 
     private fun deposit(account: LocalAccount, amount: BigInteger, expectSuccess: Boolean) {
         val previousDeposit = hub.getHubAccount(account.address)!!.deposit
-        val tx = this.chain.newTransaction(account.chainAccount, hubContract.contractAddress, amount)
-        val txHash = chain.submitTransaction(account.chainAccount, tx)
-        //waitTx(txHash)
-        waitHubEvent(HubEventType.NEW_DEPOSIT)
+        waitHubEvent(HubEventType.NEW_DEPOSIT, expectSuccess) {
+            val tx = this.chain.newTransaction(account.chainAccount, hubContract.contractAddress, amount)
+            chain.submitTransaction(account.chainAccount, tx)
+        }
         account.hubAccount = hub.getHubAccount(account.address)
         if (expectSuccess) {
             Assert.assertEquals(account.hubAccount!!.deposit, previousDeposit + amount)
@@ -260,22 +260,13 @@ abstract class HubTestBase<T : ChainTransaction, A : ChainAccount> {
         to.update = updates[1]
     }
 
-    private fun withdraw(address: Address, amount: Long) {
-//        this.txs.add(
-//            ChainTransaction(
-//                address,
-//                Constants.CONTRACT_ADDRESS,
-//                "InitiateWithdrawal",
-//                //sirius.coreContractServiceGrpc.getInitiateWithdrawalMethod().getFullMethodName(),
-//                InitiateWithdrawalRequest.newBuilder()
-//                    .setAddress(address.toByteString())
-//                    .setAmount(amount)
-//                    //TODO
-//                    //.setPath(hub.getProof(address)!!.toProto())
-//                    .build()
-//            )
-//        )
-        Assert.assertEquals(amount, hub.getHubAccount(address)!!.withdraw)
+    private fun withdraw(account: A, amount: Long) {
+        val proof =
+            hub.getProof(account.address) ?: throw RuntimeException("can not find proof by address: ${account.address}")
+        waitHubEvent(HubEventType.WITHDRAWAL) {
+            hubContract.initiateWithdrawal(account, Withdrawal(account.address, proof, amount))
+        }
+        Assert.assertEquals(amount, hub.getHubAccount(account.address)?.withdraw?.longValueExact())
         totalHubBalance.addAndGet(-amount)
     }
 
@@ -296,21 +287,25 @@ abstract class HubTestBase<T : ChainTransaction, A : ChainAccount> {
 
     }
 
-    private fun waitHubEvent(type: HubEventType) {
+    private fun waitHubEvent(type: HubEventType, expectSuccess: Boolean = true, block: () -> Unit) {
         val queue = hub.watchByFilter { it.type === type }
-        val event = queue.poll(30, TimeUnit.SECONDS)
-        Assert.assertNotNull(event)
+        block()
+        val event = queue.poll(5, TimeUnit.SECONDS)
+        if (expectSuccess) {
+            Assert.assertNotNull(event)
+        } else {
+            Assert.assertNull(event)
+        }
     }
 
     private fun goToNextEon() {
         val expectEon = this.hub.currentEon().id + 1
-        val queue = hub.watchByFilter { event -> event.type === HubEventType.NEW_HUB_ROOT }
-        var event: HubEvent? = queue.poll()
-        while (event == null || event.getPayload<HubRoot>().eon < expectEon) {
-            this.createBlock()
-            event = queue.poll()
+        LOG.info("go to Next Eon $expectEon")
+        waitHubEvent(HubEventType.NEW_HUB_ROOT) {
+            for (i in 0..Eon.waitToEon(hub.startBlockNumber, hub.currentBlockNumber, hub.blocksPerEon, expectEon) + 1) {
+                this.createBlock()
+            }
         }
-        Assert.assertEquals(expectEon, event.getPayload<HubRoot>().eon)
         this.verifyRoot()
     }
 
