@@ -8,7 +8,8 @@ import java.util.*
 
 fun ByteArray.toULong() = BigInteger(1, this).toLong()
 
-fun ByteArray.toHEXString() = Utils.HEX.encode(this).let { if (!it.startsWith("0x")) "0x$it" else it }
+fun ByteArray.toHEXString() = "0x" + this.toNoPrefixHEXString()
+fun ByteArray.toNoPrefixHEXString() = Utils.HEX.encode(this)
 
 fun ByteArray.toBigInteger(offset: Int, length: Int) = BigInteger(1, Arrays.copyOfRange(this, offset, offset + length))
 fun ByteArray.toBigInteger() = BigInteger(this)

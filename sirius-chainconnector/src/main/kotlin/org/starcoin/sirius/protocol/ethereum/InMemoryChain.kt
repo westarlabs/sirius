@@ -13,7 +13,7 @@ import org.starcoin.sirius.core.Hash
 import org.starcoin.sirius.core.Receipt
 import org.starcoin.sirius.crypto.CryptoKey
 import org.starcoin.sirius.crypto.eth.EthCryptoKey
-import org.starcoin.sirius.lang.toHEXString
+import org.starcoin.sirius.lang.toNoPrefixHEXString
 import org.starcoin.sirius.protocol.EthereumTransaction
 import org.starcoin.sirius.protocol.EventTopic
 import org.starcoin.sirius.protocol.TransactionResult
@@ -119,7 +119,7 @@ class InMemoryChain(val autoGenblock: Boolean = true) : EthereumBaseChain() {
     val bytesType: SolidityType.BytesType = SolidityType.BytesType()
 
     override fun callConstFunction(caller: CryptoKey, contractAddress: Address, data: ByteArray): ByteArray {
-        val tx = createRawTransaction(0, 0, 100000000000000L, contractAddress.toBytes().toHEXString(), 0, data)
+        val tx = createRawTransaction(0, 0, 100000000000000L, contractAddress.toBytes().toNoPrefixHEXString(), 0, data)
         tx.sign((caller as EthCryptoKey).ecKey)
         val callBlock = sb.blockchain.bestBlock
         val repository = this.sb.blockchain.getRepository().getSnapshotTo(callBlock.getStateRoot()).startTracking()
