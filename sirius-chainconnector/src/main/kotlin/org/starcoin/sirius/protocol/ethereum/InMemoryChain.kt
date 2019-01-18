@@ -1,6 +1,10 @@
 package org.starcoin.sirius.protocol.ethereum
 
+import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.channels.Channel
+import kotlinx.coroutines.channels.SendChannel
+import kotlinx.coroutines.channels.actor
+import kotlinx.coroutines.runBlocking
 import org.ethereum.core.CallTransaction.createRawTransaction
 import org.ethereum.solidity.SolidityType
 import org.ethereum.util.blockchain.StandaloneBlockchain
@@ -15,9 +19,31 @@ import org.starcoin.sirius.protocol.EventTopic
 import org.starcoin.sirius.protocol.TransactionResult
 import java.math.BigInteger
 
-class InMemoryChain(autoGenblock: Boolean = true) : EthereumBaseChain() {
+sealed class ChainCtlMessage {
+    class NewBlock(val response: SendChannel<EthereumBlock?>) : ChainCtlMessage()
+}
 
-    val sb = StandaloneBlockchain().withAutoblock(autoGenblock).withGasLimit(500000000)
+class InMemoryChain(val autoGenblock: Boolean = true) : EthereumBaseChain() {
+
+    //StandaloneBlockchain autoblock has concurrent problem
+    val sb = StandaloneBlockchain().withAutoblock(false).withGasLimit(500000000)
+
+    val chainAcctor = chainActor()
+
+    fun chainActor() = GlobalScope.actor<ChainCtlMessage> {
+        for (msg in channel) {
+            when (msg) {
+                is ChainCtlMessage.NewBlock -> {
+                    try {
+                        val block = EthereumBlock(sb.createBlock())
+                        msg.response.send(block)
+                    } catch (ex: Exception) {
+                        msg.response.send(null)
+                    }
+                }
+            }
+        }
+    }
 
     override fun watchEvents(
         contract: Address,
@@ -66,13 +92,17 @@ class InMemoryChain(autoGenblock: Boolean = true) : EthereumBaseChain() {
         return tx?.let { EthereumTransaction(tx.receipt.transaction) }
     }
 
-    override fun submitTransaction(account: EthereumAccount, transaction: EthereumTransaction): Hash {
+    override fun submitTransaction(account: EthereumAccount, transaction: EthereumTransaction): Hash = runBlocking {
         val key = account.key as EthCryptoKey
         sb.sender = key.ecKey
         transaction.sign(key)
         sb.submitTransaction(transaction.toEthTransaction())
         account.getAndIncNonce()
-        return transaction.hash()
+        val response = Channel<EthereumBlock?>(1)
+        chainAcctor.send(ChainCtlMessage.NewBlock(response))
+        //TODO async, not wait block create.
+        response.receive()
+        transaction.hash()
     }
 
     val bytesType: SolidityType.BytesType = SolidityType.BytesType()
@@ -117,13 +147,14 @@ class InMemoryChain(autoGenblock: Boolean = true) : EthereumBaseChain() {
         return ethereumTransaction
     }
 
-    fun createBlock(): EthereumBlock {
-        val block = this.sb.createBlock()
-        return EthereumBlock(block)
+    fun createBlock(): EthereumBlock = runBlocking {
+        val response = Channel<EthereumBlock?>(1)
+        chainAcctor.send(ChainCtlMessage.NewBlock(response))
+        response.receive() ?: throw RuntimeException("Create Block fail.")
     }
 
     fun miningCoin(address: Address, amount: BigInteger) {
         this.sb.sendEther(address.toBytes(), amount)
-        this.sb.createBlock()
+        this.createBlock()
     }
 }
