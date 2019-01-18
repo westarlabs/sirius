@@ -8,7 +8,7 @@ build
 out
 logs
 *.DS_Store
-*/database/
+database
 */logs
 *.ipr
 *.iws
