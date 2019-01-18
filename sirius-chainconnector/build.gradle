@@ -6,15 +6,3 @@ dependencies{
 
     testCompile project(path: ':sirius-core', configuration: 'testOutput')
 }
-
-//task copySolidity(type: Copy) {
-//    delete "out/test/resources/solidity"
-//    from ("${project(':sirius-contract').projectDir}/src/main"){
-//        include "**/*.sol"
-//    }
-//    into "out/test/resources"
-//}
-//
-//compileTestJava {
-//    copySolidity.execute()
-//}
