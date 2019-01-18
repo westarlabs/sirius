@@ -21,6 +21,9 @@ data class Update(
     @SerialId(3)
     var hubSign: Signature = Signature.ZERO_SIGN
 ) : SiriusObject() {
+
+    constructor() : this(0, 0L, 0L, 0L)
+
     constructor(
         eon: Int,
         version: Long,
