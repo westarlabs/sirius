@@ -1,22 +1,15 @@
 package org.starcoin.sirius.hub
 
 
-import com.google.common.base.Preconditions
 import org.starcoin.sirius.core.InetAddressPort
+import org.starcoin.sirius.crypto.CryptoKey
+import org.starcoin.sirius.crypto.CryptoService
+import org.starcoin.sirius.lang.hexToByteArray
+import org.starcoin.sirius.lang.toHEXString
 import java.util.*
-import kotlin.properties.Delegates
-
-class Configuration private constructor(val network: Network) {
-
-    var rpcBind: InetAddressPort by Delegates.notNull()
-        private set
-    //TODO
-    var blocksPerEon = 8
-        private set
 
 
-    val isUnitNetwork: Boolean
-        get() = this.network == Network.UINT
+class Configuration private constructor(val properties: Properties) {
 
     enum class Network constructor(val magic: Int) {
         MAIN(0x468dccb0),
@@ -26,32 +19,26 @@ class Configuration private constructor(val network: Network) {
         UINT(0xAB218E);
     }
 
-    class ConfigurationBuilder private constructor(private val configuration: Configuration) {
+    val rpcBind: InetAddressPort
+        get() = InetAddressPort.valueOf(properties.getProperty("rpcBind", DEFAULT_RPC_BIND.toString()))
 
-        fun setRpcBind(rpcBind: InetAddressPort): ConfigurationBuilder {
-            Preconditions.checkNotNull(rpcBind, "rpcBind")
-            this.configuration.rpcBind = rpcBind
-            return this
-        }
+    val blocksPerEon: Int
+        get() = Integer.valueOf(properties.getProperty("blocksPerEon", DEFAULT_BLOCKS_PER_EON.toString()))
 
-        fun setBlocksPerEon(blocks: Int): ConfigurationBuilder {
-            Preconditions.checkArgument(blocks > 0, "blocks per eon should bigger than zero.")
-            this.configuration.blocksPerEon = blocks
-            return this
-        }
+    val ownerKey: CryptoKey
+        get() = CryptoService.loadCryptoKey(
+            properties.getProperty(
+                "ownerKey",
+                CryptoService.dummyCryptoKey.toBytes().toHEXString()
+            ).hexToByteArray()
+        )
 
-        fun build(): Configuration {
-            // TODO check properties.
-            return configuration
-        }
+    val isUnitNetwork: Boolean
+        get() = this.network == Network.UINT
 
-        companion object {
+    val network: Network
+        get() = Network.valueOf(properties.getProperty("network", Network.DEV.name))
 
-            fun forNetwork(network: Network): ConfigurationBuilder {
-                return ConfigurationBuilder(Configuration(network))
-            }
-        }
-    }
 
     companion object {
 
@@ -62,30 +49,14 @@ class Configuration private constructor(val network: Network) {
         fun loadConfiguration(): Configuration {
             var properties = Properties()
             Configuration::class.java.classLoader.getResource("hub.conf").openStream().use { properties.load(it) }
-
-
-            val networkName = properties.getProperty("network", Network.DEV.name)
-
-            val network = Network.valueOf(networkName)
-
-            val builder = ConfigurationBuilder.forNetwork(network)
-
-
-            val rpcHostPort = properties.getProperty("rpcBind", DEFAULT_RPC_BIND.toString())
-            val rpcBind = InetAddressPort.valueOf(rpcHostPort)
-            builder.setRpcBind(rpcBind)
-
-            val blocksPerEon =
-                Integer.valueOf(properties.getProperty("blocksPerEon", DEFAULT_BLOCKS_PER_EON.toString()))
-            builder.setBlocksPerEon(blocksPerEon)
-
-            return builder.build()
+            return Configuration(properties)
         }
 
         fun configurationForUNIT(): Configuration {
-            val configuration = Configuration(Network.UINT)
-            configuration.rpcBind = InetAddressPort.random()
-            return configuration
+            val properties = Properties()
+            properties.put("network", Network.UINT.name)
+            properties.put("rpcBind", InetAddressPort.random().toString())
+            return Configuration(properties)
         }
     }
 }
