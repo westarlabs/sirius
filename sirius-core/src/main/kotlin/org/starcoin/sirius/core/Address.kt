@@ -94,4 +94,5 @@ class Address private constructor(private val bytes: ByteArray) : CachedHashable
 }
 
 fun ByteArray.toAddress() = Address.wrap(this)
-fun String.toAddress() = Address.wrap(this)
+fun String.toAddress() = Address.wrap(this.let {
+    if (this.startsWith("0x")) this.substring(2) else this })

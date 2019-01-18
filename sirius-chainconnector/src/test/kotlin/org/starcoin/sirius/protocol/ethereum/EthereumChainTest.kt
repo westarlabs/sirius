@@ -41,12 +41,10 @@ class EthereumChainTest {
         Assert.assertNotSame(0.toBigInteger(), balance)
         val tx = chain.newTransaction(etherbase, alice.address, 1.toBigInteger())
         val hash = chain.submitTransaction(etherbase, tx)
+        val expectTx = chain.findTransaction(hash)
+        Assert.assertNotNull(expectTx)
     }
 
-    @Test
-    fun testWatchTransactions() {
-
-    }
 
     private fun etherbase(): CryptoKey {
         val credentials = WalletUtils.loadCredentials(
@@ -59,7 +57,6 @@ class EthereumChainTest {
     @Test
     fun testGetBlock() {
         val block = chain.getBlock()
-        println("the block height current is ${block!!.height}")
+        Assert.assertNotNull(block)
     }
-
 }

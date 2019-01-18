@@ -45,11 +45,11 @@ class Hash private constructor(internal val bytes: ByteArray) : Comparable<Hash>
     }
 
     override fun toString(): String {
-        return Utils.HEX.encode(bytes)
+        return Utils.HEX.encode(bytes).let { if (!it.startsWith("0x")) "0x$it" else it }
     }
 
     fun toMD5Hex(): String {
-        return HashUtil.md5Hex(bytes)
+        return HashUtil.md5Hex(bytes).let { if (!it.startsWith("0x")) "0x$it" else it }
     }
 
     /**
