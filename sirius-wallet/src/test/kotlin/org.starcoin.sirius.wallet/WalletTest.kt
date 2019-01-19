@@ -13,8 +13,8 @@ import org.starcoin.sirius.core.*
 import org.starcoin.sirius.crypto.CryptoService
 import org.starcoin.sirius.hub.Configuration
 import org.starcoin.sirius.hub.HubServer
-import org.starcoin.sirius.protocol.ContractConstructArgs
 import org.starcoin.sirius.protocol.EthereumTransaction
+import org.starcoin.sirius.protocol.HubContract
 import org.starcoin.sirius.protocol.ethereum.EthereumAccount
 import org.starcoin.sirius.protocol.ethereum.InMemoryChain
 import org.starcoin.sirius.protocol.ethereum.contract.EthereumHubContract
@@ -29,7 +29,7 @@ class WalletTest {
     private val logger = Logger.getLogger("test")
 
     private var chain: InMemoryChain by Delegates.notNull()
-    private var contract: EthereumHubContract by Delegates.notNull()
+    private var contract: HubContract<EthereumAccount> by Delegates.notNull()
 
     private var owner: EthereumAccount by Delegates.notNull()
     private var alice: EthereumAccount by Delegates.notNull()
@@ -57,21 +57,19 @@ class WalletTest {
         val amount = EtherUtil.convert(100000, EtherUtil.Unit.ETHER)
         this.sendEther(alice.address, amount)
 
-        this.contract = chain.deployContract(owner, ContractConstructArgs.DEFAULT_ARG)
+        //this.contract = chain.deployContract(owner, ContractConstructArgs.DEFAULT_ARG)
 
         hubChannel = InProcessChannelBuilder.forName(configuration.rpcBind.toString()).build()
         stub = HubServiceGrpc.newBlockingStub(hubChannel)
 
         val channelManager = ChannelManager(hubChannel)
 
-        walletAlice= Wallet(this.contract.contractAddress,channelManager,chain,null,alice)
-        //commitHubRoot(0, BigInteger.ZERO)
-
-        //hub = HubImpl(owner, chain, contract)
-        //hub.start()
 
         hubServer = HubServer(configuration,chain,owner)
         hubServer.start()
+        contract = hubServer.contract
+
+        walletAlice= Wallet(this.contract.contractAddress,channelManager,chain,null,alice)
 
     }
 
@@ -109,6 +107,8 @@ class WalletTest {
         Assert.assertEquals(walletAlice.balance().toLong(),amount)
 
         val account=stub.getHubAccount(alice.address.toProto())
+
+        println(account)
         Assert.assertEquals(HubAccount.parseFromProtoMessage(account).deposit.toLong(),amount)
 
     }
