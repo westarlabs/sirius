@@ -43,6 +43,12 @@ enum class PathDirection :
                 values().size
             )]
         }
+
+        fun reversal(direction: PathDirection) = when (direction) {
+            ROOT -> ROOT
+            LEFT -> RIGHT
+            RIGHT -> LEFT
+        }
     }
 }
 

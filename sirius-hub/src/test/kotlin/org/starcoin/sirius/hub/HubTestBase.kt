@@ -327,7 +327,7 @@ abstract class HubTestBase<T : ChainTransaction, A : ChainAccount> {
         Assert.assertEquals(proof, proof1)
 
         Assert.assertNotNull(proof)
-        Assert.assertTrue(AMTree.verifyMembershipProof(root!!, proof))
+        Assert.assertTrue(AMTree.verifyMembershipProof(root!!.toAMTreePathNode(), proof))
         account.hubAccount = hub.getHubAccount(account.address)
     }
 }

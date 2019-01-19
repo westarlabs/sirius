@@ -61,7 +61,7 @@ class HubImpl<T : ChainTransaction, A : ChainAccount>(
                 ready,
                 blocksPerEon,
                 eonState.eon,
-                stateRoot.toAMTreePathNode() as AMTreePathInternalNode,
+                stateRoot.toAMTreePathNode() as AMTreePathNode,
                 owner.key.keyPair.public
             )
         }
@@ -346,7 +346,7 @@ class HubImpl<T : ChainTransaction, A : ChainAccount>(
 
     private fun doCommit() {
         val hubRoot =
-            HubRoot(this.eonState.state.root.toAMTreePathNode() as AMTreePathInternalNode, this.eonState.eon)
+            HubRoot(this.eonState.state.root.toAMTreePathNode() as AMTreePathNode, this.eonState.eon)
         LOG.info("doCommit:" + hubRoot.toJSON())
         this.contract.commit(owner, hubRoot)
     }
@@ -381,9 +381,10 @@ class HubImpl<T : ChainTransaction, A : ChainAccount>(
         val address = CryptoService.generateAddress(challenge.publicKey)
         //TODO is nullable
         val proofPath = this.eonState.state.getMembershipProof(address) ?: assertAccountNotNull(address)
-
+        val leafNodeInfo =
+            this.eonState.state.findLeafNode(address)?.info as AMTreeLeafNodeInfo? ?: assertAccountNotNull(address)
         //val proof = BalanceUpdateProof(proofPath?.leaf?.nodeInfo?.update, proofPath)
-        val closeBalanceUpdateChallengeRequest = CloseBalanceUpdateChallenge(proofPath.leaf.nodeInfo.update, proofPath)
+        val closeBalanceUpdateChallengeRequest = CloseBalanceUpdateChallenge(leafNodeInfo.update, proofPath)
         this.contract.closeBalanceUpdateChallenge(owner, closeBalanceUpdateChallengeRequest)
     }
 

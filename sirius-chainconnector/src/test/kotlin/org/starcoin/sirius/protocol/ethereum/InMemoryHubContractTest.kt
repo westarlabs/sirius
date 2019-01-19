@@ -171,19 +171,23 @@ class InMemoryHubContractTest {
     private fun newPath(addr: Address, update: Update, offset: BigInteger, allotment: BigInteger): AMTreePath {
         val path = AMTreePath(update.eon, newLeaf(addr, update, offset, allotment))
         for (i in 0..MockUtils.nextInt(0, 10)) {
-            path.append(AMTreePathInternalNode.mock())
+            path.append(AMTreePathNode.mock())
         }
 
         return path
     }
 
     private fun newProof(addr: Address, update: Update, offset: BigInteger, allotment: BigInteger): AMTreeProof {
-        return AMTreeProof(newPath(addr, update, offset, allotment), newLeaf(addr, update, offset, allotment))
+        return AMTreeProof(newPath(addr, update, offset, allotment), AMTreeLeafNodeInfo(addr.hash(), update))
     }
 
-    private fun newLeaf(addr: Address, update: Update, offset: BigInteger, allotment: BigInteger): AMTreePathLeafNode {
-        val nodeInfo = AMTreeLeafNodeInfo(addr.hash(), update)
-        return AMTreePathLeafNode(nodeInfo, PathDirection.LEFT, offset, allotment)
+    private fun newLeaf(addr: Address, update: Update, offset: BigInteger, allotment: BigInteger): AMTreePathNode {
+        val nodeInfo = newLeafNodeInfo(addr, update)
+        return AMTreePathNode(nodeInfo.hash(), PathDirection.LEFT, offset, allotment)
+    }
+
+    private fun newLeafNodeInfo(addr: Address, update: Update): AMTreeLeafNodeInfo {
+        return AMTreeLeafNodeInfo(addr.hash(), update)
     }
 
     private fun newUpdate(eon: Int, version: Long, sendAmount: BigInteger, callUser: EthereumAccount): Update {
@@ -228,7 +232,7 @@ class InMemoryHubContractTest {
 
     fun newHubRoot(eon: Int, amount: BigInteger): HubRoot {
         val info = AMTreeInternalNodeInfo(Hash.random(), amount, Hash.random())
-        val node = AMTreePathInternalNode(info, PathDirection.ROOT, 0.toBigInteger(), amount)
+        val node = AMTreePathNode(info.hash(), PathDirection.ROOT, 0.toBigInteger(), amount)
         return HubRoot(node, eon)
     }
 
@@ -289,7 +293,7 @@ class InMemoryHubContractTest {
         val update1 = newUpdate(0, 1, BigInteger.ZERO, alice.key)//other
         val path = newPath(alice.address, update1, BigInteger.ZERO, amount)
         val update2 = newUpdate(0, 1, BigInteger.ZERO, alice.key)//mine
-        val leaf2 = newLeaf(alice.address, update2, 1100.toBigInteger(), 1000.toBigInteger())
+        val leaf2 = newLeafNodeInfo(alice.address, update2)
         val amtp = AMTreeProof(path, leaf2)
         val bup = BalanceUpdateProof(true, update2, true, amtp)
         val buc = BalanceUpdateChallenge(bup, alice.key.keyPair.public)
@@ -305,7 +309,7 @@ class InMemoryHubContractTest {
         val update3 = newUpdate(0, 3, BigInteger.ZERO, alice)//other
         val update4 = newUpdate(0, 4, BigInteger.ZERO, alice)//mine
         val path3 = newPath(alice.address, update3, BigInteger.ZERO, 20.toBigInteger())
-        val leaf3 = newLeaf(alice.address, update4, 1100.toBigInteger(), 1000.toBigInteger())
+        val leaf3 = newLeafNodeInfo(alice.address, update4)
         val amtp2 = AMTreeProof(path, leaf3)
         val close = CloseBalanceUpdateChallenge(update4, amtp2)
         hash = contract.closeBalanceUpdateChallenge(alice, close)
@@ -346,7 +350,7 @@ class InMemoryHubContractTest {
         val update1 = newUpdate(0, 1, BigInteger.ZERO, alice)//other
         val path = newPath(alice.address, update1, BigInteger.ZERO, 200.toBigInteger())
         val update2 = newUpdate(0, 1, BigInteger.ZERO, alice)//mine
-        val leaf2 = newLeaf(alice.address, update2, 1100.toBigInteger(), 1000.toBigInteger())
+        val leaf2 = newLeafNodeInfo(alice.address, update2)
         val amtp = AMTreeProof(path, leaf2)
         val close =
             CloseTransferDeliveryChallenge(amtp, update2, MerklePath.mock(), alice.key.keyPair.public, Hash.of(tx))

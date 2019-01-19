@@ -49,11 +49,11 @@ data class AMTreeLeafNodeInfo(
 
 @ProtobufSchema(Starcoin.AMTreeProof::class)
 @Serializable
-data class AMTreeProof(@SerialId(1) val path: AMTreePath, @SerialId(2) val leaf: AMTreePathLeafNode) : SiriusObject() {
+data class AMTreeProof(@SerialId(1) val path: AMTreePath, @SerialId(2) val leaf: AMTreeLeafNodeInfo) : SiriusObject() {
     companion object : SiriusObjectCompanion<AMTreeProof, Starcoin.AMTreeProof>(AMTreeProof::class) {
-        val DUMMY_PROOF = AMTreeProof(AMTreePath.DUMMY_PATH, AMTreePathLeafNode.DUMMY_NODE)
+        val DUMMY_PROOF = AMTreeProof(AMTreePath.DUMMY_PATH, AMTreeLeafNodeInfo.DUMMY_NODE)
         override fun mock(): AMTreeProof {
-            return AMTreeProof(AMTreePath.mock(), AMTreePathLeafNode.mock())
+            return AMTreeProof(AMTreePath.mock(), AMTreeLeafNodeInfo.mock())
         }
     }
 }
@@ -102,7 +102,7 @@ class AMTree(
     fun findLeafNode(addressHash: Hash?): AMTreeNode? {
         return findTreeNode(
             this.root
-        ) { node -> node.isLeafNode && (node.info as AMTreeLeafNodeInfo).addressHash == addressHash }
+        ) { it.isLeafNode && (it.info as AMTreeLeafNodeInfo).addressHash == addressHash }
     }
 
     private fun findTreeNode(
@@ -123,9 +123,10 @@ class AMTree(
 
         val path = AMTreePath(
             this.eon,
-            siblingNode.toAMTreePathNode() as AMTreePathLeafNode
+            leaf.toAMTreePathNode()
         )
-        val proof = AMTreeProof(path, leaf.toAMTreePathNode() as AMTreePathLeafNode)
+        path.append(siblingNode.toAMTreePathNode())
+        val proof = AMTreeProof(path, leaf.info as AMTreeLeafNodeInfo)
 
         var parent = leaf.parent ?: return proof
         while (parent.parent != null) {
@@ -200,63 +201,40 @@ class AMTree(
             }
         }
 
-        fun buildRoot(path: AMTreePath, leafNode: AMTreePathLeafNode): AMTreeNode {
-
-            var node = if (path.leaf.direction == PathDirection.LEFT) AMTreeNode(
-                AMTreeNode(path.leaf), AMTreeNode(leafNode)
-            ) else AMTreeNode(AMTreeNode(leafNode), AMTreeNode(path.leaf))
-
-            for (i in 0 until path.size) {
-                val pathNode = path[i]
-                node = when {
-                    pathNode.direction == PathDirection.LEFT -> AMTreeNode(
-                        AMTreeNode(
-                            pathNode
-                        ), node
-                    )
-                    else -> AMTreeNode(
-                        node,
-                        AMTreeNode(pathNode)
-                    )
-                }
-            }
-            return node
-        }
-
-        fun verifyMembershipProof(root: AMTreePathInternalNode?, proof: AMTreeProof?): Boolean {
+        fun verifyMembershipProof(root: AMTreePathNode?, proof: AMTreeProof?): Boolean {
             return verifyMembershipProof(root, proof?.path, proof?.leaf)
         }
 
         fun verifyMembershipProof(
-            root: AMTreeNode?, proof: AMTreeProof?
-        ): Boolean {
-            return this.verifyMembershipProof(
-                root?.toAMTreePathNode() as AMTreePathInternalNode?,
-                proof?.path,
-                proof?.leaf
-            )
-        }
-
-        fun verifyMembershipProof(
-            root: AMTreeNode?, path: AMTreePath?, leaf: AMTreeNode?
-        ): Boolean {
-            return this.verifyMembershipProof(
-                root?.toAMTreePathNode() as AMTreePathInternalNode?,
-                path,
-                leaf?.toAMTreePathNode() as AMTreePathLeafNode
-            )
-        }
-
-        fun verifyMembershipProof(
-            root: AMTreePathInternalNode?,
+            root: AMTreePathNode?,
             path: AMTreePath?,
-            leaf: AMTreePathLeafNode?
+            leaf: AMTreeLeafNodeInfo?
         ): Boolean {
             return when {
                 root == null || path == null || leaf == null -> false
+                path.isEmpty() -> false
+                path.leafNode.nodeHash != leaf.hash() -> false
+                path.leafNode.direction == PathDirection.ROOT -> false
                 else -> {
-                    val buildRoot = buildRoot(path, leaf)
-                    return buildRoot.hash() == root.hash() && buildRoot.offset == root.offset && buildRoot.allotment == root.allotment
+                    var currentNode = path.leafNode
+                    for ((index, node) in path.withIndex()) {
+                        if (node.direction == PathDirection.ROOT || node.direction == currentNode.direction) {
+                            return false
+                        }
+                        val (left, right) = if (node.direction == PathDirection.LEFT) Pair(node, currentNode) else Pair(
+                            currentNode,
+                            node
+                        )
+                        val direction =
+                            if (index + 1 == path.size) PathDirection.ROOT else PathDirection.reversal(path[index + 1].direction)
+                        currentNode = AMTreePathNode(
+                            AMTreeInternalNodeInfo(left.nodeHash, right.offset, right.nodeHash).hash(),
+                            direction,
+                            left.offset,
+                            left.allotment + right.allotment
+                        )
+                    }
+                    return root.offset == currentNode.offset && root.allotment == currentNode.allotment && root.nodeHash == currentNode.nodeHash
                 }
             }
         }
@@ -311,18 +289,6 @@ class AMTreeNode(
         this.right = right
     }
 
-    constructor(pathNode: AMTreePathLeafNode) : this(
-        pathNode.offset,
-        pathNode.nodeInfo,
-        pathNode.allotment
-    )
-
-    constructor(pathNode: AMTreePathInternalNode) : this(
-        pathNode.offset,
-        pathNode.nodeInfo,
-        pathNode.allotment
-    )
-
     val isLeafNode: Boolean
         get() = this.left == null && this.right == null && this.info is AMTreeLeafNodeInfo
 
@@ -348,7 +314,7 @@ class AMTreeNode(
         }
 
     override fun doHash(): Hash {
-        return Hash.of(this.toAMTreePathNode())
+        return Hash.of(this.info)
     }
 
     override fun equals(other: Any?): Boolean {
@@ -370,20 +336,12 @@ class AMTreeNode(
     }
 
     fun toAMTreePathNode(): AMTreePathNode {
-        return when (this.info) {
-            is AMTreeInternalNodeInfo -> AMTreePathInternalNode(
-                this.info,
-                this.direction,
-                this.offset,
-                this.allotment
-            )
-            is AMTreeLeafNodeInfo -> AMTreePathLeafNode(
-                this.info,
-                this.direction,
-                this.offset,
-                this.allotment
-            )
-        }
+        return AMTreePathNode(
+            this.info.hash(),
+            this.direction,
+            this.offset,
+            this.allotment
+        )
     }
 
     companion object {

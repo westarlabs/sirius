@@ -73,8 +73,8 @@ class SiriusModelTest : ContractTestBase("solidity/test_all", "test_all") {
     }
 
     @Test
-    fun testAMTreePathLeafNode() {
-        doTest(AMTreePathLeafNode::class, "am_tree_path_leaf_node_test")
+    fun testAMTreePathNode() {
+        doTest(AMTreePathNode::class, "am_tree_path_leaf_node_test")
     }
 
     @Test

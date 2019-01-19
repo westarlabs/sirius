@@ -82,15 +82,8 @@ enum PathDirection {
     DIRECTION_RIGHT = 2;
 }
 
-message AMTreePathInternalNode {
-    required AMTreeInternalNodeInfo nodeInfo = 1;
-    required PathDirection direction = 2;
-    required bytes offset = 3;
-    required bytes allotment = 4;
-}
-
-message AMTreePathLeafNode {
-    required AMTreeLeafNodeInfo nodeInfo = 1;
+message AMTreePathNode {
+    required bytes nodeHash = 1;
     required PathDirection direction = 2;
     required bytes offset = 3;
     required bytes allotment = 4;
@@ -98,13 +91,13 @@ message AMTreePathLeafNode {
 
 message AMTreePath {
     required uint32 eon = 1;
-    required AMTreePathLeafNode leaf = 2;
-    repeated AMTreePathInternalNode nodes = 3;
+    required AMTreePathNode leaf = 2;
+    repeated AMTreePathNode nodes = 3;
 }
 
 message AMTreeProof {
     required AMTreePath path = 1;
-    required AMTreePathLeafNode leaf = 2;
+    required AMTreeLeafNodeInfo leaf = 2;
 }
 
 //UpdateData
@@ -165,7 +158,7 @@ message QueryHubCommitRequest {
 }
 
 message HubRoot {
-    required AMTreePathInternalNode root = 1;
+    required AMTreePathNode root = 1;
     required uint32 eon = 2;
 }
 
@@ -178,7 +171,7 @@ message HubInfo {
     required bool ready = 1;
     required uint32 eon = 2;
     required uint32 blocksPerEon = 3;
-    required AMTreePathInternalNode root = 4;
+    required AMTreePathNode root = 4;
     required bytes publicKey = 5;
 }
 

@@ -33,12 +33,18 @@ class AMTreeTest {
     //TODO random exception org.starcoin.sirius.core.AMTreePathLeafNode cannot be cast to org.starcoin.sirius.core.AMTreePathInternalNode
     @Test
     fun testMembershipProof() {
-        val tree = AMTree.random(MockUtils.nextInt(10, 1000))
+        val tree = AMTree.random(MockUtils.nextInt(10, 100))
         val node = tree.randomLeafNode()!!
-        val path = tree.getMembershipProof((node.info as AMTreeLeafNodeInfo).addressHash)
-        Assert.assertTrue(AMTree.verifyMembershipProof(tree.root, path))
+        val proof = tree.getMembershipProof((node.info as AMTreeLeafNodeInfo).addressHash)
+        Assert.assertTrue(AMTree.verifyMembershipProof(tree.root.toAMTreePathNode(), proof))
     }
 
+    @Test
+    fun testMembershipProofMany() {
+        for (i in 0..100) {
+            testMembershipProof()
+        }
+    }
 
     @Test
     fun testEmptyListHash() {
@@ -64,11 +70,11 @@ class AMTreeTest {
         val a = HubAccount.mock()
         val tree = AMTree(eon, Lists.newArrayList(a))
         val proof = tree.getMembershipProof(a.address)!!
-        Assert.assertTrue(AMTree.verifyMembershipProof(tree.root, proof))
+        Assert.assertTrue(AMTree.verifyMembershipProof(tree.root.toAMTreePathNode(), proof))
 
         // test verify after marshal
-        val rootBytes = (tree.root.toAMTreePathNode() as AMTreePathInternalNode).toProtobuf()
-        val root = AMTreePathInternalNode.parseFromProtobuf(rootBytes)
+        val rootBytes = tree.root.toAMTreePathNode().toProtobuf()
+        val root = AMTreePathNode.parseFromProtobuf(rootBytes)
         Assert.assertEquals(tree.root.toAMTreePathNode(), root)
 
         val proof1 = AMTreeProof.parseFromProtobuf(proof.toProtobuf())

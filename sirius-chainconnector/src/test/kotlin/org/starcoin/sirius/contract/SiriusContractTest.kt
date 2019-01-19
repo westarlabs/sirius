@@ -129,7 +129,7 @@ class SiriusContractTest : ContractTestBase("solidity/SiriusService", "SiriusSer
         val update1 = newUpdate(eon, 1, 0)//other
         val path = newPath(ethKey2Address(callUser), update1)
         val update2 = newUpdate(eon, 1, 0)//mine
-        val leaf2 = newLeaf(ethKey2Address(callUser), update2, 1100, 1000)
+        val leaf2 = newLeafNodeInfo(ethKey2Address(callUser), update2)
         val amtp = AMTreeProof(path, leaf2)
         val bup = BalanceUpdateProof(true, update2, true, amtp)
         val buc = BalanceUpdateChallenge(bup, callUser.keyPair.public)
@@ -146,7 +146,7 @@ class SiriusContractTest : ContractTestBase("solidity/SiriusService", "SiriusSer
         val update3 = newUpdate(eon, 3, 0)//other
         val update4 = newUpdate(eon, 4, 0)//mine
         val path = newPath(ethKey2Address(callUser), update3)
-        val leaf3 = newLeaf(ethKey2Address(callUser), update4, 1100, 1000)
+        val leaf3 = newLeafNodeInfo(ethKey2Address(callUser), update4)
         val amtp = AMTreeProof(path, leaf3)
         val close = CloseBalanceUpdateChallenge(update4, amtp)
         val data = RLP.dump(CloseBalanceUpdateChallenge.serializer(), close)
@@ -196,7 +196,7 @@ class SiriusContractTest : ContractTestBase("solidity/SiriusService", "SiriusSer
         val update1 = newUpdate(eon, 1, 0)//other
         val path = newPath(ethKey2Address(callUser), update1)
         val update2 = newUpdate(eon, 1, 0)//mine
-        val leaf2 = newLeaf(ethKey2Address(callUser), update2, 1100, 1000)
+        val leaf2 = newLeafNodeInfo(ethKey2Address(callUser), update2)
         val amtp = AMTreeProof(path, leaf2)
         val close =
             CloseTransferDeliveryChallenge(amtp, update2, MerklePath.mock(), callUser.keyPair.public, Hash.of(tx))
@@ -221,7 +221,7 @@ class SiriusContractTest : ContractTestBase("solidity/SiriusService", "SiriusSer
         val update3 = newUpdate(eon, 3, 0)//other
         val update4 = newUpdate(eon, 4, 0)//mine
         val path = newPath(ethKey2Address(callUser), update3)
-        val leaf3 = newLeaf(ethKey2Address(callUser), update4, 0, 0)
+        val leaf3 = newLeafNodeInfo(ethKey2Address(callUser), update4)
 
         val refund = AMTreeProof(path, leaf3)
         val data = RLP.dump(AMTreeProof.serializer(), refund)
@@ -238,7 +238,7 @@ class SiriusContractTest : ContractTestBase("solidity/SiriusService", "SiriusSer
     }
 
     private fun newProof(addr: Address, update: Update): AMTreeProof {
-        return AMTreeProof(newPath(addr, update), AMTreePathLeafNode.DUMMY_NODE)
+        return AMTreeProof(newPath(addr, update), AMTreeLeafNodeInfo.DUMMY_NODE)
     }
 
     private fun newPath(addr: Address, update: Update): AMTreePath {
@@ -246,15 +246,19 @@ class SiriusContractTest : ContractTestBase("solidity/SiriusService", "SiriusSer
         val allotment: Long = 1000
         val path = AMTreePath(update.eon, newLeaf(addr, update, offset, allotment))
         for (i in 0..MockUtils.nextInt(0, 10)) {
-            path.append(AMTreePathInternalNode.mock())
+            path.append(AMTreePathNode.mock())
         }
 
         return path
     }
 
-    private fun newLeaf(addr: Address, update: Update, offset: Long, allotment: Long): AMTreePathLeafNode {
+    private fun newLeaf(addr: Address, update: Update, offset: Long, allotment: Long): AMTreePathNode {
         val nodeInfo = AMTreeLeafNodeInfo(addr.hash(), update)
-        return AMTreePathLeafNode(nodeInfo, PathDirection.LEFT, offset, allotment)
+        return AMTreePathNode(nodeInfo.hash(), PathDirection.LEFT, offset, allotment)
+    }
+
+    fun newLeafNodeInfo(addr: Address, update: Update): AMTreeLeafNodeInfo {
+        return AMTreeLeafNodeInfo(addr.hash(), update)
     }
 
     private fun createEon(eon: Int) {

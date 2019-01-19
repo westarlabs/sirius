@@ -10,18 +10,18 @@ import org.starcoin.sirius.util.MockUtils
 @Serializable
 data class HubRoot(
     @SerialId(1)
-    val root: AMTreePathInternalNode = AMTreePathInternalNode.DUMMY_NODE,
+    val root: AMTreePathNode = AMTreePathNode.DUMMY_NODE,
     @SerialId(2)
     val eon: Int = 0
 ) : SiriusObject() {
     companion object : SiriusObjectCompanion<HubRoot, Starcoin.HubRoot>(HubRoot::class) {
 
         val DUMMY_HUB_ROOT = HubRoot()
-        val EMPTY_TREE_HUBROOT = HubRoot(AMTree().root.toAMTreePathNode() as AMTreePathInternalNode, 0)
+        val EMPTY_TREE_HUBROOT = HubRoot(AMTree().root.toAMTreePathNode(), 0)
 
         override fun mock(): HubRoot {
             return HubRoot(
-                AMTreePathInternalNode.mock(), MockUtils.nextInt()
+                AMTreePathNode.mock(), MockUtils.nextInt()
             )
         }
     }

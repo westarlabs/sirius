@@ -68,7 +68,7 @@ abstract class ContractTestBase(val contractPath: String, val contractName: Stri
         }
 
         fun ethKey2Address(ethKey: EthCryptoKey): Address {
-            return Address.getAddress(ethKey.keyPair.public)
+            return ethKey.address
         }
     }
 
@@ -144,7 +144,7 @@ abstract class ContractTestBase(val contractPath: String, val contractName: Stri
 
     fun commitData(eon: Int, amount: Long, flag: Boolean) {
         val info = AMTreeInternalNodeInfo(Hash.random(), amount, Hash.random())
-        val node = AMTreePathInternalNode(info, PathDirection.ROOT, 0, amount)
+        val node = AMTreePathNode(info.hash(), PathDirection.ROOT, 0, amount)
         val root = HubRoot(node, eon)
         val data = RLP.dump(HubRoot.serializer(), root)
         val callResult = contract.callFunction("commit", data)
@@ -166,7 +166,7 @@ abstract class ContractTestBase(val contractPath: String, val contractName: Stri
         val realEon = eon + 1
         accounts.add(HubAccount(callUser.keyPair.public, up, allotment, amount, 0, txs))
         val tree = AMTree(realEon, accounts)
-        val node = tree.root.toAMTreePathNode() as AMTreePathInternalNode
+        val node = tree.root.toAMTreePathNode()
 
         val root = HubRoot(node, realEon)
         val data = RLP.dump(HubRoot.serializer(), root)
