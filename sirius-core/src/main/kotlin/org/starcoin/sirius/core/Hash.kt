@@ -7,6 +7,7 @@ import com.google.common.primitives.Ints
 import com.google.protobuf.ByteString
 import kotlinx.serialization.*
 import org.starcoin.sirius.crypto.CryptoService
+import org.starcoin.sirius.lang.hexToByteArray
 import org.starcoin.sirius.serialization.BinaryDecoder
 import org.starcoin.sirius.serialization.BinaryEncoder
 import org.starcoin.sirius.util.HashUtil
@@ -135,7 +136,7 @@ class Hash private constructor(internal val bytes: ByteArray) : Comparable<Hash>
          * not represent exactly 32 bytes
          */
         fun wrap(hexString: String): Hash {
-            return wrap(Utils.HEX.decode(hexString))
+            return wrap(hexString.hexToByteArray())
         }
 
         fun wrap(byteString: ByteString): Hash {
@@ -232,4 +233,4 @@ class Hash private constructor(internal val bytes: ByteArray) : Comparable<Hash>
 }
 
 fun ByteArray.toHash() = Hash.wrap(this)
-fun String.toHash() = Hash.wrap(if (startsWith("0x")) substring(2) else this)
+fun String.toHash() = Hash.wrap(this)
