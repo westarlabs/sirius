@@ -17,7 +17,6 @@ import org.starcoin.sirius.protocol.EthereumTransaction
 import org.starcoin.sirius.protocol.HubContract
 import org.starcoin.sirius.protocol.ethereum.EthereumAccount
 import org.starcoin.sirius.protocol.ethereum.InMemoryChain
-import org.starcoin.sirius.protocol.ethereum.contract.EthereumHubContract
 import org.starcoin.sirius.wallet.core.ChannelManager
 import org.starcoin.sirius.wallet.core.Wallet
 import java.math.BigInteger
@@ -57,13 +56,10 @@ class WalletTest {
         val amount = EtherUtil.convert(100000, EtherUtil.Unit.ETHER)
         this.sendEther(alice.address, amount)
 
-        //this.contract = chain.deployContract(owner, ContractConstructArgs.DEFAULT_ARG)
-
         hubChannel = InProcessChannelBuilder.forName(configuration.rpcBind.toString()).build()
         stub = HubServiceGrpc.newBlockingStub(hubChannel)
 
         val channelManager = ChannelManager(hubChannel)
-
 
         hubServer = HubServer(configuration,chain,owner)
         hubServer.start()
@@ -108,7 +104,6 @@ class WalletTest {
 
         val account=stub.getHubAccount(alice.address.toProto())
 
-        println(account)
         Assert.assertEquals(HubAccount.parseFromProtoMessage(account).deposit.toLong(),amount)
 
     }
@@ -133,25 +128,6 @@ class WalletTest {
         chain.sb.createBlock()
 
         Assert.assertTrue(!walletAlice.hub.hubStatus.couldWithDrawal())
-    }
-
-    private fun commitHubRoot(eon: Int, amount: BigInteger): Hash {
-        var height = chain.getBlockNumber().toLong()
-        if (eon != 0) {
-            if (height?.rem(8) != 0L) {
-                var blockNumber = 8 - (height?.rem(8) ?: 0) - 1
-                for (i in 0..blockNumber) {
-                    chain.sb.createBlock()
-                }
-            }
-        }
-        val info = AMTreeInternalNodeInfo(Hash.random(), amount, Hash.random())
-        val node = AMTreePathInternalNode(info, PathDirection.ROOT, 0.toBigInteger(), amount)
-        val root = HubRoot(node, eon)
-        logger.info("current block height is :" + chain.getBlockNumber())
-        logger.info(root.toJSON())
-        val callResult = contract.commit(owner, root)
-        return callResult
     }
 
     private fun waitToNextEon() {
