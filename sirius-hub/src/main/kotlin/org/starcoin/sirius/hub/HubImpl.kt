@@ -431,6 +431,7 @@ class HubImpl<T : ChainTransaction, A : ChainAccount>(
     private fun processDeposit(deposit: Deposit) {
         this.strategy.processDeposit(
             {
+                println(this.eonState.getAccounts())
                 val hubAccount = this.eonState.getAccount(deposit.address) ?: assertAccountNotNull(deposit.address)
                 hubAccount.addDeposit(deposit.amount)
                 this.fireEvent(

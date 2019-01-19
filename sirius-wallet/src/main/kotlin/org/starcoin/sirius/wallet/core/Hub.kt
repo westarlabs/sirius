@@ -166,7 +166,7 @@ class Hub <T : ChainTransaction, A : ChainAccount> {
             hubStatus.addUpdate(response)
             this.accountInfo()
             watchHubEnvent()
-            this.disconnect = false
+            //this.disconnect = false
             return response
         } catch (e: StatusRuntimeException) {
             throw e

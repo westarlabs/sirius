@@ -1,12 +1,18 @@
 package org.starcoin.sirius.wallet
 
+import com.google.protobuf.Empty
+import io.grpc.Channel
 import io.grpc.inprocess.InProcessChannelBuilder
 import org.ethereum.util.blockchain.EtherUtil
+import org.junit.After
 import org.junit.Assert
 import org.junit.Before
 import org.junit.Test
+import org.starcoin.proto.HubServiceGrpc
 import org.starcoin.sirius.core.*
 import org.starcoin.sirius.crypto.CryptoService
+import org.starcoin.sirius.hub.Configuration
+import org.starcoin.sirius.hub.HubServer
 import org.starcoin.sirius.protocol.ContractConstructArgs
 import org.starcoin.sirius.protocol.EthereumTransaction
 import org.starcoin.sirius.protocol.ethereum.EthereumAccount
@@ -30,26 +36,42 @@ class WalletTest {
 
     private var walletAlice : Wallet<EthereumTransaction,EthereumAccount> by Delegates.notNull()
 
+    private var hubServer: HubServer<EthereumTransaction,EthereumAccount> by Delegates.notNull()
+
+    private val configuration = Configuration.configurationForUNIT()
+
+    private var hubChannel : Channel by Delegates.notNull()
+
+    private var stub : HubServiceGrpc.HubServiceBlockingStub by Delegates.notNull()
+
+
     @Before
     @Throws(InterruptedException::class)
     fun before() {
         chain = InMemoryChain(true)
 
-        owner = EthereumAccount(CryptoService.generateCryptoKey())
+        val owner = EthereumAccount(configuration.ownerKey)
+        chain.miningCoin(owner.address, EtherUtil.convert(Int.MAX_VALUE.toLong(), EtherUtil.Unit.ETHER))
         alice = EthereumAccount(CryptoService.generateCryptoKey())
 
         val amount = EtherUtil.convert(100000, EtherUtil.Unit.ETHER)
-        this.sendEther(owner.address, amount)
         this.sendEther(alice.address, amount)
 
         this.contract = chain.deployContract(owner, ContractConstructArgs.DEFAULT_ARG)
 
-        val hubChannel = InProcessChannelBuilder.forName("").build()
+        hubChannel = InProcessChannelBuilder.forName(configuration.rpcBind.toString()).build()
+        stub = HubServiceGrpc.newBlockingStub(hubChannel)
 
         val channelManager = ChannelManager(hubChannel)
 
         walletAlice= Wallet(this.contract.contractAddress,channelManager,chain,null,alice)
-        commitHubRoot(0, BigInteger.ZERO)
+        //commitHubRoot(0, BigInteger.ZERO)
+
+        //hub = HubImpl(owner, chain, contract)
+        //hub.start()
+
+        hubServer = HubServer(configuration,chain,owner)
+        hubServer.start()
 
     }
 
@@ -59,14 +81,46 @@ class WalletTest {
         Assert.assertEquals(amount, chain.getBalance(address))
     }
 
+    fun waitHubReady(stub: HubServiceGrpc.HubServiceBlockingStub) {
+        var hubInfo = stub.getHubInfo(Empty.newBuilder().build())
+        while (!hubInfo.ready) {
+            logger.info("waiting hub ready:")
+            Thread.sleep(100)
+            hubInfo = stub.getHubInfo(Empty.newBuilder().build())
+        }
+    }
+
+    @After
+    fun after() {
+        hubServer.stop()
+    }
+
     @Test
     fun testDeposit(){
+        testReg()
+
+        waitToNextEon()
+
         val amount=2000L
         walletAlice.deposit(amount)
         chain.sb.createBlock()
 
         Assert.assertEquals(amount, chain.getBalance(contract.contractAddress).toLong())
         Assert.assertEquals(walletAlice.balance().toLong(),amount)
+
+        val account=stub.getHubAccount(alice.address.toProto())
+        Assert.assertEquals(HubAccount.parseFromProtoMessage(account).deposit.toLong(),amount)
+
+    }
+
+
+    @Test
+    fun testReg(){
+        waitHubReady(stub)
+
+        var update=walletAlice.register()
+
+        Assert.assertNotNull(update)
     }
 
     @Test
@@ -109,4 +163,5 @@ class WalletTest {
             }
         }
     }
+
 }

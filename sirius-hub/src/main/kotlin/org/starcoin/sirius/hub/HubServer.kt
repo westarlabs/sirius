@@ -1,19 +1,16 @@
 package org.starcoin.sirius.hub
 
-import org.ethereum.util.blockchain.EtherUtil
+import org.starcoin.sirius.core.Block
+import org.starcoin.sirius.core.ChainTransaction
+import org.starcoin.sirius.protocol.Chain
+import org.starcoin.sirius.protocol.ChainAccount
 import org.starcoin.sirius.protocol.ContractConstructArgs
-import org.starcoin.sirius.protocol.ethereum.EthereumAccount
-import org.starcoin.sirius.protocol.ethereum.InMemoryChain
 
-class HubServer(val configuration: Configuration) {
+class HubServer<T : ChainTransaction, A : ChainAccount>(val configuration: Configuration, val chain:Chain<T, out Block<T>, A>,val owner: A) {
 
     var grpcServer = GrpcServer(configuration)
 
-
     fun start() {
-        val owner = EthereumAccount(configuration.ownerKey)
-        val chain = InMemoryChain()
-        chain.miningCoin(owner.address, EtherUtil.convert(Int.MAX_VALUE.toLong(), EtherUtil.Unit.ETHER))
         val contract = chain.deployContract(owner, ContractConstructArgs.DEFAULT_ARG)
         val hubService = HubService(owner, chain, contract)
         val hubRpcService = HubRpcService(hubService)

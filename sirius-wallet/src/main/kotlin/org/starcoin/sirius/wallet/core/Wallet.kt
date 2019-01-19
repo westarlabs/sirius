@@ -3,6 +3,7 @@ package org.starcoin.sirius.wallet.core
 import org.starcoin.sirius.core.Address
 import org.starcoin.sirius.core.Block
 import org.starcoin.sirius.core.ChainTransaction
+import org.starcoin.sirius.core.Update
 import org.starcoin.sirius.protocol.Chain
 import org.starcoin.sirius.protocol.ChainAccount
 import org.starcoin.sirius.wallet.core.blockchain.BlockChain
@@ -47,5 +48,9 @@ class Wallet<T : ChainTransaction, A : ChainAccount> {
 
     fun withdrawal(value:Long){
         return hub.withDrawal(value)
+    }
+
+    fun register():Update?{
+        return hub.register()
     }
 }

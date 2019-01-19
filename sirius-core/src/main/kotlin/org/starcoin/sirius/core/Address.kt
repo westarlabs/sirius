@@ -4,6 +4,7 @@ package org.starcoin.sirius.core
 import com.google.common.base.Preconditions
 import com.google.protobuf.ByteString
 import kotlinx.serialization.*
+import org.starcoin.proto.Starcoin
 import org.starcoin.sirius.crypto.CryptoService
 import org.starcoin.sirius.serialization.BinaryDecoder
 import org.starcoin.sirius.serialization.BinaryEncoder
@@ -43,6 +44,10 @@ class Address private constructor(private val bytes: ByteArray) : CachedHashable
 
     override fun hashCode(): Int {
         return bytes.contentHashCode()
+    }
+
+    fun toProto():Starcoin.ProtoBlockAddress{
+        return Starcoin.ProtoBlockAddress.newBuilder().setAddress(ByteString.copyFrom(bytes)).build()
     }
 
     @Serializer(forClass = Address::class)

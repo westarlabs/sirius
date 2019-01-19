@@ -2,6 +2,7 @@ package org.starcoin.sirius.hub
 
 import com.google.protobuf.Empty
 import io.grpc.inprocess.InProcessChannelBuilder
+import org.ethereum.util.blockchain.EtherUtil
 import org.junit.After
 import org.junit.Assert
 import org.junit.Before
@@ -11,18 +12,26 @@ import org.starcoin.proto.Starcoin
 import org.starcoin.sirius.core.Participant
 import org.starcoin.sirius.core.Update
 import org.starcoin.sirius.crypto.CryptoService
+import org.starcoin.sirius.protocol.EthereumTransaction
+import org.starcoin.sirius.protocol.ethereum.EthereumAccount
+import org.starcoin.sirius.protocol.ethereum.InMemoryChain
 import org.starcoin.sirius.util.WithLogging
 import kotlin.properties.Delegates
 
 class HubServerTest {
     companion object : WithLogging()
 
-    var hubServer: HubServer by Delegates.notNull()
+    var hubServer: HubServer<EthereumTransaction,EthereumAccount> by Delegates.notNull()
     val configuration = Configuration.configurationForUNIT()
 
     @Before
     fun before() {
-        hubServer = HubServer(configuration)
+
+        val chain = InMemoryChain()
+        val owner = EthereumAccount(configuration.ownerKey)
+        chain.miningCoin(owner.address, EtherUtil.convert(Int.MAX_VALUE.toLong(), EtherUtil.Unit.ETHER))
+
+        hubServer = HubServer(configuration,chain,owner)
         hubServer.start()
     }
 
