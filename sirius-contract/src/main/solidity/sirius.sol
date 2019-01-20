@@ -41,7 +41,6 @@ contract SiriusService is Sirius {
     event SiriusEvent(bytes32 indexed hash, uint indexed num, bytes value);
 
     constructor(bytes memory data) public {
-
         GlobleLib.Balance memory initBalance = newBalance(0);
         checkBalances(initBalance);
 
@@ -52,7 +51,7 @@ contract SiriusService is Sirius {
         ModelLib.HubRoot memory root = args.hubRoot;
         require(root.eon == 0);
         require(root.node.allotment == 0);
-        require(root.node.offset == 0);
+        ModelLib.hubRootCommonVerify(root);
 
         balances[0].root = root;
         balances[0].hasRoot = true;
@@ -124,12 +123,12 @@ contract SiriusService is Sirius {
             if(flag) {
                 ModelLib.HubRoot memory root = ModelLib.unmarshalHubRoot(RLPDecoder.toRLPItem(data, true));
                 require(!balances[0].hasRoot);
-                require(root.eon >= 0);
+                require(root.eon > 0);
                 require(balances[0].eon == root.eon);
-                require(root.node.allotment >= 0);
+                ModelLib.hubRootCommonVerify(root);
                 uint tmp = SafeMath.add(balances[1].root.node.allotment, balances[1].depositMeta.total);
                 uint allotmentTmp = SafeMath.sub(tmp, balances[1].withdrawalMeta.total);
-                require(allotmentTmp >= 0 && allotmentTmp == root.node.allotment);
+                require(allotmentTmp == root.node.allotment);
                 balances[0].root = root;
                 balances[0].hasRoot = true;
 
@@ -195,7 +194,7 @@ contract SiriusService is Sirius {
     function cancelWithdrawal(bytes calldata data) external returns (bool) {
         if(!recoveryMode) {
             ModelLib.CancelWithdrawal memory cancel = ModelLib.unmarshalCancelWithdrawal(RLPDecoder.toRLPItem(data, true));
-            uint currentEon = currentEon();
+            //uint currentEon = currentEon();
             //require(cancel.update.upData.eon >= 0 && cancel.update.upData.eon == currentEon);
 
             bytes32 key = ByteUtilLib.address2hash(cancel.addr);
@@ -409,7 +408,7 @@ contract SiriusService is Sirius {
         uint preEon = balances[1].eon;
         require(preEon == proof.leaf.update.upData.eon);
 
-        ModelLib.HubRoot memory preRoot = preRoot();
+        ModelLib.HubRoot memory preRoot = getPreRoot();
         bool proofFlag = ModelLib.verifyMembershipProof4AMTreeProof(preRoot.node, proof);
         require(proofFlag);
 
@@ -554,7 +553,7 @@ contract SiriusService is Sirius {
         }
     }
 
-    function preRoot() private view returns (ModelLib.HubRoot memory) {
+    function getPreRoot() private view returns (ModelLib.HubRoot memory) {
         ModelLib.HubRoot memory preRoot = balances[1].root;
         if(balances[0].eon == 0) {
             preRoot = latestRoot();

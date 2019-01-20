@@ -326,7 +326,42 @@ library ModelLib {
     }
 
     function verifyMembershipProof4AMTreeProof(AMTreePathNode memory root, AMTreeProof memory proof) internal pure returns(bool) {
-        return true;
+        //AMTreeLeafNodeInfo == AMTreePath.leaf
+        bytes32 leafHash = keccak256(marshalAMTreeLeafNodeInfo(proof.leaf));
+        require(leafHash == proof.path.leaf.nodeHash);
+
+        //AMTreePath -> root
+        AMTreePathNode memory computeNode = proof.path.leaf;
+        for (uint i=0;i<proof.path.nodes.length;i++) {
+            AMTreePathNode memory node = proof.path.nodes[i];
+            if (node.direction == Direction.DIRECTION_LEFT) {
+                computeNode.direction = Direction.DIRECTION_RIGHT;
+                computeNode = combineAMTreePathNode(node, computeNode);
+                //printAMTreeInternalNodeInfo(computeNode);
+            } else if(node.direction == Direction.DIRECTION_RIGHT) {
+                computeNode.direction = Direction.DIRECTION_LEFT;
+                computeNode = combineAMTreePathNode(computeNode, node);
+                //printAMTreeInternalNodeInfo(computeNode);
+            } else {}
+        }
+
+        computeNode.direction = Direction.DIRECTION_ROOT;
+
+        //hash == hash
+        return (keccak256(marshalAMTreePathNode(root)) == keccak256(marshalAMTreePathNode(computeNode)) && root.offset == computeNode.offset && root.allotment == computeNode.allotment);
+    }
+
+    function combineAMTreePathNode(AMTreePathNode memory left, AMTreePathNode memory right) private pure returns (AMTreePathNode memory node) {
+        AMTreeInternalNodeInfo memory tmp;
+        tmp.left = left.nodeHash;
+        tmp.offset = right.offset;
+        tmp.right = right.nodeHash;
+
+        bytes32 nodeHash = keccak256(marshalAMTreeInternalNodeInfo(tmp));
+
+        node.nodeHash = nodeHash;
+        node.offset = left.offset;
+        node.allotment = SafeMath.add(left.allotment, right.allotment);
     }
 
     function unmarshalAMTreePath(RLPLib.RLPItem memory rlp) internal pure returns (AMTreePath memory path) {
@@ -716,6 +751,11 @@ library ModelLib {
         bytes memory eon = RLPEncoder.encodeUint(hub.eon);
 
         return RLPEncoder.encodeList(ByteUtilLib.append(node, eon));
+    }
+
+    function hubRootCommonVerify(HubRoot memory root) internal pure {
+        require(root.node.offset == 0);
+        require(root.node.direction == ModelLib.Direction.DIRECTION_ROOT);
     }
 
     struct ContractConstructArgs {

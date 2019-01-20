@@ -56,21 +56,21 @@ contract TestDataRLP {
         return encodeData(data);
     }
 
-    function echo(bytes memory _data) public view returns (bytes memory){
+    function echo(bytes memory _data) public pure returns (bytes memory){
         //return _data;
         return encodeData(decodeData(_data));
     }
 
     //TODO solidity bug, byte always 0
-    function echoByte(byte b) public view returns (byte){
+    function echoByte(byte b) public pure returns (byte){
         return b;
     }
 
-    function testBoolTrue() public view returns(bool){
+    function testBoolTrue() public pure returns(bool){
         return true;
     }
 
-    function testBoolFalse() public view returns(bool){
+    function testBoolFalse() public pure returns(bool){
         return false;
     }
 }

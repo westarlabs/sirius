@@ -85,7 +85,7 @@ class SiriusModelTest : ContractTestBase("solidity/test_all", "test_all") {
     }
 
     @Test
-    fun testAMTreeProof2() {
+    fun testVerifyAMTreeProof() {
         val tree = AMTree.random()
         val obj = tree.randommProof as AMTreeProof
         val data1 = obj.toRLP()
@@ -101,13 +101,7 @@ class SiriusModelTest : ContractTestBase("solidity/test_all", "test_all") {
         val root = tree.root.toAMTreePathNode()
         val data2 = root.toRLP()
         Assert.assertTrue(AMTree.verifyMembershipProof(tree.root.toAMTreePathNode(), obj))
-        val callResult2 = contract.callConstFunction("am_tree_proof_test2", data1, data2)[0] as ByteArray
-        Assert.assertArrayEquals(
-            "expect222 ${data2.toHEXString()} but get ${callResult2.toHEXString()}",
-            data2,
-            callResult2
-        )
-//        val obj2 = AMTreeProof.parseFromRLP(callResult2)
-//        Assert.assertEquals(root, obj2)
+        val flag = contract.callConstFunction("verify_proof_test", data1, data2)[0] as Boolean
+        Assert.assertTrue(flag)
     }
 }
