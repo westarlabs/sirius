@@ -7,7 +7,6 @@ import "./lib/safe_math.sol";
 import "./lib/model.sol";
 
 contract test_all_interface {
-    function hub_root_test_decode() external;
     function hub_root_test(bytes calldata data) external returns (bytes memory);
     function initiate_withdrawal_test(bytes calldata data) external returns (bytes memory);
     function cancel_withdrawal_test(bytes calldata data) external returns (bytes memory);
@@ -15,6 +14,7 @@ contract test_all_interface {
     function close_balance_update_challenge_test(bytes calldata data) external returns (bytes memory);
     function open_transfer_delivery_challenge_request_test(bytes calldata data) external returns (bytes memory);
     function close_transfer_delivery_challenge_test(bytes calldata data) external returns (bytes memory);
+    function am_tree_path_node_test(bytes calldata data) external returns (bytes memory);
     function am_tree_proof_test(bytes calldata data) external returns (bytes memory);
     function balance_update_proof_test(bytes calldata data) external returns (bytes memory);
     function update_data_test(bytes calldata data) external returns (bytes memory);
@@ -23,15 +23,6 @@ contract test_all_interface {
 }
 
 contract test_all is test_all_interface {
-
-    function hub_root_test_decode() external {
-        ModelLib.HubRoot memory root = ModelLib.unmarshalHubRoot(RLPDecoder.toRLPItem(hex"f852f84bf843a0123a1d14be2941b9692aaf935e49294d9e7af3849521f5f522628c244de06f3880a08d0da8cbfc71a73b24e599088e31641d292d6e6aba69aa0e3bb328fcf10659a4808083d26998840113b1c7", true));
-
-        Log.log("hub_root_test_d_eon", root.eon);
-        Log.log("hub_root_test_d_offset", root.node.offset);
-        Log.log("hub_root_test_d_allotment", root.node.allotment);
-        Log.log("hub_root_test_d_node_left", root.node.nodeHash);
-    }
 
     function hub_root_test(bytes calldata data) external returns (bytes memory) {
         ModelLib.HubRoot memory root = ModelLib.unmarshalHubRoot(RLPDecoder.toRLPItem(data, true));
@@ -156,12 +147,4 @@ contract test_all is test_all_interface {
         node.offset = left.offset;
         node.allotment = SafeMath.add(left.allotment, right.allotment);
     }
-
-    //function printAMTreeInternalNodeInfo(ModelLib.AMTreePathInternalNode memory node) internal {
-    //    Log.log("hub", node.offset);
-    //    Log.log("hub", node.nodeInfo.left);
-    //    Log.log("hub", node.nodeInfo.offset);
-    //    Log.log("hub", node.nodeInfo.right);
-    //    Log.log("hub", node.allotment);
-    //}
 }

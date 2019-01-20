@@ -20,19 +20,6 @@ class SiriusModelTest : ContractTestBase("solidity/test_all", "test_all") {
     }
 
     @Test
-    fun testHubRootDecode() {
-        val callResult = contract.callFunction("hub_root_test_decode")
-
-        println(callResult.receipt.error)
-
-        assert(callResult.receipt.isTxStatusOK)
-
-        callResult.receipt.logInfoList.forEach { logInfo ->
-            println("event:$logInfo")
-        }
-    }
-
-    @Test
     fun testHubRoot() {
         doTest(HubRoot::class, "hub_root_test")
     }
@@ -74,7 +61,7 @@ class SiriusModelTest : ContractTestBase("solidity/test_all", "test_all") {
 
     @Test
     fun testAMTreePathNode() {
-        doTest(AMTreePathNode::class, "am_tree_path_leaf_node_test")
+        doTest(AMTreePathNode::class, "am_tree_path_node_test")
     }
 
     @Test
