@@ -31,9 +31,7 @@ contract test_all is test_all_interface {
         Log.log("hub_root_test_d_eon", root.eon);
         Log.log("hub_root_test_d_offset", root.node.offset);
         Log.log("hub_root_test_d_allotment", root.node.allotment);
-        Log.log("hub_root_test_d_node_left", root.node.nodeInfo.left);
-        Log.log("hub_root_test_d_node_offset", root.node.nodeInfo.offset);
-        Log.log("hub_root_test_d_node_right", root.node.nodeInfo.right);
+        Log.log("hub_root_test_d_node_left", root.node.nodeHash);
     }
 
     function hub_root_test(bytes calldata data) external returns (bytes memory) {
@@ -83,10 +81,10 @@ contract test_all is test_all_interface {
         return ModelLib.marshalAMTreeProof(proof);
     }
 
-    function am_tree_path_leaf_node_test(bytes calldata data) external returns (bytes memory) {
-        ModelLib.AMTreePathLeafNode memory leaf = ModelLib.unmarshalAMTreePathLeafNode(RLPDecoder.toRLPItem(data, true));
+    function am_tree_path_node_test(bytes calldata data) external returns (bytes memory) {
+        ModelLib.AMTreePathNode memory leaf = ModelLib.unmarshalAMTreePathNode(RLPDecoder.toRLPItem(data, true));
 
-        return ModelLib.marshalAMTreePathLeafNode(leaf);
+        return ModelLib.marshalAMTreePathNode(leaf);
     }
 
     function balance_update_proof_test(bytes calldata data) external returns (bytes memory) {

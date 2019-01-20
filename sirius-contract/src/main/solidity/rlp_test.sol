@@ -142,9 +142,7 @@ contract rlp_test is rlp_test_interface {
         root.node.offset = 0;
         root.node.allotment = 13789592;
         root.node.direction = ModelLib.Direction.DIRECTION_ROOT;
-        root.node.nodeInfo.left = 0x123a1d14be2941b9692aaf935e49294d9e7af3849521f5f522628c244de06f38;
-        root.node.nodeInfo.offset = 0;
-        root.node.nodeInfo.right = 0x8d0da8cbfc71a73b24e599088e31641d292d6e6aba69aa0e3bb328fcf10659a4;
+        root.node.nodeHash = 0x123a1d14be2941b9692aaf935e49294d9e7af3849521f5f522628c244de06f38;
 
         bytes memory data = ModelLib.marshalHubRoot(root);
         Log.log("test", data);
@@ -305,12 +303,12 @@ contract rlp_test is rlp_test_interface {
                         }
                     } else if(idx1 == 2) {
                         uint len = RLPDecoder.items(r1);
-                        ModelLib.AMTreePathInternalNode[] memory tmp = new ModelLib.AMTreePathInternalNode[](len);
+                        ModelLib.AMTreePathNode[] memory tmp = new ModelLib.AMTreePathNode[](len);
                         RLPLib.Iterator memory it2 = RLPDecoder.iterator(r1);
                         uint i;
                         while(RLPDecoder.hasNext(it2)) {
                             RLPLib.RLPItem memory t2 = RLPDecoder.next(it2);
-                            tmp[i] = ModelLib.unmarshalAMTreePathInternalNode(t2);
+                            tmp[i] = ModelLib.unmarshalAMTreePathNode(t2);
                             i++;
                         }
                         Log.log("len", len);

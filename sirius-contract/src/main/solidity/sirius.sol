@@ -53,7 +53,6 @@ contract SiriusService is Sirius {
         require(root.eon == 0);
         require(root.node.allotment == 0);
         require(root.node.offset == 0);
-        require(root.node.nodeInfo.offset == 0);
 
         balances[0].root = root;
         balances[0].hasRoot = true;
@@ -235,7 +234,7 @@ contract SiriusService is Sirius {
             bytes32 key = ByteUtilLib.address2hash(msg.sender);
             //bytes32 key = challenge.proof.proof.leaf.nodeInfo.addressHash;
             if(challenge.proof.hasPath) {//Special case:eon-1 exist a account, evil owner removed it in this eon, so the account has only path
-                uint tmpEon =  challenge.proof.proof.leaf.nodeInfo.update.upData.eon;
+                uint tmpEon =  challenge.proof.proof.leaf.update.upData.eon;
                 require(tmpEon >= 0);
                 require(balances[1].hasRoot);
                 require(tmpEon == leastEon);
@@ -289,7 +288,7 @@ contract SiriusService is Sirius {
             bool proofFlag = ModelLib.verifyMembershipProof4AMTreeProof(root.node, close.proof);
             require(proofFlag);
 
-            bytes32 key = close.proof.leaf.nodeInfo.addressHash;
+            bytes32 key = close.proof.leaf.addressHash;
 
             GlobleLib.BalanceUpdateChallengeAndStatus storage tmpStat = balances[0].bucMeta.balanceChallenges[key];
             require(tmpStat.isVal);
@@ -301,7 +300,7 @@ contract SiriusService is Sirius {
                 uint d = balances[1].depositMeta.deposits[hash];
                 if(close.update.upData.sendAmount == 0 && close.update.upData.receiveAmount == 0) {
                     if(d > 0) {
-                        require(d <= close.proof.leaf.allotment);
+                        require(d <= close.proof.path.leaf.allotment);
                     }
                 } else {
                     bool signFlag = ModelLib.verifySign4Update(close.update.upData, close.update.sign, hash);
@@ -313,7 +312,7 @@ contract SiriusService is Sirius {
 
                 uint preAllotment = 0;
                 if(stat.challenge.proof.hasPath) {
-                    preAllotment = stat.challenge.proof.proof.leaf.allotment;
+                    preAllotment = stat.challenge.proof.proof.path.leaf.allotment;
                 }
 
                 uint t1 = SafeMath.add(close.update.upData.receiveAmount, preAllotment);
@@ -325,7 +324,7 @@ contract SiriusService is Sirius {
                 }
                 uint t2 = close.update.upData.sendAmount;
                 uint allotment = SafeMath.sub(t1, t2);
-                require(allotment == close.proof.leaf.allotment);
+                require(allotment == close.proof.path.leaf.allotment);
 
                 //TODO: require(close.update == close.proof.leaf.nodeInfo.update);
 
@@ -405,16 +404,16 @@ contract SiriusService is Sirius {
         ModelLib.AMTreeProof memory proof = ModelLib.unmarshalAMTreeProof(RLPDecoder.toRLPItem(data, true));
 
         bytes32 key = ByteUtilLib.address2hash(msg.sender);
-        require(proof.leaf.nodeInfo.addressHash == key);
+        require(proof.leaf.addressHash == key);
 
         uint preEon = balances[1].eon;
-        require(preEon == proof.leaf.nodeInfo.update.upData.eon);
+        require(preEon == proof.leaf.update.upData.eon);
 
         ModelLib.HubRoot memory preRoot = preRoot();
         bool proofFlag = ModelLib.verifyMembershipProof4AMTreeProof(preRoot.node, proof);
         require(proofFlag);
 
-        uint amount = SafeMath.add(proof.leaf.allotment, balances[0].depositMeta.deposits[key]);
+        uint amount = SafeMath.add(proof.path.leaf.allotment, balances[0].depositMeta.deposits[key]);
         amount = SafeMath.add(amount, balances[1].depositMeta.deposits[key]);
         require(amount > 0);
 

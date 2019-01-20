@@ -380,7 +380,7 @@ library ModelLib {
         while(RLPDecoder.hasNext(it)) {
             RLPLib.RLPItem memory r = RLPDecoder.next(it);
             if(idx == 0) path.eon = RLPDecoder.toUint(r);
-            else if(idx == 1) path.leaf = unmarshalAMTreePathLeafNode(r);
+            else if(idx == 1) path.leaf = unmarshalAMTreePathNode(r);
             else if(idx == 2) {
                 uint len = RLPDecoder.items(r);
                 AMTreePathNode[] memory tmp = new AMTreePathNode[](len);
@@ -400,7 +400,7 @@ library ModelLib {
 
     function marshalAMTreePath(AMTreePath memory path) internal pure returns (bytes memory) {
         bytes memory eon = RLPEncoder.encodeUint(path.eon);
-        bytes memory leaf = marshalAMTreePathLeafNode(path.leaf);
+        bytes memory leaf = marshalAMTreePathNode(path.leaf);
         bytes memory data;
         AMTreePathNode[] memory nodes = path.nodes;
         for(uint i=0;i<nodes.length;i++) {
@@ -605,7 +605,7 @@ library ModelLib {
     }
 
     function verifyAddr4WithdrawalInfo(WithdrawalInfo memory self, address addr) internal pure {
-        require(addr == self.addr && ByteUtilLib.address2hash(addr) == self.proof.path.leaf.nodeInfo.addressHash);
+        require(addr == self.addr && ByteUtilLib.address2hash(addr) == self.proof.leaf.addressHash);
     }
 
     struct Participant {
