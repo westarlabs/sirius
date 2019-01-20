@@ -4,7 +4,8 @@ import kotlinx.serialization.Decoder
 import kotlinx.serialization.Encoder
 import kotlinx.serialization.KSerializer
 import kotlinx.serialization.Serializer
-import org.starcoin.sirius.util.Utils
+import org.starcoin.sirius.lang.hexToByteArray
+import org.starcoin.sirius.lang.toHEXString
 import java.math.BigInteger
 
 @Serializer(forClass = BigInteger::class)
@@ -13,9 +14,7 @@ class BigIntegerSerializer : KSerializer<BigInteger> {
         return when (input) {
             is BinaryDecoder -> input.decodeBigInteger()
             else -> BigInteger(
-                Utils.HEX.decode(
-                    input.decodeString()
-                )
+                input.decodeString().hexToByteArray()
             )
         }
     }
@@ -24,9 +23,7 @@ class BigIntegerSerializer : KSerializer<BigInteger> {
         when (output) {
             is BinaryEncoder -> output.encodeBigInteger(obj)
             else -> output.encodeString(
-                Utils.HEX.encode(
-                    obj.toByteArray()
-                )
+                obj.toByteArray().toHEXString()
             )
         }
     }

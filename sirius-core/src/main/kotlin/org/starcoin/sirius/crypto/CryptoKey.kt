@@ -4,7 +4,7 @@ import org.starcoin.sirius.core.Address
 import org.starcoin.sirius.core.Hash
 import org.starcoin.sirius.core.Signature
 import org.starcoin.sirius.core.SiriusObject
-import org.starcoin.sirius.util.Utils
+import org.starcoin.sirius.lang.toHEXString
 import java.security.KeyPair
 
 abstract class CryptoKey {
@@ -41,6 +41,6 @@ abstract class CryptoKey {
     }
 
     override fun toString(): String {
-        return Utils.HEX.encode(this.toBytes())
+        return this.toBytes().toHEXString()
     }
 }

@@ -5,7 +5,8 @@ import kotlinx.serialization.Encoder
 import kotlinx.serialization.KSerializer
 import kotlinx.serialization.Serializer
 import org.starcoin.sirius.crypto.CryptoService
-import org.starcoin.sirius.util.Utils
+import org.starcoin.sirius.lang.hexToByteArray
+import org.starcoin.sirius.lang.toHEXString
 import java.security.PrivateKey
 
 @Serializer(forClass = PrivateKey::class)
@@ -17,9 +18,7 @@ class PrivateKeySerializer : KSerializer<PrivateKey> {
                 input.decodeByteArray()
             )
             else -> CryptoService.loadPrivateKey(
-                Utils.HEX.decode(
-                    input.decodeString()
-                )
+                input.decodeString().hexToByteArray()
             )
         }
     }
@@ -32,11 +31,9 @@ class PrivateKeySerializer : KSerializer<PrivateKey> {
                 )
             )
             else -> output.encodeString(
-                Utils.HEX.encode(
-                    CryptoService.encodePrivateKey(
-                        obj
-                    )
-                )
+                CryptoService.encodePrivateKey(
+                    obj
+                ).toHEXString()
             )
         }
     }

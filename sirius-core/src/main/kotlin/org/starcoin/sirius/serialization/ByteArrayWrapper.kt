@@ -2,7 +2,8 @@ package org.starcoin.sirius.serialization
 
 import com.google.protobuf.ByteString
 import kotlinx.serialization.*
-import org.starcoin.sirius.util.Utils
+import org.starcoin.sirius.lang.hexToByteArray
+import org.starcoin.sirius.lang.toHEXString
 
 @Serializable
 class ByteArrayWrapper(val bytes: ByteArray) {
@@ -11,7 +12,7 @@ class ByteArrayWrapper(val bytes: ByteArray) {
         get() = bytes.size
 
     override fun toString(): String {
-        return Utils.HEX.encode(bytes)
+        return bytes.toHEXString()
     }
 
     fun toBytes() = this.bytes
@@ -39,7 +40,7 @@ class ByteArrayWrapper(val bytes: ByteArray) {
         }
 
         fun wrap(hexString: String): ByteArrayWrapper {
-            return ByteArrayWrapper(Utils.HEX.decode(hexString))
+            return ByteArrayWrapper(hexString.hexToByteArray())
         }
 
         override fun deserialize(input: Decoder): ByteArrayWrapper {

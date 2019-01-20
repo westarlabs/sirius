@@ -1,15 +1,17 @@
 package org.starcoin.sirius.lang
 
-import org.starcoin.sirius.util.Utils
+import com.google.common.io.BaseEncoding
 import java.io.InputStream
 import java.math.BigInteger
 import java.nio.charset.Charset
 import java.util.*
 
+private val HEX = BaseEncoding.base16().lowerCase()
+
 fun ByteArray.toULong() = BigInteger(1, this).toLong()
 
 fun ByteArray.toHEXString() = "0x" + this.toNoPrefixHEXString()
-fun ByteArray.toNoPrefixHEXString() = Utils.HEX.encode(this)
+fun ByteArray.toNoPrefixHEXString() = HEX.encode(this)
 
 fun ByteArray.toBigInteger(offset: Int, length: Int) = BigInteger(1, Arrays.copyOfRange(this, offset, offset + length))
 fun ByteArray.toBigInteger() = BigInteger(this)

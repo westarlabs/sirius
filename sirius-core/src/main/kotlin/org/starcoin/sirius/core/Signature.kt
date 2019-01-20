@@ -4,9 +4,10 @@ import com.google.protobuf.ByteString
 import kotlinx.serialization.*
 import org.starcoin.sirius.crypto.CryptoKey
 import org.starcoin.sirius.crypto.CryptoService
+import org.starcoin.sirius.lang.hexToByteArray
+import org.starcoin.sirius.lang.toHEXString
 import org.starcoin.sirius.serialization.BinaryDecoder
 import org.starcoin.sirius.serialization.BinaryEncoder
-import org.starcoin.sirius.util.Utils
 import java.security.PublicKey
 
 @Serializable
@@ -28,7 +29,7 @@ class Signature private constructor(internal val bytes: ByteArray) {
     fun verify(data: SiriusObject, key: CryptoKey) = key.verify(data, this)
 
     override fun toString(): String {
-        return Utils.HEX.encode(this.bytes)
+        return this.bytes.toHEXString()
     }
 
     fun toBytes() = this.bytes.copyOf()
@@ -70,7 +71,7 @@ class Signature private constructor(internal val bytes: ByteArray) {
         val ZERO_SIGN = wrap(ByteArray(4))
 
         fun wrap(hexString: String): Signature {
-            return wrap(Utils.HEX.decode(hexString))
+            return wrap(hexString.hexToByteArray())
         }
 
         fun wrap(sign: ByteArray): Signature {

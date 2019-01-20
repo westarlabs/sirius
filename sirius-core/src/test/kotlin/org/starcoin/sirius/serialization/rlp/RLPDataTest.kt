@@ -6,7 +6,7 @@ import org.junit.Assert
 import org.junit.Before
 import org.junit.Test
 import org.starcoin.sirius.lang.hexToByteArray
-import org.starcoin.sirius.util.Utils
+import org.starcoin.sirius.lang.toHEXString
 import org.starcoin.sirius.util.WithLogging
 import java.math.BigInteger
 
@@ -35,7 +35,7 @@ class RLPDataTest {
             val output = value.getValue("out")!! as String
             val rlp = input.toRLP()
             val decodeRLP = output.hexToByteArray().decodeRLP()
-            Assert.assertEquals("0x" + Utils.HEX.encode(rlp.encode()), output)
+            Assert.assertEquals(rlp.encode().toHEXString(), output)
             Assert.assertEquals(rlp, decodeRLP)
         }
     }

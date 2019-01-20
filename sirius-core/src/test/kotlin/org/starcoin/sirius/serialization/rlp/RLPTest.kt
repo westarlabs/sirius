@@ -7,7 +7,6 @@ import org.junit.Ignore
 import org.junit.Test
 import org.starcoin.sirius.serialization.NamedData
 import org.starcoin.sirius.serialization.TestData
-import org.starcoin.sirius.util.Utils
 import org.starcoin.sirius.util.WithLogging
 import java.math.BigInteger
 
@@ -92,7 +91,6 @@ class RLPTest {
             Assert.assertEquals(bigInteger, int1)
             val rlpBytes1 = org.ethereum.util.RLP.encodeBigInteger(bigInteger)
             Assert.assertArrayEquals(rlpBytes, rlpBytes1)
-            println(Utils.HEX.encode(rlpBytes))
         }
     }
 
@@ -105,14 +103,12 @@ class RLPTest {
             val rlp = value.toRLP()
             val bytes = rlp.encode()
             LOG.info("integer: $value ${rlp.bytes.size}")
-            println(Utils.HEX.encode(bytes))
 
             val bytes1 = org.ethereum.util.RLP.encodeInt(value)
             Assert.assertArrayEquals(bytes1, bytes)
 
             val value1 = org.ethereum.util.RLP.decodeInt(bytes1, 0)
             Assert.assertEquals(value, value1)
-            println(Utils.HEX.encode(bytes1))
 
             val value2 = rlp.toIntFromRLP()
             Assert.assertEquals(value, value2)
@@ -127,7 +123,6 @@ class RLPTest {
             val rlp = value.toRLP()
             val bytes = rlp.encode()
             LOG.info("string: $value ${rlp.bytes.size}")
-            println(Utils.HEX.encode(bytes))
 
             val bytes1 = org.ethereum.util.RLP.encodeString(value)
             Assert.assertArrayEquals(bytes, bytes1)
@@ -138,7 +133,6 @@ class RLPTest {
                 else -> RuntimeException("unsupported type: ${result.javaClass}")
             }
             Assert.assertEquals(value, value1)
-            println(Utils.HEX.encode(bytes1))
 
             val value2 = rlp.toStringFromRLP()
             Assert.assertEquals(value, value2)

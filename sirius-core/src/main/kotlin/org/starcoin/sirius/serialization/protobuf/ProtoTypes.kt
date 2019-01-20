@@ -1,6 +1,9 @@
 package org.starcoin.sirius.serialization.protobuf
 
-import kotlinx.serialization.*
+import kotlinx.serialization.SerialDescriptor
+import kotlinx.serialization.SerialId
+import kotlinx.serialization.SerialInfo
+import kotlinx.serialization.SerializationException
 import kotlinx.serialization.internal.onlySingleOrNull
 
 enum class ProtoNumberType {

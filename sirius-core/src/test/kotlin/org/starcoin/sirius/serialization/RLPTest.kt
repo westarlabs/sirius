@@ -1,11 +1,5 @@
 package org.starcoin.sirius.serialization
 
-import org.junit.Assert
-import org.junit.Test
-import org.kethereum.functions.rlp.toBigIntegerFromRLP
-import org.kethereum.functions.rlp.toRLP
-import java.math.BigInteger
-
 class RLPTest {
 
     //TODO

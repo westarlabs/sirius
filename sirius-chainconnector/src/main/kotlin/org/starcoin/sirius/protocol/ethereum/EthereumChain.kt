@@ -13,10 +13,10 @@ import org.starcoin.sirius.core.toHash
 import org.starcoin.sirius.crypto.CryptoKey
 import org.starcoin.sirius.crypto.eth.EthCryptoKey
 import org.starcoin.sirius.lang.hexToByteArray
+import org.starcoin.sirius.lang.toHEXString
 import org.starcoin.sirius.protocol.EthereumTransaction
 import org.starcoin.sirius.protocol.EventTopic
 import org.starcoin.sirius.protocol.TransactionResult
-import org.starcoin.sirius.util.Utils
 import org.web3j.protocol.Web3j
 import org.web3j.protocol.core.DefaultBlockParameter
 import org.web3j.protocol.core.DefaultBlockParameterName
@@ -182,7 +182,7 @@ override fun callConstFunction(caller: CryptoKey, contractAddress: Address, data
         org.web3j.protocol.core.methods.request.Transaction.createEthCallTransaction(
             caller.address.toString(),
             contractAddress.toString(),
-            Utils.HEX.encode(data)
+            data.toHEXString()
         ), DefaultBlockParameterName.LATEST
     ).sendAsync().get()
     if (resp.hasError()) throw RuntimeException(resp.error.message)

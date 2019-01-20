@@ -8,11 +8,11 @@ import com.google.protobuf.ByteString
 import kotlinx.serialization.*
 import org.starcoin.sirius.crypto.CryptoService
 import org.starcoin.sirius.lang.hexToByteArray
+import org.starcoin.sirius.lang.toHEXString
 import org.starcoin.sirius.serialization.BinaryDecoder
 import org.starcoin.sirius.serialization.BinaryEncoder
 import org.starcoin.sirius.util.HashUtil
 import org.starcoin.sirius.util.MockUtils
-import org.starcoin.sirius.util.Utils
 import java.io.File
 import java.io.FileInputStream
 import java.io.IOException
@@ -46,11 +46,11 @@ class Hash private constructor(internal val bytes: ByteArray) : Comparable<Hash>
     }
 
     override fun toString(): String {
-        return Utils.HEX.encode(bytes).let { if (!it.startsWith("0x")) "0x$it" else it }
+        return this.bytes.toHEXString()
     }
 
     fun toMD5Hex(): String {
-        return HashUtil.md5Hex(bytes).let { if (!it.startsWith("0x")) "0x$it" else it }
+        return HashUtil.md5Hex(bytes)
     }
 
     /**

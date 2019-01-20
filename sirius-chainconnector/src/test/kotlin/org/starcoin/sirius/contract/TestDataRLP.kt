@@ -4,8 +4,8 @@ import org.ethereum.core.CallTransaction
 import org.junit.Assert
 import org.junit.Test
 import org.starcoin.sirius.core.Address
+import org.starcoin.sirius.lang.toHEXString
 import org.starcoin.sirius.serialization.rlp.RLP
-import org.starcoin.sirius.util.Utils
 import java.math.BigInteger
 
 class TestDataRLP : ContractTestBase("solidity/TestDataRLP", "TestDataRLP") {
@@ -68,7 +68,7 @@ class TestDataRLP : ContractTestBase("solidity/TestDataRLP", "TestDataRLP") {
 //        println("${dataRLP.size}:${returnDataRLP.size}")
 //        println(bytesToHexString(dataRLP))
 //        println(bytesToHexString(returnDataRLP))
-        Assert.assertEquals(Utils.HEX.encode(dataRLP), Utils.HEX.encode(returnDataRLP))
+        Assert.assertEquals(dataRLP.toHEXString(), returnDataRLP.toHEXString())
         Assert.assertArrayEquals(dataRLP, returnDataRLP)
         val returnData = RLP.load(Data.serializer(), returnDataRLP)
         Assert.assertEquals(data, returnData)

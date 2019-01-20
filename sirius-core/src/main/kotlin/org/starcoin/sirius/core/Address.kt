@@ -6,10 +6,11 @@ import com.google.protobuf.ByteString
 import kotlinx.serialization.*
 import org.starcoin.proto.Starcoin
 import org.starcoin.sirius.crypto.CryptoService
+import org.starcoin.sirius.lang.hexToByteArray
+import org.starcoin.sirius.lang.toHEXString
 import org.starcoin.sirius.serialization.BinaryDecoder
 import org.starcoin.sirius.serialization.BinaryEncoder
 import org.starcoin.sirius.util.MockUtils
-import org.starcoin.sirius.util.Utils
 import java.security.PublicKey
 
 @Serializable
@@ -26,7 +27,7 @@ class Address private constructor(private val bytes: ByteArray) : CachedHashable
     }
 
     override fun toString(): String {
-        return Utils.HEX.encode(this.bytes)
+        return this.bytes.toHEXString()
     }
 
     override fun hashData(): ByteArray {
@@ -75,7 +76,7 @@ class Address private constructor(private val bytes: ByteArray) : CachedHashable
 
         fun wrap(addressHex: String): Address {
             Preconditions.checkNotNull(addressHex, "addressHex")
-            return Address(Utils.HEX.decode(addressHex))
+            return Address(addressHex.hexToByteArray())
         }
 
         fun wrap(address: ByteArray): Address {

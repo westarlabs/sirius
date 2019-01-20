@@ -3,7 +3,6 @@ package org.starcoin.sirius.core
 import kotlinx.serialization.SerialId
 import kotlinx.serialization.Serializable
 import org.starcoin.proto.Starcoin
-import org.starcoin.sirius.lang.toHEXString
 import org.starcoin.sirius.serialization.BigIntegerSerializer
 import org.starcoin.sirius.serialization.ProtobufSchema
 import org.starcoin.sirius.util.MockUtils
