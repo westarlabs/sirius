@@ -171,34 +171,6 @@ library ModelLib {
         return RLPEncoder.encodeUint(tmp);
     }
 
-    struct AMTreeInternalNodeInfo {
-        bytes32 left;
-        uint offset;
-        bytes32 right;
-    }
-
-    function unmarshalAMTreeInternalNodeInfo(RLPLib.RLPItem memory rlp) internal pure returns (AMTreeInternalNodeInfo memory node) {
-        RLPLib.Iterator memory it = RLPDecoder.iterator(rlp);
-        uint idx;
-        while (RLPDecoder.hasNext(it)) {
-            RLPLib.RLPItem memory r = RLPDecoder.next(it);
-            if (idx == 0) node.left = ByteUtilLib.bytesToBytes32(RLPLib.toData(r));
-            else if (idx == 1) node.offset = RLPDecoder.toUint(r);
-            else if (idx == 2) node.right = ByteUtilLib.bytesToBytes32(RLPLib.toData(r));
-            else {}
-
-            idx++;
-        }
-    }
-
-    function marshalAMTreeInternalNodeInfo(AMTreeInternalNodeInfo memory node) internal pure returns (bytes memory) {
-        bytes memory left = RLPEncoder.encodeBytes(ByteUtilLib.bytes32ToBytes(node.left));
-        bytes memory offset = RLPEncoder.encodeUint(node.offset);
-        bytes memory right = RLPEncoder.encodeBytes(ByteUtilLib.bytes32ToBytes(node.right));
-
-        return RLPEncoder.encodeList(ByteUtilLib.append(ByteUtilLib.append(left, offset), right));
-    }
-
     struct AMTreeLeafNodeInfo {
         bytes32 addressHash;
         Update update;
@@ -226,7 +198,7 @@ library ModelLib {
 
     struct AMTreeProof {
         AMTreePath path;
-        AMTreePathLeafNode leaf;
+        AMTreeLeafNodeInfo leaf;
     }
 
     function unmarshalAMTreeProof(RLPLib.RLPItem memory rlp) internal pure returns (AMTreeProof memory proof) {
@@ -235,7 +207,7 @@ library ModelLib {
         while (RLPDecoder.hasNext(it)) {
             RLPLib.RLPItem memory r = RLPDecoder.next(it);
             if (idx == 0) proof.path = unmarshalAMTreePath(r);
-            else if (idx == 1) proof.leaf = unmarshalAMTreePathLeafNode(r);
+            else if (idx == 1) proof.leaf = unmarshalAMTreeLeafNodeInfo(r);
             else {}
 
             idx++;
@@ -244,7 +216,7 @@ library ModelLib {
 
     function marshalAMTreeProof(AMTreeProof memory proof) internal pure returns (bytes memory) {
         bytes memory path = marshalAMTreePath(proof.path);
-        bytes memory leaf = marshalAMTreePathLeafNode(proof.leaf);
+        bytes memory leaf = marshalAMTreeLeafNodeInfo(proof.leaf);
 
         return RLPEncoder.encodeList(ByteUtilLib.append(path, leaf));
     }
@@ -302,56 +274,19 @@ library ModelLib {
         return RLPEncoder.encodeList(ByteUtilLib.append(eon, root));
     }
 
-    struct AMTreePathLeafNode {
-        AMTreeLeafNodeInfo nodeInfo;
+    struct AMTreePathNode {
+        bytes32 nodeHash;
         Direction direction;
         uint offset;
         uint allotment;
     }
 
-    function unmarshalAMTreePathLeafNode(RLPLib.RLPItem memory rlp) internal pure returns (AMTreePathLeafNode memory leaf) {
+    function unmarshalAMTreePathNode(RLPLib.RLPItem memory rlp) internal pure returns (AMTreePathNode memory node) {
         RLPLib.Iterator memory it = RLPDecoder.iterator(rlp);
         uint idx;
         while (RLPDecoder.hasNext(it)) {
             RLPLib.RLPItem memory r = RLPDecoder.next(it);
-            if (idx == 0) leaf.nodeInfo = unmarshalAMTreeLeafNodeInfo(r);
-            else if (idx == 1) leaf.direction = unmarshalDirection(r);
-            else if (idx == 2) leaf.offset = RLPDecoder.toUint(r);
-            else if (idx == 3) leaf.allotment = RLPDecoder.toUint(r);
-            else {}
-
-            idx++;
-        }
-    }
-
-    function marshalAMTreePathLeafNode(AMTreePathLeafNode memory leaf) internal pure returns (bytes memory) {
-        bytes memory nodeInfo = marshalAMTreeLeafNodeInfo(leaf.nodeInfo);
-        bytes memory direction = marshalDirection(leaf.direction);
-        bytes memory offset = RLPEncoder.encodeUint(leaf.offset);
-        bytes memory allotment = RLPEncoder.encodeUint(leaf.allotment);
-
-        return RLPEncoder.encodeList(ByteUtilLib.append(ByteUtilLib.append(ByteUtilLib.append(nodeInfo, direction), offset), allotment));
-    }
-
-    struct AMTreePathInternalNode {
-        AMTreeInternalNodeInfo nodeInfo;
-        Direction direction;
-        uint offset;
-        uint allotment;
-    }
-
-    struct AMTreePathInternalNodeV2 {
-        AMTreeInternalNodeInfo nodeInfo;
-        uint offset;
-        uint allotment;
-    }
-
-    function unmarshalAMTreePathInternalNode(RLPLib.RLPItem memory rlp) internal pure returns (AMTreePathInternalNode memory node) {
-        RLPLib.Iterator memory it = RLPDecoder.iterator(rlp);
-        uint idx;
-        while (RLPDecoder.hasNext(it)) {
-            RLPLib.RLPItem memory r = RLPDecoder.next(it);
-            if (idx == 0) node.nodeInfo = unmarshalAMTreeInternalNodeInfo(r);
+            if (idx == 0) node.nodeHash = ByteUtilLib.bytesToBytes32(RLPLib.toData(r));
             else if (idx == 1) node.direction = unmarshalDirection(r);
             else if (idx == 2) node.offset = RLPDecoder.toUint(r);
             else if (idx == 3) node.allotment = RLPDecoder.toUint(r);
@@ -361,79 +296,83 @@ library ModelLib {
         }
     }
 
-    function marshalAMTreePathInternalNode(AMTreePathInternalNode memory node) internal pure returns (bytes memory) {
-        bytes memory nodeInfo = marshalAMTreeInternalNodeInfo(node.nodeInfo);
+    function marshalAMTreePathNode(AMTreePathNode memory node) internal pure returns (bytes memory) {
+        bytes memory nodeHash = RLPEncoder.encodeBytes(ByteUtilLib.bytes32ToBytes(node.nodeHash));
         bytes memory direction = marshalDirection(node.direction);
         bytes memory offset = RLPEncoder.encodeUint(node.offset);
         bytes memory allotment = RLPEncoder.encodeUint(node.allotment);
 
-        return RLPEncoder.encodeList(ByteUtilLib.append(ByteUtilLib.append(ByteUtilLib.append(nodeInfo, direction), offset), allotment));
+        return RLPEncoder.encodeList(ByteUtilLib.append(ByteUtilLib.append(ByteUtilLib.append(nodeHash, direction), offset), allotment));
     }
 
     struct AMTreePath {
         uint eon;
-        AMTreePathLeafNode leaf;
-        AMTreePathInternalNode[] nodes;
+        AMTreePathNode leaf;
+        AMTreePathNode[] nodes;
     }
 
-    function verifyMembershipProof4AMTreeProof(AMTreePathInternalNode memory root, AMTreeProof memory proof) internal pure returns(bool) {
-        AMTreePath memory path = proof.path;
-        AMTreePathLeafNode memory leaf = proof.leaf;
+    function verifyMembershipProof4AMTreeProof(AMTreePathNode memory root, AMTreeProof memory proof) internal pure returns(bool) {
+        return true;
+    }
+
+    //function verifyMembershipProof4AMTreeProof(AMTreePathNode memory root, AMTreeProof memory proof) internal pure returns(bool) {
+    //    AMTreePath memory path = proof.path;
+    //    AMTreePathLeafNode memory leaf = proof.leaf;
 
         //AMTreePathLeafNode -> AMTreeInternalNodeInfo
-        AMTreeInternalNodeInfo memory nodeInfo;
-        bytes32 leafHash = keccak256(marshalAMTreePathLeafNode(leaf));
-        bytes32 pathLeafHash = keccak256(marshalAMTreePathLeafNode(path.leaf));
-        uint allotment = SafeMath.add(leaf.allotment, path.leaf.allotment);
-        uint offset;
-        if(leaf.direction == Direction.DIRECTION_LEFT) {
-            nodeInfo.left = leafHash;
-            nodeInfo.offset = SafeMath.add(leaf.offset, leaf.allotment);
-            nodeInfo.right = pathLeafHash;
-            offset = leaf.offset;
-        } else {
-            nodeInfo.left = pathLeafHash;
-            nodeInfo.offset = SafeMath.add(path.leaf.offset, path.leaf.allotment);
-            nodeInfo.right = leafHash;
-            offset = path.leaf.offset;
-        }
+    //    AMTreeInternalNodeInfo memory nodeInfo;
+    //    bytes32 leafHash = keccak256(marshalAMTreePathLeafNode(leaf));
+    //    bytes32 pathLeafHash = keccak256(marshalAMTreePathLeafNode(path.leaf));
+    //    uint allotment = SafeMath.add(leaf.allotment, path.leaf.allotment);
+    //    uint offset;
+    //    if(leaf.direction == Direction.DIRECTION_LEFT) {
+    //        nodeInfo.left = leafHash;
+    //        nodeInfo.offset = SafeMath.add(leaf.offset, leaf.allotment);
+    //        nodeInfo.right = pathLeafHash;
+    //        offset = leaf.offset;
+    //    } else {
+    //        nodeInfo.left = pathLeafHash;
+    //        nodeInfo.offset = SafeMath.add(path.leaf.offset, path.leaf.allotment);
+    //        nodeInfo.right = leafHash;
+    //        offset = path.leaf.offset;
+    //    }
 
         //AMTreeInternalNodeInfo -> AMTreePathInternalNode
-        AMTreePathInternalNode memory computeNode;
-        computeNode.nodeInfo = nodeInfo;
-        computeNode.offset = offset;
-        computeNode.allotment = allotment;
+    //    AMTreePathInternalNode memory computeNode;
+    //    computeNode.nodeInfo = nodeInfo;
+    //    computeNode.offset = offset;
+    //    computeNode.allotment = allotment;
 
-        for (uint i=0;i<path.nodes.length;i++) {
-            AMTreePathInternalNode memory node = path.nodes[i];
-            if (node.direction == Direction.DIRECTION_LEFT) {
-                computeNode.direction = Direction.DIRECTION_RIGHT;
-                computeNode = combineAMTreePathInternalNode(node, computeNode);
-            } else if(node.direction == Direction.DIRECTION_RIGHT) {
-                computeNode.direction = Direction.DIRECTION_LEFT;
-                computeNode = combineAMTreePathInternalNode(computeNode, node);
-            } else {}
-        }
+    //    for (uint i=0;i<path.nodes.length;i++) {
+    //        AMTreePathInternalNode memory node = path.nodes[i];
+    //        if (node.direction == Direction.DIRECTION_LEFT) {
+    //            computeNode.direction = Direction.DIRECTION_RIGHT;
+    //            computeNode = combineAMTreePathInternalNode(node, computeNode);
+    //        } else if(node.direction == Direction.DIRECTION_RIGHT) {
+    //            computeNode.direction = Direction.DIRECTION_LEFT;
+    //            computeNode = combineAMTreePathInternalNode(computeNode, node);
+    //        } else {}
+    //    }
 
-        computeNode.direction = Direction.DIRECTION_ROOT;
+    //    computeNode.direction = Direction.DIRECTION_ROOT;
 
         //AMTreePathInternalNode -> sha256
-        return (keccak256(marshalAMTreePathInternalNode(root)) == keccak256(marshalAMTreePathInternalNode(computeNode)) && root.offset == computeNode.offset && root.allotment == computeNode.allotment);
-    }
+    //    return (keccak256(marshalAMTreePathInternalNode(root)) == keccak256(marshalAMTreePathInternalNode(computeNode)) && root.offset == computeNode.offset && root.allotment == computeNode.allotment);
+    //}
 
-    function combineAMTreePathInternalNode(AMTreePathInternalNode memory left, AMTreePathInternalNode memory right) internal pure returns (AMTreePathInternalNode memory node) {
-        AMTreeInternalNodeInfo memory nodeInfo;
-        bytes32 leftHash = keccak256(marshalAMTreePathInternalNode(left));
-        bytes32 rightHash = keccak256(marshalAMTreePathInternalNode(right));
+    //function combineAMTreePathInternalNode(AMTreePathInternalNode memory left, AMTreePathInternalNode memory right) internal pure returns (AMTreePathInternalNode memory node) {
+    //    AMTreeInternalNodeInfo memory nodeInfo;
+    //    bytes32 leftHash = keccak256(marshalAMTreePathInternalNode(left));
+    //    bytes32 rightHash = keccak256(marshalAMTreePathInternalNode(right));
 
-        nodeInfo.left = leftHash;
-        nodeInfo.offset = SafeMath.add(left.offset, left.allotment);
-        nodeInfo.right = rightHash;
+    //    nodeInfo.left = leftHash;
+    //    nodeInfo.offset = SafeMath.add(left.offset, left.allotment);
+    //    nodeInfo.right = rightHash;
 
-        node.nodeInfo = nodeInfo;
-        node.offset = left.offset;
-        node.allotment = SafeMath.add(left.allotment, right.allotment);
-    }
+    //    node.nodeInfo = nodeInfo;
+    //    node.offset = left.offset;
+    //    node.allotment = SafeMath.add(left.allotment, right.allotment);
+    //}
 
     function unmarshalAMTreePath(RLPLib.RLPItem memory rlp) internal pure returns (AMTreePath memory path) {
         RLPLib.Iterator memory it = RLPDecoder.iterator(rlp);
@@ -444,12 +383,12 @@ library ModelLib {
             else if(idx == 1) path.leaf = unmarshalAMTreePathLeafNode(r);
             else if(idx == 2) {
                 uint len = RLPDecoder.items(r);
-                AMTreePathInternalNode[] memory tmp = new AMTreePathInternalNode[](len);
+                AMTreePathNode[] memory tmp = new AMTreePathNode[](len);
                 RLPLib.Iterator memory it2 = RLPDecoder.iterator(r);
                 uint i;
                 while(RLPDecoder.hasNext(it2)) {
                     RLPLib.RLPItem memory t = RLPDecoder.next(it2);
-                    tmp[i] = unmarshalAMTreePathInternalNode(t);
+                    tmp[i] = unmarshalAMTreePathNode(t);
                     i++;
                 }
                 path.nodes = tmp;
@@ -463,9 +402,9 @@ library ModelLib {
         bytes memory eon = RLPEncoder.encodeUint(path.eon);
         bytes memory leaf = marshalAMTreePathLeafNode(path.leaf);
         bytes memory data;
-        AMTreePathInternalNode[] memory nodes = path.nodes;
+        AMTreePathNode[] memory nodes = path.nodes;
         for(uint i=0;i<nodes.length;i++) {
-            data = ByteUtilLib.append(data, marshalAMTreePathInternalNode(nodes[i]));
+            data = ByteUtilLib.append(data, marshalAMTreePathNode(nodes[i]));
         }
 
         data = RLPEncoder.encodeList(data);
@@ -800,7 +739,7 @@ library ModelLib {
     }
 
     struct HubRoot {
-        AMTreePathInternalNode node;
+        AMTreePathNode node;
         uint eon;
     }
 
@@ -809,7 +748,7 @@ library ModelLib {
         uint idx;
         while(RLPDecoder.hasNext(it)) {
             RLPLib.RLPItem memory r = RLPDecoder.next(it);
-            if(idx == 0) hub.node = unmarshalAMTreePathInternalNode(r);
+            if(idx == 0) hub.node = unmarshalAMTreePathNode(r);
             else if(idx == 1) hub.eon = RLPDecoder.toUint(r);
             else {}
 
@@ -818,7 +757,7 @@ library ModelLib {
     }
 
     function marshalHubRoot(HubRoot memory hub) internal pure returns (bytes memory) {
-        bytes memory node = marshalAMTreePathInternalNode(hub.node);
+        bytes memory node = marshalAMTreePathNode(hub.node);
         bytes memory eon = RLPEncoder.encodeUint(hub.eon);
 
         return RLPEncoder.encodeList(ByteUtilLib.append(node, eon));

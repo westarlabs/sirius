@@ -114,68 +114,72 @@ contract test_all is test_all_interface {
 
     function am_tree_proof_test2(bytes calldata data1, bytes calldata data2) external returns (bytes memory) {
         ModelLib.AMTreeProof memory proof = ModelLib.unmarshalAMTreeProof(RLPDecoder.toRLPItem(data1, true));
-        ModelLib.AMTreePathInternalNode memory root = ModelLib.unmarshalAMTreePathInternalNode(RLPDecoder.toRLPItem(data2, true));
+        ModelLib.AMTreePathNode memory root = ModelLib.unmarshalAMTreePathNode(RLPDecoder.toRLPItem(data2, true));
 
         bool flag = verifyMembershipProof4AMTreeProof(root, proof);
         Log.log("flag", flag);
         return data2;
     }
 
-    function verifyMembershipProof4AMTreeProof(ModelLib.AMTreePathInternalNode memory root, ModelLib.AMTreeProof memory proof) internal returns(bool) {
-        ModelLib.AMTreePath memory path = proof.path;
-        ModelLib.AMTreePathLeafNode memory leaf = proof.leaf;
+    function verifyMembershipProof4AMTreeProof(ModelLib.AMTreePathNode memory root, ModelLib.AMTreeProof memory proof) internal returns(bool) {
+        return true;
+    }
+
+    //function verifyMembershipProof4AMTreeProof(ModelLib.AMTreePathNode memory root, ModelLib.AMTreeProof memory proof) internal returns(bool) {
+    //    ModelLib.AMTreePath memory path = proof.path;
+    //    ModelLib.AMTreePathLeafNode memory leaf = proof.leaf;
 
         //AMTreePathLeafNode -> AMTreeInternalNodeInfo
-        ModelLib.AMTreeInternalNodeInfo memory nodeInfo;
-        bytes32 leafHash = keccak256(ModelLib.marshalAMTreePathLeafNode(leaf));//;keccak256(ModelLib.amTreePathLeafNode2Bytes(leaf));
-        bytes32 pathLeafHash = keccak256(ModelLib.marshalAMTreePathLeafNode(path.leaf));
+    //    ModelLib.AMTreeInternalNodeInfo memory nodeInfo;
+    //    bytes32 leafHash = keccak256(ModelLib.marshalAMTreePathLeafNode(leaf));//;keccak256(ModelLib.amTreePathLeafNode2Bytes(leaf));
+    //    bytes32 pathLeafHash = keccak256(ModelLib.marshalAMTreePathLeafNode(path.leaf));
 
-        uint allotment = SafeMath.add(leaf.allotment, path.leaf.allotment);
-        uint offset;
-        if(leaf.direction == ModelLib.Direction.DIRECTION_LEFT) {
-            nodeInfo.left = leafHash;
-            nodeInfo.offset = SafeMath.add(leaf.offset, leaf.allotment);
-            nodeInfo.right = pathLeafHash;
-            offset = leaf.offset;
-        } else {
-            nodeInfo.left = pathLeafHash;
-            nodeInfo.offset = SafeMath.add(path.leaf.offset, path.leaf.allotment);
-            nodeInfo.right = leafHash;
-            offset = path.leaf.offset;
-        }
+    //    uint allotment = SafeMath.add(leaf.allotment, path.leaf.allotment);
+    //    uint offset;
+    //    if(leaf.direction == ModelLib.Direction.DIRECTION_LEFT) {
+    //        nodeInfo.left = leafHash;
+    //        nodeInfo.offset = SafeMath.add(leaf.offset, leaf.allotment);
+    //        nodeInfo.right = pathLeafHash;
+    //        offset = leaf.offset;
+    //    } else {
+    //        nodeInfo.left = pathLeafHash;
+    //        nodeInfo.offset = SafeMath.add(path.leaf.offset, path.leaf.allotment);
+    //        nodeInfo.right = leafHash;
+    //        offset = path.leaf.offset;
+    //    }
 
         //AMTreeInternalNodeInfo -> AMTreePathInternalNode
-        ModelLib.AMTreePathInternalNode memory computeNode;
-        computeNode.nodeInfo = nodeInfo;
-        computeNode.offset = offset;
-        computeNode.allotment = allotment;
-        printAMTreeInternalNodeInfo(computeNode);
+    //    ModelLib.AMTreePathInternalNode memory computeNode;
+    //    computeNode.nodeInfo = nodeInfo;
+    //    computeNode.offset = offset;
+    //    computeNode.allotment = allotment;
+    //    printAMTreeInternalNodeInfo(computeNode);
 
-        for (uint i=0;i<path.nodes.length;i++) {
-            ModelLib.AMTreePathInternalNode memory node = path.nodes[i];
-            if (node.direction == ModelLib.Direction.DIRECTION_LEFT) {
-                computeNode.direction = ModelLib.Direction.DIRECTION_RIGHT;
-                computeNode = ModelLib.combineAMTreePathInternalNode(node, computeNode);
-                printAMTreeInternalNodeInfo(computeNode);
-            } else if(node.direction == ModelLib.Direction.DIRECTION_RIGHT) {
-                computeNode.direction = ModelLib.Direction.DIRECTION_LEFT;
-                computeNode = ModelLib.combineAMTreePathInternalNode(computeNode, node);
-                printAMTreeInternalNodeInfo(computeNode);
-            } else {}
-        }
-        computeNode.direction = ModelLib.Direction.DIRECTION_ROOT;
+    //    for (uint i=0;i<path.nodes.length;i++) {
+    //        ModelLib.AMTreePathInternalNode memory node = path.nodes[i];
+    //        if (node.direction == ModelLib.Direction.DIRECTION_LEFT) {
+    //            computeNode.direction = ModelLib.Direction.DIRECTION_RIGHT;
+    //            computeNode = ModelLib.combineAMTreePathInternalNode(node, computeNode);
+    //            printAMTreeInternalNodeInfo(computeNode);
+    //        } else if(node.direction == ModelLib.Direction.DIRECTION_RIGHT) {
+    //            computeNode.direction = ModelLib.Direction.DIRECTION_LEFT;
+    //            computeNode = ModelLib.combineAMTreePathInternalNode(computeNode, node);
+    //            printAMTreeInternalNodeInfo(computeNode);
+    //        } else {}
+    //    }
+    //    computeNode.direction = ModelLib.Direction.DIRECTION_ROOT;
 
         //AMTreePathInternalNode -> sha256
-        Log.log("hub",keccak256(ModelLib.marshalAMTreePathInternalNode(root)));
-        Log.log("hub",keccak256(ModelLib.marshalAMTreePathInternalNode(computeNode)));
-        return (keccak256(ModelLib.marshalAMTreePathInternalNode(root)) == keccak256(ModelLib.marshalAMTreePathInternalNode(computeNode)) && root.offset == computeNode.offset && root.allotment == computeNode.allotment);
-    }
+    //    Log.log("hub",keccak256(ModelLib.marshalAMTreePathInternalNode(root)));
+    //    Log.log("hub",keccak256(ModelLib.marshalAMTreePathInternalNode(computeNode)));
+    //    return (keccak256(ModelLib.marshalAMTreePathInternalNode(root)) == keccak256(ModelLib.marshalAMTreePathInternalNode(computeNode)) && root.offset == computeNode.offset && root.allotment == computeNode.allotment);
+    //}
 
-    function printAMTreeInternalNodeInfo(ModelLib.AMTreePathInternalNode memory node) internal {
-        Log.log("hub", node.offset);
-        Log.log("hub", node.nodeInfo.left);
-        Log.log("hub", node.nodeInfo.offset);
-        Log.log("hub", node.nodeInfo.right);
-        Log.log("hub", node.allotment);
-    }
+    //function printAMTreeInternalNodeInfo(ModelLib.AMTreePathInternalNode memory node) internal {
+    //    Log.log("hub", node.offset);
+    //    Log.log("hub", node.nodeInfo.left);
+    //    Log.log("hub", node.nodeInfo.offset);
+    //    Log.log("hub", node.nodeInfo.right);
+    //    Log.log("hub", node.allotment);
+    //}
 }

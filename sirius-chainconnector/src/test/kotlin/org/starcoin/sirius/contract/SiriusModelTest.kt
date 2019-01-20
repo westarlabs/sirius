@@ -128,12 +128,12 @@ class SiriusModelTest : ContractTestBase("solidity/test_all", "test_all") {
         println()
         println()
         println(obj.leaf.hash())
-        println(obj.leaf.offset.toByteArray().toHEXString())
-        println(obj.path.leaf.hash())
-        println(obj.path.leaf.offset.toByteArray().toHEXString())
+//        println(obj.leaf.offset.toByteArray().toHEXString())
+//        println(obj.path.leaf.hash())
+//        println(obj.path.leaf.offset.toByteArray().toHEXString())
         println()
         println()
-        Assert.assertTrue(AMTree.verifyMembershipProof(tree.root, obj))
+        Assert.assertTrue(AMTree.verifyMembershipProof(tree.root.toAMTreePathNode(), obj))
         val callResult2 = contract.callConstFunction("am_tree_proof_test2", data1, data2)[0] as ByteArray
         Assert.assertArrayEquals(
             "expect ${data2.toHEXString()} but get ${callResult2.toHEXString()}",
