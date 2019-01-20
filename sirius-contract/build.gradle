@@ -5,7 +5,8 @@ plugins {
 solidity {
     outputComponents = ["BIN", "ABI", "METADATA"]
     optimize = true
-    //optimizeRuns = 500
+    overwrite = true
+    optimizeRuns = 500
 }
 
 configurations {
