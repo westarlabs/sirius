@@ -1,11 +1,11 @@
 package org.starcoin.sirius.hub
 
 import com.google.common.eventbus.Subscribe
+import kotlinx.coroutines.channels.ReceiveChannel
 import org.starcoin.proto.Starcoin
 import org.starcoin.proto.Starcoin.HubMaliciousFlags
 import org.starcoin.sirius.core.*
 import java.util.*
-import java.util.concurrent.BlockingQueue
 import java.util.stream.Collectors
 
 interface Hub {
@@ -53,15 +53,11 @@ interface Hub {
 
     fun currentEon(): Eon?
 
-    fun watch(address: Address): BlockingQueue<HubEvent> {
-        return this.watchByFilter { event -> event.isPublicEvent || event.address == address }
+    fun watch(address: Address): ReceiveChannel<HubEvent> {
+        return this.watch { event -> event.isPublicEvent || event.address == address }
     }
 
-    fun watchByFilter(predicate: (HubEvent) -> Boolean): BlockingQueue<HubEvent>
-
-    fun watch(listener: HubEventListener)
-
-    fun onBlock(blockInfo: Block<*>)
+    fun watch(predicate: (HubEvent) -> Boolean): ReceiveChannel<HubEvent>
 
     enum class HubMaliciousFlag constructor(private val protoFlag: Starcoin.HubMaliciousFlag) :
         SiriusEnum<Starcoin.HubMaliciousFlag> {

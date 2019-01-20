@@ -3,6 +3,8 @@ package org.starcoin.sirius.hub
 import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.runBlocking
+import kotlinx.coroutines.withTimeoutOrNull
 import org.apache.commons.lang3.RandomUtils
 import org.junit.Assert
 import org.junit.Before
@@ -228,7 +230,7 @@ abstract class HubTestBase<T : ChainTransaction, A : ChainAccount> {
 
     private fun deposit(account: LocalAccount, amount: BigInteger, expectSuccess: Boolean) {
         val previousDeposit = hub.getHubAccount(account.address)!!.deposit
-        waitHubEvent(HubEventType.NEW_DEPOSIT, expectSuccess) {
+        waitHubEvent(HubEventType.NEW_DEPOSIT, expectSuccess, account.address) {
             val tx = this.chain.newTransaction(account.chainAccount, hubContract.contractAddress, amount)
             chain.submitTransaction(account.chainAccount, tx)
         }
@@ -275,22 +277,30 @@ abstract class HubTestBase<T : ChainTransaction, A : ChainAccount> {
     private fun waitHubReady() {
         if (hub.ready)
             return
-        val queue = hub.watchByFilter { event -> event.type === HubEventType.NEW_HUB_ROOT }
+        val queue = hub.watch { event -> event.type === HubEventType.NEW_HUB_ROOT }
         // generate new block to return hub commit result, and trigger hub ready.
         createBlock()
         try {
             LOG.info("waitHubReady")
-            queue.take()
+            runBlocking {
+                queue.receive()
+            }
         } catch (e: InterruptedException) {
             LOG.severe(e.message)
         }
 
     }
 
-    private fun waitHubEvent(type: HubEventType, expectSuccess: Boolean = true, block: () -> Unit) {
-        val queue = hub.watchByFilter { it.type === type }
+    private fun waitHubEvent(
+        type: HubEventType,
+        expectSuccess: Boolean = true,
+        address: Address? = null,
+        block: () -> Unit
+    ) {
+        val queue = hub.watch { event -> event.type == type && address?.let { event.address == it } ?: true }
         block()
-        val event = queue.poll(5, TimeUnit.SECONDS)
+        val event = runBlocking { withTimeoutOrNull(TimeUnit.SECONDS.toMillis(5)) { queue.receive() } }
+        LOG.info("waitHubEvent $type $event")
         if (expectSuccess) {
             Assert.assertNotNull(event)
         } else {

@@ -1,5 +1,6 @@
 package org.starcoin.sirius.hub
 
+import kotlinx.coroutines.channels.ReceiveChannel
 import org.starcoin.sirius.core.*
 import org.starcoin.sirius.hub.Hub.HubMaliciousFlag
 import org.starcoin.sirius.protocol.Chain
@@ -7,7 +8,6 @@ import org.starcoin.sirius.protocol.ChainAccount
 import org.starcoin.sirius.protocol.HubContract
 import java.security.PublicKey
 import java.util.*
-import java.util.concurrent.BlockingQueue
 
 class HubService<T : ChainTransaction, A : ChainAccount>(
     private val owner: A,
@@ -82,12 +82,12 @@ class HubService<T : ChainTransaction, A : ChainAccount>(
         return hub.getProof(eon, blockAddress)
     }
 
-    fun watch(address: Address): BlockingQueue<HubEvent> {
+    fun watch(address: Address): ReceiveChannel<HubEvent> {
         return hub.watch(address)
     }
 
-    fun watch(predicate: (HubEvent) -> Boolean): BlockingQueue<HubEvent> {
-        return hub.watchByFilter(predicate)
+    fun watch(predicate: (HubEvent) -> Boolean): ReceiveChannel<HubEvent> {
+        return hub.watch(predicate)
     }
 
     fun getHubAccount(blockAddress: Address): HubAccount? {
