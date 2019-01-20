@@ -340,6 +340,12 @@ library ModelLib {
         uint allotment;
     }
 
+    struct AMTreePathInternalNodeV2 {
+        AMTreeInternalNodeInfo nodeInfo;
+        uint offset;
+        uint allotment;
+    }
+
     function unmarshalAMTreePathInternalNode(RLPLib.RLPItem memory rlp) internal pure returns (AMTreePathInternalNode memory node) {
         RLPLib.Iterator memory it = RLPDecoder.iterator(rlp);
         uint idx;
@@ -370,77 +376,63 @@ library ModelLib {
         AMTreePathInternalNode[] nodes;
     }
 
-    struct AMTreeNode4Hash {
-        uint offset;
-        AMTreeInternalNodeInfo info;
-        uint allotment;
-    }
-
-    function marshalAMTreeNode4Hash(AMTreeNode4Hash memory node) internal pure returns (bytes memory) {
-        bytes memory offset = RLPEncoder.encodeUint(node.offset);
-        bytes memory info = marshalAMTreeInternalNodeInfo(node.info);
-        bytes memory allotment = RLPEncoder.encodeUint(node.allotment);
-
-        return RLPEncoder.encodeList(ByteUtilLib.append(ByteUtilLib.append(offset, info), allotment));
-    }
-
     function verifyMembershipProof4AMTreeProof(AMTreePathInternalNode memory root, AMTreeProof memory proof) internal pure returns(bool) {
         AMTreePath memory path = proof.path;
         AMTreePathLeafNode memory leaf = proof.leaf;
 
-        AMTreeNode4Hash memory computeNode = combineAMTreePathLeafNode(leaf, path.leaf);
+        //AMTreePathLeafNode -> AMTreeInternalNodeInfo
+        AMTreeInternalNodeInfo memory nodeInfo;
+        bytes32 leafHash = keccak256(marshalAMTreePathLeafNode(leaf));
+        bytes32 pathLeafHash = keccak256(marshalAMTreePathLeafNode(path.leaf));
+        uint allotment = SafeMath.add(leaf.allotment, path.leaf.allotment);
+        uint offset;
+        if(leaf.direction == Direction.DIRECTION_LEFT) {
+            nodeInfo.left = leafHash;
+            nodeInfo.offset = SafeMath.add(leaf.offset, leaf.allotment);
+            nodeInfo.right = pathLeafHash;
+            offset = leaf.offset;
+        } else {
+            nodeInfo.left = pathLeafHash;
+            nodeInfo.offset = SafeMath.add(path.leaf.offset, path.leaf.allotment);
+            nodeInfo.right = leafHash;
+            offset = path.leaf.offset;
+        }
 
-        AMTreeNode4Hash memory rootNode = changeAMTreePathInternalNode2AMTreeNode4Hash(root);
+        //AMTreeInternalNodeInfo -> AMTreePathInternalNode
+        AMTreePathInternalNode memory computeNode;
+        computeNode.nodeInfo = nodeInfo;
+        computeNode.offset = offset;
+        computeNode.allotment = allotment;
 
         for (uint i=0;i<path.nodes.length;i++) {
             AMTreePathInternalNode memory node = path.nodes[i];
-            AMTreeNode4Hash memory tmp = changeAMTreePathInternalNode2AMTreeNode4Hash(node);
             if (node.direction == Direction.DIRECTION_LEFT) {
-                computeNode = combineAMTreeNode4Hash(tmp, computeNode);
+                computeNode.direction = Direction.DIRECTION_RIGHT;
+                computeNode = combineAMTreePathInternalNode(node, computeNode);
             } else if(node.direction == Direction.DIRECTION_RIGHT) {
-                computeNode = combineAMTreeNode4Hash(computeNode, tmp);
+                computeNode.direction = Direction.DIRECTION_LEFT;
+                computeNode = combineAMTreePathInternalNode(computeNode, node);
             } else {}
         }
-        return true;
-        //return (keccak256(marshalAMTreeNode4Hash(rootNode)) == keccak256(marshalAMTreeNode4Hash(computeNode)) && rootNode.offset == computeNode.offset && rootNode.allotment == computeNode.allotment);
+
+        computeNode.direction = Direction.DIRECTION_ROOT;
+
+        //AMTreePathInternalNode -> sha256
+        return (keccak256(marshalAMTreePathInternalNode(root)) == keccak256(marshalAMTreePathInternalNode(computeNode)) && root.offset == computeNode.offset && root.allotment == computeNode.allotment);
     }
 
-    function changeAMTreePathInternalNode2AMTreeNode4Hash(AMTreePathInternalNode memory iNode)private pure returns(AMTreeNode4Hash memory node) {
-        node.offset = iNode.offset;
-        node.info = iNode.nodeInfo;
-        node.allotment = iNode.allotment;
-    }
-
-    function combineAMTreePathLeafNode(AMTreePathLeafNode memory first, AMTreePathLeafNode memory second) private pure returns(AMTreeNode4Hash memory node) {
-        AMTreeInternalNodeInfo memory internalNodeInfo;
-        if(first.direction == Direction.DIRECTION_LEFT) {
-            internalNodeInfo.left = keccak256(marshalAMTreeLeafNodeInfo(first.nodeInfo));
-            internalNodeInfo.offset = second.offset;
-            internalNodeInfo.right = keccak256(marshalAMTreeLeafNodeInfo(second.nodeInfo));
-
-            node.offset = first.offset;
-            node.info = internalNodeInfo;
-            node.allotment = SafeMath.add(first.allotment, second.allotment);
-        } else {
-            internalNodeInfo.left = keccak256(marshalAMTreeLeafNodeInfo(second.nodeInfo));
-            internalNodeInfo.offset = first.offset;
-            internalNodeInfo.right = keccak256(marshalAMTreeLeafNodeInfo(first.nodeInfo));
-
-            node.offset = second.offset;
-            node.info = internalNodeInfo;
-            node.allotment = SafeMath.add(first.allotment, second.allotment);
-        }
-    }
-
-    function combineAMTreeNode4Hash(AMTreeNode4Hash memory left, AMTreeNode4Hash memory right) private pure returns(AMTreeNode4Hash memory combine) {
+    function combineAMTreePathInternalNode(AMTreePathInternalNode memory left, AMTreePathInternalNode memory right) internal pure returns (AMTreePathInternalNode memory node) {
         AMTreeInternalNodeInfo memory nodeInfo;
-        nodeInfo.left = keccak256(marshalAMTreeNode4Hash(left));
-        nodeInfo.offset = SafeMath.add(left.offset, left.allotment);
-        nodeInfo.right = keccak256(marshalAMTreeNode4Hash(right));
+        bytes32 leftHash = keccak256(marshalAMTreePathInternalNode(left));
+        bytes32 rightHash = keccak256(marshalAMTreePathInternalNode(right));
 
-        combine.offset = left.offset;
-        combine.info = nodeInfo;
-        combine.allotment = SafeMath.add(left.allotment, right.allotment);
+        nodeInfo.left = leftHash;
+        nodeInfo.offset = SafeMath.add(left.offset, left.allotment);
+        nodeInfo.right = rightHash;
+
+        node.nodeInfo = nodeInfo;
+        node.offset = left.offset;
+        node.allotment = SafeMath.add(left.allotment, right.allotment);
     }
 
     function unmarshalAMTreePath(RLPLib.RLPItem memory rlp) internal pure returns (AMTreePath memory path) {
@@ -595,10 +587,26 @@ library ModelLib {
         return RLPEncoder.encodeList(ByteUtilLib.append(ByteUtilLib.append(ByteUtilLib.append(ByteUtilLib.append(eon, version), sendAmount), receiveAmount), root));
     }
 
+    function updateDataHash(UpdateData memory ud) private pure returns (bytes memory) {
+        bytes memory eon = ByteUtilLib.uint2byte(ud.eon);
+        bytes memory version = ByteUtilLib.uint2byte(ud.version);
+        bytes memory sendAmount = ByteUtilLib.uint2byte(ud.sendAmount);
+        bytes memory receiveAmount = ByteUtilLib.uint2byte(ud.receiveAmount);
+        bytes memory root = ByteUtilLib.bytes32ToBytes(ud.root);
+
+        return ByteUtilLib.append(ByteUtilLib.append(ByteUtilLib.append(ByteUtilLib.append(eon, version), sendAmount), receiveAmount), root);
+    }
+
+    function verifySign4Update(UpdateData memory data, Signature memory sign, bytes32 addrHash) internal pure returns (bool flag) {
+        bytes32 hash = keccak256(updateDataHash(data));
+        address signer = ecrecover(hash, uint8(sign.v), sign.r, sign.s);
+        return ByteUtilLib.address2hash(signer) == addrHash;
+    }
+
     struct Update {
         UpdateData upData;
-        bytes sign;
-        bytes hubSign;
+        Signature sign;
+        Signature hubSign;
     }
 
     function unmarshalUpdate(RLPLib.RLPItem memory rlp) internal pure returns (Update memory update) {
@@ -607,8 +615,8 @@ library ModelLib {
         while (RLPDecoder.hasNext(it)) {
             RLPLib.RLPItem memory r = RLPDecoder.next(it);
             if (idx == 0) update.upData = unmarshalUpdateData(r);
-            else if (idx == 1) update.sign = RLPLib.toData(r);
-            else if (idx == 2) update.hubSign = RLPLib.toData(r);
+            else if (idx == 1) update.sign = unmarshalSignature(r);
+            else if (idx == 2) update.hubSign = unmarshalSignature(r);
             else {}
 
             idx++;
@@ -617,23 +625,10 @@ library ModelLib {
 
     function marshalUpdate(Update memory update) internal pure returns (bytes memory) {
         bytes memory upData = marshalUpdateData(update.upData);
-        bytes memory sign = RLPEncoder.encodeBytes(update.sign);
-        bytes memory hubSign = RLPEncoder.encodeBytes(update.hubSign);
+        bytes memory sign = marshalSignature(update.sign);
+        bytes memory hubSign = marshalSignature(update.hubSign);
 
         return RLPEncoder.encodeList(ByteUtilLib.append(ByteUtilLib.append(upData, sign), hubSign));
-    }
-
-    function verifySig4Update(bytes memory userPK, Update memory update) internal pure returns(bool flag) {
-        //TODO
-        userPK;
-        update;
-        return true;
-    }
-
-    function verifyHubSig4Update(bytes memory hubPK, Update memory update) internal pure returns(bool flag) {
-        hubPK;
-        update;
-        return true;
     }
 
 ///////////////////////////////////////
@@ -881,9 +876,44 @@ library ModelLib {
         return RLPEncoder.encodeList(ByteUtilLib.append(ByteUtilLib.append(ByteUtilLib.append(ByteUtilLib.append(eon, fr), to), amount), timestamp));
     }
 
+    struct Signature {
+        byte v;
+        bytes32 r;
+        bytes32 s;
+    }
+
+    function unmarshalSignature(RLPLib.RLPItem memory rlp) internal pure returns (Signature memory sign) {
+        rlp = RLPDecoder.toRLPItem(RLPLib.toData(rlp), true);
+        RLPLib.Iterator memory it = RLPDecoder.iterator(rlp);
+        uint idx;
+        while(RLPDecoder.hasNext(it)) {
+            RLPLib.RLPItem memory r = RLPDecoder.next(it);
+            if(idx == 0) {
+                bytes memory bs = RLPLib.toData(r);
+                sign.v = bs[0];
+            } else if(idx == 1) {
+                sign.r = ByteUtilLib.bytesToBytes32(RLPLib.toData(r));
+            } else if(idx == 2) {
+                sign.s = ByteUtilLib.bytesToBytes32(RLPLib.toData(r));
+             } else {}
+
+            idx++;
+        }
+    }
+
+    function marshalSignature(Signature memory sign) internal pure returns (bytes memory) {
+        bytes memory tmp = new bytes(1);
+        tmp[0] = sign.v;
+        bytes memory v = RLPEncoder.encodeBytes(tmp);
+        bytes memory r = RLPEncoder.encodeBytes(ByteUtilLib.bytes32ToBytes(sign.r));
+        bytes memory s = RLPEncoder.encodeBytes(ByteUtilLib.bytes32ToBytes(sign.s));
+
+        return RLPEncoder.encodeBytes(RLPEncoder.encodeList(ByteUtilLib.append(ByteUtilLib.append(v, r), s)));
+    }
+
     struct OffchainTransaction {
         OffchainTransactionData offData;
-        bytes sign;
+        Signature sign;
     }
 
     function unmarshalOffchainTransaction(RLPLib.RLPItem memory rlp) internal pure returns (OffchainTransaction memory off) {
@@ -892,7 +922,7 @@ library ModelLib {
         while(RLPDecoder.hasNext(it)) {
             RLPLib.RLPItem memory r = RLPDecoder.next(it);
             if(idx == 0) off.offData = unmarshalOffchainTransactionData(r);
-            else if(idx == 1) off.sign = RLPLib.toData(r);
+            else if(idx == 1) off.sign = unmarshalSignature(r);//RLPLib.toData(r);
             else {}
 
             idx++;
@@ -901,7 +931,7 @@ library ModelLib {
 
     function marshalOffchainTransaction(OffchainTransaction memory off) internal pure returns (bytes memory) {
         bytes memory offData = marshalOffchainTransactionData(off.offData);
-        bytes memory sign = RLPEncoder.encodeBytes(off.sign);
+        bytes memory sign = marshalSignature(off.sign);//RLPEncoder.encodeBytes(off.sign);
 
         return RLPEncoder.encodeList(ByteUtilLib.append(offData, sign));
     }

@@ -38,8 +38,6 @@ contract SiriusService is Sirius {
     mapping(address => bool) private recoverys;//used for recovery model
 
     using SafeMath for uint;
-    event DepositEvent(uint indexed i, uint value);
-    event DepositEvent2(uint indexed i, bytes32 hash);
     event SiriusEvent(bytes32 indexed hash, uint indexed num, bytes value);
 
     constructor(bytes memory data) public {
@@ -201,15 +199,16 @@ contract SiriusService is Sirius {
             uint currentEon = currentEon();
             //require(cancel.update.upData.eon >= 0 && cancel.update.upData.eon == currentEon);
 
-            //bool signFlag = ModelLib.verifySig4Update(cancel.participant.publicKey, cancel.update);
-            //require(signFlag);
+            bytes32 key = ByteUtilLib.address2hash(cancel.addr);
+            bool signFlag = ModelLib.verifySign4Update(cancel.update.upData, cancel.update.sign, key);
+            require(signFlag);
 
             ModelLib.HubRoot memory latestRoot = latestRoot();
             bool proofFlag = ModelLib.verifyMembershipProof4AMTreeProof(latestRoot.node, cancel.proof);
             require(proofFlag);
 
             //address addr = ByteUtilLib.pubkey2Address(cancel.participant.publicKey);
-            bytes32 key = ByteUtilLib.address2hash(cancel.addr);
+            //bytes32 key = ByteUtilLib.address2hash(cancel.addr);
 
             GlobleLib.Withdrawal storage with = balances[0].withdrawalMeta.withdrawals[key];
             if(with.isVal) {
@@ -260,9 +259,9 @@ contract SiriusService is Sirius {
 
                 //require(msg.sender == ByteUtilLib.pubkey2Address(challenge.publicKey));//TODO
 
-                bool signFlag = ModelLib.verifySig4Update(challenge.publicKey, up);
+                bool signFlag = ModelLib.verifySign4Update(up.upData, up.sign, key);
                 require(signFlag);
-                bool hubSignFlag = ModelLib.verifyHubSig4Update(hubPK, up);
+                bool hubSignFlag = ModelLib.verifySign4Update(up.upData, up.hubSign, ByteUtilLib.address2hash(owner));
                 require(hubSignFlag);
             } else {
 
@@ -296,7 +295,8 @@ contract SiriusService is Sirius {
             require(tmpStat.isVal);
             ModelLib.BalanceUpdateChallengeStatus memory stat = GlobleLib.change2BalanceUpdateChallengeStatus(tmpStat);
 
-            bytes32 hash = ByteUtilLib.address2hash(ByteUtilLib.pubkey2Address(stat.challenge.publicKey));
+            address addr = ByteUtilLib.pubkey2Address(stat.challenge.publicKey);
+            bytes32 hash = ByteUtilLib.address2hash(addr);
             if(stat.status == ModelLib.ChallengeStatus.OPEN) {
                 uint d = balances[1].depositMeta.deposits[hash];
                 if(close.update.upData.sendAmount == 0 && close.update.upData.receiveAmount == 0) {
@@ -304,9 +304,9 @@ contract SiriusService is Sirius {
                         require(d <= close.proof.leaf.allotment);
                     }
                 } else {
-                    bool signFlag = ModelLib.verifySig4Update(stat.challenge.publicKey, close.update);
+                    bool signFlag = ModelLib.verifySign4Update(close.update.upData, close.update.sign, hash);
                     require(signFlag);
-                    bool hubsignFlag = ModelLib.verifyHubSig4Update(hubPK, close.update);
+                    bool hubsignFlag = ModelLib.verifySign4Update(close.update.upData, close.update.hubSign, ByteUtilLib.address2hash(owner));
                     require(hubsignFlag);
                     require(close.update.upData.version >= stat.challenge.proof.update.upData.version);
                 }
@@ -345,7 +345,7 @@ contract SiriusService is Sirius {
             require(open.update.upData.eon >= 0 && open.update.upData.eon == balances[1].eon);
             require(open.tran.offData.eon >= 0 && open.tran.offData.eon == balances[1].eon);
 
-            bool signFlag = ModelLib.verifyHubSig4Update(hubPK, open.update);
+            bool signFlag = ModelLib.verifySign4Update(open.update.upData, open.update.hubSign, ByteUtilLib.address2hash(owner));
             require(signFlag);
 
             bytes32 hash = ModelLib.hash4OffchainTransaction(open.tran);
@@ -380,7 +380,8 @@ contract SiriusService is Sirius {
             require(challenge.isVal);
 
             if(challenge.stat == ModelLib.ChallengeStatus.OPEN) {
-                bool signFlag = ModelLib.verifySig4Update(close.fromPublicKey, close.update);
+                bytes32 addrHash = ByteUtilLib.address2hash(ByteUtilLib.pubkey2Address(close.fromPublicKey));
+                bool signFlag = ModelLib.verifySign4Update(close.update.upData, close.update.sign, addrHash);
                 require(signFlag);
 
                 //TODO:require(close.proof.leaf.nodeInfo.update == close.update);
@@ -575,22 +576,15 @@ contract SiriusService is Sirius {
         uint newEon = SafeMath.div(tmp, blocksPerEon);
         uint latestEon = currentEon();
         uint addEon = SafeMath.add(balances[0].eon, 1);
-        emit DepositEvent(9, tmp);
-        emit DepositEvent(8, newEon);
 
         //recovery
-        emit DepositEvent(7, latestEon);
         uint tmp2 = SafeMath.add(SafeMath.mul(blocksPerEon, latestEon), SafeMath.div(blocksPerEon, 4));
         uint tmp3 = SafeMath.add(tmp2, blocksPerEon);
-        emit DepositEvent(6, tmp2);
-        emit DepositEvent(5, tmp3);
         if ((newEon > addEon) || (newEon == addEon && tmp > tmp3 && balances[0].hasRoot) || (newEon == latestEon && tmp > tmp2 && !balances[0].hasRoot)) {
-            emit DepositEvent(4, 0);
             recoveryMode = true;
         }
 
         if (newEon == addEon && !recoveryMode) {// change eon
-            emit DepositEvent(1, 0);
             GlobleLib.Balance memory latest = newBalance(newEon);
             checkBalances(latest);
         } else {}

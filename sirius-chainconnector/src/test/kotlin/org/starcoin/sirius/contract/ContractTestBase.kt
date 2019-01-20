@@ -87,12 +87,12 @@ abstract class ContractTestBase(val contractPath: String, val contractName: Stri
     }
 
     open fun getContractConstructArg():Any?{
-        return null;
+        return null
     }
 
     @Suppress("INACCESSIBLE_TYPE")
     fun deployContract(): ContractData {
-        val sb = StandaloneBlockchain().withAutoblock(true).withGasLimit(2147483647).withGasPrice(2147483647)
+        val sb = StandaloneBlockchain().withAutoblock(true).withGasLimit(8000000).withGasPrice(2147483647)
 
 
         val contractMetadata = loadContractMetadata(contractPath)
