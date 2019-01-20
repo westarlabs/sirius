@@ -99,22 +99,12 @@ class SiriusModelTest : ContractTestBase("solidity/test_all", "test_all") {
 
     @Test
     fun testAMTreeProof2() {
-        var tree: AMTree = AMTree.random()
-        var obj: AMTreeProof = AMTreeProof.DUMMY_PROOF
-        var flag = false
-        while (!flag) {
-            try {
-                tree = AMTree.random()
-                obj = tree.randommProof as AMTreeProof
-                flag = true
-            } catch (e: Exception) {
-
-            }
-        }
+        val tree = AMTree.random()
+        val obj = tree.randommProof as AMTreeProof
         val data1 = obj.toRLP()
         val callResult1 = contract.callConstFunction("am_tree_proof_test", data1)[0] as ByteArray
         Assert.assertArrayEquals(
-            "expect ${data1.toHEXString()} but get ${callResult1.toHEXString()}",
+            "expect111 ${data1.toHEXString()} but get ${callResult1.toHEXString()}",
             data1,
             callResult1
         )
@@ -123,20 +113,10 @@ class SiriusModelTest : ContractTestBase("solidity/test_all", "test_all") {
 
         val root = tree.root.toAMTreePathNode()
         val data2 = root.toRLP()
-        println(tree.root.left!!.hash())
-        println(tree.root.right!!.hash())
-        println()
-        println()
-        println(obj.leaf.hash())
-//        println(obj.leaf.offset.toByteArray().toHEXString())
-//        println(obj.path.leaf.hash())
-//        println(obj.path.leaf.offset.toByteArray().toHEXString())
-        println()
-        println()
         Assert.assertTrue(AMTree.verifyMembershipProof(tree.root.toAMTreePathNode(), obj))
         val callResult2 = contract.callConstFunction("am_tree_proof_test2", data1, data2)[0] as ByteArray
         Assert.assertArrayEquals(
-            "expect ${data2.toHEXString()} but get ${callResult2.toHEXString()}",
+            "expect222 ${data2.toHEXString()} but get ${callResult2.toHEXString()}",
             data2,
             callResult2
         )

@@ -274,6 +274,20 @@ library ModelLib {
         return RLPEncoder.encodeList(ByteUtilLib.append(eon, root));
     }
 
+    struct AMTreeInternalNodeInfo {
+        bytes32 left;
+        uint offset;
+        bytes32 right;
+    }
+
+    function marshalAMTreeInternalNodeInfo(AMTreeInternalNodeInfo memory node) internal pure returns (bytes memory) {
+        bytes memory left = RLPEncoder.encodeBytes(ByteUtilLib.bytes32ToBytes(node.left));
+        bytes memory offset = RLPEncoder.encodeUint(node.offset);
+        bytes memory right = RLPEncoder.encodeBytes(ByteUtilLib.bytes32ToBytes(node.right));
+
+        return RLPEncoder.encodeList(ByteUtilLib.append(ByteUtilLib.append(left, offset), right));
+    }
+
     struct AMTreePathNode {
         bytes32 nodeHash;
         Direction direction;
@@ -314,65 +328,6 @@ library ModelLib {
     function verifyMembershipProof4AMTreeProof(AMTreePathNode memory root, AMTreeProof memory proof) internal pure returns(bool) {
         return true;
     }
-
-    //function verifyMembershipProof4AMTreeProof(AMTreePathNode memory root, AMTreeProof memory proof) internal pure returns(bool) {
-    //    AMTreePath memory path = proof.path;
-    //    AMTreePathLeafNode memory leaf = proof.leaf;
-
-        //AMTreePathLeafNode -> AMTreeInternalNodeInfo
-    //    AMTreeInternalNodeInfo memory nodeInfo;
-    //    bytes32 leafHash = keccak256(marshalAMTreePathLeafNode(leaf));
-    //    bytes32 pathLeafHash = keccak256(marshalAMTreePathLeafNode(path.leaf));
-    //    uint allotment = SafeMath.add(leaf.allotment, path.leaf.allotment);
-    //    uint offset;
-    //    if(leaf.direction == Direction.DIRECTION_LEFT) {
-    //        nodeInfo.left = leafHash;
-    //        nodeInfo.offset = SafeMath.add(leaf.offset, leaf.allotment);
-    //        nodeInfo.right = pathLeafHash;
-    //        offset = leaf.offset;
-    //    } else {
-    //        nodeInfo.left = pathLeafHash;
-    //        nodeInfo.offset = SafeMath.add(path.leaf.offset, path.leaf.allotment);
-    //        nodeInfo.right = leafHash;
-    //        offset = path.leaf.offset;
-    //    }
-
-        //AMTreeInternalNodeInfo -> AMTreePathInternalNode
-    //    AMTreePathInternalNode memory computeNode;
-    //    computeNode.nodeInfo = nodeInfo;
-    //    computeNode.offset = offset;
-    //    computeNode.allotment = allotment;
-
-    //    for (uint i=0;i<path.nodes.length;i++) {
-    //        AMTreePathInternalNode memory node = path.nodes[i];
-    //        if (node.direction == Direction.DIRECTION_LEFT) {
-    //            computeNode.direction = Direction.DIRECTION_RIGHT;
-    //            computeNode = combineAMTreePathInternalNode(node, computeNode);
-    //        } else if(node.direction == Direction.DIRECTION_RIGHT) {
-    //            computeNode.direction = Direction.DIRECTION_LEFT;
-    //            computeNode = combineAMTreePathInternalNode(computeNode, node);
-    //        } else {}
-    //    }
-
-    //    computeNode.direction = Direction.DIRECTION_ROOT;
-
-        //AMTreePathInternalNode -> sha256
-    //    return (keccak256(marshalAMTreePathInternalNode(root)) == keccak256(marshalAMTreePathInternalNode(computeNode)) && root.offset == computeNode.offset && root.allotment == computeNode.allotment);
-    //}
-
-    //function combineAMTreePathInternalNode(AMTreePathInternalNode memory left, AMTreePathInternalNode memory right) internal pure returns (AMTreePathInternalNode memory node) {
-    //    AMTreeInternalNodeInfo memory nodeInfo;
-    //    bytes32 leftHash = keccak256(marshalAMTreePathInternalNode(left));
-    //    bytes32 rightHash = keccak256(marshalAMTreePathInternalNode(right));
-
-    //    nodeInfo.left = leftHash;
-    //    nodeInfo.offset = SafeMath.add(left.offset, left.allotment);
-    //    nodeInfo.right = rightHash;
-
-    //    node.nodeInfo = nodeInfo;
-    //    node.offset = left.offset;
-    //    node.allotment = SafeMath.add(left.allotment, right.allotment);
-    //}
 
     function unmarshalAMTreePath(RLPLib.RLPItem memory rlp) internal pure returns (AMTreePath memory path) {
         RLPLib.Iterator memory it = RLPDecoder.iterator(rlp);
