@@ -129,6 +129,7 @@ abstract class HubTestBase<T : ChainTransaction, A : ChainAccount> {
         Assert.assertTrue(eon < eon1)
 
         this.verifyRoot()
+        goToNextEon()
 
         this.withdraw(a1.chainAccount, RandomUtils.nextLong(1, a1.hubAccount!!.balance.longValueExact()))
 
@@ -262,7 +263,7 @@ abstract class HubTestBase<T : ChainTransaction, A : ChainAccount> {
 
         val toUpdate = Update.newUpdate(eon, to.update.version + 1, to.address, toTxs)
         toUpdate.sign(to.kp)
-        val receiveChannel = waitHubEvent(HubEventType.NEW_UPDATE) {
+        val receiveChannel = getHubEventChannel(HubEventType.NEW_UPDATE) {
             hub.receiveNewTransfer(IOU(tx, toUpdate))
         }
 
@@ -277,7 +278,8 @@ abstract class HubTestBase<T : ChainTransaction, A : ChainAccount> {
 
     private fun withdraw(account: A, amount: Long) {
         val proof =
-            hub.getProof(account.address) ?: throw RuntimeException("can not find proof by address: ${account.address}")
+            hub.getProof(hub.currentEon().id - 1, account.address)
+                ?: throw RuntimeException("can not find proof by address: ${account.address}")
         waitHubEvent(HubEventType.WITHDRAWAL) {
             hubContract.initiateWithdrawal(account, Withdrawal(proof, amount))
         }
@@ -304,7 +306,7 @@ abstract class HubTestBase<T : ChainTransaction, A : ChainAccount> {
 
     }
 
-    private fun waitHubEvent(
+    private fun getHubEventChannel(
         type: HubEventType,
         address: Address? = null,
         block: () -> Unit
@@ -320,7 +322,7 @@ abstract class HubTestBase<T : ChainTransaction, A : ChainAccount> {
         address: Address? = null,
         block: () -> Unit
     ): HubEvent? {
-        val queue = waitHubEvent(type, address, block)
+        val queue = getHubEventChannel(type, address, block)
         val event = runBlocking { withTimeoutOrNull(TimeUnit.SECONDS.toMillis(5)) { queue.receive() } }
         LOG.info("waitHubEvent $type $event")
         if (expectSuccess) {

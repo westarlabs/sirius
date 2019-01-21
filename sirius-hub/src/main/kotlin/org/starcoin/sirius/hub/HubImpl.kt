@@ -401,11 +401,6 @@ class HubImpl<T : ChainTransaction, A : ChainAccount>(
                 val path = this.eonState.state.getMembershipProof(from)
                 val cancelWithdrawal = CancelWithdrawal(from, hubAccount.update, path ?: AMTreeProof.DUMMY_PROOF)
                 val txHash = contract.cancelWithdrawal(owner, cancelWithdrawal)
-                val future = CompletableFuture<Receipt>()
-                this.txReceipts[txHash] = future
-                future.whenComplete { _, _ ->
-
-                }
             } else {
                 val withdrawalStatus = WithdrawalStatus(WithdrawalStatusType.INIT, withdrawal)
                 withdrawalStatus.pass()
