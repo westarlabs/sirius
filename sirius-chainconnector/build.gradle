@@ -1,3 +1,10 @@
+buildscript {
+    repositories.jcenter()
+    dependencies.classpath 'at.phatbl:shellexec:+'
+}
+
+import at.phatbl.shellexec.ShellExec
+
 dependencies{
     compile project(":sirius-core")
     compile project(":sirius-proto")
@@ -5,4 +12,12 @@ dependencies{
     compile ('org.web3j:core:4.0.0')
 
     testCompile project(path: ':sirius-core', configuration: 'testOutput')
+}
+
+task buildGoEthereum(type: ShellExec) {
+    command "./scripts/docker.sh build"
+}
+
+compileTestJava {
+    buildGoEthereum.execute()
 }

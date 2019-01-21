@@ -1,7 +1,6 @@
 #!/usr/bin/env bash
-set -x
 usage(){
-    echo "Usage $(basename $0) [clean, build, run, start, stop, logs, attach, geth, copy]"
+    echo "Usage $(basename $0) [clean, build, run, start, stop, logs, attach, geth]"
 }
 
 
@@ -9,9 +8,17 @@ if [ $# -lt 1 ]; then
     usage;
 fi
 
+SCRIPTPATH="$( cd "$(dirname "$0")" ; pwd -P )"
+source $SCRIPTPATH/docker/go-ethereum/env.sh
 case $"$1" in
     clean)
-	docker rm -f $(docker ps -a |grep go-ethereum|awk '{print $1}')
+	containers=$(docker ps -a |grep go-ethereum|awk '{print $1}')
+	if [[ -n $containers ]];then
+	    docker rm -f $containers
+	fi
+	if [[ -d $datadir ]] ;then
+	    rm -rf $datadir
+	fi
         ;;
     build)
 	docker build  -f $(dirname $0)/docker/go-ethereum/Dockerfile -t starcoin/go-etherum $(dirname $0)/docker/go-ethereum/
@@ -20,19 +27,14 @@ case $"$1" in
 	docker build --no-cache -f $(dirname $0)/docker/go-ethereum/Dockerfile -t starcoin/go-etherum $(dirname $0)/docker/go-ethereum/ 
 	;;
     run)
-	docker run -d --name go-ethereum -p 127.0.0.1:8545:8545 -p 30303:30303  -v $PWD/docker/go-ethereum:/ethereum starcoin/go-etherum
-	;;
-    copy)
-	while true;do
-	    if [ -z "$(ls -A $PWD/docker/go-ethereum/geth_data/keystore/)" ];then
-		sleep 1
-		continue
+	docker run -d --name go-ethereum -p 127.0.0.1:8545:8545 -p 30303:30303  -v /tmp/geth_data:/tmp/geth_data starcoin/go-etherum
+	while true; do
+	    if [[ -d $datadir ]]; then
+		break
 	    fi
-	    break
+	    sleep 1
+	    continue
 	done
-	rm  $PWD/../build/resources/test/keystore/*
-	cp  $PWD/docker/go-ethereum/geth_data/keystore/* $PWD/../build/resources/test/keystore/
-	    
 	;;
     logs)
 	docker logs $(docker ps -a |grep go-ethereum|awk '{print $1}') -f

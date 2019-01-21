@@ -1,7 +1,5 @@
 #!/usr/bin/env sh
-set -euo pipefail
-
-datadir=./geth_data
+datadir=/tmp/geth_data
 etherbase_passwd="starcoinmakeworldbetter"
 new_account(){
     echo  "$1"> ./pass

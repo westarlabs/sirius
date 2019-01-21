@@ -1,8 +1,6 @@
 package org.starcoin.sirius.protocol.ethereum
 
-import org.junit.Assert
-import org.junit.Before
-import org.junit.Test
+import org.junit.*
 import org.starcoin.sirius.core.Block
 import org.starcoin.sirius.core.ChainTransaction
 import org.starcoin.sirius.crypto.CryptoKey
@@ -14,25 +12,27 @@ import java.io.File
 import kotlin.properties.Delegates
 
 
-/* XXX: Move those properties to test configure*/
-const val RPC_URL = "http://127.0.0.1:8545"
-const val ETHERBASE_PASSWD = "starcoinmakeworldbetter"
-
-class EthereumChainTest {
+class EthereumChainTest : EtherumContainer() {
     private var chain: Chain<ChainTransaction, Block<ChainTransaction>, ChainAccount> by Delegates.notNull()
     private val alice = EthereumAccount(CryptoService.generateCryptoKey())
     private val bob = EthereumAccount(CryptoService.generateCryptoKey())
-    private val etherbase = EthereumAccount(etherbase())
+    private var etherbase: EthereumAccount by Delegates.notNull()
 
     @Before
     fun setUp() {
         /*
-         XXX: Setup go-etheruem container here. For now, required started outside by
-         running `scrips/docker.sh build && script/docker.sh run`.
+         XXX: Rquired to build image outside by
+         running `scrips/docker.sh build`.
         */
-        val ethchain = EthereumChain(RPC_URL)
+        this.ethStart()
+        etherbase = EthereumAccount(etherbase())
+        val ethchain = EthereumChain()
         chain = ethchain as Chain<ChainTransaction, Block<ChainTransaction>, ChainAccount>
+    }
 
+    @After
+    fun tearDown() {
+        this.ethStop()
     }
 
     @Test
@@ -45,18 +45,37 @@ class EthereumChainTest {
         Assert.assertNotNull(expectTx)
     }
 
-
-    private fun etherbase(): CryptoKey {
-        val credentials = WalletUtils.loadCredentials(
-            ETHERBASE_PASSWD,
-            File(this.javaClass.getResource("/keystore").toURI()).listFiles().first()
-        )
-        return CryptoService.loadCryptoKey(credentials.ecKeyPair.privateKey.toByteArray())
-    }
-
     @Test
     fun testGetBlock() {
         val block = chain.getBlock()
         Assert.assertNotNull(block)
+    }
+}
+
+open class EtherumContainer {
+    private val keystore = "/tmp/geth_data/keystore"
+    private val script = "scripts/docker.sh"
+    private val etherbasePasswd = "starcoinmakeworldbetter"
+
+    fun ethStart() = scriptExec("run")
+
+    fun ethStop() = scriptExec("clean")
+
+    fun etherbase(): CryptoKey {
+        val credentials = WalletUtils.loadCredentials(
+            etherbasePasswd,
+            File(keystore).let {
+                while (!it.exists() || it.name.contentEquals("tmp")) {
+                    Thread.sleep(1000)
+                }; it
+            }.listFiles().first()
+        )
+        return CryptoService.loadCryptoKey(credentials.ecKeyPair.privateKey.toByteArray())
+    }
+
+    private fun scriptExec(cmd: String) {
+        val process = Runtime.getRuntime().exec("$script $cmd")
+        val exit = process.waitFor()
+        if (exit != 0) Assert.fail(process.errorStream.bufferedReader().use { it.readText() })
     }
 }
