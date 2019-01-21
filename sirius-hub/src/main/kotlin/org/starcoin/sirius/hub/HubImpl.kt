@@ -61,6 +61,8 @@ class HubImpl<T : ChainTransaction, A : ChainAccount>(
     private lateinit var txChannel: Channel<TransactionResult<T>>
     private lateinit var blockChannel: Channel<out Block<T>>
 
+    private val withdrawals = ConcurrentHashMap<Address, Withdrawal>()
+
     val hubActor = GlobalScope.actor<HubAction> {
         consumeEach {
             when (it) {
@@ -354,7 +356,7 @@ class HubImpl<T : ChainTransaction, A : ChainAccount>(
 
     private fun doCommit() {
         val hubRoot =
-            HubRoot(this.eonState.state.root.toAMTreePathNode() as AMTreePathNode, this.eonState.eon)
+            HubRoot(this.eonState.state.root.toAMTreePathNode(), this.eonState.eon)
         LOG.info("doCommit:" + hubRoot.toJSON())
         this.contract.commit(owner, hubRoot)
     }
@@ -396,17 +398,17 @@ class HubImpl<T : ChainTransaction, A : ChainAccount>(
         this.contract.closeBalanceUpdateChallenge(owner, closeBalanceUpdateChallengeRequest)
     }
 
-    private suspend fun processWithdrawal(withdrawal: Withdrawal) {
-        this.strategy.processWithdrawal(withdrawal)
+    private suspend fun processWithdrawal(from: Address, withdrawal: Withdrawal) {
+        withdrawals[from] = withdrawal
+        this.strategy.processWithdrawal(from, withdrawal)
         {
-            val address = withdrawal.address
             val amount = withdrawal.amount
-            val hubAccount = this.eonState.getAccount(address) ?: assertAccountNotNull(address)
+            val hubAccount = this.eonState.getAccount(from) ?: assertAccountNotNull(from)
             if (!hubAccount.addWithdraw(amount)) {
                 //signed update (e) or update (e − 1), τ (e − 1)
                 //TODO path is nullable?
-                val path = this.eonState.state.getMembershipProof(address)
-                val cancelWithdrawal = CancelWithdrawal(address, hubAccount.update, path ?: AMTreeProof.DUMMY_PROOF)
+                val path = this.eonState.state.getMembershipProof(from)
+                val cancelWithdrawal = CancelWithdrawal(from, hubAccount.update, path ?: AMTreeProof.DUMMY_PROOF)
                 val txHash = contract.cancelWithdrawal(owner, cancelWithdrawal)
                 val future = CompletableFuture<Receipt>()
                 this.txReceipts[txHash] = future
@@ -416,7 +418,7 @@ class HubImpl<T : ChainTransaction, A : ChainAccount>(
             } else {
                 val withdrawalStatus = WithdrawalStatus(WithdrawalStatusType.INIT, withdrawal)
                 withdrawalStatus.pass()
-                this.fireEvent(HubEvent(HubEventType.WITHDRAWAL, withdrawalStatus, address))
+                this.fireEvent(HubEvent(HubEventType.WITHDRAWAL, withdrawalStatus, from))
             }
         }
 
@@ -483,7 +485,7 @@ class HubImpl<T : ChainTransaction, A : ChainAccount>(
                 val input = contractFunction.decode(tx.data)
                     ?: throw RuntimeException("$contractFunction decode tx:${txResult.tx} fail.")
                 LOG.info("$contractFunction: $input")
-                this.processWithdrawal(input)
+                this.processWithdrawal(tx.from!!, input)
             }
             is OpenTransferDeliveryChallengeFunction -> {
                 val input = contractFunction.decode(tx.data)
@@ -536,15 +538,15 @@ class HubImpl<T : ChainTransaction, A : ChainAccount>(
             }
         }
 
-        suspend fun processWithdrawal(withdrawal: Withdrawal, normalAction: suspend () -> Unit) {
+        suspend fun processWithdrawal(from: Address, withdrawal: Withdrawal, normalAction: suspend () -> Unit) {
             // steal withdrawal from a random user who has enough balance.
             if (maliciousFlags.contains(Hub.HubMaliciousFlag.STEAL_WITHDRAWAL)) {
                 val hubAccount =
-                    getHubAccount { account -> (account.address != withdrawal.address && account.balance >= withdrawal.amount) }
+                    getHubAccount { account -> (account.address != from && account.balance >= withdrawal.amount) }
                 if (hubAccount != null) {
                     hubAccount.addWithdraw(withdrawal.amount)
                     LOG.info(
-                        (withdrawal.address.toString()
+                        (from.toString()
                                 + " steal withdrawal from "
                                 + hubAccount.address.toString())
                     )

@@ -266,7 +266,7 @@ abstract class HubTestBase<T : ChainTransaction, A : ChainAccount> {
         val proof =
             hub.getProof(account.address) ?: throw RuntimeException("can not find proof by address: ${account.address}")
         waitHubEvent(HubEventType.WITHDRAWAL) {
-            hubContract.initiateWithdrawal(account, Withdrawal(account.address, proof, amount))
+            hubContract.initiateWithdrawal(account, Withdrawal(proof, amount))
         }
         Assert.assertEquals(amount, hub.getHubAccount(account.address)?.withdraw?.longValueExact())
         totalHubBalance.addAndGet(-amount)

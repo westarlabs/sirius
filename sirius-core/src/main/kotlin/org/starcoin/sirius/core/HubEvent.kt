@@ -46,7 +46,7 @@ data class HubEvent(
                 }
                 HubEventType.WITHDRAWAL -> {
                     val obj = Withdrawal.mock()
-                    HubEvent(type, obj, obj.address)
+                    HubEvent(type, obj, Address.random())
                 }
                 HubEventType.NEW_TX -> {
                     val obj = OffchainTransaction.mock()
