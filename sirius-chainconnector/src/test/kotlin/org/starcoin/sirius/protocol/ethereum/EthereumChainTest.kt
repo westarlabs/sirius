@@ -20,10 +20,6 @@ class EthereumChainTest : EtherumContainer() {
 
     @Before
     fun setUp() {
-        /*
-         XXX: Rquired to build image outside by
-         running `scrips/docker.sh build`.
-        */
         this.ethStart()
         etherbase = EthereumAccount(etherbase())
         val ethchain = EthereumChain()
