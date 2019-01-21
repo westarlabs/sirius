@@ -1,7 +1,6 @@
 package org.starcoin.sirius.wallet.core
 
 import kotlinx.coroutines.channels.Channel
-import kotlinx.coroutines.runBlocking
 import org.starcoin.sirius.core.*
 import org.starcoin.sirius.protocol.Chain
 import org.starcoin.sirius.protocol.ChainAccount
@@ -59,5 +58,9 @@ class Wallet<T : ChainTransaction, A : ChainAccount> {
 
     internal fun getMessageChannel():Channel<ClientEventType>?{
         return hub.eonChannel
+    }
+
+    fun hubTransfer(to:Address,value:Long):OffchainTransaction{
+        return hub.newTransfer(to,value)
     }
 }

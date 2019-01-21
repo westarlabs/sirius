@@ -33,8 +33,10 @@ class WalletTest {
 
     private var owner: EthereumAccount by Delegates.notNull()
     private var alice: EthereumAccount by Delegates.notNull()
+    private var bob: EthereumAccount by Delegates.notNull()
 
     private var walletAlice : Wallet<EthereumTransaction,EthereumAccount> by Delegates.notNull()
+    private var walletBob : Wallet<EthereumTransaction,EthereumAccount> by Delegates.notNull()
 
     private var hubServer: HubServer<EthereumTransaction,EthereumAccount> by Delegates.notNull()
 
@@ -55,9 +57,11 @@ class WalletTest {
         val owner = EthereumAccount(configuration.ownerKey)
         chain.miningCoin(owner.address, EtherUtil.convert(Int.MAX_VALUE.toLong(), EtherUtil.Unit.ETHER))
         alice = EthereumAccount(CryptoService.generateCryptoKey())
+        bob = EthereumAccount(CryptoService.generateCryptoKey())
 
         val amount = EtherUtil.convert(100000, EtherUtil.Unit.ETHER)
         this.sendEther(alice.address, amount)
+        this.sendEther(bob.address, amount)
 
         hubChannel = InProcessChannelBuilder.forName(configuration.rpcBind.toString()).build()
         stub = HubServiceGrpc.newBlockingStub(hubChannel)
@@ -70,6 +74,9 @@ class WalletTest {
 
         walletAlice= Wallet(this.contract.contractAddress,channelManager,chain,null,alice)
         walletAlice.initMessageChannel()
+
+        walletBob= Wallet(this.contract.contractAddress,channelManager,chain,null,bob)
+        walletBob.initMessageChannel()
 
         hubInfo= contract.queryHubInfo(alice)
     }
@@ -100,25 +107,40 @@ class WalletTest {
 
         val amount=2000L
         walletAlice.deposit(amount)
+        walletBob.deposit(amount)
+
         chain.sb.createBlock()
 
-        Assert.assertEquals(amount, chain.getBalance(contract.contractAddress).toLong())
+        Assert.assertEquals(amount*2, chain.getBalance(contract.contractAddress).toLong())
         Assert.assertEquals(walletAlice.balance().toLong(),amount)
+        Assert.assertEquals(walletBob.balance().toLong(),amount)
 
-        val account=stub.getHubAccount(alice.address.toProto())
+        var account=stub.getHubAccount(alice.address.toProto())
 
+        Assert.assertEquals(HubAccount.parseFromProtoMessage(account).deposit.toLong(),amount)
+
+        account=stub.getHubAccount(bob.address.toProto())
         Assert.assertEquals(HubAccount.parseFromProtoMessage(account).deposit.toLong(),amount)
 
     }
 
+    @Test
+    fun testTransfer(){
+        testReg()
+
+
+    }
 
     @Test
     fun testReg(){
         waitHubReady(stub)
 
         var update=walletAlice.register()
-
         Assert.assertNotNull(update)
+
+        update=walletBob.register()
+        Assert.assertNotNull(update)
+
     }
 
     @Test

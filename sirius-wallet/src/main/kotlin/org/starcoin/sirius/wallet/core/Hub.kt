@@ -109,23 +109,21 @@ class Hub <T : ChainTransaction, A : ChainAccount> {
 
     internal fun onWithdrawal(withdrawalStatus: WithdrawalStatus) {
         var clientEventType = ClientEventType.INIT_WITHDRAWAL
-        if (withdrawalStatus.withdrawal.address.equals(account.address)) {
-            when (withdrawalStatus.status) {
-                WithdrawalStatusType.INIT.number -> {
-                    this.hubStatus.syncWithDrawal(withdrawalStatus)
-                    clientEventType = ClientEventType.INIT_WITHDRAWAL
-                }
-                WithdrawalStatusType.CANCEL.number -> {
-                    this.hubStatus.cancelWithDrawal()
-                    LOG.info("cancel")
-                }
-                WithdrawalStatusType.PASSED.number -> {
-                    this.hubStatus.syncWithDrawal(withdrawalStatus)
-                    LOG.info("pass")
-                }
-                else -> LOG.info(withdrawalStatus.toJSON()
-                )
+        when (withdrawalStatus.status) {
+            WithdrawalStatusType.INIT.number -> {
+                this.hubStatus.syncWithDrawal(withdrawalStatus)
+                clientEventType = ClientEventType.INIT_WITHDRAWAL
             }
+            WithdrawalStatusType.CANCEL.number -> {
+                this.hubStatus.cancelWithDrawal()
+                LOG.info("cancel")
+            }
+            WithdrawalStatusType.PASSED.number -> {
+                this.hubStatus.syncWithDrawal(withdrawalStatus)
+                LOG.info("pass")
+            }
+            else -> LOG.info(withdrawalStatus.toJSON()
+            )
         }
         GlobalScope.launch {
             eonChannel?.send(clientEventType)
@@ -214,8 +212,36 @@ class Hub <T : ChainTransaction, A : ChainAccount> {
     fun sync() {
     }
 
-    fun newTransfer(addr:Address, value:Int) :OffchainTransaction?{
-        return null
+    fun newTransfer(addr:Address, value:Long) :OffchainTransaction{
+        val hubServiceBlockingStub = HubServiceGrpc.newBlockingStub(channelManager.hubChannel)
+
+        val tx = OffchainTransaction(this.currentEon.id, addr, addr, value)
+        tx.sign(account.key)
+        this.hubStatus.addOffchainTransaction(tx)
+
+        val update = Update.newUpdate(
+            this.currentEon.id,
+            this.hubStatus.currentUpdate(currentEon).version + 1,
+            addr,
+            this.hubStatus.currentTransactions()
+        )
+        update.sign(account.key)
+
+        val iou = IOU(tx, update)
+        val protoUpdate = iou.update.toProto<Starcoin.Update>()
+        val protoHubTransaction = iou.transaction.toProto<Starcoin.OffchainTransaction>()
+
+        val iouProto = Starcoin.IOU.newBuilder()
+            .setUpdate(protoUpdate)
+            .setTransaction(protoHubTransaction)
+            .build()
+        val succResponse = hubServiceBlockingStub.sendNewTransfer(iouProto)
+        //dataStore.save(this.hubStatusData)
+        return if (succResponse.getSucc() == true) {
+            tx
+        } else {
+            throw RuntimeException("offlien transfer failed")
+        }
     }
 
     fun deposit(value :Long) {
@@ -273,7 +299,7 @@ class Hub <T : ChainTransaction, A : ChainAccount> {
             return
         }
 
-        val withdrawal = Withdrawal(account.address, hubStatus.currentEonProof()!!, value)
+        val withdrawal = Withdrawal(hubStatus.currentEonProof()!!, value)
         this.contract.initiateWithdrawal(account,withdrawal)
     }
 

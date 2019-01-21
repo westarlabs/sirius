@@ -31,16 +31,20 @@ class BlockChain <T : ChainTransaction, A : ChainAccount> (chain: Chain<T, out B
                 val contractFunction = tx.contractFunction
                 when (contractFunction) {
                     null -> {
-                        val deposit = Deposit(tx.from!!, tx.amount)
-                        LOG.info("Deposit:" + deposit.toJSON())
-                        hub.confirmDeposit(tx)
+                        if(tx.from?.equals(account.address)?:false){
+                            val deposit = Deposit(tx.from!!, tx.amount)
+                            LOG.info("Deposit:" + deposit.toJSON())
+                            hub.confirmDeposit(tx)
+                        }
                     }
                     is InitiateWithdrawalFunction -> {
-                        val input = contractFunction.decode(tx.data)
-                            ?: throw RuntimeException("$contractFunction decode tx:${txResult.tx} fail.")
-                        LOG.info("$contractFunction: $input")
-                        val withdrawalStatus = WithdrawalStatus( WithdrawalStatusType.INIT,input)
-                        hub.onWithdrawal(withdrawalStatus)
+                        if(tx.from?.equals(account.address)?:false){
+                            val input = contractFunction.decode(tx.data)
+                                ?: throw RuntimeException("$contractFunction decode tx:${txResult.tx} fail.")
+                            LOG.info("$contractFunction: $input")
+                            val withdrawalStatus = WithdrawalStatus( WithdrawalStatusType.INIT,input)
+                            hub.onWithdrawal(withdrawalStatus)
+                        }
                     }
                     is OpenTransferDeliveryChallengeFunction -> {
                         val input = contractFunction.decode(tx.data)
