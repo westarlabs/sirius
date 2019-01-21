@@ -41,7 +41,7 @@ class EthereumChainTest : EtherumContainer() {
         Assert.assertNotSame(0.toBigInteger(), balance)
         val tx = chain.newTransaction(etherbase, alice.address, 1.toBigInteger())
         val hash = chain.submitTransaction(etherbase, tx)
-        var receipt: Receipt?
+        var receipt: Receipt? = null
         for (i in 1..4) {
             Thread.sleep(1000)
             receipt = chain.getTransactionReceipts(ArrayList<Hash>(1).apply { this.add(hash) })[0]
