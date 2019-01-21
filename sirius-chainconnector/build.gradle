@@ -3,7 +3,7 @@ buildscript {
     dependencies.classpath 'at.phatbl:shellexec:+'
 }
 
-import at.phatbl.shellexec.ShellExec
+//import at.phatbl.shellexec.ShellExec
 
 dependencies{
     compile project(":sirius-core")
@@ -14,9 +14,9 @@ dependencies{
     testCompile project(path: ':sirius-core', configuration: 'testOutput')
 }
 
-task buildGoEthereum(type: ShellExec) {
-    command "./scripts/docker.sh build"
-}
+//task buildGoEthereum(type: ShellExec) {
+//    command "./scripts/docker.sh build"
+//}
 
 compileTestJava {
     // Build docker goetherum manually

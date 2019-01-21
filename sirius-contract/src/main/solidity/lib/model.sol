@@ -221,11 +221,11 @@ library ModelLib {
         return RLPEncoder.encodeList(ByteUtilLib.append(path, leaf));
     }
 
-    function verifyProof(uint eon, bytes32 userAddrHash, bytes32 hubAddrHash, AMTreeProof memory proof) internal pure {
+    function verifyProof(uint eon, address userAddr, address hubAddr, AMTreeProof memory proof) internal pure {
         require(eon == proof.path.eon);
-        require(userAddrHash == proof.leaf.addressHash);
-        //require(verifySign4Update(proof.leaf.update.upData, proof.leaf.update.sign, userAddrHash));
-        //require(verifySign4Update(proof.leaf.update.upData, proof.leaf.update.hubSign, hubAddrHash));
+        require(ByteUtilLib.address2hash(userAddr) == proof.leaf.addressHash);
+        require(verifySign4Update(proof.leaf.update.upData, proof.leaf.update.sign, userAddr));
+        require(verifySign4Update(proof.leaf.update.upData, proof.leaf.update.hubSign, hubAddr));
     }
 
     struct AMTreeNode {
@@ -533,12 +533,10 @@ library ModelLib {
         return ByteUtilLib.append(ByteUtilLib.append(ByteUtilLib.append(ByteUtilLib.append(eon, version), sendAmount), receiveAmount), root);
     }
 
-    function verifySign4Update(UpdateData memory data, Signature memory sign, bytes32 addrHash) internal pure returns (bool flag) {
-        bytes32 hash = keccak256(marshalUpdateData(data));//keccak256(updateDataHash(data));
+    function verifySign4Update(UpdateData memory data, Signature memory sign, address addr) internal pure returns (bool flag) {
+        bytes32 hash = keccak256(marshalUpdateData(data));
         address signer = ecrecover(hash, uint8(sign.v), sign.r, sign.s);
-        bytes32 signerHash = ByteUtilLib.address2hash(signer);
-        //return signerHash == addrHash;
-        return true;
+        return signer == addr;
     }
 
     struct Update {

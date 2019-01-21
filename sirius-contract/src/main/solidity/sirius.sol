@@ -168,7 +168,7 @@ contract SiriusService is Sirius {
             require(init.proof.path.leaf.allotment >= init.amount);//TODO  proof decode bug, allotment is wrong
             uint preEon = balances[1].eon;
             bytes32 key = ByteUtilLib.address2hash(addr);
-            ModelLib.verifyProof(preEon, key, ownerHash, init.proof);
+            ModelLib.verifyProof(preEon, addr, owner, init.proof);
 
             bool processingFlag = withdrawalProcessing(key);
             require(!processingFlag);
@@ -198,7 +198,7 @@ contract SiriusService is Sirius {
             //require(cancel.update.upData.eon >= 0 && cancel.update.upData.eon == currentEon);
 
             bytes32 key = ByteUtilLib.address2hash(cancel.addr);
-            bool signFlag = ModelLib.verifySign4Update(cancel.update.upData, cancel.update.sign, key);
+            bool signFlag = ModelLib.verifySign4Update(cancel.update.upData, cancel.update.sign, cancel.addr);
             require(signFlag);
 
             ModelLib.HubRoot memory latestRoot = latestRoot();
@@ -257,9 +257,9 @@ contract SiriusService is Sirius {
 
                 //require(msg.sender == ByteUtilLib.pubkey2Address(challenge.publicKey));//TODO
 
-                bool signFlag = ModelLib.verifySign4Update(up.upData, up.sign, key);
+                bool signFlag = ModelLib.verifySign4Update(up.upData, up.sign, msg.sender);
                 require(signFlag);
-                bool hubSignFlag = ModelLib.verifySign4Update(up.upData, up.hubSign, ByteUtilLib.address2hash(owner));
+                bool hubSignFlag = ModelLib.verifySign4Update(up.upData, up.hubSign, owner);
                 require(hubSignFlag);
             } else {
 
@@ -302,9 +302,9 @@ contract SiriusService is Sirius {
                         require(d <= close.proof.path.leaf.allotment);
                     }
                 } else {
-                    bool signFlag = ModelLib.verifySign4Update(close.update.upData, close.update.sign, hash);
+                    bool signFlag = ModelLib.verifySign4Update(close.update.upData, close.update.sign, addr);
                     require(signFlag);
-                    bool hubsignFlag = ModelLib.verifySign4Update(close.update.upData, close.update.hubSign, ByteUtilLib.address2hash(owner));
+                    bool hubsignFlag = ModelLib.verifySign4Update(close.update.upData, close.update.hubSign, owner);
                     require(hubsignFlag);
                     require(close.update.upData.version >= stat.challenge.proof.update.upData.version);
                 }
@@ -343,7 +343,7 @@ contract SiriusService is Sirius {
             require(open.update.upData.eon >= 0 && open.update.upData.eon == balances[1].eon);
             require(open.tran.offData.eon >= 0 && open.tran.offData.eon == balances[1].eon);
 
-            bool signFlag = ModelLib.verifySign4Update(open.update.upData, open.update.hubSign, ByteUtilLib.address2hash(owner));
+            bool signFlag = ModelLib.verifySign4Update(open.update.upData, open.update.hubSign, owner);
             require(signFlag);
 
             bytes32 hash = ModelLib.hash4OffchainTransaction(open.tran);
@@ -378,8 +378,8 @@ contract SiriusService is Sirius {
             require(challenge.isVal);
 
             if(challenge.stat == ModelLib.ChallengeStatus.OPEN) {
-                bytes32 addrHash = ByteUtilLib.address2hash(ByteUtilLib.pubkey2Address(close.fromPublicKey));
-                bool signFlag = ModelLib.verifySign4Update(close.update.upData, close.update.sign, addrHash);
+                address addr = ByteUtilLib.pubkey2Address(close.fromPublicKey);
+                bool signFlag = ModelLib.verifySign4Update(close.update.upData, close.update.sign, addr);
                 require(signFlag);
 
                 //TODO:require(close.proof.leaf.nodeInfo.update == close.update);
