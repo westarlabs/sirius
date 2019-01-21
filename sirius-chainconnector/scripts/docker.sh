@@ -52,5 +52,5 @@ case $"$1" in
     geth)
 	shift 1
 	docker exec -it $(docker ps -a |grep go-ethereum|awk '{print $1}') \
-	geth --datadir /ethereum/geth_data $@
+	geth --datadir $datadir $@
 esac

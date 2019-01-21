@@ -19,7 +19,7 @@ interface Chain<T : ChainTransaction, B : Block<T>, A : ChainAccount> {
 
     fun watchBlock(filter: (B) -> Boolean = { true }): Channel<B>
 
-    fun getTransactionReceipts(txHashs: List<Hash>): List<Receipt>
+    fun getTransactionReceipts(txHashs: List<Hash>): List<Receipt?>
 
     fun watchTransactions(filter: (TransactionResult<T>) -> Boolean = { true }): Channel<TransactionResult<T>>
 

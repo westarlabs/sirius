@@ -70,7 +70,7 @@ class EthereumChain constructor(httpUrl: String = DEFAULT_URL, socketPath: Strin
         GlobalScope.launch {
             web3.transactionFlowable().subscribe {
                 val txr = TransactionResult(
-                    EthereumTransaction(it), getTransactionReceipts(hx)[0]
+                    EthereumTransaction(it), getTransactionReceipts(hx)[0]!!
                 )
                 if (filter(txr)) ch.sendBlocking(txr)
             }
@@ -140,83 +140,85 @@ class EthereumChain constructor(httpUrl: String = DEFAULT_URL, socketPath: Strin
 
     override fun findTransaction(hash: Hash): EthereumTransaction? {
         val resp = web3.ethGetTransactionByHash(hash.toString())
-    .send()
-    if (resp.hasError()) throw Exception(resp.error.message)
-    val tx = resp.transaction.orElse(null)
-    return tx.chainTransaction()
-}
-
-override fun getBlock(height: BigInteger): EthereumBlock? {
-    val blockReq = web3.ethGetBlockByNumber(
-        if (height == BigInteger.valueOf(-1)) DefaultBlockParameterName.LATEST else
-            DefaultBlockParameter.valueOf(height),
-        true
-    ).sendAsync().get()
-    if (blockReq.hasError()) throw IOException(blockReq.error.message)
-
-    // FIXME: Use BigInbteger in blockinfo
-    val blockInfo = EthereumBlock(blockReq.block)
-    blockReq.block.transactions.map { it ->
-        val tx = it as Transaction
-        blockInfo.addTransaction(tx.chainTransaction())
+            .send()
+        if (resp.hasError()) throw Exception(resp.error.message)
+        val tx = resp.transaction.orElse(null)
+        return tx.chainTransaction()
     }
-    return blockInfo
-}
 
-override fun getTransactionReceipts(txHashs: List<Hash>): List<Receipt> {
-    return txHashs.map {
-        val recepitResp = web3.ethGetTransactionReceipt(it.toString()).sendAsync().get()
-        if (recepitResp.hasError()) throw GetRecepitException(recepitResp.error)
-        val r = recepitResp.transactionReceipt.get()
-        Receipt(
-            r.transactionHash, r.transactionIndex,
-            r.blockHash, r.blockNumber, r.contractAddress,
-            r.from, r.to, r.gasUsed, r.logsBloom,
-            r.cumulativeGasUsed, r.root, r.isStatusOK
+    override fun getBlock(height: BigInteger): EthereumBlock? {
+        val blockReq = web3.ethGetBlockByNumber(
+            if (height == BigInteger.valueOf(-1)) DefaultBlockParameterName.LATEST else
+                DefaultBlockParameter.valueOf(height),
+            true
+        ).sendAsync().get()
+        if (blockReq.hasError()) throw IOException(blockReq.error.message)
+
+        // FIXME: Use BigInbteger in blockinfo
+        val blockInfo = EthereumBlock(blockReq.block)
+        blockReq.block.transactions.map { it ->
+            val tx = it as Transaction
+            blockInfo.addTransaction(tx.chainTransaction())
+        }
+        return blockInfo
+    }
+
+    override fun getTransactionReceipts(txHashs: List<Hash>): List<Receipt?> {
+        return txHashs.map {
+            val recepitResp = web3.ethGetTransactionReceipt(it.toString()).sendAsync().get()
+            if (recepitResp.hasError()) throw GetRecepitException(recepitResp.error)
+            recepitResp.transactionReceipt.orElse(null)?.let { r ->
+                Receipt(
+                    r.transactionHash, r.transactionIndex,
+                    r.blockHash, r.blockNumber, r.contractAddress,
+                    r.from, r.to, r.gasUsed, r.logsBloom,
+                    r.cumulativeGasUsed, r.root, r.isStatusOK
+                )
+            }
+        }
+    }
+
+
+    override fun callConstFunction(caller: CryptoKey, contractAddress: Address, data: ByteArray): ByteArray {
+        val resp = this.web3.ethCall(
+            org.web3j.protocol.core.methods.request.Transaction.createEthCallTransaction(
+                caller.address.toString(),
+                contractAddress.toString(),
+                data.toHEXString()
+            ), DefaultBlockParameterName.LATEST
+        ).sendAsync().get()
+        if (resp.hasError()) throw RuntimeException(resp.error.message)
+        return resp.value.hexToByteArray()
+    }
+
+    private fun Transaction.chainTransaction() = EthereumTransaction(this)
+
+    private fun EthBlock.Block.blockInfo(): EthereumBlock {
+        return EthereumBlock(this)
+    }
+
+    fun caculateGasLimit(): BigInteger {
+        return BigInteger.valueOf(10000000000000)
+        /**
+        return ByteUtil.bytesToBigInteger(parent.getGasLimit())
+        .multiply(GAS_LIMIT_BOUND_DIVISOR * 100 + blockGasIncreasePercent)
+        .divide(BigInteger.valueOf((GAS_LIMIT_BOUND_DIVISOR * 100).toLong()))**/
+    }
+
+    override fun newTransaction(account: EthereumAccount, to: Address, value: BigInteger): EthereumTransaction {
+        return EthereumTransaction(
+            to,
+            account.getNonce(),
+            EthereumBaseChain.defaultGasPrice,
+            EthereumBaseChain.defaultGasLimit,
+            value
         )
     }
-}
 
-override fun callConstFunction(caller: CryptoKey, contractAddress: Address, data: ByteArray): ByteArray {
-    val resp = this.web3.ethCall(
-        org.web3j.protocol.core.methods.request.Transaction.createEthCallTransaction(
-            caller.address.toString(),
-            contractAddress.toString(),
-            data.toHEXString()
-        ), DefaultBlockParameterName.LATEST
-    ).sendAsync().get()
-    if (resp.hasError()) throw RuntimeException(resp.error.message)
-    return resp.value.hexToByteArray()
-}
-
-private fun Transaction.chainTransaction() = EthereumTransaction(this)
-
-private fun EthBlock.Block.blockInfo(): EthereumBlock {
-    return EthereumBlock(this)
-}
-
-fun caculateGasLimit(): BigInteger {
-    return BigInteger.valueOf(10000000000000)
-    /**
-    return ByteUtil.bytesToBigInteger(parent.getGasLimit())
-    .multiply(GAS_LIMIT_BOUND_DIVISOR * 100 + blockGasIncreasePercent)
-    .divide(BigInteger.valueOf((GAS_LIMIT_BOUND_DIVISOR * 100).toLong()))**/
-}
-
-override fun newTransaction(account: EthereumAccount, to: Address, value: BigInteger): EthereumTransaction {
-    return EthereumTransaction(
-        to,
-        account.getNonce(),
-        EthereumBaseChain.defaultGasPrice,
-        EthereumBaseChain.defaultGasLimit,
-        value
-    )
-}
-
-class NewTxException(error: Error) : Exception(error.message)
-open class WatchTxExecption(error: Error) : Exception(error.message)
-class NewFilterException(error: Error) : WatchTxExecption(error)
-class FilterChangeException(error: Error) : WatchTxExecption(error)
-class GetRecepitException(error: Error) : WatchTxExecption(error)
-class GetTransactionException(error: Error) : WatchTxExecption(error)
+    class NewTxException(error: Error) : Exception(error.message)
+    open class WatchTxExecption(error: Error) : Exception(error.message)
+    class NewFilterException(error: Error) : WatchTxExecption(error)
+    class FilterChangeException(error: Error) : WatchTxExecption(error)
+    class GetRecepitException(error: Error) : WatchTxExecption(error)
+    class GetTransactionException(error: Error) : WatchTxExecption(error)
 }

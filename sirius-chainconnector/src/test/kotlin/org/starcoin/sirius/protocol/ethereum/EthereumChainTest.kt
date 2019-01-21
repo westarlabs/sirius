@@ -3,12 +3,16 @@ package org.starcoin.sirius.protocol.ethereum
 import org.junit.*
 import org.starcoin.sirius.core.Block
 import org.starcoin.sirius.core.ChainTransaction
+import org.starcoin.sirius.core.Hash
+import org.starcoin.sirius.core.Receipt
 import org.starcoin.sirius.crypto.CryptoKey
 import org.starcoin.sirius.crypto.CryptoService
 import org.starcoin.sirius.protocol.Chain
 import org.starcoin.sirius.protocol.ChainAccount
+import org.starcoin.sirius.protocol.EthereumTransaction
 import org.web3j.crypto.WalletUtils
 import java.io.File
+import kotlin.math.exp
 import kotlin.properties.Delegates
 
 
@@ -37,9 +41,16 @@ class EthereumChainTest : EtherumContainer() {
         Assert.assertNotSame(0.toBigInteger(), balance)
         val tx = chain.newTransaction(etherbase, alice.address, 1.toBigInteger())
         val hash = chain.submitTransaction(etherbase, tx)
-        val expectTx = chain.findTransaction(hash)
-        Assert.assertNotNull(expectTx)
+        var receipt: Receipt?
+        for (i in 1..4) {
+            Thread.sleep(1000)
+            receipt = chain.getTransactionReceipts(ArrayList<Hash>(1).apply { this.add(hash) })[0]
+            if (receipt != null) break
+        }
+        Assert.assertEquals(1, receipt!!.status)
+        Assert.assertEquals(1.toBigInteger(), chain.getBalance(alice.address))
     }
+
 
     @Test
     fun testGetBlock() {
@@ -53,7 +64,10 @@ open class EtherumContainer {
     private val script = "scripts/docker.sh"
     private val etherbasePasswd = "starcoinmakeworldbetter"
 
-    fun ethStart() = scriptExec("run")
+    fun ethStart() {
+        scriptExec("clean")
+        scriptExec("run")
+    }
 
     fun ethStop() = scriptExec("clean")
 
