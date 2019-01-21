@@ -9,10 +9,8 @@ import org.starcoin.sirius.crypto.CryptoKey
 import org.starcoin.sirius.crypto.CryptoService
 import org.starcoin.sirius.protocol.Chain
 import org.starcoin.sirius.protocol.ChainAccount
-import org.starcoin.sirius.protocol.EthereumTransaction
 import org.web3j.crypto.WalletUtils
 import java.io.File
-import kotlin.math.exp
 import kotlin.properties.Delegates
 
 

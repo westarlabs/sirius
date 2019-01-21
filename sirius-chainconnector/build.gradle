@@ -19,5 +19,6 @@ task buildGoEthereum(type: ShellExec) {
 }
 
 compileTestJava {
-    buildGoEthereum.execute()
+    // Build docker goetherum manually
+    // buildGoEthereum.execute()
 }
