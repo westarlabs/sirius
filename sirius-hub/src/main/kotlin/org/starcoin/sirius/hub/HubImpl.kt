@@ -279,8 +279,8 @@ class HubImpl<T : ChainTransaction, A : ChainAccount>(
     }
 
     override fun sendNewTransfer(iou: IOU) {
-        this.eonState.getIOUByFrom(iou.transaction.to) ?: throw StatusRuntimeException(Status.ALREADY_EXISTS)
-        this.eonState.getIOUByTo(iou.transaction.to) ?: throw StatusRuntimeException(Status.ALREADY_EXISTS)
+        if (this.eonState.getIOUByFrom(iou.transaction.from) != null) throw StatusRuntimeException(Status.ALREADY_EXISTS)
+        if (this.eonState.getIOUByTo(iou.transaction.to) != null) throw StatusRuntimeException(Status.ALREADY_EXISTS)
         this.checkIOU(iou, true)
         GlobalScope.launch { hubActor.send(HubAction.IOUAction(iou)) }
     }
