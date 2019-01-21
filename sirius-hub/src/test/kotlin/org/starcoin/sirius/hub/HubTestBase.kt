@@ -2,6 +2,7 @@ package org.starcoin.sirius.hub
 
 import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.channels.Channel
+import kotlinx.coroutines.channels.ReceiveChannel
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.withTimeoutOrNull
@@ -245,21 +246,33 @@ abstract class HubTestBase<T : ChainTransaction, A : ChainAccount> {
 
     private fun transfer(eon: Int, from: LocalAccount, to: LocalAccount, amount: BigInteger) {
         val tx = OffchainTransaction(eon, from.address, to.address, amount)
+        tx.sign(from.kp)
         val fromTxs = ArrayList(from.hubAccount!!.getTransactions())
         fromTxs.add(tx)
 
         val fromUpdate = Update.newUpdate(eon, from.update.version + 1, from.address, fromTxs)
         fromUpdate.sign(from.kp)
 
+        val newTxEvent = waitHubEvent(HubEventType.NEW_TX, true, to.address) {
+            hub.sendNewTransfer(IOU(tx, fromUpdate))
+        }!!
+
         val toTxs = ArrayList(to.hubAccount!!.getTransactions())
-        toTxs.add(tx)
+        toTxs.add(newTxEvent.getPayload())
 
         val toUpdate = Update.newUpdate(eon, to.update.version + 1, to.address, toTxs)
         toUpdate.sign(to.kp)
+        val receiveChannel = waitHubEvent(HubEventType.NEW_UPDATE) {
+            hub.receiveNewTransfer(IOU(tx, toUpdate))
+        }
 
-        val updates = hub.transfer(tx, fromUpdate, toUpdate)
-        from.update = updates[0]
-        to.update = updates[1]
+        runBlocking {
+            from.update = receiveChannel.receive().getPayload()
+            to.update = receiveChannel.receive().getPayload()
+        }
+        //val updates = hub.transfer(tx, fromUpdate, toUpdate)
+        //from.update = updates[0]
+        //to.update = updates[1]
     }
 
     private fun withdraw(account: A, amount: Long) {
@@ -293,12 +306,21 @@ abstract class HubTestBase<T : ChainTransaction, A : ChainAccount> {
 
     private fun waitHubEvent(
         type: HubEventType,
+        address: Address? = null,
+        block: () -> Unit
+    ): ReceiveChannel<HubEvent> {
+        val queue = hub.watch { event -> event.type == type && address?.let { event.address == it } ?: true }
+        block()
+        return queue
+    }
+
+    private fun waitHubEvent(
+        type: HubEventType,
         expectSuccess: Boolean = true,
         address: Address? = null,
         block: () -> Unit
-    ) {
-        val queue = hub.watch { event -> event.type == type && address?.let { event.address == it } ?: true }
-        block()
+    ): HubEvent? {
+        val queue = waitHubEvent(type, address, block)
         val event = runBlocking { withTimeoutOrNull(TimeUnit.SECONDS.toMillis(5)) { queue.receive() } }
         LOG.info("waitHubEvent $type $event")
         if (expectSuccess) {
@@ -306,6 +328,7 @@ abstract class HubTestBase<T : ChainTransaction, A : ChainAccount> {
         } else {
             Assert.assertNull(event)
         }
+        return event
     }
 
     private fun goToNextEon() {

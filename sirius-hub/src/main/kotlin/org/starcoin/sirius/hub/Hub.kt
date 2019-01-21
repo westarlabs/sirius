@@ -1,6 +1,5 @@
 package org.starcoin.sirius.hub
 
-import com.google.common.eventbus.Subscribe
 import kotlinx.coroutines.channels.ReceiveChannel
 import org.starcoin.proto.Starcoin
 import org.starcoin.proto.Starcoin.HubMaliciousFlags
@@ -19,14 +18,6 @@ interface Hub {
     //return previous Flags
     fun resetHubMaliciousFlag(): EnumSet<HubMaliciousFlag>
 
-    class HubEventListener(val eventLambda: (HubEvent) -> Unit) {
-
-        @Subscribe
-        fun onEvent(event: HubEvent) {
-            eventLambda(event)
-        }
-    }
-
     fun start()
 
     fun registerParticipant(participant: Participant, initUpdate: Update): Update
@@ -36,10 +27,6 @@ interface Hub {
     fun getHubAccount(address: Address): HubAccount?
 
     fun getHubAccount(eon: Int, address: Address): HubAccount?
-
-    // TODO
-    @Deprecated("")
-    fun transfer(transaction: OffchainTransaction, fromUpdate: Update, toUpdate: Update): Array<Update>
 
     fun sendNewTransfer(iou: IOU)
 

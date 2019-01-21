@@ -218,15 +218,6 @@ class HubImpl<T : ChainTransaction, A : ChainAccount>(
         return this.eonState.getAccount(predicate)
     }
 
-    override fun transfer(transaction: OffchainTransaction, fromUpdate: Update, toUpdate: Update): Array<Update> {
-        this.checkReady()
-        Preconditions.checkArgument(transaction.amount > BigInteger.ZERO, "transaction amount should > 0")
-        val from = this.getHubAccount(transaction.from) ?: assertAccountNotNull(transaction.from)
-        this.checkBalance(from, transaction.amount)
-        GlobalScope.launch { hubActor.send(HubAction.OffchainTransactionAction(transaction, fromUpdate, toUpdate)) }
-        return arrayOf(fromUpdate, toUpdate)
-    }
-
     private suspend fun processOffchainTransaction(
         transaction: OffchainTransaction, fromUpdate: Update, toUpdate: Update
     ) {
