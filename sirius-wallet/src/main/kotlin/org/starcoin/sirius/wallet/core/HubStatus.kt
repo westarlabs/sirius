@@ -34,7 +34,7 @@ class HubStatus {
     }
 
     internal fun syncWithDrawal(value: WithdrawalStatus) {
-        if (withdrawalStatus == null) {
+        if (value == null) {
             this.withdrawalStatus = null
             return
         }
@@ -44,7 +44,7 @@ class HubStatus {
             return
         }
         if (value?.status != Starcoin.WithdrawalStatusType.WITHDRAWAL_STATUS_CLIENT_CONFIRMED_VALUE || value.status != Starcoin.WithdrawalStatusType.WITHDRAWAL_STATUS_CANCEL_VALUE)
-            this.withdrawalStatus = withdrawalStatus
+            this.withdrawalStatus = value
     }
 
     internal fun cancelWithDrawal() {

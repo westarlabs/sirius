@@ -44,6 +44,8 @@ class WalletTest {
 
     private var stub : HubServiceGrpc.HubServiceBlockingStub by Delegates.notNull()
 
+    private var hubInfo:ContractHubInfo by Delegates.notNull()
+
 
     @Before
     @Throws(InterruptedException::class)
@@ -68,6 +70,8 @@ class WalletTest {
 
         walletAlice= Wallet(this.contract.contractAddress,channelManager,chain,null,alice)
         walletAlice.initMessageChannel()
+
+        hubInfo= contract.queryHubInfo(alice)
     }
 
     fun sendEther(address: Address, amount: BigInteger) {
@@ -123,8 +127,6 @@ class WalletTest {
 
         waitToNextEon()
 
-        createBlocks(9)
-
         runBlocking {
             walletAlice.getMessageChannel()?.receive()
         }
@@ -132,17 +134,17 @@ class WalletTest {
         val amount = 20L
         walletAlice.withdrawal(amount)
 
-        createBlocks(1)
+        runBlocking {
+            walletAlice.getMessageChannel()?.receive()
+        }
         Assert.assertTrue(!walletAlice.hub.hubStatus.couldWithDrawal())
     }
 
     private fun waitToNextEon() {
         var height = chain.getBlockNumber()
-        if (height?.rem(8) != 0L) {
-            var blockNumber = 8 - (height?.rem(8) ?: 0) - 1
-            for (i in 0..blockNumber) {
-                chain.sb.createBlock()
-            }
+        var blockNumber = Eon.waitToEon(hubInfo.startBlockNumber.toLong(),height,hubInfo.blocksPerEon,hubInfo.latestEon+1)
+        for (i in 0..blockNumber) {
+            chain.sb.createBlock()
         }
     }
 

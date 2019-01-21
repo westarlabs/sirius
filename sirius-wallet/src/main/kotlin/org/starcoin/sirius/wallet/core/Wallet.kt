@@ -57,7 +57,7 @@ class Wallet<T : ChainTransaction, A : ChainAccount> {
         hub.eonChannel = Channel(200)
     }
 
-    internal fun getMessageChannel():Channel<Eon>?{
+    internal fun getMessageChannel():Channel<ClientEventType>?{
         return hub.eonChannel
     }
 }

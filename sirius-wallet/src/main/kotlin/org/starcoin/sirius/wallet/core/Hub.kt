@@ -42,7 +42,7 @@ class Hub <T : ChainTransaction, A : ChainAccount> {
 
     private var chain: Chain<T, out Block<T>, A> by Delegates.notNull()
 
-    internal var eonChannel :Channel<Eon>? = null
+    internal var eonChannel :Channel<ClientEventType>? = null
 
     // for test lost connect
     var disconnect = true
@@ -108,10 +108,12 @@ class Hub <T : ChainTransaction, A : ChainAccount> {
     }
 
     internal fun onWithdrawal(withdrawalStatus: WithdrawalStatus) {
+        var clientEventType = ClientEventType.INIT_WITHDRAWAL
         if (withdrawalStatus.withdrawal.address.equals(account.address)) {
             when (withdrawalStatus.status) {
                 WithdrawalStatusType.INIT.number -> {
                     this.hubStatus.syncWithDrawal(withdrawalStatus)
+                    clientEventType = ClientEventType.INIT_WITHDRAWAL
                 }
                 WithdrawalStatusType.CANCEL.number -> {
                     this.hubStatus.cancelWithDrawal()
@@ -124,6 +126,9 @@ class Hub <T : ChainTransaction, A : ChainAccount> {
                 else -> LOG.info(withdrawalStatus.toJSON()
                 )
             }
+        }
+        GlobalScope.launch {
+            eonChannel?.send(clientEventType)
         }
         serverEventHandler?.onWithdrawal(withdrawalStatus)
     }
@@ -160,6 +165,8 @@ class Hub <T : ChainTransaction, A : ChainAccount> {
         if (result == false) {
             LOG.info("hub server lie")
             needChallenge = true
+        }else{
+            LOG.info("verify hub commit pass!!")
         }
 
         val lastUpdate = hubStatus.currentUpdate(this.currentEon)
@@ -173,12 +180,14 @@ class Hub <T : ChainTransaction, A : ChainAccount> {
             needChallenge = true
             LOG.info("proof hub allot is " + selfNode.allotment)
             LOG.info("local allot is " + this.getAvailableCoin())
+        }else {
+            LOG.info("challenge is not necessary")
         }
         //this.dataStore?.save(this.hubStatus)
 
         //openBalanceUpdateChallenge(lastUpdate, lastIndex)
         GlobalScope.launch {
-            eonChannel?.send(currentEon)
+            eonChannel?.send(ClientEventType.FINISH_EON_CHANGE)
         }
 
         if (!needChallenge) {
