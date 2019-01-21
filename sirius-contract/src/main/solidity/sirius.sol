@@ -40,6 +40,7 @@ contract SiriusService is Sirius {
 
     using SafeMath for uint;
     event SiriusEvent(bytes32 indexed hash, uint indexed num, bytes value);
+    event SiriusEvent2(uint indexed num, address value);
 
     constructor(bytes memory data) public {
         GlobleLib.Balance memory initBalance = newBalance(0);

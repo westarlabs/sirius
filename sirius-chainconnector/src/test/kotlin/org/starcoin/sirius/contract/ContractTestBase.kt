@@ -149,7 +149,6 @@ abstract class ContractTestBase(val contractPath: String, val contractName: Stri
         val data = RLP.dump(HubRoot.serializer(), root)
         val callResult = contract.callFunction("commit", data)
 
-
         if (flag) {
             assert(callResult.returnValue as Boolean)
             verifyReturn(callResult)
@@ -161,7 +160,7 @@ abstract class ContractTestBase(val contractPath: String, val contractName: Stri
         }
     }
 
-    fun commitRealData(eon: Int, up: Update,  allotment : Long,  amount: Long, flag: Boolean, txs:MutableList<OffchainTransaction>) {
+    fun commitRealData(eon: Int, up: Update,  allotment : Long,  amount: Long, flag: Boolean, txs:MutableList<OffchainTransaction>) : AMTree {
         val accounts = mutableListOf<HubAccount>()
         val realEon = eon + 1
         accounts.add(HubAccount(callUser.keyPair.public, up, allotment, amount, 0, txs))
@@ -172,7 +171,6 @@ abstract class ContractTestBase(val contractPath: String, val contractName: Stri
         val data = RLP.dump(HubRoot.serializer(), root)
         val callResult = contract.callFunction("commit", data)
 
-
         if (flag) {
             assert(callResult.returnValue as Boolean)
             verifyReturn(callResult)
@@ -182,6 +180,8 @@ abstract class ContractTestBase(val contractPath: String, val contractName: Stri
                 LOG.info("event:$logInfo")
             }
         }
+
+        return tree
     }
 
     fun verifyReturn(callResult: SolidityCallResult) {

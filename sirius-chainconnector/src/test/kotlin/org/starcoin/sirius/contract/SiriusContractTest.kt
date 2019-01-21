@@ -91,12 +91,25 @@ class SiriusContractTest : ContractTestBase("solidity/SiriusService", "SiriusSer
 
     @Test
     fun testInitiateWithdrawal() {
-        createEon(0)
-        val amount: Long = 100
         val eon = 1
-        val path = newProof(ethKey2Address(callUser), newUpdate(eon, 1, 0))
-        val w = Withdrawal(path, amount)
-        val data = RLP.dump(Withdrawal.serializer(), w)
+        val total = createEon(1, true, true)
+        val txs = mutableListOf<OffchainTransaction>()
+        val updateData = UpdateData(eon, 1)
+        val update = Update(updateData)
+        update.sign(callUser)
+        update.signHub(callUser)
+        val count = 7 * deposit
+        val preTree = commitRealData(1, update, total - count, count, true, txs)
+
+        for (i in 0..blocksPerEon) {
+            testDeposit(true)
+        }
+
+        val amount: BigInteger = BigInteger.valueOf(100)
+
+        val proof = preTree.getMembershipProof(callUser.address)!!
+        val w = Withdrawal(proof, amount)
+        val data = w.toRLP()
         val callResult = contract.callFunction("initiateWithdrawal", data)
         assert(callResult.returnValue as Boolean)
         verifyReturn(callResult)
@@ -115,7 +128,7 @@ class SiriusContractTest : ContractTestBase("solidity/SiriusService", "SiriusSer
                     ), update
                 )
             )
-        val data = RLP.dump(CancelWithdrawal.serializer(), cancel)
+        val data = cancel.toRLP()
         val callResult = contract.callFunction("cancelWithdrawal", data)
         assert(callResult.returnValue as Boolean)
         verifyReturn(callResult)
@@ -133,7 +146,7 @@ class SiriusContractTest : ContractTestBase("solidity/SiriusService", "SiriusSer
         val amtp = AMTreeProof(path, leaf2)
         val bup = BalanceUpdateProof(true, update2, true, amtp)
         val buc = BalanceUpdateChallenge(bup, callUser.keyPair.public)
-        val data = RLP.dump(BalanceUpdateChallenge.serializer(), buc)
+        val data = buc.toRLP()
         val callResult = contract.callFunction("openBalanceUpdateChallenge", data)
         assert(callResult.returnValue as Boolean)
         verifyReturn(callResult)
@@ -149,7 +162,7 @@ class SiriusContractTest : ContractTestBase("solidity/SiriusService", "SiriusSer
         val leaf3 = newLeafNodeInfo(ethKey2Address(callUser), update4)
         val amtp = AMTreeProof(path, leaf3)
         val close = CloseBalanceUpdateChallenge(update4, amtp)
-        val data = RLP.dump(CloseBalanceUpdateChallenge.serializer(), close)
+        val data = close.toRLP()
         val callResult = contract.callFunction("closeBalanceUpdateChallenge", data)
         assert(callResult.returnValue as Boolean)
         verifyReturn(callResult)
@@ -182,7 +195,7 @@ class SiriusContractTest : ContractTestBase("solidity/SiriusService", "SiriusSer
         commitRealData(eon, update, 6 * deposit, 7 * deposit, true, txs)
 
         val open = TransferDeliveryChallenge(update, tx, tree.getMembershipProof(tx.hash()))
-        val data = RLP.dump(TransferDeliveryChallenge.serializer(), open)
+        val data = open.toRLP()
         val callResult = contract.callFunction("openTransferDeliveryChallenge", data)
         assert(callResult.returnValue as Boolean)
         verifyReturn(callResult)
@@ -201,7 +214,7 @@ class SiriusContractTest : ContractTestBase("solidity/SiriusService", "SiriusSer
         val close =
             CloseTransferDeliveryChallenge(amtp, update2, MerklePath.mock(), callUser.keyPair.public, Hash.of(tx))
 
-        val data = RLP.dump(CloseTransferDeliveryChallenge.serializer(), close)
+        val data = close.toRLP()
         val callResult = contract.callFunction("closeTransferDeliveryChallenge", data)
         assert(callResult.returnValue as Boolean)
         verifyReturn(callResult)
@@ -224,7 +237,7 @@ class SiriusContractTest : ContractTestBase("solidity/SiriusService", "SiriusSer
         val leaf3 = newLeafNodeInfo(ethKey2Address(callUser), update4)
 
         val refund = AMTreeProof(path, leaf3)
-        val data = RLP.dump(AMTreeProof.serializer(), refund)
+        val data = refund.toRLP()
         val callResult = contract.callFunction("recoverFunds", data)
         verifyReturn(callResult)
     }
@@ -261,13 +274,13 @@ class SiriusContractTest : ContractTestBase("solidity/SiriusService", "SiriusSer
         return AMTreeLeafNodeInfo(addr.hash(), update)
     }
 
-    private fun createEon(eon: Int) {
-        createEon(eon, true, false)
+    private fun createEon(eon: Int): Long {
+        return createEon(eon, true, false)
     }
 
-    private fun createEon(eon: Int, flag: Boolean, realFlag: Boolean) {
+    private fun createEon(eon: Int, flag: Boolean, realFlag: Boolean): Long {
         var ct = 0
-
+        var total: Long = 0
         for (i in 0..eon) {
             var tmp = if (!flag && i == eon) {
                 (blocksPerEon * (i + 1)) + 2
@@ -279,10 +292,12 @@ class SiriusContractTest : ContractTestBase("solidity/SiriusService", "SiriusSer
                 testDeposit(true)
                 ct += 1
             }
-            var total = ct * deposit
+            total = ct * deposit
             if (!realFlag || (realFlag && i < eon))
                 commitData(i + 1, total, flag)
         }
+
+        return total
     }
 
     @Test
