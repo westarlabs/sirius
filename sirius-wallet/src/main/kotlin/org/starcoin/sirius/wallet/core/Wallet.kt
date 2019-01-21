@@ -1,9 +1,8 @@
 package org.starcoin.sirius.wallet.core
 
-import org.starcoin.sirius.core.Address
-import org.starcoin.sirius.core.Block
-import org.starcoin.sirius.core.ChainTransaction
-import org.starcoin.sirius.core.Update
+import kotlinx.coroutines.channels.Channel
+import kotlinx.coroutines.runBlocking
+import org.starcoin.sirius.core.*
 import org.starcoin.sirius.protocol.Chain
 import org.starcoin.sirius.protocol.ChainAccount
 import org.starcoin.sirius.wallet.core.blockchain.BlockChain
@@ -52,5 +51,13 @@ class Wallet<T : ChainTransaction, A : ChainAccount> {
 
     fun register():Update?{
         return hub.register()
+    }
+
+    internal fun initMessageChannel(){
+        hub.eonChannel = Channel(200)
+    }
+
+    internal fun getMessageChannel():Channel<Eon>?{
+        return hub.eonChannel
     }
 }

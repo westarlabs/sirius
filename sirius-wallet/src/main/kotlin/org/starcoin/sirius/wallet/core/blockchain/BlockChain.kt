@@ -35,9 +35,6 @@ class BlockChain <T : ChainTransaction, A : ChainAccount> (chain: Chain<T, out B
                         LOG.info("Deposit:" + deposit.toJSON())
                         hub.confirmDeposit(tx)
                     }
-                    is CommitFunction -> {
-                        contractFunction.decode(tx.data)
-                    }
                     is InitiateWithdrawalFunction -> {
                         val input = contractFunction.decode(tx.data)
                             ?: throw RuntimeException("$contractFunction decode tx:${txResult.tx} fail.")
@@ -56,6 +53,12 @@ class BlockChain <T : ChainTransaction, A : ChainAccount> (chain: Chain<T, out B
                             ?: throw RuntimeException("$contractFunction decode tx:${txResult.tx} fail.")
                         LOG.info("$contractFunction: $input")
                         //hub.onBalanceUpdateChallenge(input)
+                    }
+                    is CommitFunction ->{
+                        val input = contractFunction.decode(tx.data)
+                            ?: throw RuntimeException("$contractFunction decode tx:${txResult.tx} fail.")
+                        LOG.info("$contractFunction: $input")
+                        hub.onHubRootCommit(input)
                     }
                 }
 

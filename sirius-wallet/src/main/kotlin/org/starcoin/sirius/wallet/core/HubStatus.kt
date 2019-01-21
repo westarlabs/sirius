@@ -24,20 +24,6 @@ class HubStatus {
     private var depositingTransactions: MutableMap<Hash, ChainTransaction> = mutableMapOf()
 
     private var withdrawalStatus: WithdrawalStatus? = null
-        set(value) {
-            if (withdrawalStatus == null) {
-                this.withdrawalStatus = null
-                return
-            }
-            if (this.withdrawalStatus?.withdrawalAmount==value?.withdrawalAmount
-                && this.withdrawalStatus?.status === Starcoin.WithdrawalStatusType.WITHDRAWAL_STATUS_CLIENT_CONFIRMED_VALUE
-            ) {
-                return
-            }
-            if (value?.status != Starcoin.WithdrawalStatusType.WITHDRAWAL_STATUS_CLIENT_CONFIRMED_VALUE || value.status != Starcoin.WithdrawalStatusType.WITHDRAWAL_STATUS_CANCEL_VALUE)
-                this.withdrawalStatus = withdrawalStatus
-        }
-
 
     var height: Int = 0
 
@@ -47,8 +33,18 @@ class HubStatus {
         this.eonStatuses[currentEonStatusIndex] = eonStatus
     }
 
-    internal fun syncWithDrawal(withdrawalStatus: WithdrawalStatus) {
-        this.withdrawalStatus = withdrawalStatus
+    internal fun syncWithDrawal(value: WithdrawalStatus) {
+        if (withdrawalStatus == null) {
+            this.withdrawalStatus = null
+            return
+        }
+        if (this.withdrawalStatus?.withdrawalAmount==value?.withdrawalAmount
+            && this.withdrawalStatus?.status === Starcoin.WithdrawalStatusType.WITHDRAWAL_STATUS_CLIENT_CONFIRMED_VALUE
+        ) {
+            return
+        }
+        if (value?.status != Starcoin.WithdrawalStatusType.WITHDRAWAL_STATUS_CLIENT_CONFIRMED_VALUE || value.status != Starcoin.WithdrawalStatusType.WITHDRAWAL_STATUS_CANCEL_VALUE)
+            this.withdrawalStatus = withdrawalStatus
     }
 
     internal fun cancelWithDrawal() {
@@ -205,5 +201,8 @@ class HubStatus {
 
     fun couldWithDrawal():Boolean {
         if (this.withdrawalStatus == null) return true else return false
+    }
+
+    internal fun addWithDrawal(value:WithdrawalStatus){
     }
 }

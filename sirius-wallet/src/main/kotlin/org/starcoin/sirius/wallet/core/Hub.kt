@@ -1,6 +1,9 @@
 package org.starcoin.sirius.wallet.core
 
 import io.grpc.StatusRuntimeException
+import kotlinx.coroutines.GlobalScope
+import kotlinx.coroutines.channels.Channel
+import kotlinx.coroutines.launch
 import org.starcoin.proto.HubServiceGrpc
 import org.starcoin.proto.Starcoin
 import org.starcoin.sirius.core.*
@@ -9,7 +12,9 @@ import org.starcoin.sirius.protocol.ChainAccount
 import org.starcoin.sirius.protocol.HubContract
 import org.starcoin.sirius.util.WithLogging
 import org.starcoin.sirius.wallet.core.store.Store
+import java.lang.RuntimeException
 import java.math.BigInteger
+
 import kotlin.properties.Delegates
 
 class Hub <T : ChainTransaction, A : ChainAccount> {
@@ -36,6 +41,8 @@ class Hub <T : ChainTransaction, A : ChainAccount> {
         private set
 
     private var chain: Chain<T, out Block<T>, A> by Delegates.notNull()
+
+    internal var eonChannel :Channel<Eon>? = null
 
     // for test lost connect
     var disconnect = true
@@ -72,8 +79,28 @@ class Hub <T : ChainTransaction, A : ChainAccount> {
         return Eon.calculateEon(blocksPerEon = hubInfo.blocksPerEon,blockHeight = chain.getBlockNumber().toLong())
     }
 
-    private fun onHubRootCommit(hubRoot: HubRoot) {
+    fun onHubRootCommit(hubRoot: HubRoot) {
+        try {
+            // System.out.println("get new hub root"+hubRoot.toString());
+            LOG.info("start get eon")
+            val eon = this.getChainEon()
+            LOG.info("finish get eon")
 
+            /**
+            if (this.accountInfo() == null) {
+                return
+            }**/
+            LOG.info("current eon is "+eon.id+" hubroot eon is " +hubRoot.eon)
+            if (eon.id === hubRoot.eon) {
+                LOG.info("start change eon")
+                nextEon(hubRoot)
+                LOG.info("finish change eon")
+            } else {
+                throw RuntimeException("hub eon is not right")
+            }
+        } catch (e: Exception) {
+            e.printStackTrace()
+        }
     }
 
     internal fun onDeposit(deposit: Deposit) {
@@ -94,7 +121,8 @@ class Hub <T : ChainTransaction, A : ChainAccount> {
                     this.hubStatus.syncWithDrawal(withdrawalStatus)
                     LOG.info("pass")
                 }
-                else -> System.out.println(withdrawalStatus)
+                else -> LOG.info(withdrawalStatus.toJSON()
+                )
             }
         }
         serverEventHandler?.onWithdrawal(withdrawalStatus)
@@ -118,7 +146,45 @@ class Hub <T : ChainTransaction, A : ChainAccount> {
     }
 
     @Synchronized
-    private fun nextEon() {
+    private fun nextEon(hubRoot: HubRoot) {
+        this.currentEon = this.getChainEon()
+
+        this.checkChallengeStatus()
+        val hubServiceBlockingStub = HubServiceGrpc.newBlockingStub(this.channelManager.hubChannel)
+
+        val protoAugmentedMerkleProof = hubServiceBlockingStub.getProof(account.address.toProto())
+        val proof = AMTreeProof.parseFromProtoMessage(protoAugmentedMerkleProof)
+
+        val result = AMTree.verifyMembershipProof(hubRoot.root, proof)
+        var needChallenge = false
+        if (result == false) {
+            LOG.info("hub server lie")
+            needChallenge = true
+        }
+
+        val lastUpdate = hubStatus.currentUpdate(this.currentEon)
+
+        // 加上已经确认的转进来的钱,加上别人转过来的钱，减去转给别人的钱
+        val lastIndex = this.hubStatus.nextEon(this.currentEon, proof)
+
+        val selfNode = proof.path.leafNode
+
+        if (selfNode.allotment < this.getAvailableCoin()) {
+            needChallenge = true
+            LOG.info("proof hub allot is " + selfNode.allotment)
+            LOG.info("local allot is " + this.getAvailableCoin())
+        }
+        //this.dataStore?.save(this.hubStatus)
+
+        //openBalanceUpdateChallenge(lastUpdate, lastIndex)
+        GlobalScope.launch {
+            eonChannel?.send(currentEon)
+        }
+
+        if (!needChallenge) {
+            return
+        }
+
     }
 
     internal fun openBalanceUpdateChallenge(){
@@ -127,8 +193,8 @@ class Hub <T : ChainTransaction, A : ChainAccount> {
         this.contract.openBalanceUpdateChallenge(account,challenge)
     }
 
-    fun getAvailableCoin():Long {
-        return 0;
+    fun getAvailableCoin():BigInteger {
+        return BigInteger.valueOf(0)
     }
 
     fun getWithdrawalCoin():Long {

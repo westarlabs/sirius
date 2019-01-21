@@ -3,6 +3,7 @@ package org.starcoin.sirius.wallet
 import com.google.protobuf.Empty
 import io.grpc.Channel
 import io.grpc.inprocess.InProcessChannelBuilder
+import kotlinx.coroutines.runBlocking
 import org.ethereum.util.blockchain.EtherUtil
 import org.junit.After
 import org.junit.Assert
@@ -66,7 +67,7 @@ class WalletTest {
         contract = hubServer.contract
 
         walletAlice= Wallet(this.contract.contractAddress,channelManager,chain,null,alice)
-
+        walletAlice.initMessageChannel()
     }
 
     fun sendEther(address: Address, amount: BigInteger) {
@@ -92,8 +93,6 @@ class WalletTest {
     @Test
     fun testDeposit(){
         testReg()
-
-        waitToNextEon()
 
         val amount=2000L
         walletAlice.deposit(amount)
@@ -122,22 +121,34 @@ class WalletTest {
     fun testWithdrawal() {
         testDeposit()
 
+        waitToNextEon()
+
+        createBlocks(9)
+
+        runBlocking {
+            walletAlice.getMessageChannel()?.receive()
+        }
+
         val amount = 20L
         walletAlice.withdrawal(amount)
 
-        chain.sb.createBlock()
-
+        createBlocks(1)
         Assert.assertTrue(!walletAlice.hub.hubStatus.couldWithDrawal())
     }
 
     private fun waitToNextEon() {
-        var height = chain.getBlockNumber().toLong()
+        var height = chain.getBlockNumber()
         if (height?.rem(8) != 0L) {
             var blockNumber = 8 - (height?.rem(8) ?: 0) - 1
             for (i in 0..blockNumber) {
                 chain.sb.createBlock()
             }
         }
+    }
+
+    private fun createBlocks(number:Int){
+        for(i in 1..number)
+            chain.createBlock()
     }
 
 }
