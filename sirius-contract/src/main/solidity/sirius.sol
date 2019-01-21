@@ -25,9 +25,10 @@ interface Sirius {
 }
 
 contract SiriusService is Sirius {
-    address private owner = msg.sender;
+    address private owner;
+    bytes32 private ownerHash;
     bool private recoveryMode = false;
-    uint private startHeight = block.number;
+    uint private startHeight;
     uint private blocksPerEon;
     bytes private hubPK;
     string ip;
@@ -55,6 +56,10 @@ contract SiriusService is Sirius {
 
         balances[0].root = root;
         balances[0].hasRoot = true;
+
+        owner = msg.sender;
+        ownerHash = ByteUtilLib.address2hash(msg.sender);
+        startHeight = block.number;
     }
 
     modifier onlyOwner() {
@@ -158,24 +163,18 @@ contract SiriusService is Sirius {
             address payable addr = msg.sender;
             ModelLib.WithdrawalInfo memory init = ModelLib.unmarshalWithdrawalInfo(RLPDecoder.toRLPItem(data, true));
             require(init.amount > 0);
-            //ModelLib.verifyAddr4WithdrawalInfo(init, msg.sender);//TODO
-
-            uint currentEon = currentEon();
-            ModelLib.verifyEon4WithdrawalInfo(init, currentEon);
-            //nodes.length is possible 0.
-            //            uint len = init.proof.path.nodes.length;
-            //            require(len > 0);
-
+            require(init.proof.path.eon > 0);
+            require(init.proof.path.leaf.allotment >= init.amount);//TODO  proof decode bug, allotment is wrong
+            uint preEon = balances[1].eon;
             bytes32 key = ByteUtilLib.address2hash(addr);
-            //            bool processingFlag = withdrawalProcessing(key);
-            //            require(!processingFlag);
+            ModelLib.verifyProof(preEon, key, ownerHash, init.proof);
 
-            //            ModelLib.HubRoot memory latestRoot = latestRoot();
-            //            bool proofFlag = ModelLib.verifyMembershipProof4AMTreeProof(latestRoot.node, init.proof);
-            //            require(proofFlag);
+            bool processingFlag = withdrawalProcessing(key);
+            require(!processingFlag);
 
-            //TODO  proof decode bug, allotment is wrong
-            //require(init.proof.path.leaf.allotment >= init.amount);
+            ModelLib.HubRoot memory preRoot = getPreRoot();
+            bool proofFlag = ModelLib.verifyMembershipProof4AMTreeProof(preRoot.node, init.proof);
+            require(proofFlag);
 
             GlobleLib.Withdrawal memory with;
             with.info = data;

@@ -221,6 +221,13 @@ library ModelLib {
         return RLPEncoder.encodeList(ByteUtilLib.append(path, leaf));
     }
 
+    function verifyProof(uint eon, bytes32 userAddrHash, bytes32 hubAddrHash, AMTreeProof memory proof) internal pure {
+        require(eon == proof.path.eon);
+        require(userAddrHash == proof.leaf.addressHash);
+        require(verifySign4Update(proof.leaf.update.upData, proof.leaf.update.sign, userAddrHash));
+        require(verifySign4Update(proof.leaf.update.upData, proof.leaf.update.hubSign, hubAddrHash));
+    }
+
     struct AMTreeNode {
         uint offset;
         AMTreeLeafNodeInfo info;
@@ -563,7 +570,6 @@ library ModelLib {
 ///////////////////////////////////////
 
     struct WithdrawalInfo {
-        address addr;
         AMTreeProof proof;
         uint amount;
     }
@@ -573,9 +579,8 @@ library ModelLib {
         uint idx;
         while(RLPDecoder.hasNext(it)) {
             RLPLib.RLPItem memory r = RLPDecoder.next(it);
-            if(idx == 0) init.addr = RLPDecoder.toAddress(r);
-            else if(idx == 1) init.proof = unmarshalAMTreeProof(r);
-            else if(idx == 2) init.amount = RLPDecoder.toUint(r);
+            if(idx == 0) init.proof = unmarshalAMTreeProof(r);
+            else if(idx == 1) init.amount = RLPDecoder.toUint(r);
             else {}
 
             idx++;
@@ -583,19 +588,10 @@ library ModelLib {
     }
 
     function marshalWithdrawalInfo(WithdrawalInfo memory init) internal pure returns (bytes memory) {
-        bytes memory addr = RLPEncoder.encodeAddress(init.addr);
         bytes memory proof = marshalAMTreeProof(init.proof);
         bytes memory amount = RLPEncoder.encodeUint(init.amount);
 
-        return RLPEncoder.encodeList(ByteUtilLib.append(ByteUtilLib.append(addr, proof), amount));
-    }
-
-    function verifyEon4WithdrawalInfo(WithdrawalInfo memory self, uint eon) internal pure {
-        require(eon == self.proof.path.eon);
-    }
-
-    function verifyAddr4WithdrawalInfo(WithdrawalInfo memory self, address addr) internal pure {
-        require(addr == self.addr && ByteUtilLib.address2hash(addr) == self.proof.leaf.addressHash);
+        return RLPEncoder.encodeList(ByteUtilLib.append(proof, amount));
     }
 
     struct Participant {

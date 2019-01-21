@@ -58,9 +58,8 @@ message AMTreeLeafNodeInfo{
 }
 
 message Withdrawal {
-    required bytes address = 1;
-    required AMTreeProof proof = 2;
-    required bytes amount = 3;
+    required AMTreeProof proof = 1;
+    required bytes amount = 2;
 }
 
 enum WithdrawalStatusType {

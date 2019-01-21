@@ -12,22 +12,20 @@ import java.math.BigInteger
 @Serializable
 data class Withdrawal(
     @SerialId(1)
-    val address: Address = Address.DUMMY_ADDRESS,
-    @SerialId(2)
     val proof:AMTreeProof = AMTreeProof.DUMMY_PROOF,
-    @SerialId(3)
+    @SerialId(2)
     @Serializable(with = BigIntegerSerializer::class)
     val amount: BigInteger = BigInteger.ZERO
 ) : SiriusObject() {
 
-    constructor(address: Address, proof: AMTreeProof, amount: Long) : this(address, proof, amount.toBigInteger())
+    constructor(proof: AMTreeProof, amount: Long) : this(proof, amount.toBigInteger())
 
     companion object : SiriusObjectCompanion<Withdrawal, Starcoin.Withdrawal>(Withdrawal::class) {
 
         var DUMMY_WITHDRAWAL = Withdrawal()
 
         override fun mock(): Withdrawal {
-            return Withdrawal(Address.random(), AMTreeProof.mock(), MockUtils.nextBigInteger())
+            return Withdrawal(AMTreeProof.mock(), MockUtils.nextBigInteger())
         }
     }
 }
