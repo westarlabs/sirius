@@ -126,8 +126,22 @@ class WalletTest {
 
     @Test
     fun testTransfer(){
-        testReg()
+        testDeposit()
 
+        val amount=20L
+        val transaction=walletAlice.hubTransfer(bob.address,amount)
+
+        Assert.assertNotNull(transaction)
+
+        runBlocking {
+            walletBob.getMessageChannel()?.receive()
+            walletAlice.getMessageChannel()?.receive()
+            walletBob.getMessageChannel()?.receive()
+        }
+
+        var account=stub.getHubAccount(bob.address.toProto())
+
+        Assert.assertEquals(HubAccount.parseFromProtoMessage(account).deposit.toLong(),amount+2000)
 
     }
 

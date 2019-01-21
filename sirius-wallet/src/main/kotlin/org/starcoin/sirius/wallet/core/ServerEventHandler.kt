@@ -12,5 +12,5 @@ interface ServerEventHandler {
 
     fun onNewTransaction(offchainTransaction: OffchainTransaction)
 
-    fun onNewUpdate(update: UpdateData)
+    fun onNewUpdate(update: Update)
 }

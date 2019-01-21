@@ -3,15 +3,14 @@ package org.starcoin.sirius.wallet.core
 import io.grpc.stub.StreamObserver
 import org.starcoin.proto.Starcoin
 import java.util.*
-import java.util.function.Consumer
 
 class HubObserver : StreamObserver<Starcoin.HubEvent> {
 
-    private val consumerList = ArrayList<Consumer<Starcoin.HubEvent>>()
+    private val consumerList = ArrayList<(Starcoin.HubEvent)->Unit>()
 
     override fun onNext(value: Starcoin.HubEvent) {
         for (protoHubEventConsumer in consumerList) {
-            protoHubEventConsumer.accept(value)
+            protoHubEventConsumer(value)
         }
     }
 
@@ -19,7 +18,7 @@ class HubObserver : StreamObserver<Starcoin.HubEvent> {
 
     override fun onCompleted() {}
 
-    fun addConsumer(consumer: Consumer<Starcoin.HubEvent>) {
+    fun addConsumer(consumer: (Starcoin.HubEvent)->Unit) {
         this.consumerList.add(consumer)
     }
 }

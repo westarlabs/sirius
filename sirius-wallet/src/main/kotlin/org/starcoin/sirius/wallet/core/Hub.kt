@@ -1,5 +1,6 @@
 package org.starcoin.sirius.wallet.core
 
+import com.google.protobuf.InvalidProtocolBufferException
 import io.grpc.StatusRuntimeException
 import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.channels.Channel
@@ -132,6 +133,25 @@ class Hub <T : ChainTransaction, A : ChainAccount> {
     }
 
     private fun onNewTransaction(offchainTransaction: OffchainTransaction) {
+        val hubServiceBlockingStub = HubServiceGrpc.newBlockingStub(channelManager.hubChannel)
+
+        this.hubStatus.addOffchainTransaction(offchainTransaction)
+
+        val recieveUpdate = Update.newUpdate(
+            this.currentEon.id,
+            this.hubStatus.currentUpdate(currentEon).version + 1,
+            account.address,
+            this.hubStatus.currentTransactions()
+        )
+        recieveUpdate.sign(account.key)
+
+        val iou = IOU(offchainTransaction, recieveUpdate)
+
+        val succResponse = hubServiceBlockingStub.receiveNewTransfer(iou.toProto())
+        LOG.info("recieve new transfer from " + offchainTransaction.from + succResponse)
+
+        serverEventHandler?.onNewTransaction(offchainTransaction)
+
     }
 
     fun recieveTransacion() {
@@ -142,10 +162,9 @@ class Hub <T : ChainTransaction, A : ChainAccount> {
     }
 
     private fun onNewUpdate(update: Update) {
-    }
-
-    @Synchronized
-    private fun watchHubEnvent() {
+        this.hubStatus.addUpdate(update)
+        serverEventHandler?.onNewUpdate(update)
+        LOG.info("get hub sign")
     }
 
     @Synchronized
@@ -215,7 +234,7 @@ class Hub <T : ChainTransaction, A : ChainAccount> {
     fun newTransfer(addr:Address, value:Long) :OffchainTransaction{
         val hubServiceBlockingStub = HubServiceGrpc.newBlockingStub(channelManager.hubChannel)
 
-        val tx = OffchainTransaction(this.currentEon.id, addr, addr, value)
+        val tx = OffchainTransaction(this.currentEon.id, account.address, addr, value)
         tx.sign(account.key)
         this.hubStatus.addOffchainTransaction(tx)
 
@@ -228,14 +247,8 @@ class Hub <T : ChainTransaction, A : ChainAccount> {
         update.sign(account.key)
 
         val iou = IOU(tx, update)
-        val protoUpdate = iou.update.toProto<Starcoin.Update>()
-        val protoHubTransaction = iou.transaction.toProto<Starcoin.OffchainTransaction>()
 
-        val iouProto = Starcoin.IOU.newBuilder()
-            .setUpdate(protoUpdate)
-            .setTransaction(protoHubTransaction)
-            .build()
-        val succResponse = hubServiceBlockingStub.sendNewTransfer(iouProto)
+        val succResponse = hubServiceBlockingStub.sendNewTransfer(iou.toProto())
         //dataStore.save(this.hubStatusData)
         return if (succResponse.getSucc() == true) {
             tx
@@ -267,7 +280,7 @@ class Hub <T : ChainTransaction, A : ChainAccount> {
             hubStatus.addUpdate(response)
             this.accountInfo()
             watchHubEnvent()
-            //this.disconnect = false
+            this.disconnect = false
             return response
         } catch (e: StatusRuntimeException) {
             throw e
@@ -322,6 +335,47 @@ class Hub <T : ChainTransaction, A : ChainAccount> {
 
     internal fun getBalance():BigInteger{
         return hubStatus.allotment
+    }
+
+    @Synchronized
+    private fun watchHubEnvent() {
+        if (alreadWatch == true) {
+            return
+        }
+
+        val hubServiceStub = HubServiceGrpc.newStub(this.channelManager.hubChannel)
+
+        val hubObserver = HubObserver()
+        hubObserver.addConsumer(this::hubRootConsumer)
+
+        hubServiceStub.watch(account.address.toProto(), hubObserver)
+        this.alreadWatch = true
+    }
+
+    private fun hubRootConsumer(value: Starcoin.HubEvent) {
+        if (disconnect) {
+            return
+        }
+        try {
+            var clientEvent = ClientEventType.NOTHING
+            when (value.type.number) {
+                Starcoin.HubEventType.HUB_EVENT_NEW_TX_VALUE -> {
+                    onNewTransaction(OffchainTransaction.parseFromProtobuf(value.payload.toByteArray()))
+                    clientEvent= ClientEventType.NEW_OFFLINE_TRANSACTION
+                }
+                Starcoin.HubEventType.HUB_EVENT_NEW_UPDATE_VALUE -> {
+                    onNewUpdate(Update.parseFromProtobuf(value.payload.toByteArray()))
+                    clientEvent= ClientEventType.HUB_SIGN
+                }else -> {
+            }
+            }
+            GlobalScope.launch {
+                eonChannel?.send(clientEvent)
+            }
+            //dataStore.save(this.hubStatusData)
+        } catch (e: InvalidProtocolBufferException) {
+            e.printStackTrace()
+        }
     }
 
 }
