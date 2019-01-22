@@ -5,13 +5,16 @@ import com.google.common.eventbus.EventBus
 import com.google.common.eventbus.Subscribe
 import com.google.protobuf.Empty
 import io.grpc.inprocess.InProcessChannelBuilder
+import kotlinx.coroutines.GlobalScope
+import kotlinx.coroutines.launch
 import org.ethereum.db.IndexedBlockStore
-import org.junit.*
+import org.junit.After
+import org.junit.Assert
+import org.junit.Before
+import org.junit.Test
 import org.starcoin.proto.HubServiceGrpc
 import org.starcoin.proto.Starcoin
 import org.starcoin.sirius.core.*
-import org.starcoin.sirius.crypto.CryptoKey
-import org.starcoin.sirius.crypto.CryptoService
 import org.starcoin.sirius.protocol.Chain
 import org.starcoin.sirius.protocol.ChainAccount
 import org.starcoin.sirius.protocol.HubContract
@@ -21,8 +24,6 @@ import java.math.BigInteger
 import java.util.*
 import java.util.concurrent.*
 import java.util.concurrent.atomic.AtomicInteger
-import java.util.logging.Level
-import java.util.logging.LogManager
 import kotlin.properties.Delegates
 
 class HubEventFuture(private val predicate: (HubEvent) -> Boolean) : CompletableFuture<HubEvent>() {
@@ -43,141 +44,6 @@ class BlockFuture : CompletableFuture<IndexedBlockStore.BlockInfo>() {
     }
 }
 
-class EonState(internal var previous: EonState?, internal var eon: Int, internal var update: Update) {
-    internal var txs: MutableList<OffchainTransaction> = ArrayList<OffchainTransaction>()
-    internal var hubAccount: HubAccount? = null
-    internal var hubRoot: HubRoot? = null
-    internal var proof: AMTreeProof? = null
-
-    constructor(eon: Int, update: Update) : this(null, eon, update) {}
-
-    fun addTx(tx: OffchainTransaction) {
-        this.txs.add(tx)
-    }
-}
-
-
-class LocalAccount<A : ChainAccount> {
-
-    internal var kp: CryptoKey
-    internal var p: Participant
-    internal var state: EonState? = null
-    internal var eventBus: EventBus
-    var chainAccount: A by Delegates.notNull()
-    var hubService: HubServiceGrpc.HubServiceBlockingStub by Delegates.notNull()
-
-
-    var hubAccount: HubAccount?
-        get() = if (this.state == null) null else this.state!!.hubAccount
-        set(hubAccount) {
-            this.state!!.hubAccount = hubAccount
-        }
-
-    val address: Address
-        get() = this.p.address
-
-    var update: Update
-        get() = this.state!!.update
-        set(update) {
-            this.state!!.update = update
-        }
-
-    val txs: List<OffchainTransaction>
-        get() = this.state!!.txs
-
-    val isRegister: Boolean
-        get() = this.hubAccount != null
-
-    init {
-        this.kp = CryptoService.generateCryptoKey()
-        this.p = Participant(kp.keyPair.public)
-        this.eventBus = EventBus()
-    }
-
-    fun onEon(hubRoot: HubRoot) {
-        val eon = hubRoot.eon
-        val update = Update(eon, 0, 0, 0)
-        update.sign(kp)
-        this.state = EonState(this.state, eon, update)
-        this.state!!.hubRoot = hubRoot
-        this.state!!.proof = AMTreeProof.parseFromProtoMessage(hubService.getProof(this.address.toProto()))
-        Assert.assertTrue(
-            AMTree.verifyMembershipProof(this.state?.hubRoot?.root, this.state?.proof)
-        )
-
-        this.state!!.hubAccount = HubAccount.parseFromProtoMessage(hubService.getHubAccount(this.address.toProto()))
-        LOG.info(this.address.toString() + " to new eon:" + eon)
-    }
-
-    fun initUpdate(eon: Int): Update {
-        val update = Update(eon, 0, 0, 0)
-        update.sign(kp)
-        this.state = EonState(this.state, eon, update)
-        return update
-    }
-
-    fun addTx(tx: OffchainTransaction) {
-        this.state!!.addTx(tx)
-        val newUpdate = Update.newUpdate(
-            this.state!!.eon,
-            this.update.version + 1,
-            this.p.address,
-            this.txs
-        )
-        newUpdate.sign(kp)
-        this.state!!.update = newUpdate
-    }
-
-    fun newTx(to: Address, amount: BigInteger): OffchainTransaction {
-        val tx = OffchainTransaction(this.state!!.eon, this.address, to, amount)
-        this.addTx(tx)
-        return tx
-    }
-
-    fun register(update: Update, hubAccount: HubAccount) {
-        this.state!!.update = update
-        this.state!!.hubAccount = hubAccount
-        try {
-            //executorService.submit {
-            hubService
-                .watch(this.address.toProto())
-                .forEachRemaining { protoHubEvent ->
-                    val event = HubEvent.parseFromProtoMessage(protoHubEvent)
-                    HubServerIntegrationTestBase.LOG.info("onEvent:" + event.toString())
-                    if (event.type === HubEventType.NEW_TX) {
-                        onTx(event.getPayload() as OffchainTransaction)
-                    } else if (event.type === HubEventType.NEW_UPDATE) {
-                        onUpdate(event.getPayload() as Update)
-                    }
-                    this.eventBus.post(event)
-                }
-            //}
-        } catch (e: Exception) {
-            e.printStackTrace()
-        }
-
-    }
-
-    fun watch(future: HubEventFuture) {
-        this.eventBus.register(future)
-    }
-
-    fun onTx(tx: OffchainTransaction) {
-        this.addTx(tx)
-        val toIOU = IOU(tx, this.update)
-        Assert.assertTrue(hubService.receiveNewTransfer(toIOU.toProto()).getSucc())
-    }
-
-    fun onUpdate(update: Update) {
-        this.update = update
-        this.hubAccount = HubAccount.parseFromProtoMessage(hubService.getHubAccount(this.address.toProto()))
-    }
-
-    companion object : WithLogging() {
-
-    }
-}
-
 
 abstract class HubServerIntegrationTestBase<T : ChainTransaction, A : ChainAccount> {
 
@@ -190,7 +56,6 @@ abstract class HubServerIntegrationTestBase<T : ChainTransaction, A : ChainAccou
     var hubService: HubServiceGrpc.HubServiceBlockingStub by Delegates.notNull()
     var contract: HubContract<A> by Delegates.notNull()
     internal var eventBus: EventBus by Delegates.notNull()
-    internal var executorService: ExecutorService by Delegates.notNull()
 
     internal var txMap: ConcurrentHashMap<Hash, CompletableFuture<TransactionResult<T>>> by Delegates.notNull()
 
@@ -201,40 +66,44 @@ abstract class HubServerIntegrationTestBase<T : ChainTransaction, A : ChainAccou
     internal var a0: LocalAccount<A> by Delegates.notNull()
     internal var a1: LocalAccount<A> by Delegates.notNull()
 
-    abstract fun createChainAccount(): A
+    abstract fun createChainAccount(amount: Long): A
     var owner: A by Delegates.notNull()
+    var contractHubInfo: ContractHubInfo by Delegates.notNull()
 
     @Before
     @Throws(InterruptedException::class)
     fun before() {
-        this.executorService = Executors.newCachedThreadPool()
         this.txMap = ConcurrentHashMap()
 
-        this.a0 = LocalAccount()
-        this.a1 = LocalAccount()
         this.eventBus = EventBus()
         this.configuration = Configuration.configurationForUNIT()
-        val rpcServer = GrpcServer(configuration)
-        this.owner = this.createChainAccount()
+        this.owner = this.createChainAccount(10000)
         this.hubServer = HubServer(configuration, chain, owner)
-        contract = this.hubServer.contract
 
         hubServer.start()
-
+        contract = this.hubServer.contract
+        contractHubInfo = contract.queryHubInfo(this.owner)
+        this.eon.set(contractHubInfo.latestEon)
 
         hubService = HubServiceGrpc.newBlockingStub(
             InProcessChannelBuilder.forName(configuration.rpcBind.toString()).build()
         )
-
-        this.produceBlock(2)
+        this.a0 = LocalAccount(this.createChainAccount(1000), hubService)
+        this.a1 = LocalAccount(this.createChainAccount(1000), hubService)
 
         this.waitServerStart()
         this.watchEon()
         this.watchBlock()
-        this.produceBlock(1)
+        //this.produceBlock(1)
     }
 
-    abstract fun produceBlock(n: Int)
+    abstract fun createBlock()
+
+    fun produceBlock(n: Int) {
+        for (i in 0..n) {
+            createBlock()
+        }
+    }
 
     private fun waitServerStart() {
 //        while (chainService
@@ -258,7 +127,7 @@ abstract class HubServerIntegrationTestBase<T : ChainTransaction, A : ChainAccou
     }
 
     private fun watchEon() {
-        executorService.submit {
+        GlobalScope.launch {
             try {
                 hubService
                     .watchHubRoot(Empty.newBuilder().build())
@@ -288,23 +157,20 @@ abstract class HubServerIntegrationTestBase<T : ChainTransaction, A : ChainAccou
 
 
     private fun watchBlock() {
-        //TODO
-//        executorService.submit {
-//            try {
-//                chainService
-//                    .watch(Empty.newBuilder().build())
-//                    .forEachRemaining(
-//                        { protoBlockInfo ->
-//                            val blockInfo = IndexedBlockStore.BlockInfo(protoBlockInfo)
-//                            blockHeight.set(blockInfo.getHeight())
-//                            LOG.info("new Block:" + blockInfo.toJson())
-//                            blockInfo.getTransactions().stream().forEach(???({ this.onTransaction(it) }))
-//                            eventBus.post(blockInfo)
-//                        })
-//            } catch (e: Exception) {
-//                LOG.severe(e.message)
-//            }
-//        }
+        GlobalScope.launch {
+            val blockChannel = chain.watchBlock()
+            for (block in blockChannel) {
+                eventBus.post(block)
+            }
+        }
+
+        GlobalScope.launch {
+            //TODO add filter
+            val txChannel = chain.watchTransactions()
+            for (txResult in txChannel) {
+                onTransaction(txResult)
+            }
+        }
     }
 
     private inner class HubRootFuture(private val expectEon: Int) : CompletableFuture<HubRoot>() {
@@ -326,7 +192,14 @@ abstract class HubServerIntegrationTestBase<T : ChainTransaction, A : ChainAccou
         LOG.info("waitToNextEon:$expectEon")
         val future = HubRootFuture(expectEon)
         this.eventBus.register(future)
-        this.produceBlock(expectEon * this.configuration.blocksPerEon - blockHeight.get() + 1)
+        this.produceBlock(
+            Eon.waitToEon(
+                contractHubInfo.startBlockNumber.longValueExact(),
+                blockHeight.toLong(),
+                contractHubInfo.blocksPerEon,
+                expectEon
+            )
+        )
         try {
             val hubRoot = future.get(1000, TimeUnit.MILLISECONDS)
             this.eon.set(hubRoot.eon)
@@ -768,20 +641,10 @@ abstract class HubServerIntegrationTestBase<T : ChainTransaction, A : ChainAccou
     @After
     fun after() {
         this.hubService.resetMaliciousFlags(Empty.newBuilder().build())
-        this.executorService.shutdown()
         this.hubServer.stop()
     }
 
     companion object : WithLogging() {
-
-        @BeforeClass
-        fun setUpClass() {
-            val rootLogger = LogManager.getLogManager().getLogger("")
-            rootLogger.level = Level.ALL
-            for (h in rootLogger.handlers) {
-                h.level = Level.ALL
-            }
-        }
 
         private fun sleep(time: Long) {
             try {

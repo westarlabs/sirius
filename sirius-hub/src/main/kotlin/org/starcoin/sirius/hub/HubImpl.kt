@@ -58,9 +58,6 @@ class HubImpl<T : ChainTransaction, A : ChainAccount>(
         private set
     var currentBlockNumber: Long by Delegates.notNull()
 
-    private lateinit var txChannel: Channel<TransactionResult<T>>
-    private lateinit var blockChannel: Channel<out Block<T>>
-
     private val withdrawals = ConcurrentHashMap<Address, Withdrawal>()
 
     val hubActor = GlobalScope.actor<HubAction> {
@@ -139,12 +136,8 @@ class HubImpl<T : ChainTransaction, A : ChainAccount>(
         //TODO load previous status from storage.
         eonState = EonState(currentEon.id)
 
-        this.blockChannel = this.chain.watchBlock()
-        this.txChannel =
-            this.chain.watchTransactions { it.tx.to == ownerAddress || it.tx.from == ownerAddress || it.tx.to == contract.contractAddress }
-
-        this.processTransactions()
         this.processBlocks()
+        this.processTransactions()
         //first commit create by contract construct.
         // if miss latest commit, should commit root first.
         if (contractHubInfo.latestEon < currentEon.id) {
@@ -156,6 +149,8 @@ class HubImpl<T : ChainTransaction, A : ChainAccount>(
 
     private fun processTransactions() {
         GlobalScope.launch {
+            val txChannel =
+                chain.watchTransactions { it.tx.to == contract.contractAddress }
             for (tx in txChannel) {
                 hubActor.send(HubAction.ChainTransactionAction(tx))
             }
@@ -164,6 +159,7 @@ class HubImpl<T : ChainTransaction, A : ChainAccount>(
 
     private fun processBlocks() {
         GlobalScope.launch {
+            val blockChannel = chain.watchBlock()
             for (block in blockChannel) {
                 hubActor.send(HubAction.BlockAction(block))
             }

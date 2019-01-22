@@ -9,7 +9,7 @@ fun main(args: Array<String>) {
     val configuration = Configuration.loadConfiguration()
     val chain = InMemoryChain()
     val owner = EthereumAccount(configuration.ownerKey)
-    chain.miningCoin(owner.address, EtherUtil.convert(Int.MAX_VALUE.toLong(), EtherUtil.Unit.ETHER))
+    chain.miningCoin(owner, EtherUtil.convert(Int.MAX_VALUE.toLong(), EtherUtil.Unit.ETHER))
 
     val hubServer = HubServer(configuration,chain,owner)
     hubServer.start()

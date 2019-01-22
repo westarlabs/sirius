@@ -60,7 +60,7 @@ class EthereumChain constructor(httpUrl: String = DEFAULT_URL, socketPath: Strin
         val hexTx = transaction.toHEXString()
         val resp = web3.ethSendRawTransaction(hexTx).sendAsync().get()
         if (resp.hasError()) throw NewTxException(resp.error)
-        account.getAndIncNonce()
+        account.incAndGetNonce()
         return resp.transactionHash.toHash()
     }
 

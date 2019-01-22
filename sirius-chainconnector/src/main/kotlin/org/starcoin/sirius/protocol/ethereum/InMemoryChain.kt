@@ -28,6 +28,7 @@ class InMemoryChain(val autoGenblock: Boolean = true) : EthereumBaseChain() {
 
     //StandaloneBlockchain autoblock has concurrent problem
     val sb = StandaloneBlockchain().withAutoblock(false).withGasLimit(500000000)
+    val originAccount = sb.sender
 
     val chainAcctor = chainActor()
 
@@ -108,7 +109,10 @@ class InMemoryChain(val autoGenblock: Boolean = true) : EthereumBaseChain() {
         val key = account.key as EthCryptoKey
         sb.sender = key.ecKey
         transaction.sign(key)
-        account.getAndIncNonce()
+        val chainNonce = sb.blockchain.repository.getNonce(account.address.toBytes())
+        LOG.fine("chainNonce ${account.address} $chainNonce")
+        LOG.fine("${account.address} submitTransaction hash:${transaction.hash()} nonce:${transaction.nonce} contractFunction:${transaction.contractFunction}")
+        account.incAndGetNonce()
         val response = Channel<EthereumBlock?>(1)
         chainAcctor.send(ChainCtlMessage.NewTransaction(transaction, response))
         //TODO async, not wait block create.
@@ -164,8 +168,9 @@ class InMemoryChain(val autoGenblock: Boolean = true) : EthereumBaseChain() {
         response.receive() ?: throw RuntimeException("Create Block fail.")
     }
 
-    fun miningCoin(address: Address, amount: BigInteger) {
-        this.sb.sendEther(address.toBytes(), amount)
+    fun miningCoin(account: EthereumAccount, amount: BigInteger) {
+        this.sb.sender = originAccount
+        this.sb.sendEther(account.address.toBytes(), amount)
         this.createBlock()
     }
 }

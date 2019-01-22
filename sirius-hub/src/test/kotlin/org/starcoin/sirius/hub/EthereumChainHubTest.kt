@@ -12,8 +12,9 @@ class EthereumChainHubTest : HubTestBase<EthereumTransaction, EthereumAccount>()
 
     override fun createChainAccount(amount: Long): EthereumAccount {
         val key = CryptoService.generateCryptoKey()
-        chain.miningCoin(key.address, EtherUtil.convert(amount, EtherUtil.Unit.ETHER))
-        return EthereumAccount(key)
+        val account = EthereumAccount(key)
+        chain.miningCoin(account, EtherUtil.convert(amount, EtherUtil.Unit.ETHER))
+        return account
     }
 
     override fun createBlock() {

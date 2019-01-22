@@ -29,7 +29,7 @@ class HubServerTest {
 
         val chain = InMemoryChain()
         val owner = EthereumAccount(configuration.ownerKey)
-        chain.miningCoin(owner.address, EtherUtil.convert(Int.MAX_VALUE.toLong(), EtherUtil.Unit.ETHER))
+        chain.miningCoin(owner, EtherUtil.convert(Int.MAX_VALUE.toLong(), EtherUtil.Unit.ETHER))
 
         hubServer = HubServer(configuration,chain,owner)
         hubServer.start()
