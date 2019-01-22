@@ -32,7 +32,7 @@ data class HubEvent(
 
     @Transient
     val isPublicEvent: Boolean
-        get() = this.address != Address.ZERO_ADDRESS
+        get() = this.address == Address.ZERO_ADDRESS
 
 
     companion object : SiriusObjectCompanion<HubEvent, Starcoin.HubEvent>(HubEvent::class) {
