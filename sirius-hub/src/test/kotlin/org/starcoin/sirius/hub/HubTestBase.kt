@@ -191,6 +191,19 @@ abstract class HubTestBase<T : ChainTransaction, A : ChainAccount> {
         this.verifyRoot()
     }
 
+    @Test
+    fun testWatchHubEvent() {
+        this.register(a0)
+        this.register(a1)
+        val channel0 = hub.watch(a0.address)
+        val channel1 = hub.watch(a0.address)
+        val amount = RandomUtils.nextLong(10, 100000).toBigInteger()
+        this.deposit(a0, amount)
+        // transfer
+        this.transfer(hub.currentEon().id, a0, a1, amount / 2.toBigInteger())
+
+    }
+
     private fun randomEon(a0: LocalAccount, a1: LocalAccount) {
         val eons = RandomUtils.nextInt(3, 10)
         for (i in 0 until eons) {

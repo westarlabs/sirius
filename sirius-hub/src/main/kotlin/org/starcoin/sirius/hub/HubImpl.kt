@@ -4,8 +4,11 @@ import com.google.common.base.Preconditions
 import io.grpc.Status
 import io.grpc.StatusRuntimeException
 import kotlinx.coroutines.GlobalScope
-import kotlinx.coroutines.channels.*
+import kotlinx.coroutines.channels.ReceiveChannel
+import kotlinx.coroutines.channels.actor
+import kotlinx.coroutines.channels.consumeEach
 import kotlinx.coroutines.launch
+import org.starcoin.sirius.channel.EventBus
 import org.starcoin.sirius.core.*
 import org.starcoin.sirius.crypto.CryptoService
 import org.starcoin.sirius.protocol.*
@@ -42,7 +45,7 @@ class HubImpl<T : ChainTransaction, A : ChainAccount>(
 
     private val ownerAddress: Address = owner.address
 
-    private val eventBus: ConflatedBroadcastChannel<HubEvent> = ConflatedBroadcastChannel()
+    private val eventBus = EventBus<HubEvent>()
 
     var ready: Boolean = false
         private set
@@ -338,7 +341,7 @@ class HubImpl<T : ChainTransaction, A : ChainAccount>(
     }
 
     override fun watch(predicate: (HubEvent) -> Boolean): ReceiveChannel<HubEvent> {
-        return this.eventBus.openSubscription().filter { predicate(it) }
+        return this.eventBus.subscribe(predicate)
     }
 
     private fun doCommit() {
