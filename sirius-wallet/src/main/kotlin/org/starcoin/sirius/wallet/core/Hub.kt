@@ -146,7 +146,6 @@ class Hub <T : ChainTransaction, A : ChainAccount> {
         recieveUpdate.sign(account.key)
 
         val iou = IOU(offchainTransaction, recieveUpdate)
-
         val succResponse = hubServiceBlockingStub.receiveNewTransfer(iou.toProto())
         LOG.info("recieve new transfer from " + offchainTransaction.from + succResponse)
 
@@ -357,6 +356,8 @@ class Hub <T : ChainTransaction, A : ChainAccount> {
             return
         }
         try {
+            if(!Address.wrap(value.address).equals(account.address))
+                return
             var clientEvent = ClientEventType.NOTHING
             when (value.type.number) {
                 Starcoin.HubEventType.HUB_EVENT_NEW_TX_VALUE -> {
@@ -370,6 +371,7 @@ class Hub <T : ChainTransaction, A : ChainAccount> {
             }
             }
             GlobalScope.launch {
+                if(clientEvent!=ClientEventType.NOTHING)
                 eonChannel?.send(clientEvent)
             }
             //dataStore.save(this.hubStatusData)

@@ -101,9 +101,9 @@ data class HubAccount(
                 .toMD5Hex() + ", but get " + newUpdate.data.root.toMD5Hex()
         )
 
-        Preconditions.checkArgument(
-            newUpdate.data.sendAmount == prepareUpdate.sendAmount, "sendAmount"
-        )
+        //Preconditions.checkArgument(
+        //    newUpdate.data.sendAmount == prepareUpdate.sendAmount, "sendAmount"
+        //)
         Preconditions.checkArgument(
             newUpdate.data.receiveAmount == prepareUpdate.receiveAmount,
             String.format(
