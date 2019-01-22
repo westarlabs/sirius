@@ -304,6 +304,8 @@ library ModelLib {
 
     function unmarshalAMTreePathNode(RLPLib.RLPItem memory rlp) internal pure returns (AMTreePathNode memory node) {
         RLPLib.Iterator memory it = RLPDecoder.iterator(rlp);
+        uint len = RLPDecoder.items(rlp);
+        require(len == 4, "AMTreePathNode unmarshal err");
         uint idx;
         while (RLPDecoder.hasNext(it)) {
             RLPLib.RLPItem memory r = RLPDecoder.next(it);
@@ -706,6 +708,8 @@ library ModelLib {
 
     function unmarshalHubRoot(RLPLib.RLPItem memory rlp) internal pure returns (HubRoot memory hub) {
         RLPLib.Iterator memory it = RLPDecoder.iterator(rlp);
+        uint len = RLPDecoder.items(rlp);
+        require(len == 2, "HubRoot unmarshal err");
         uint idx;
         while(RLPDecoder.hasNext(it)) {
             RLPLib.RLPItem memory r = RLPDecoder.next(it);
@@ -725,8 +729,8 @@ library ModelLib {
     }
 
     function hubRootCommonVerify(HubRoot memory root) internal pure {
-        require(root.node.offset == 0);
-        require(root.node.direction == ModelLib.Direction.DIRECTION_ROOT);
+        require(root.node.offset == 0, "offset != 0");
+        require(root.node.direction == ModelLib.Direction.DIRECTION_ROOT, "direction is not root");
     }
 
     struct ContractConstructArgs {

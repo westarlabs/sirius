@@ -64,7 +64,7 @@ contract SiriusService is Sirius {
     }
 
     modifier onlyOwner() {
-        require(msg.sender == owner);
+        require(msg.sender == owner, "not owner");
         doRecovery();
         _;
     }
@@ -128,13 +128,13 @@ contract SiriusService is Sirius {
 
             if(flag) {
                 ModelLib.HubRoot memory root = ModelLib.unmarshalHubRoot(RLPDecoder.toRLPItem(data, true));
-                require(!balances[0].hasRoot);
-                require(root.eon > 0);
-                require(balances[0].eon == root.eon);
+                require(!balances[0].hasRoot, "root exist");
+                require(root.eon > 0, "eon == 0");
+                require(balances[0].eon == root.eon, "eon err");
                 ModelLib.hubRootCommonVerify(root);
                 uint tmp = SafeMath.add(balances[1].root.node.allotment, balances[1].depositMeta.total);
                 uint allotmentTmp = SafeMath.sub(tmp, balances[1].withdrawalMeta.total);
-                require(allotmentTmp == root.node.allotment);
+                require(allotmentTmp == root.node.allotment, "allotment err");
                 balances[0].root = root;
                 balances[0].hasRoot = true;
 
@@ -582,7 +582,7 @@ contract SiriusService is Sirius {
     }
 
     function doRecovery() private {
-        require(!recoveryMode);
+        require(!recoveryMode, "recovery mode err");
 
         //current eon
         uint tmp = SafeMath.sub(block.number, startHeight);
