@@ -1,5 +1,7 @@
 package org.starcoin.sirius.util
 
+import java.util.logging.Level
+import java.util.logging.LogManager
 import java.util.logging.Logger
 import kotlin.reflect.KClass
 import kotlin.reflect.full.companionObject
@@ -49,4 +51,12 @@ fun Loggable.logger(): Logger = logger(this.javaClass)
 // abstract base class to provide logging, intended for companion objects more than classes but works for either
 abstract class WithLogging : Loggable {
     val LOG = logger()
+
+    init {
+        val rootLogger = LogManager.getLogManager().getLogger("")
+        rootLogger.level = Level.ALL
+        for (h in rootLogger.handlers) {
+            h.level = Level.ALL
+        }
+    }
 }
