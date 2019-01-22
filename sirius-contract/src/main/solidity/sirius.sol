@@ -134,7 +134,7 @@ contract SiriusService is Sirius {
                 ModelLib.hubRootCommonVerify(root);
                 uint tmp = SafeMath.add(balances[1].root.node.allotment, balances[1].depositMeta.total);
                 uint allotmentTmp = SafeMath.sub(tmp, balances[1].withdrawalMeta.total);
-                require(allotmentTmp == root.node.allotment, "allotment err");
+require(allotmentTmp == root.node.allotment, ByteUtilLib.appendUintToString("allotment error:",allotmentTmp));
                 balances[0].root = root;
                 balances[0].hasRoot = true;
 
