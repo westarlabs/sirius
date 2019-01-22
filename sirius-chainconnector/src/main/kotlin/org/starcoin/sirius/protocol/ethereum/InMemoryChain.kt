@@ -111,7 +111,7 @@ class InMemoryChain(val autoGenblock: Boolean = true) : EthereumBaseChain() {
         transaction.sign(key)
         val chainNonce = sb.blockchain.repository.getNonce(account.address.toBytes())
         LOG.fine("chainNonce ${account.address} $chainNonce")
-        LOG.fine("${account.address} submitTransaction hash:${transaction.hash()} nonce:${transaction.nonce} contractFunction:${transaction.contractFunction}")
+        LOG.fine("${account.address} submitTransaction hash:${transaction.hash()} nonce:${transaction.nonce} contractFunction:${transaction.contractFunction} dataSize:${transaction.data?.size}")
         account.incAndGetNonce()
         val response = Channel<EthereumBlock?>(1)
         chainAcctor.send(ChainCtlMessage.NewTransaction(transaction, response))
@@ -156,8 +156,8 @@ class InMemoryChain(val autoGenblock: Boolean = true) : EthereumBaseChain() {
 
     override fun newTransaction(account: EthereumAccount,to:Address,value:BigInteger):EthereumTransaction {
         var ethereumTransaction = EthereumTransaction(
-            to, account.getNonce(), 21000.toBigInteger(),
-            210000.toBigInteger(), value
+            to, account.getNonce(), defaultGasPrice,
+            defaultGasLimit, value
         )
         return ethereumTransaction
     }
