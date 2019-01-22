@@ -146,7 +146,7 @@ abstract class ContractTestBase(val contractPath: String, val contractName: Stri
         val info = AMTreeInternalNodeInfo(Hash.random(), amount, Hash.random())
         val node = AMTreePathNode(info.hash(), PathDirection.ROOT, 0, amount)
         val root = HubRoot(node, eon)
-        val data = RLP.dump(HubRoot.serializer(), root)
+        val data = root.toRLP()
         val callResult = contract.callFunction("commit", data)
 
         if (flag) {

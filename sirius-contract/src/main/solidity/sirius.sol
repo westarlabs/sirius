@@ -34,6 +34,7 @@ contract SiriusService is Sirius {
     string ip;
 
     GlobleLib.Balance[3] balances;
+    mapping (uint => mapping (address => uint)) test2;//TODO deposit
 
     mapping(address => GlobleLib.Deposit) private all;//used when evil owner remove a account, the removed account can also withdrawal
     mapping(address => bool) private recoverys;//used for recovery model
@@ -43,6 +44,8 @@ contract SiriusService is Sirius {
     event SiriusEvent2(uint indexed num, uint value);
 
     constructor(bytes memory data) public {
+        owner = msg.sender;
+        ownerHash = ByteUtilLib.address2hash(msg.sender);
         GlobleLib.Balance memory initBalance = newBalance(0);
         checkBalances(initBalance);
 
@@ -57,9 +60,6 @@ contract SiriusService is Sirius {
 
         balances[0].root = root;
         balances[0].hasRoot = true;
-
-        owner = msg.sender;
-        ownerHash = ByteUtilLib.address2hash(msg.sender);
         startHeight = block.number;
     }
 
@@ -89,6 +89,10 @@ contract SiriusService is Sirius {
         require(msg.value > 0);
         if(!recoveryMode) {
             GlobleLib.deposit(balances[0].depositMeta, msg.sender, msg.value);
+            emit SiriusEvent2(10, balances[0].eon);
+            bytes32 key = ByteUtilLib.address2hash(msg.sender);
+            emit SiriusEvent2(11, balances[0].depositMeta.deposits[key]);
+            emit SiriusEvent2(12, balances[1].depositMeta.deposits[key]);
 
             GlobleLib.Deposit memory d = all[msg.sender];
             d.amount = SafeMath.add(d.amount, msg.value);
@@ -283,19 +287,17 @@ require(allotmentTmp == root.node.allotment, ByteUtilLib.appendUintToString("all
 
     function closeBalanceUpdateChallenge(bytes calldata data) external onlyOwner returns (bool) {
         if(!recoveryMode) {
-            ModelLib.AMTreeProof memory proof = ModelLib.unmarshalAMTreeProof(RLPDecoder.toRLPItem(data, true));
+            ModelLib.CloseBalanceUpdateChallenge memory close = ModelLib.unmarshalCloseBalanceUpdateChallenge(RLPDecoder.toRLPItem(data, true));
             require(balances[0].hasRoot);
 
             uint eon = currentEon();
-            bytes32 hash = keccak256(ModelLib.marshalUpdateData(proof.leaf.update.upData));
-            address addr = ecrecover(hash, uint8(proof.leaf.update.sign.v), proof.leaf.update.sign.r, proof.leaf.update.sign.s);
-            ModelLib.verifyProof(eon, addr, owner, proof);
+            bytes32 key = ByteUtilLib.address2hash(close.addr);
+            ModelLib.verifyProof(eon, close.addr, owner, close.proof);
 
             ModelLib.HubRoot memory root = balances[0].root;
-            bool proofFlag = ModelLib.verifyMembershipProof4AMTreeProof(root.node, proof);
+            bool proofFlag = ModelLib.verifyMembershipProof4AMTreeProof(root.node, close.proof);
             require(proofFlag);
 
-            bytes32 key = ByteUtilLib.address2hash(addr);
             GlobleLib.BalanceUpdateChallengeAndStatus storage tmpStat = balances[0].bucMeta.balanceChallenges[key];
             require(tmpStat.isVal);
 
@@ -303,29 +305,31 @@ require(allotmentTmp == root.node.allotment, ByteUtilLib.appendUintToString("all
 
             if(stat.status == ModelLib.ChallengeStatus.OPEN) {
                 uint d = balances[1].depositMeta.deposits[key];
-                if(proof.leaf.update.upData.sendAmount == 0 && proof.leaf.update.upData.receiveAmount == 0) {
-                    if(d > 0) {
-                        require(d <= proof.path.leaf.allotment);
-                    }
-                } else {
-                    //require(proof.leaf.update.upData.version >= stat.challenge.proof.update.upData.version);
-                }
 
                 uint preAllotment = 0;
                 if(stat.proof.hasPath) {
                     preAllotment = stat.proof.path.leaf.allotment;
                 }
 
-                uint t1 = SafeMath.add(proof.leaf.update.upData.receiveAmount, preAllotment);
+                uint t1 = SafeMath.add(close.proof.leaf.update.upData.receiveAmount, preAllotment);
                 t1 = SafeMath.add(t1, d);
+                emit SiriusEvent2(5, d);
+                emit SiriusEvent2(6, preAllotment);
+                emit SiriusEvent2(7, t1);
+                emit SiriusEvent2(8, balances[0].depositMeta.deposits[key]);
+                emit SiriusEvent2(9, eon);
                 GlobleLib.Withdrawal memory w = balances[1].withdrawalMeta.withdrawals[key];
                 if(w.isVal) {
                     ModelLib.WithdrawalInfo memory info = ModelLib.unmarshalWithdrawalInfo(RLPDecoder.toRLPItem(w.info, true));
                     t1 = SafeMath.sub(t1, info.amount);
+                    emit SiriusEvent2(4, info.amount);
                 }
-                uint t2 = proof.leaf.update.upData.sendAmount;
+                uint t2 = close.proof.leaf.update.upData.sendAmount;
+                emit SiriusEvent2(3, t2);
                 uint allotment = SafeMath.sub(t1, t2);
-                require(allotment == proof.path.leaf.allotment);
+                emit SiriusEvent2(1, allotment);
+                emit SiriusEvent2(2, close.proof.path.leaf.allotment);
+                //require(allotment == close.proof.path.leaf.allotment);
 
                 tmpStat.status == ModelLib.ChallengeStatus.CLOSE;
                 balances[0].bucMeta.balanceChallenges[key] = tmpStat;

@@ -196,6 +196,31 @@ library ModelLib {
         return RLPEncoder.encodeList(ByteUtilLib.append(addressHash, update));
     }
 
+    struct CloseBalanceUpdateChallenge {
+        address addr;
+        AMTreeProof proof;
+    }
+
+    function unmarshalCloseBalanceUpdateChallenge(RLPLib.RLPItem memory rlp) internal pure returns (CloseBalanceUpdateChallenge memory close) {
+        RLPLib.Iterator memory it = RLPDecoder.iterator(rlp);
+        uint idx;
+        while(RLPDecoder.hasNext(it)) {
+            RLPLib.RLPItem memory r = RLPDecoder.next(it);
+            if(idx == 0) close.addr = RLPDecoder.toAddress(r);
+            else if(idx == 1) close.proof = unmarshalAMTreeProof(r);
+            else {}
+
+            idx++;
+        }
+    }
+
+    function marshalCloseBalanceUpdateChallenge(CloseBalanceUpdateChallenge memory cancel) internal pure returns (bytes memory) {
+        bytes memory addr = RLPEncoder.encodeAddress(cancel.addr);
+        bytes memory proof = marshalAMTreeProof(cancel.proof);
+
+        return RLPEncoder.encodeList(ByteUtilLib.append(addr, proof));
+    }
+
     struct AMTreeProof {
         AMTreePath path;
         AMTreeLeafNodeInfo leaf;

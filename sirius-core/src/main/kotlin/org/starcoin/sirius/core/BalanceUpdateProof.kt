@@ -35,3 +35,26 @@ data class BalanceUpdateProof(
         }
     }
 }
+
+@Serializable
+@ProtobufSchema(Starcoin.CloseBalanceUpdateChallenge::class)
+data class CloseBalanceUpdateChallenge(
+    @SerialId(1)
+    val address: Address = Address.DUMMY_ADDRESS,
+    @SerialId(2)
+    val proof: AMTreeProof = AMTreeProof.DUMMY_PROOF
+) : SiriusObject() {
+
+    companion object :
+        SiriusObjectCompanion<CloseBalanceUpdateChallenge, Starcoin.CloseBalanceUpdateChallenge>(
+            CloseBalanceUpdateChallenge::class
+        ) {
+
+        var DUMMY_CLOSE_BALANCE_UPDATE_CHALLENGE =
+            CloseBalanceUpdateChallenge(Address.DUMMY_ADDRESS, AMTreeProof.DUMMY_PROOF)
+
+        override fun mock(): CloseBalanceUpdateChallenge {
+            return CloseBalanceUpdateChallenge(Address.random(), AMTreeProof.mock())
+        }
+    }
+}

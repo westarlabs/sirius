@@ -137,6 +137,11 @@ message BalanceUpdateProof {
     required AMTreePath path = 4;
 }
 
+message CloseBalanceUpdateChallenge {
+    required bytes addr = 1;
+    required AMTreeProof proof = 4;
+}
+
 message RegisterParticipantRequest {
     required Participant participant = 1;
     required Update update = 2;
