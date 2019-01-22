@@ -10,7 +10,6 @@ import kotlinx.coroutines.channels.consumeEach
 import kotlinx.coroutines.launch
 import org.starcoin.sirius.channel.EventBus
 import org.starcoin.sirius.core.*
-import org.starcoin.sirius.crypto.CryptoService
 import org.starcoin.sirius.protocol.*
 import org.starcoin.sirius.util.WithLogging
 import java.math.BigInteger
@@ -377,15 +376,14 @@ class HubImpl<T : ChainTransaction, A : ChainAccount>(
         }
     }
 
-    private fun processBalanceUpdateChallenge(challenge: BalanceUpdateChallenge) {
-        val address = CryptoService.generateAddress(challenge.publicKey)
+    private fun processBalanceUpdateChallenge(address: Address, challenge: BalanceUpdateProof) {
         //TODO is nullable
         val proofPath = this.eonState.state.getMembershipProof(address) ?: assertAccountNotNull(address)
         val leafNodeInfo =
             this.eonState.state.findLeafNode(address)?.info as AMTreeLeafNodeInfo? ?: assertAccountNotNull(address)
         //val proof = BalanceUpdateProof(proofPath?.leaf?.nodeInfo?.update, proofPath)
-        val closeBalanceUpdateChallengeRequest = CloseBalanceUpdateChallenge(leafNodeInfo.update, proofPath)
-        this.contract.closeBalanceUpdateChallenge(owner, closeBalanceUpdateChallengeRequest)
+        //val closeBalanceUpdateChallengeRequest = BalanceUpdateProof(proofPath)
+        this.contract.closeBalanceUpdateChallenge(owner, proofPath)
     }
 
     private suspend fun processWithdrawal(from: Address, withdrawal: Withdrawal) {
@@ -482,7 +480,7 @@ class HubImpl<T : ChainTransaction, A : ChainAccount>(
                 val input = contractFunction.decode(tx.data)
                     ?: throw RuntimeException("$contractFunction decode tx:${txResult.tx} fail.")
                 LOG.info("$contractFunction: $input")
-                this.processBalanceUpdateChallenge(input)
+                this.processBalanceUpdateChallenge(tx.from!!, input)
             }
             is CancelWithdrawalFunction -> {
                 val input = contractFunction.decode(tx.data)

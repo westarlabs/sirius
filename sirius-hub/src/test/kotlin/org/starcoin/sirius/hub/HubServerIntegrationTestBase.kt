@@ -602,10 +602,8 @@ abstract class HubServerIntegrationTestBase<T : ChainTransaction, A : ChainAccou
     }
 
     private fun balanceUpdateChallenge(account: LocalAccount<A>, update: Update) {
-        val challenge = BalanceUpdateChallenge(
-            BalanceUpdateProof(update, account.state!!.previous!!.proof),
-            account.kp.keyPair.public
-        )
+        //TODO
+        val challenge = BalanceUpdateProof(account.state!!.previous!!.proof!!)
 
         val txHash = contract.openBalanceUpdateChallenge(account.chainAccount, challenge)
         val future = this.registerTxHook(txHash)
