@@ -11,7 +11,10 @@ import org.junit.Before
 import org.junit.Test
 import org.starcoin.proto.HubServiceGrpc
 import org.starcoin.proto.Starcoin
-import org.starcoin.sirius.core.*
+import org.starcoin.sirius.core.Address
+import org.starcoin.sirius.core.ContractHubInfo
+import org.starcoin.sirius.core.Eon
+import org.starcoin.sirius.core.HubAccount
 import org.starcoin.sirius.crypto.CryptoService
 import org.starcoin.sirius.hub.Configuration
 import org.starcoin.sirius.hub.HubServer
@@ -56,7 +59,7 @@ class WalletTest {
         chain = InMemoryChain(true)
 
         val owner = EthereumAccount(configuration.ownerKey)
-        chain.miningCoin(owner.address, EtherUtil.convert(Int.MAX_VALUE.toLong(), EtherUtil.Unit.ETHER))
+        chain.miningCoin(owner, EtherUtil.convert(Int.MAX_VALUE.toLong(), EtherUtil.Unit.ETHER))
         alice = EthereumAccount(CryptoService.generateCryptoKey())
         bob = EthereumAccount(CryptoService.generateCryptoKey())
 
