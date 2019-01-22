@@ -64,10 +64,10 @@ object CommitFunction : ContractFunction<HubRoot>("commit", HubRoot::class)
 object InitiateWithdrawalFunction : ContractFunction<Withdrawal>("initiateWithdrawal", Withdrawal::class)
 object CancelWithdrawalFunction : ContractFunction<CancelWithdrawal>("cancelWithdrawal", CancelWithdrawal::class)
 object OpenBalanceUpdateChallengeFunction :
-    ContractFunction<BalanceUpdateChallenge>("openBalanceUpdateChallenge", BalanceUpdateChallenge::class)
+    ContractFunction<BalanceUpdateProof>("openBalanceUpdateChallenge", BalanceUpdateProof::class)
 
 object CloseBalanceUpdateChallengeFunction :
-    ContractFunction<CloseBalanceUpdateChallenge>("closeBalanceUpdateChallenge", CloseBalanceUpdateChallenge::class)
+    ContractFunction<AMTreeProof>("closeBalanceUpdateChallenge", AMTreeProof::class)
 
 object OpenTransferDeliveryChallengeFunction :
     ContractFunction<TransferDeliveryChallenge>("openTransferDeliveryChallenge", TransferDeliveryChallenge::class)
@@ -97,11 +97,11 @@ abstract class HubContract<A : ChainAccount> {
         return this.queryContractFunction(account, "queryHubCommit", HubRoot::class, eon)
     }
 
-    fun queryCurrentBalanceUpdateChallenge(account: A, address: Address): BalanceUpdateChallenge? {
+    fun queryCurrentBalanceUpdateChallenge(account: A, address: Address): BalanceUpdateProof? {
         return this.queryContractFunction(
             account,
             "queryCurrentBalanceUpdateChallenge",
-            BalanceUpdateChallenge::class,
+            BalanceUpdateProof::class,
             address
         )
     }
@@ -132,14 +132,14 @@ abstract class HubContract<A : ChainAccount> {
         return this.executeContractFunction(account, CancelWithdrawalFunction, input)
     }
 
-    fun openBalanceUpdateChallenge(account: A, input: BalanceUpdateChallenge): Hash {
+    fun openBalanceUpdateChallenge(account: A, input: BalanceUpdateProof): Hash {
         return this.executeContractFunction(
             account,
             OpenBalanceUpdateChallengeFunction, input
         )
     }
 
-    fun closeBalanceUpdateChallenge(account: A, input: CloseBalanceUpdateChallenge): Hash {
+    fun closeBalanceUpdateChallenge(account: A, input: AMTreeProof): Hash {
         return this.executeContractFunction(
             account,
             CloseBalanceUpdateChallengeFunction, input

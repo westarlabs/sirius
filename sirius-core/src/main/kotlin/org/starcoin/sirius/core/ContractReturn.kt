@@ -13,7 +13,7 @@ data class ContractReturn(@SerialId(1) val hasVal: Boolean, @SerialId(2) val pay
 
     companion object : SiriusObjectCompanion<ContractReturn, Starcoin.ProtoContractReturn>(ContractReturn::class) {
         override fun mock(): ContractReturn {
-            return ContractReturn(true, ByteArrayWrapper(BalanceUpdateChallenge.mock().toRLP()))
+            return ContractReturn(true, ByteArrayWrapper(BalanceUpdateProof.mock().toRLP()))
         }
     }
 }

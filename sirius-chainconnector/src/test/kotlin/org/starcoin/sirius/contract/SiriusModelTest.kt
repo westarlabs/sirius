@@ -35,16 +35,6 @@ class SiriusModelTest : ContractTestBase("solidity/test_all", "test_all") {
     }
 
     @Test
-    fun testBalanceUpdateChallenge() {
-        doTest(BalanceUpdateChallenge::class, "balance_update_challenge_test")
-    }
-
-    @Test
-    fun testCloseBalanceUpdateChallenge() {
-        doTest(CloseBalanceUpdateChallenge::class, "close_balance_update_challenge_test")
-    }
-
-    @Test
     fun testOpenTransferDeliveryChallengeRequest() {
         doTest(TransferDeliveryChallenge::class, "open_transfer_delivery_challenge_request_test")
     }

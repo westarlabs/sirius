@@ -130,21 +130,11 @@ message CancelWithdrawal {
     required AMTreeProof proof = 3;
 }
 
-message BalanceUpdateChallenge {
-    required BalanceUpdateProof proof = 1;
-    required bytes publicKey = 2;
-}
-
 message BalanceUpdateProof {
     required bool hasUp = 1;
     required Update update = 2;
     required bool hasPath = 3;
-    required AMTreeProof proof = 4;
-}
-
-message CloseBalanceUpdateChallenge {
-    required Update update = 1;
-    required AMTreeProof proof = 2;
+    required AMTreePath path = 4;
 }
 
 message RegisterParticipantRequest {
@@ -204,7 +194,7 @@ enum ChallengeStatus {
 }
 
 message BalanceUpdateChallengeStatus {
-    required BalanceUpdateChallenge challenge = 1;
+    required BalanceUpdateProof proof = 1;
     required ChallengeStatus status = 2;
 }
 

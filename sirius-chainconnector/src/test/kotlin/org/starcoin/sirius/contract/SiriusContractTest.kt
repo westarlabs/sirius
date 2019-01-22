@@ -16,6 +16,7 @@ class SiriusContractTest : ContractTestBase("solidity/SiriusService", "SiriusSer
     val ip = "192.168.0.0.1:80"
     val blocksPerEon = 8
     lateinit var preProof: AMTreeProof
+    lateinit var currentTree : AMTree
 
 
     override fun getContractConstructArg(): Any? {
@@ -133,6 +134,10 @@ class SiriusContractTest : ContractTestBase("solidity/SiriusService", "SiriusSer
 
     @Test
     fun testOpenBalanceUpdateChallenge() {
+        openBalanceUpdateChallenge(false)
+    }
+
+    private fun openBalanceUpdateChallenge(flag: Boolean) {
         val eon = 1
         val total = createEon(eon, true, true)
 
@@ -147,10 +152,14 @@ class SiriusContractTest : ContractTestBase("solidity/SiriusService", "SiriusSer
         }
 
         val update2 = newUpdate(eon + 1, 1, deposit)
-        commitRealData(eon + 1, update2, total, blocksPerEon * deposit, true, txs)
+        currentTree = commitRealData(eon + 1, update2, total, blocksPerEon * deposit, true, txs)
 
-        val update3 = newUpdate(eon + 1, 2, 0)
-        val bup = BalanceUpdateProof(true, update3, true, preProof)
+        var update3: Update
+        when (flag) {
+            true -> update3 = update2
+            false -> update3 = newUpdate(eon + 1, 2, 0)
+        }
+        val bup = BalanceUpdateProof(true, update3, true, preProof.path)
 
         val data = bup.toRLP()
         val callResult = contract.callFunction("openBalanceUpdateChallenge", data)
@@ -160,18 +169,15 @@ class SiriusContractTest : ContractTestBase("solidity/SiriusService", "SiriusSer
 
     @Test
     fun testCloseBalanceUpdateChallenge() {
-        val eon = 1
-        testOpenBalanceUpdateChallenge()
-        val update3 = newUpdate(eon, 3, 0)//other
-        val update4 = newUpdate(eon, 4, 0)//mine
-        val path = newPath(ethKey2Address(callUser), update3)
-        val leaf3 = newLeafNodeInfo(ethKey2Address(callUser), update4)
-        val amtp = AMTreeProof(path, leaf3)
-        val close = CloseBalanceUpdateChallenge(update4, amtp)
-        val data = close.toRLP()
-        val callResult = contract.callFunction("closeBalanceUpdateChallenge", data)
-        assert(callResult.returnValue as Boolean)
-        verifyReturn(callResult)
+//        val eon = 1
+//        openBalanceUpdateChallenge(true)
+//
+//        val amtp = currentTree.getMembershipProof(callUser.address)!!
+//        val close = CloseBalanceUpdateChallenge(update4, amtp)
+//        val data = close.toRLP()
+//        val callResult = contract.callFunction("closeBalanceUpdateChallenge", data)
+//        assert(callResult.returnValue as Boolean)
+//        verifyReturn(callResult)
     }
 
     @Test

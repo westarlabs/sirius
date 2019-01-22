@@ -105,13 +105,13 @@ library GlobleLib {
 
     ////////////////////////////////////////Balance challenge
     struct BalanceUpdateChallengeAndStatus {
-        bytes challenge;//bytes for ModelLib.BalanceUpdateChallenge
+        bytes challenge;//bytes for ModelLib.BalanceUpdateProof
         ModelLib.ChallengeStatus status;
         bool isVal;
     }
 
     function change2BalanceUpdateChallengeStatus(BalanceUpdateChallengeAndStatus memory bas) internal pure returns(ModelLib.BalanceUpdateChallengeStatus memory bs) {
-        bs.challenge = ModelLib.unmarshalBalanceUpdateChallenge(RLPDecoder.toRLPItem(bas.challenge, true));
+        bs.proof = ModelLib.unmarshalBalanceUpdateProof(RLPDecoder.toRLPItem(bas.challenge, true));
         bs.status = bas.status;
     }
 
@@ -337,10 +337,14 @@ library ModelLib {
         bytes32 leafHash = keccak256(marshalAMTreeLeafNodeInfo(proof.leaf));
         require(leafHash == proof.path.leaf.nodeHash);
 
+        return verifyMembershipProof4AMTreePath(root, proof.path);
+    }
+
+    function verifyMembershipProof4AMTreePath(AMTreePathNode memory root, AMTreePath memory path) internal pure returns(bool) {
         //AMTreePath -> root
-        AMTreePathNode memory computeNode = proof.path.leaf;
-        for (uint i=0;i<proof.path.nodes.length;i++) {
-            AMTreePathNode memory node = proof.path.nodes[i];
+        AMTreePathNode memory computeNode = path.leaf;
+        for (uint i=0;i<path.nodes.length;i++) {
+            AMTreePathNode memory node = path.nodes[i];
             if (node.direction == Direction.DIRECTION_LEFT) {
                 computeNode.direction = Direction.DIRECTION_RIGHT;
                 computeNode = combineAMTreePathNode(node, computeNode);
@@ -668,7 +672,7 @@ library ModelLib {
         bool hasUp;
         Update update;
         bool hasPath;
-        AMTreeProof proof;
+        AMTreePath path;
     }
 
     function unmarshalBalanceUpdateProof(RLPLib.RLPItem memory rlp) internal pure returns (BalanceUpdateProof memory bup) {
@@ -679,7 +683,7 @@ library ModelLib {
             if(idx == 0) bup.hasUp = RLPDecoder.toBool(r);
             else if(idx == 1) bup.update = unmarshalUpdate(r);
             else if(idx == 2) bup.hasPath = RLPDecoder.toBool(r);
-            else if(idx == 3) bup.proof = unmarshalAMTreeProof(r);
+            else if(idx == 3) bup.path = unmarshalAMTreePath(r);
             else {}
 
             idx++;
@@ -690,34 +694,9 @@ library ModelLib {
         bytes memory hasUp = RLPEncoder.encodeBool(bup.hasUp);
         bytes memory update = marshalUpdate(bup.update);
         bytes memory hasPath = RLPEncoder.encodeBool(bup.hasPath);
-        bytes memory proof = marshalAMTreeProof(bup.proof);
+        bytes memory path = marshalAMTreePath(bup.path);
 
-        return RLPEncoder.encodeList(ByteUtilLib.append(ByteUtilLib.append(ByteUtilLib.append(hasUp, update), hasPath), proof));
-    }
-
-    struct CloseBalanceUpdateChallenge {
-        Update update;
-        AMTreeProof proof;
-    }
-
-    function unmarshalCloseBalanceUpdateChallenge(RLPLib.RLPItem memory rlp) internal pure returns (CloseBalanceUpdateChallenge memory close) {
-        RLPLib.Iterator memory it = RLPDecoder.iterator(rlp);
-        uint idx;
-        while(RLPDecoder.hasNext(it)) {
-            RLPLib.RLPItem memory r = RLPDecoder.next(it);
-            if(idx == 0) close.update = unmarshalUpdate(r);
-            else if(idx == 1) close.proof = unmarshalAMTreeProof(r);
-            else {}
-
-            idx++;
-        }
-    }
-
-    function marshalCloseBalanceUpdateChallenge(CloseBalanceUpdateChallenge memory close) internal pure returns (bytes memory) {
-        bytes memory update = marshalUpdate(close.update);
-        bytes memory proof = marshalAMTreeProof(close.proof);
-
-        return RLPEncoder.encodeList(ByteUtilLib.append(update, proof));
+        return RLPEncoder.encodeList(ByteUtilLib.append(ByteUtilLib.append(ByteUtilLib.append(hasUp, update), hasPath), path));
     }
 
     struct HubRoot {
@@ -934,7 +913,7 @@ library ModelLib {
     }
 
     struct BalanceUpdateChallengeStatus {
-        BalanceUpdateChallenge challenge;
+        BalanceUpdateProof proof;
         ChallengeStatus status;
     }
 
@@ -943,7 +922,7 @@ library ModelLib {
         uint idx;
         while(RLPDecoder.hasNext(it)) {
             RLPLib.RLPItem memory r = RLPDecoder.next(it);
-            if(idx == 0) challengeStatus.challenge = unmarshalBalanceUpdateChallenge(r);
+            if(idx == 0) challengeStatus.proof = unmarshalBalanceUpdateProof(r);
             else if(idx == 1) challengeStatus.status = unmarshalChallengeStatus(r);
             else {}
 
@@ -952,10 +931,10 @@ library ModelLib {
     }
 
     function marshalBalanceUpdateChallengeStatus(BalanceUpdateChallengeStatus memory challengeStatus) internal pure returns (bytes memory) {
-        bytes memory challenge = marshalBalanceUpdateChallenge(challengeStatus.challenge);
+        bytes memory proof = marshalBalanceUpdateProof(challengeStatus.proof);
         bytes memory status = marshalChallengeStatus(challengeStatus.status);
 
-        return RLPEncoder.encodeList(ByteUtilLib.append(challenge, status));
+        return RLPEncoder.encodeList(ByteUtilLib.append(proof, status));
     }
 
     enum ChallengeStatus {
