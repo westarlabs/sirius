@@ -15,6 +15,7 @@ class SiriusContractTest : ContractTestBase("solidity/SiriusService", "SiriusSer
     private val deposit: Long = 10000
     val ip = "192.168.0.0.1:80"
     val blocksPerEon = 8
+    lateinit var preProof: AMTreeProof
 
 
     override fun getContractConstructArg(): Any? {
@@ -105,10 +106,10 @@ class SiriusContractTest : ContractTestBase("solidity/SiriusService", "SiriusSer
             testDeposit(true)
         }
 
-        val amount: BigInteger = BigInteger.valueOf(100)
+        val amount: BigInteger = BigInteger.valueOf(deposit)
 
-        val proof = preTree.getMembershipProof(callUser.address)!!
-        val w = Withdrawal(proof, amount)
+        preProof = preTree.getMembershipProof(callUser.address)!!
+        val w = Withdrawal(preProof, amount)
         val data = w.toRLP()
         val callResult = contract.callFunction("initiateWithdrawal", data)
         assert(callResult.returnValue as Boolean)
@@ -119,14 +120,10 @@ class SiriusContractTest : ContractTestBase("solidity/SiriusService", "SiriusSer
     fun testCancelWithdrawal() {
         val eon = 1
         testInitiateWithdrawal()
-        val update = newUpdate(eon, 2, 950)
+        val update = newUpdate(eon, 2, 135000)
         val cancel =
             CancelWithdrawal(
-                callUser.address, update, newProof(
-                    ethKey2Address(
-                        callUser
-                    ), update
-                )
+                callUser.address, update, preProof
             )
         val data = cancel.toRLP()
         val callResult = contract.callFunction("cancelWithdrawal", data)

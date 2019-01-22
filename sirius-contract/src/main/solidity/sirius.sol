@@ -194,32 +194,42 @@ contract SiriusService is Sirius {
     function cancelWithdrawal(bytes calldata data) external returns (bool) {
         if(!recoveryMode) {
             ModelLib.CancelWithdrawal memory cancel = ModelLib.unmarshalCancelWithdrawal(RLPDecoder.toRLPItem(data, true));
-            //uint currentEon = currentEon();
-            //require(cancel.update.upData.eon >= 0 && cancel.update.upData.eon == currentEon);
-
+            require((cancel.update.upData.eon > cancel.proof.leaf.update.upData.eon || (cancel.update.upData.eon == cancel.proof.leaf.update.upData.eon && cancel.update.upData.version > cancel.proof.leaf.update.upData.version)));
             bytes32 key = ByteUtilLib.address2hash(cancel.addr);
-            bool signFlag = ModelLib.verifySign4Update(cancel.update.upData, cancel.update.sign, cancel.addr);
-            require(signFlag);
+            require(key == cancel.proof.leaf.addressHash);
 
-            ModelLib.HubRoot memory latestRoot = latestRoot();
-            bool proofFlag = ModelLib.verifyMembershipProof4AMTreeProof(latestRoot.node, cancel.proof);
+            //verify proof
+            uint hubRootEon = SafeMath.add(cancel.proof.leaf.update.upData.eon, 1);
+            ModelLib.HubRoot memory tmpRoot = queryHubRootByEon(hubRootEon);
+            bool proofFlag = ModelLib.verifyMembershipProof4AMTreeProof(tmpRoot.node, cancel.proof);
             require(proofFlag);
 
-            //address addr = ByteUtilLib.pubkey2Address(cancel.participant.publicKey);
-            //bytes32 key = ByteUtilLib.address2hash(cancel.addr);
+            //verify Update
+            bool signFlag = ModelLib.verifySign4Update(cancel.update.upData, cancel.update.sign, cancel.addr);
+            require(signFlag);
+            bool hubSignFlag = ModelLib.verifySign4Update(cancel.update.upData, cancel.update.hubSign, owner);
+            require(hubSignFlag);
 
-            GlobleLib.Withdrawal storage with = balances[0].withdrawalMeta.withdrawals[key];
-            if(with.isVal) {
-                if(with.stat == GlobleLib.WithdrawalStatusType.INIT) {
-                    ModelLib.WithdrawalInfo memory tmpInfo = ModelLib.unmarshalWithdrawalInfo(RLPDecoder.toRLPItem(with.info, true));
-                    uint tmp = SafeMath.sub(SafeMath.add(cancel.proof.path.leaf.allotment, cancel.update.upData.receiveAmount), cancel.update.upData.sendAmount);
-                    if (tmpInfo.amount > tmp) {
-                        with.stat = GlobleLib.WithdrawalStatusType.CANCEL;
-                        balances[0].withdrawalMeta.withdrawals[key] = with;
-                        return true;
+            for(uint i=0;i<balances.length;i++) {
+                GlobleLib.Withdrawal memory tmpWith = balances[i].withdrawalMeta.withdrawals[key];
+
+                if(tmpWith.isVal && tmpWith.stat != GlobleLib.WithdrawalStatusType.CANCEL && tmpWith.stat != GlobleLib.WithdrawalStatusType.CONFIRMED) {
+                    GlobleLib.Withdrawal storage with = balances[i].withdrawalMeta.withdrawals[key];
+                    if(with.stat == GlobleLib.WithdrawalStatusType.INIT) {
+                        ModelLib.WithdrawalInfo memory tmpInfo = ModelLib.unmarshalWithdrawalInfo(RLPDecoder.toRLPItem(with.info, true));
+                        uint tmp = SafeMath.sub(SafeMath.add(cancel.proof.path.leaf.allotment, cancel.update.upData.receiveAmount), cancel.update.upData.sendAmount);
+                        if (tmpInfo.amount > tmp) {
+                            with.stat = GlobleLib.WithdrawalStatusType.CANCEL;
+                        }
                     }
                 }
+
+                if(tmpWith.isVal) {
+                    break;
+                }
             }
+
+            return true;
         }
         return false;
     }
@@ -532,17 +542,20 @@ contract SiriusService is Sirius {
 
     function withdrawalProcessing(bytes32 key) private view returns (bool flag) {
         flag = false;
+
         for(uint i=0;i<balances.length;i++) {
-            if(balances[i].withdrawalMeta.withdrawals[key].isVal) {
-                GlobleLib.Withdrawal memory with = balances[i].withdrawalMeta.withdrawals[key];
+            GlobleLib.Withdrawal memory with = balances[i].withdrawalMeta.withdrawals[key];
 
-                if(with.stat != GlobleLib.WithdrawalStatusType.CANCEL && with.stat != GlobleLib.WithdrawalStatusType.CONFIRMED) {
-                    flag = true;
-                }
+            if(with.isVal && with.stat != GlobleLib.WithdrawalStatusType.CANCEL && with.stat != GlobleLib.WithdrawalStatusType.CONFIRMED) {
+                flag = true;
+            }
 
+            if(with.isVal) {
                 break;
             }
         }
+
+        return flag;
     }
 
     function latestRoot() private view returns (ModelLib.HubRoot memory) {
@@ -560,6 +573,18 @@ contract SiriusService is Sirius {
         }
 
         return preRoot;
+    }
+
+    function queryHubRootByEon(uint eon) private view returns (ModelLib.HubRoot memory) {
+        if(balances[0].eon == eon) {
+            return balances[0].root;
+        } else if(balances[1].eon == eon) {
+            return balances[1].root;
+        } else if(balances[2].eon == eon) {
+            return balances[2].root;
+        } else {
+            revert();
+        }
     }
 
     function currentEon() private view returns (uint) {
