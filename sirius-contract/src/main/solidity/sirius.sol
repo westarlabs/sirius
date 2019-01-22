@@ -184,7 +184,7 @@ contract SiriusService is Sirius {
 
             balances[0].withdrawalMeta.addrs.push(addr);
             balances[0].withdrawalMeta.withdrawals[key] = with;
-            balances[0].withdrawalMeta.total += init.amount;
+            balances[0].withdrawalMeta.total = SafeMath.add(balances[0].withdrawalMeta.total, init.amount);
             return true;
         } else {
             return false;
@@ -220,6 +220,7 @@ contract SiriusService is Sirius {
                         uint tmp = SafeMath.sub(SafeMath.add(cancel.proof.path.leaf.allotment, cancel.update.upData.receiveAmount), cancel.update.upData.sendAmount);
                         if (tmpInfo.amount > tmp) {
                             with.stat = GlobleLib.WithdrawalStatusType.CANCEL;
+                            balances[i].withdrawalMeta.total = SafeMath.sub(balances[i].withdrawalMeta.total, tmpInfo.amount);
                         }
                     }
                 }
