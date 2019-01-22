@@ -169,15 +169,13 @@ class SiriusContractTest : ContractTestBase("solidity/SiriusService", "SiriusSer
 
     @Test
     fun testCloseBalanceUpdateChallenge() {
-//        val eon = 1
-//        openBalanceUpdateChallenge(true)
-//
-//        val amtp = currentTree.getMembershipProof(callUser.address)!!
-//        val close = CloseBalanceUpdateChallenge(update4, amtp)
-//        val data = close.toRLP()
-//        val callResult = contract.callFunction("closeBalanceUpdateChallenge", data)
-//        assert(callResult.returnValue as Boolean)
-//        verifyReturn(callResult)
+        openBalanceUpdateChallenge(true)
+
+        val amtp = currentTree.getMembershipProof(callUser.address)!!
+        val data = amtp.toRLP()
+        val callResult = contract.callFunction("closeBalanceUpdateChallenge", data)
+        assert(callResult.returnValue as Boolean)
+        verifyReturn(callResult)
     }
 
     @Test
