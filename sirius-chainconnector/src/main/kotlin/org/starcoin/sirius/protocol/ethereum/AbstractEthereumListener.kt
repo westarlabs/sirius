@@ -7,8 +7,14 @@ import org.ethereum.net.message.Message
 import org.ethereum.net.p2p.HelloMessage
 import org.ethereum.net.rlpx.Node
 import org.ethereum.net.server.Channel
+import org.starcoin.sirius.core.Hash
+import org.starcoin.sirius.core.toHash
+import org.starcoin.sirius.lang.hexToByteArray
+import org.starcoin.sirius.util.WithLogging
 
 abstract class AbstractEthereumListener : EthereumListener {
+
+    val traceMap = mutableMapOf<Hash, String>()
 
     override fun onSyncDone(state: EthereumListener.SyncState) {
     }
@@ -30,6 +36,8 @@ abstract class AbstractEthereumListener : EthereumListener {
     }
 
     override fun onVMTraceCreated(transactionHash: String, trace: String) {
+        //LOG.fine("chain vm trace $transactionHash $trace")
+        traceMap[transactionHash.hexToByteArray().toHash()] = trace
     }
 
     override fun onBlock(blockSummary: BlockSummary) {
@@ -57,8 +65,11 @@ abstract class AbstractEthereumListener : EthereumListener {
     }
 
     override fun trace(output: String) {
+        LOG.fine("chain trace $output")
     }
 
     override fun onNoConnections() {
     }
+
+    companion object : WithLogging()
 }
