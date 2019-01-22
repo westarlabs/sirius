@@ -428,9 +428,15 @@ abstract class HubServerIntegrationTestBase<T : ChainTransaction, A : ChainAccou
 
     private fun verifyHubRoot(hubRoot: HubRoot) {
         LOG.info("verifyHubRoot:" + hubRoot.eon)
-        val contractRoot = contract.getLatestRoot(owner)
+        var contractRoot = contract.getLatestRoot(owner)
         Assert.assertNotNull(contractRoot)
         // ensure contract and hub root is equals.
+        while (hubRoot != contractRoot) {
+            //TODO
+            println("Wait to getLatestRoot again.")
+            sleep(1000)
+            contractRoot = contract.getLatestRoot(owner)
+        }
         Assert.assertEquals(hubRoot, contractRoot)
     }
 

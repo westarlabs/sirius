@@ -7,6 +7,7 @@ import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.channels.ReceiveChannel
 import kotlinx.coroutines.channels.actor
 import kotlinx.coroutines.channels.consumeEach
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import org.starcoin.sirius.channel.EventBus
 import org.starcoin.sirius.core.*
@@ -82,11 +83,11 @@ class HubImpl<T : ChainTransaction, A : ChainAccount>(
                     )
                     it.extAction()
                 }
-                is HubAction.ChainTransactionAction<*> -> {
-                    processTransaction(it.txResult)
-                }
                 is HubAction.BlockAction<*> -> {
                     processBlock(it.block)
+                }
+                is HubAction.ChainTransactionAction<*> -> {
+                    processTransaction(it.txResult)
                 }
             }
         }
@@ -452,7 +453,20 @@ class HubImpl<T : ChainTransaction, A : ChainAccount>(
             null -> {
                 val deposit = Deposit(tx.from!!, tx.amount)
                 LOG.info("Deposit:" + deposit.toJSON())
-                this.processDeposit(deposit)
+                val blockNumber = txResult.receipt.blockNumber
+                val eon = Eon.calculateEon(startBlockNumber, blockNumber.longValueExact(), blocksPerEon)
+                if (eon.id > this.currentEon().id) {
+                    GlobalScope.launch {
+                        while (eon.id > currentEon().id) {
+                            //TODO
+                            LOG.info("Receive next new eon Deposit, so wait.")
+                            delay(1000)
+                        }
+                        processDeposit(deposit)
+                    }
+                } else {
+                    this.processDeposit(deposit)
+                }
             }
             is CommitFunction -> {
                 val hubRoot = contractFunction.decode(tx.data)!!
