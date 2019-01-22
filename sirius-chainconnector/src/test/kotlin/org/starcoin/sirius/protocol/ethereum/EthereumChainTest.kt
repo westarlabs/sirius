@@ -11,20 +11,23 @@ import org.starcoin.sirius.protocol.Chain
 import org.starcoin.sirius.protocol.ChainAccount
 import org.web3j.crypto.WalletUtils
 import java.io.File
+import java.util.concurrent.atomic.AtomicLong
 import kotlin.properties.Delegates
 
 
-class EthereumChainTest : EtherumContainer() {
+class EthereumChainTest : EtherumServer(true) {
     private var chain: Chain<ChainTransaction, Block<ChainTransaction>, ChainAccount> by Delegates.notNull()
     private val alice = EthereumAccount(CryptoService.generateCryptoKey())
     private val bob = EthereumAccount(CryptoService.generateCryptoKey())
     private var etherbase: EthereumAccount by Delegates.notNull()
+    private var ethchain: EthereumChain by Delegates.notNull()
 
     @Before
     fun setUp() {
         this.ethStart()
-        etherbase = EthereumAccount(etherbase())
-        val ethchain = EthereumChain()
+        ethchain = EthereumChain()
+        val etherbaseKey = etherbaseKey()
+        etherbase = EthereumAccount(etherbaseKey, AtomicLong(ethchain.getNonce(etherbaseKey.address).longValueExact()))
         chain = ethchain as Chain<ChainTransaction, Block<ChainTransaction>, ChainAccount>
     }
 
@@ -35,20 +38,18 @@ class EthereumChainTest : EtherumContainer() {
 
     @Test
     fun testSubmitTransaction() {
-        val balance = chain.getBalance(etherbase.address)
-        Assert.assertNotSame(0.toBigInteger(), balance)
-        val tx = chain.newTransaction(etherbase, alice.address, 1.toBigInteger())
+        val transAmount = 100.toBigInteger()
+        val tx = chain.newTransaction(etherbase, alice.address, transAmount)
         val hash = chain.submitTransaction(etherbase, tx)
         var receipt: Receipt? = null
-        for (i in 1..4) {
+        while (true) { // Wait transaction being processed
             Thread.sleep(1000)
             receipt = chain.getTransactionReceipts(ArrayList<Hash>(1).apply { this.add(hash) })[0]
             if (receipt != null) break
         }
-        Assert.assertEquals(1, receipt!!.status)
-        Assert.assertEquals(1.toBigInteger(), chain.getBalance(alice.address))
+        Assert.assertEquals(true, receipt!!.status)
+        Assert.assertEquals(transAmount, chain.getBalance(alice.address))
     }
-
 
     @Test
     fun testGetBlock() {
@@ -57,19 +58,23 @@ class EthereumChainTest : EtherumContainer() {
     }
 }
 
-open class EtherumContainer {
+open class EtherumServer(var started: Boolean) {
     private val keystore = "/tmp/geth_data/keystore"
-    private val script = "scripts/docker.sh"
+    private val script = "scrpts/docker.sh"
     private val etherbasePasswd = "starcoinmakeworldbetter"
 
     fun ethStart() {
+        if (this.started) return
         scriptExec("clean")
         scriptExec("run")
     }
 
-    fun ethStop() = scriptExec("clean")
+    fun ethStop() {
+        if (this.started) return
+        scriptExec("clean")
+    }
 
-    fun etherbase(): CryptoKey {
+    fun etherbaseKey(): CryptoKey {
         val credentials = WalletUtils.loadCredentials(
             etherbasePasswd,
             File(keystore).let {

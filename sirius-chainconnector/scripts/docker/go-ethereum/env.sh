@@ -17,8 +17,8 @@ clear(){
 }
 
 init_genesis(){
-    etherbase=$(new_account $etherbase_passwd)
-    sed  "s/ETHERBASE/${etherbase}/" genesis.json.template > genesis.json
+    etherbase=0x$(new_account $etherbase_passwd)
+    sed  "s/ETHERBASE/${etherbase}/g" genesis.json.template > genesis.json
 }
 
 init_blockchain(){
