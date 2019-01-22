@@ -134,16 +134,25 @@ class SiriusContractTest : ContractTestBase("solidity/SiriusService", "SiriusSer
     @Test
     fun testOpenBalanceUpdateChallenge() {
         val eon = 1
-        createEon(1)
+        val total = createEon(eon, true, true)
 
-        val update1 = newUpdate(eon, 1, 0)//other
-        val path = newPath(ethKey2Address(callUser), update1)
-        val update2 = newUpdate(eon, 1, 0)//mine
-        val leaf2 = newLeafNodeInfo(ethKey2Address(callUser), update2)
-        val amtp = AMTreeProof(path, leaf2)
-        val bup = BalanceUpdateProof(true, update2, true, amtp)
-        val buc = BalanceUpdateChallenge(bup, callUser.keyPair.public)
-        val data = buc.toRLP()
+        val txs = mutableListOf<OffchainTransaction>()
+        val update1 = newUpdate(eon, 1, 0)
+        val ct = 7
+        val count = ct * deposit
+        val preTree = commitRealData(eon, update1, total - count, count, true, txs)
+        preProof = preTree.getMembershipProof(callUser.address)!!
+        for (i in 0..blocksPerEon) {
+            testDeposit(true)
+        }
+
+        val update2 = newUpdate(eon + 1, 1, deposit)
+        commitRealData(eon + 1, update2, total, blocksPerEon * deposit, true, txs)
+
+        val update3 = newUpdate(eon + 1, 2, 0)
+        val bup = BalanceUpdateProof(true, update3, true, preProof)
+
+        val data = bup.toRLP()
         val callResult = contract.callFunction("openBalanceUpdateChallenge", data)
         assert(callResult.returnValue as Boolean)
         verifyReturn(callResult)

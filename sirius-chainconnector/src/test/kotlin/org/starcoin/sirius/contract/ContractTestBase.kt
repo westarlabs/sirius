@@ -168,7 +168,7 @@ abstract class ContractTestBase(val contractPath: String, val contractName: Stri
         val node = tree.root.toAMTreePathNode()
 
         val root = HubRoot(node, realEon)
-        val data = RLP.dump(HubRoot.serializer(), root)
+        val data = root.toRLP()
         val callResult = contract.callFunction("commit", data)
 
         if (flag) {

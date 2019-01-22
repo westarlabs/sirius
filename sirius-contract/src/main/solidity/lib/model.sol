@@ -644,8 +644,7 @@ library ModelLib {
     }
 
     struct BalanceUpdateChallenge {
-        BalanceUpdateProof proof;
-        bytes publicKey;
+        bool flag;
     }
 
     function unmarshalBalanceUpdateChallenge(RLPLib.RLPItem memory rlp) internal pure returns (BalanceUpdateChallenge memory buc) {
@@ -653,8 +652,7 @@ library ModelLib {
         uint idx;
         while(RLPDecoder.hasNext(it)) {
             RLPLib.RLPItem memory r = RLPDecoder.next(it);
-            if(idx == 0) buc.proof = unmarshalBalanceUpdateProof(r);
-            else if(idx == 1) buc.publicKey = RLPLib.toData(r);
+            if(idx == 0) buc.flag = RLPDecoder.toBool(r);
             else {}
 
             idx++;
@@ -662,10 +660,8 @@ library ModelLib {
     }
 
     function marshalBalanceUpdateChallenge(BalanceUpdateChallenge memory buc) internal pure returns (bytes memory) {
-        bytes memory proof = marshalBalanceUpdateProof(buc.proof);
-        bytes memory publicKey = RLPEncoder.encodeBytes(buc.publicKey);
-
-        return RLPEncoder.encodeList(ByteUtilLib.append(proof, publicKey));
+        bytes memory flag = RLPEncoder.encodeBool(buc.flag);
+        return RLPEncoder.encodeList(flag);
     }
 
     struct BalanceUpdateProof {
