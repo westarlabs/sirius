@@ -139,9 +139,18 @@ class WalletTest {
             walletBob.getMessageChannel()?.receive()
         }
 
-        var account=stub.getHubAccount(bob.address.toProto())
+        var account=walletBob.hubAccount()
 
-        Assert.assertEquals(HubAccount.parseFromProtoMessage(account).deposit.toLong(),amount+2000)
+        Assert.assertEquals(account?.address,bob.address)
+        Assert.assertEquals(account?.deposit?.toLong(),2000L)
+        Assert.assertEquals(account?.update?.receiveAmount?.toLong(),amount)
+        Assert.assertEquals(account?.update?.sendAmount?.toLong(),0L)
+
+        account=walletAlice.hubAccount()
+        Assert.assertEquals(account?.address,alice.address)
+        Assert.assertEquals(account?.deposit?.toLong(),2000L)
+        //Assert.assertEquals(account?.update?.receiveAmount?.toLong(),0L)
+        //Assert.assertEquals(account?.update?.sendAmount?.toLong(),amount)
 
     }
 

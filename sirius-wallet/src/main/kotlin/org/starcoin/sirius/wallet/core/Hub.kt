@@ -146,6 +146,7 @@ class Hub <T : ChainTransaction, A : ChainAccount> {
         recieveUpdate.sign(account.key)
 
         val iou = IOU(offchainTransaction, recieveUpdate)
+        LOG.info("IOU is $iou")
         val succResponse = hubServiceBlockingStub.receiveNewTransfer(iou.toProto())
         LOG.info("recieve new transfer from " + offchainTransaction.from + succResponse)
 
@@ -288,6 +289,8 @@ class Hub <T : ChainTransaction, A : ChainAccount> {
     }
 
     fun  accountInfo():HubAccount ?{
+        val stub = HubServiceGrpc.newBlockingStub(channelManager.hubChannel)
+        hubAccount=HubAccount.parseFromProtoMessage(stub.getHubAccount(account.address.toProto()))
         return hubAccount
     }
 

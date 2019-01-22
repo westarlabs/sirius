@@ -63,4 +63,8 @@ class Wallet<T : ChainTransaction, A : ChainAccount> {
     fun hubTransfer(to:Address,value:Long):OffchainTransaction{
         return hub.newTransfer(to,value)
     }
+
+    internal fun hubAccount():HubAccount?{
+        return hub.accountInfo()
+    }
 }
