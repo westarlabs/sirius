@@ -6,7 +6,7 @@ buildscript {
         guava_version = '20.0'
         protobuf_version = '3.5.1'
         protoc_version = '3.5.1-1'
-        grpc_version = '1.12.0'
+        grpc_version = '1.18.0'
         ktor_version = '1.0.1'
     }
 

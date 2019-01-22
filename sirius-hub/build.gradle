@@ -9,6 +9,12 @@ sourceSets {
 dependencies{
     compile project(":sirius-core")
     compile project(":sirius-chainconnector")
-    compile "io.ktor:ktor-server-core:$ktor_version"
-    compile "io.ktor:ktor-server-netty:$ktor_version"
+    compile "io.grpc:grpc-netty-shaded:$grpc_version"
+    compile "io.grpc:grpc-protobuf:$grpc_version"
+    compile "io.grpc:grpc-stub:$grpc_version"
+    compile "io.grpc:grpc-context:$grpc_version"
+    compile 'io.opencensus:opencensus-api:0.18.0'
+    runtime 'io.opencensus:opencensus-impl:0.18.0'
+    //compile "io.ktor:ktor-server-core:$ktor_version"
+    //compile "io.ktor:ktor-server-netty:$ktor_version"
 }
