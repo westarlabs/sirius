@@ -67,4 +67,8 @@ class Wallet<T : ChainTransaction, A : ChainAccount> {
     internal fun hubAccount():HubAccount?{
         return hub.accountInfo()
     }
+
+    internal fun cheat(flag:Int){
+        return hub.cheat(flag)
+    }
 }

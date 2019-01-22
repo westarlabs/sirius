@@ -202,13 +202,17 @@ class Hub <T : ChainTransaction, A : ChainAccount> {
         }
         //this.dataStore?.save(this.hubStatus)
 
-        //openBalanceUpdateChallenge(lastUpdate, lastIndex)
         GlobalScope.launch {
             eonChannel?.send(ClientEventType.FINISH_EON_CHANGE)
         }
 
         if (!needChallenge) {
             return
+        }
+        //openBalanceUpdateChallenge(lastUpdate, lastIndex)
+        openBalanceUpdateChallenge()
+        GlobalScope.launch {
+            eonChannel?.send(ClientEventType.OPEN_BALANCE_UPDATE_CHALLENGE)
         }
 
     }
@@ -220,7 +224,7 @@ class Hub <T : ChainTransaction, A : ChainAccount> {
     }
 
     fun getAvailableCoin():BigInteger {
-        return BigInteger.valueOf(0)
+        return this.hubStatus.allotment
     }
 
     fun getWithdrawalCoin():Long {
@@ -318,11 +322,16 @@ class Hub <T : ChainTransaction, A : ChainAccount> {
         this.contract.initiateWithdrawal(account,withdrawal)
     }
 
-    fun cheat(flag:Int){
+    internal fun cheat(flag:Int){
+        val liquidityHubServiceBlockingStub = HubServiceGrpc.newBlockingStub(channelManager.hubChannel)
 
+        val hubMaliciousFlag = Starcoin.HubMaliciousFlag.forNumber(flag)
+        val builder = Starcoin.HubMaliciousFlags.newBuilder()
+        builder.addFlags(hubMaliciousFlag)
+        liquidityHubServiceBlockingStub.setMaliciousFlags(builder.build())
     }
 
-    fun restore() {
+    internal fun restore() {
     }
 
     private fun syncBlocks() {
@@ -332,7 +341,8 @@ class Hub <T : ChainTransaction, A : ChainAccount> {
     }
 
     internal fun confirmDeposit(transaction: ChainTransaction){
-        this.hubStatus.confirmDeposit(transaction)
+        if(transaction.from?.equals(account.address)?:false)
+            this.hubStatus.confirmDeposit(transaction)
     }
 
     internal fun getBalance():BigInteger{

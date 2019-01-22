@@ -129,10 +129,10 @@ class HubStatus {
     }
 
     internal fun nextEon(eon: Eon, path: AMTreeProof): Int {
-        this.allotment += this.eonStatuses[currentEonStatusIndex]
-            .confirmedTransactions
-            .stream()
-            .map { it.amount }.reduce(BigInteger.ZERO) { a, b -> a.add(b) }
+//        this.allotment += this.eonStatuses[currentEonStatusIndex]
+//            .confirmedTransactions
+//            .stream()
+//            .map { it.amount }.reduce(BigInteger.ZERO) { a, b -> a.add(b) }
         this.allotment += this.currentUpdate(eon).receiveAmount
         this.allotment -= this.currentUpdate(eon).sendAmount
         if ((this.withdrawalStatus?.status == Starcoin.WithdrawalStatusType.WITHDRAWAL_STATUS_PASSED_VALUE || this.withdrawalStatus?.status === Starcoin.WithdrawalStatusType.WITHDRAWAL_STATUS_CLIENT_CONFIRMED_VALUE)

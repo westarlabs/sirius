@@ -10,6 +10,7 @@ import org.junit.Assert
 import org.junit.Before
 import org.junit.Test
 import org.starcoin.proto.HubServiceGrpc
+import org.starcoin.proto.Starcoin
 import org.starcoin.sirius.core.*
 import org.starcoin.sirius.crypto.CryptoService
 import org.starcoin.sirius.hub.Configuration
@@ -105,7 +106,19 @@ class WalletTest {
     fun testDeposit(){
         testReg()
 
-        val amount=2000L
+        val amount = 2000L
+        deposit(amount)
+
+        var account=stub.getHubAccount(alice.address.toProto())
+
+        Assert.assertEquals(HubAccount.parseFromProtoMessage(account).deposit.toLong(),amount)
+
+        account=stub.getHubAccount(bob.address.toProto())
+        Assert.assertEquals(HubAccount.parseFromProtoMessage(account).deposit.toLong(),amount)
+
+    }
+
+    fun deposit(amount : Long){
         walletAlice.deposit(amount)
         walletBob.deposit(amount)
 
@@ -114,13 +127,6 @@ class WalletTest {
         Assert.assertEquals(amount*2, chain.getBalance(contract.contractAddress).toLong())
         Assert.assertEquals(walletAlice.balance().toLong(),amount)
         Assert.assertEquals(walletBob.balance().toLong(),amount)
-
-        var account=stub.getHubAccount(alice.address.toProto())
-
-        Assert.assertEquals(HubAccount.parseFromProtoMessage(account).deposit.toLong(),amount)
-
-        account=stub.getHubAccount(bob.address.toProto())
-        Assert.assertEquals(HubAccount.parseFromProtoMessage(account).deposit.toLong(),amount)
 
     }
 
@@ -151,6 +157,29 @@ class WalletTest {
         Assert.assertEquals(account?.deposit?.toLong(),2000L)
         //Assert.assertEquals(account?.update?.receiveAmount?.toLong(),0L)
         //Assert.assertEquals(account?.update?.sendAmount?.toLong(),amount)
+
+    }
+
+    @Test
+    fun testBalanceChallenge() {
+        testReg()
+
+        walletAlice.cheat(Starcoin.HubMaliciousFlag.STEAL_DEPOSIT_VALUE)
+
+        val amount = 2000L
+        deposit(amount)
+
+        var account=walletAlice.hubAccount()
+        Assert.assertEquals(account?.address,alice.address)
+        Assert.assertTrue(account?.deposit?.toLong()?:0<amount)
+
+        waitToNextEon()
+
+        runBlocking {
+            walletAlice.getMessageChannel()?.receive()
+            walletAlice.getMessageChannel()?.receive()
+        }
+
 
     }
 
