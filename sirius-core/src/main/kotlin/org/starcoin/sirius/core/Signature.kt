@@ -11,7 +11,7 @@ import org.starcoin.sirius.serialization.BinaryEncoder
 import java.security.PublicKey
 
 @Serializable
-class Signature private constructor(internal val bytes: ByteArray) {
+class Signature private constructor(private val bytes: ByteArray) {
 
     val size: Int
         get() = bytes.size

@@ -68,7 +68,9 @@ open class SiriusObjectSerializationTest {
 
     @Test
     fun testSignature() {
+        //println(Signature.ZERO_SIGN.size)
         Assert.assertTrue(Signature.ZERO_SIGN.isZero())
+        Assert.assertTrue(Signature.ZERO_SIGN.size > 0)
         Assert.assertFalse(Signature.random().isZero())
     }
 }
