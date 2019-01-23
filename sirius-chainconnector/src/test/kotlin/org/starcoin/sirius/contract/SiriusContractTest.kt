@@ -4,6 +4,7 @@ import org.junit.Assert
 import org.junit.Before
 import org.junit.Test
 import org.starcoin.sirius.core.*
+import org.starcoin.sirius.lang.toHEXString
 import org.starcoin.sirius.protocol.ContractConstructArgs
 import org.starcoin.sirius.serialization.rlp.RLP
 import org.starcoin.sirius.util.MockUtils
@@ -16,7 +17,8 @@ class SiriusContractTest : ContractTestBase("solidity/SiriusService", "SiriusSer
     val ip = "192.168.0.0.1:80"
     val blocksPerEon = 8
     lateinit var preProof: AMTreeProof
-    lateinit var currentTree : AMTree
+    lateinit var currentTree: AMTree
+    lateinit var tree: MerkleTree
 
 
     override fun getContractConstructArg(): Any? {
@@ -182,10 +184,11 @@ class SiriusContractTest : ContractTestBase("solidity/SiriusService", "SiriusSer
     @Test
     fun testOpenTransferDeliveryChallenge() {
         val eon = 1
-        createEon(1, true, true)
+        val total = createEon(eon, true, true)
+
         val txs = mutableListOf<OffchainTransaction>()
-        val count = MockUtils.nextLong(10, 20)
-        for (i in 0 until count) {
+        val txCount = MockUtils.nextLong(10, 20)
+        for (i in 0 until txCount) {
             val txData = OffchainTransactionData(
                 eon,
                 ethKey2Address(callUser),
@@ -195,15 +198,16 @@ class SiriusContractTest : ContractTestBase("solidity/SiriusService", "SiriusSer
             txTmp.sign(callUser)
             txs.add(txTmp)
         }
-        val tree = MerkleTree(txs)
+        tree = MerkleTree(txs)
         tx = txs[9]
 
-        val updateData = UpdateData(eon, 1, count, count, tree.hash())
+        val updateData = UpdateData(eon, 1, txCount, txCount, tree.hash())
         val update = Update(updateData)
         update.sign(callUser)
         update.signHub(callUser)
 
-        commitRealData(eon, update, 6 * deposit, 7 * deposit, true, txs)
+        val count = 7 * deposit
+        currentTree = commitRealData(eon, update, total - count, count, true, txs)
 
         val open = TransferDeliveryChallenge(update, tx, tree.getMembershipProof(tx.hash()))
         val data = open.toRLP()
@@ -214,16 +218,11 @@ class SiriusContractTest : ContractTestBase("solidity/SiriusService", "SiriusSer
 
     @Test
     fun testCloseTransferDeliveryChallenge() {
-        val eon = 1
         testOpenTransferDeliveryChallenge()
 
-        val update1 = newUpdate(eon, 1, 0)//other
-        val path = newPath(ethKey2Address(callUser), update1)
-        val update2 = newUpdate(eon, 1, 0)//mine
-        val leaf2 = newLeafNodeInfo(ethKey2Address(callUser), update2)
-        val amtp = AMTreeProof(path, leaf2)
+        val amtp = currentTree.getMembershipProof(callUser.address)!!
         val close =
-            CloseTransferDeliveryChallenge(amtp, MerklePath.mock(), callUser.address, Hash.of(tx))
+            CloseTransferDeliveryChallenge(amtp, tree.getMembershipProof(tx.hash())!!, callUser.address, Hash.of(tx))
 
         val data = close.toRLP()
         val callResult = contract.callFunction("closeTransferDeliveryChallenge", data)

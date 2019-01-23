@@ -16,7 +16,6 @@ data class CloseTransferDeliveryChallenge(
     @SerialId(2)
     val txPath: MerklePath = MerklePath.DUMMY_PATH,
     @SerialId(3)
-    @Serializable(with = PublicKeySerializer::class)
     val fromAddr: Address = Address.DUMMY_ADDRESS,
     @SerialId(4)
     val txHash: Hash = Hash.ZERO_HASH
