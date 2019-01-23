@@ -353,7 +353,6 @@ abstract class HubServerIntegrationTestBase<T : ChainTransaction, A : ChainAccou
         waitToNextEon(false)
     }
 
-    @Ignore
     @Test
     fun testStealWithdrawal() {
         register(eon.get(), a0)
@@ -365,6 +364,7 @@ abstract class HubServerIntegrationTestBase<T : ChainTransaction, A : ChainAccou
         val depositAmount: BigInteger = 100.toBigInteger()
         this.deposit(a0, depositAmount, true)
         this.waitToNextEon()
+        this.waitToNextEon()
 
         // a0 transfer to a1, and steal back
         this.offchainTransfer(a0, a1, depositAmount)
@@ -374,7 +374,6 @@ abstract class HubServerIntegrationTestBase<T : ChainTransaction, A : ChainAccou
         waitToNextEon(false)
     }
 
-    @Ignore
     @Test
     fun testStealTx() {
         register(eon.get(), a0)
@@ -390,9 +389,13 @@ abstract class HubServerIntegrationTestBase<T : ChainTransaction, A : ChainAccou
         val tx = this.offchainTransfer(a0, a1, depositAmount)
         waitToNextEon()
         Assert.assertEquals(
-            depositAmount, this.hubService.getHubAccount(a0.address.toProto()).allotment
+            depositAmount,
+            HubAccount.parseFromProtoMessage(this.hubService.getHubAccount(a0.address.toProto())).allotment
         )
-        Assert.assertEquals(0, this.hubService.getHubAccount(a1.address.toProto()).allotment)
+        Assert.assertEquals(
+            0.toBigInteger(),
+            HubAccount.parseFromProtoMessage(this.hubService.getHubAccount(a1.address.toProto())).allotment
+        )
 
         this.transferDeliveryChallenge(a0, tx)
         waitToNextEon(false)
