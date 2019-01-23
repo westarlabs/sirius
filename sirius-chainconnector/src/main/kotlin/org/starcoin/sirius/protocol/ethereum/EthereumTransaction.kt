@@ -43,6 +43,13 @@ class EthereumTransaction(private val tx: Transaction) : ChainTransaction() {
             )
         )] else null
 
+    init {
+        this.verify()
+    }
+
+    fun verify() {
+        this.tx.verify()
+    }
 
     constructor(web3Tx: org.web3j.protocol.core.methods.response.Transaction) : this(
         Transaction(
@@ -51,7 +58,10 @@ class EthereumTransaction(private val tx: Transaction) : ChainTransaction() {
             web3Tx.gas.toByteArray(),
             web3Tx.to?.toAddress()?.toBytes(),
             web3Tx.value.toByteArray(),
-            web3Tx.input.hexToByteArray()
+            web3Tx.input.hexToByteArray(),
+            web3Tx.r.hexToByteArray(),
+            web3Tx.s.hexToByteArray(),
+            web3Tx.v.toByte()
         )
     )
 
