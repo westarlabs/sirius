@@ -34,7 +34,7 @@ contract SiriusService is Sirius {
     string ip;
 
     GlobleLib.Balance[3] balances;
-    mapping (uint => mapping (address => uint)) test2;//TODO deposit
+    GlobleLib.DataStore dataStore;
 
     mapping(address => GlobleLib.Deposit) private all;//used when evil owner remove a account, the removed account can also withdrawal
     mapping(address => bool) private recoverys;//used for recovery model
@@ -89,10 +89,8 @@ contract SiriusService is Sirius {
         require(msg.value > 0);
         if(!recoveryMode) {
             GlobleLib.deposit(balances[0].depositMeta, msg.sender, msg.value);
-            emit SiriusEvent2(10, balances[0].eon);
             bytes32 key = ByteUtilLib.address2hash(msg.sender);
-            emit SiriusEvent2(11, balances[0].depositMeta.deposits[key]);
-            emit SiriusEvent2(12, balances[1].depositMeta.deposits[key]);
+            dataStore.depositData[balances[0].eon][msg.sender] = SafeMath.add(dataStore.depositData[balances[0].eon][msg.sender], msg.value);
 
             GlobleLib.Deposit memory d = all[msg.sender];
             d.amount = SafeMath.add(d.amount, msg.value);
@@ -138,7 +136,7 @@ contract SiriusService is Sirius {
                 ModelLib.hubRootCommonVerify(root);
                 uint tmp = SafeMath.add(balances[1].root.node.allotment, balances[1].depositMeta.total);
                 uint allotmentTmp = SafeMath.sub(tmp, balances[1].withdrawalMeta.total);
-require(allotmentTmp == root.node.allotment, ByteUtilLib.appendUintToString("allotment error:",allotmentTmp));
+                require(allotmentTmp == root.node.allotment, ByteUtilLib.appendUintToString("allotment error:",allotmentTmp));
                 balances[0].root = root;
                 balances[0].hasRoot = true;
 
@@ -313,22 +311,13 @@ require(allotmentTmp == root.node.allotment, ByteUtilLib.appendUintToString("all
 
                 uint t1 = SafeMath.add(close.proof.leaf.update.upData.receiveAmount, preAllotment);
                 t1 = SafeMath.add(t1, d);
-                emit SiriusEvent2(5, d);
-                emit SiriusEvent2(6, preAllotment);
-                emit SiriusEvent2(7, t1);
-                emit SiriusEvent2(8, balances[0].depositMeta.deposits[key]);
-                emit SiriusEvent2(9, eon);
                 GlobleLib.Withdrawal memory w = balances[1].withdrawalMeta.withdrawals[key];
                 if(w.isVal) {
                     ModelLib.WithdrawalInfo memory info = ModelLib.unmarshalWithdrawalInfo(RLPDecoder.toRLPItem(w.info, true));
                     t1 = SafeMath.sub(t1, info.amount);
-                    emit SiriusEvent2(4, info.amount);
                 }
                 uint t2 = close.proof.leaf.update.upData.sendAmount;
-                emit SiriusEvent2(3, t2);
                 uint allotment = SafeMath.sub(t1, t2);
-                emit SiriusEvent2(1, allotment);
-                emit SiriusEvent2(2, close.proof.path.leaf.allotment);
                 //require(allotment == close.proof.path.leaf.allotment);
 
                 tmpStat.status == ModelLib.ChallengeStatus.CLOSE;

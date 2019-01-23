@@ -131,6 +131,13 @@ library GlobleLib {
         BalanceUpdateChallengeMeta bucMeta;
         TransferDeliveryChallengeMeta tdcMeta;
     }
+
+    struct DataStore {
+        mapping (uint => mapping (address => uint)) depositData;
+        mapping (uint => mapping (address => Withdrawal)) withdrawalData;
+        mapping (uint => mapping (address => BalanceUpdateChallengeAndStatus)) bucData;
+        mapping (uint => mapping (address => TransferDeliveryChallengeAndStatus)) tdcData;
+    }
 }
 
 //////////////////////////////////
