@@ -183,10 +183,9 @@ message MerklePathNode {
 
 message CloseTransferDeliveryChallenge {
     required AMTreeProof proof = 1;
-    required Update update = 2;
-    required MerklePath txPath = 3;
-    required bytes fromPublicKey = 4;
-    required bytes txHash = 5;
+    required MerklePath txPath = 2;
+    required bytes fromAddr = 3;
+    required bytes txHash = 4;
 }
 
 message MerklePath {

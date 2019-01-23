@@ -916,9 +916,8 @@ library ModelLib {
 
     struct CloseTransferDeliveryChallenge {
         AMTreeProof proof;
-        Update update;
         MerklePath txPath;
-        bytes fromPublicKey;
+        address fromAddr;
         bytes32 txHash;
     }
 
@@ -928,10 +927,9 @@ library ModelLib {
         while(RLPDecoder.hasNext(it)) {
             RLPLib.RLPItem memory r = RLPDecoder.next(it);
             if(idx == 0) close.proof = unmarshalAMTreeProof(r);
-            else if(idx == 1) close.update = unmarshalUpdate(r);
-            else if(idx == 2) close.txPath = unmarshalMerklePath(r);
-            else if(idx == 3) close.fromPublicKey = RLPLib.toData(r);
-            else if(idx == 4) close.txHash = ByteUtilLib.bytesToBytes32(RLPLib.toData(r));
+            else if(idx == 1) close.txPath = unmarshalMerklePath(r);
+            else if(idx == 2) close.fromAddr = RLPDecoder.toAddress(r);
+            else if(idx == 3) close.txHash = ByteUtilLib.bytesToBytes32(RLPLib.toData(r));
             else {}
 
             idx++;
@@ -940,12 +938,11 @@ library ModelLib {
 
     function marshalCloseTransferDeliveryChallenge(CloseTransferDeliveryChallenge memory close) internal pure returns (bytes memory) {
         bytes memory proof = marshalAMTreeProof(close.proof);
-        bytes memory update = marshalUpdate(close.update);
         bytes memory txPath = marshalMerklePath(close.txPath);
-        bytes memory fromPublicKey = RLPEncoder.encodeBytes(close.fromPublicKey);
+        bytes memory fromAddr = RLPEncoder.encodeAddress(lose.fromAddr);
         bytes memory txHash = RLPEncoder.encodeBytes(ByteUtilLib.bytes32ToBytes(close.txHash));
 
-        return RLPEncoder.encodeList(ByteUtilLib.append(ByteUtilLib.append(ByteUtilLib.append(ByteUtilLib.append(proof, update), txPath), fromPublicKey), txHash));
+        return RLPEncoder.encodeList(ByteUtilLib.append(ByteUtilLib.append(ByteUtilLib.append(proof, txPath), fromAddr), txHash));
     }
 
     struct BalanceUpdateChallengeStatus {

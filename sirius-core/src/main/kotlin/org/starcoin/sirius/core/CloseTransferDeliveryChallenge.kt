@@ -14,13 +14,11 @@ data class CloseTransferDeliveryChallenge(
     @SerialId(1)
     val proof: AMTreeProof = AMTreeProof.DUMMY_PROOF,
     @SerialId(2)
-    val update: Update = Update.DUMMY_UPDATE,
-    @SerialId(3)
     val txPath: MerklePath = MerklePath.DUMMY_PATH,
-    @SerialId(4)
+    @SerialId(3)
     @Serializable(with = PublicKeySerializer::class)
-    val fromPublicKey: PublicKey = CryptoService.dummyCryptoKey.keyPair.public,
-    @SerialId(5)
+    val fromAddr: Address = Address.DUMMY_ADDRESS,
+    @SerialId(4)
     val txHash: Hash = Hash.ZERO_HASH
 ) : SiriusObject() {
     companion object :
@@ -33,9 +31,8 @@ data class CloseTransferDeliveryChallenge(
         override fun mock(): CloseTransferDeliveryChallenge {
             return CloseTransferDeliveryChallenge(
                 AMTreeProof.mock(),
-                Update.mock(),
                 MerklePath.mock(),
-                CryptoService.dummyCryptoKey.keyPair.public,
+                Address.random(),
                 Hash.random()
             )
         }

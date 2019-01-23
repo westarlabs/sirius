@@ -254,7 +254,7 @@ contract SiriusService is Sirius {
     require(proofFlag, "verify proof fail");
             } else {//once the account had deposit, proof must exist
                 GlobleLib.Deposit memory d = all[msg.sender];
-    require(!d.hasVal, "miss deposit");
+    require(d.hasVal, "miss deposit");
             }
 
             if(open.hasUp) {//Special case:new account only update
@@ -333,11 +333,14 @@ contract SiriusService is Sirius {
     function openTransferDeliveryChallenge(bytes calldata data) external recovery returns (bool) {
         if(!recoveryMode) {
             ModelLib.TransferDeliveryChallenge memory open = ModelLib.unmarshalTransferDeliveryChallenge(RLPDecoder.toRLPItem(data, true));
-            require(open.update.upData.eon >= 0 && open.update.upData.eon == balances[1].eon);
-            require(open.tran.offData.eon >= 0 && open.tran.offData.eon == balances[1].eon);
+            require(balances[0].hasRoot, "balances[0].hasRoot false");
+            require(open.update.upData.eon == balances[1].eon);
+            require(open.tran.offData.eon == balances[1].eon);
 
-            bool signFlag = ModelLib.verifySign4Update(open.update.upData, open.update.hubSign, owner);
-            require(signFlag);
+            bool signFlag = ModelLib.verifySign4Update(open.update.upData, open.update.sign, msg.sender);
+            require(signFlag, "verify update sign fail");
+            bool hubSignFlag = ModelLib.verifySign4Update(open.update.upData, open.update.hubSign, owner);
+            require(hubSignFlag, "verify hub sign fail");
 
             bytes32 hash = ModelLib.hash4OffchainTransaction(open.tran);
             bool verifyFlag = ModelLib.verifyMembershipProof4Merkle(open.update.upData.root, open.path, hash);
@@ -361,6 +364,8 @@ contract SiriusService is Sirius {
         if(!recoveryMode) {
             ModelLib.CloseTransferDeliveryChallenge memory close = ModelLib.unmarshalCloseTransferDeliveryChallenge(RLPDecoder.toRLPItem(data, true));
 
+            address addr = close.fromAddr;
+            ModelLib.verifyProof(balances[0].eon, addr, owner, close.proof);
             bytes32 key = close.txHash;
 
             ModelLib.HubRoot memory latestRoot = latestRoot();
@@ -371,14 +376,8 @@ contract SiriusService is Sirius {
             require(challenge.isVal);
 
             if(challenge.stat == ModelLib.ChallengeStatus.OPEN) {
-                address addr = ByteUtilLib.pubkey2Address(close.fromPublicKey);
-                bool signFlag = ModelLib.verifySign4Update(close.update.upData, close.update.sign, addr);
-                require(signFlag);
-
-                //TODO:require(close.proof.leaf.nodeInfo.update == close.update);
-
-                //bool verifyFlag = ModelLib.verifyMembershipProof4Merkle(close.update.upData.root, close.txPath, close.txHash);
-                //require(verifyFlag);
+                bool verifyFlag = ModelLib.verifyMembershipProof4Merkle(close.proof.leaf.update.upData.root, close.txPath, close.txHash);
+                require(verifyFlag);
 
                 challenge.stat = ModelLib.ChallengeStatus.CLOSE;
                 balances[0].tdcMeta.transferChallenges[key] = challenge;
