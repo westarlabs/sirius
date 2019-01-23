@@ -4,7 +4,6 @@ import org.starcoin.proto.Starcoin
 import org.starcoin.sirius.core.*
 import org.starcoin.sirius.lang.toBigInteger
 import java.math.BigInteger
-import java.security.KeyPair
 
 class HubStatus {
 
@@ -157,9 +156,9 @@ class HubStatus {
 
     internal fun newChallenge(update: Update,lastIndex: Int):BalanceUpdateProof {
         if (eonStatuses[lastIndex] != null && eonStatuses[lastIndex].treeProof != null) {
-            return BalanceUpdateProof(hasUp = false, hasPath = true,path=eonStatuses[lastIndex].treeProof?.path)
+            return BalanceUpdateProof(eonStatuses[lastIndex].treeProof!!.path!!)
         } else {
-            return BalanceUpdateProof(hasUp = true,update =update)
+            return BalanceUpdateProof(update)
         }
     }
 

@@ -9,26 +9,26 @@ import org.starcoin.sirius.serialization.ProtobufSchema
 @Serializable
 data class BalanceUpdateProof(
     @SerialId(1)
-    val hasUp: Boolean = false,
+    val hasUpdate: Boolean = false,
     @SerialId(2)
-    val update: Update? = Update.DUMMY_UPDATE,
+    val update: Update = Update.DUMMY_UPDATE,
     @SerialId(3)
     val hasPath: Boolean = false,
     @SerialId(4)
-    val path: AMTreePath? = AMTreePath.DUMMY_PATH
+    val path: AMTreePath = AMTreePath.DUMMY_PATH
 ) : SiriusObject() {
 
     constructor(proof: AMTreeProof) : this(
         true, proof.leaf.update, true, proof.path
     )
 
-    constructor(update: Update) : this(true, update, false, null)
-    constructor(path: AMTreePath) : this(false, null, true, path)
+    constructor(update: Update) : this(hasUpdate = true, update = update)
+    constructor(path: AMTreePath) : this(hasPath = true, path = path)
 
     companion object :
         SiriusObjectCompanion<BalanceUpdateProof, Starcoin.BalanceUpdateProof>(BalanceUpdateProof::class) {
 
-        var DUMMY_BALANCE_UPDATE_PROOF = BalanceUpdateProof(false, Update.DUMMY_UPDATE, false, AMTreePath.DUMMY_PATH)
+        var DUMMY_PROOF = BalanceUpdateProof(false, Update.DUMMY_UPDATE, false, AMTreePath.DUMMY_PATH)
 
         override fun mock(): BalanceUpdateProof {
             return BalanceUpdateProof(true, Update.mock(), true, AMTreePath.mock())
@@ -50,7 +50,7 @@ data class CloseBalanceUpdateChallenge(
             CloseBalanceUpdateChallenge::class
         ) {
 
-        var DUMMY_CLOSE_BALANCE_UPDATE_CHALLENGE =
+        var DUMMY_CHALLENGE =
             CloseBalanceUpdateChallenge(Address.DUMMY_ADDRESS, AMTreeProof.DUMMY_PROOF)
 
         override fun mock(): CloseBalanceUpdateChallenge {

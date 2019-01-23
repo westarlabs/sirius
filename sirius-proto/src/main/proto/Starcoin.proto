@@ -139,7 +139,7 @@ message BalanceUpdateProof {
 
 message CloseBalanceUpdateChallenge {
     required bytes addr = 1;
-    required AMTreeProof proof = 4;
+    required AMTreeProof proof = 2;
 }
 
 message RegisterParticipantRequest {
