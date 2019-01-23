@@ -939,7 +939,7 @@ library ModelLib {
     function marshalCloseTransferDeliveryChallenge(CloseTransferDeliveryChallenge memory close) internal pure returns (bytes memory) {
         bytes memory proof = marshalAMTreeProof(close.proof);
         bytes memory txPath = marshalMerklePath(close.txPath);
-        bytes memory fromAddr = RLPEncoder.encodeAddress(lose.fromAddr);
+        bytes memory fromAddr = RLPEncoder.encodeAddress(close.fromAddr);
         bytes memory txHash = RLPEncoder.encodeBytes(ByteUtilLib.bytes32ToBytes(close.txHash));
 
         return RLPEncoder.encodeList(ByteUtilLib.append(ByteUtilLib.append(ByteUtilLib.append(proof, txPath), fromAddr), txHash));

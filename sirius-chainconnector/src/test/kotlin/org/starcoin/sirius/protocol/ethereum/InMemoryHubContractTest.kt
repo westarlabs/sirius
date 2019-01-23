@@ -351,7 +351,7 @@ class InMemoryHubContractTest {
         val leaf2 = newLeafNodeInfo(alice.address, update2)
         val amtp = AMTreeProof(path, leaf2)
         val close =
-            CloseTransferDeliveryChallenge(amtp, update2, MerklePath.mock(), alice.key.keyPair.public, Hash.of(tx))
+            CloseTransferDeliveryChallenge(amtp, MerklePath.mock(), alice.address, Hash.of(tx))
         hash = contract.closeTransferDeliveryChallenge(owner, close)
         //TODO
         Thread.sleep(500)

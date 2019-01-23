@@ -223,7 +223,7 @@ class SiriusContractTest : ContractTestBase("solidity/SiriusService", "SiriusSer
         val leaf2 = newLeafNodeInfo(ethKey2Address(callUser), update2)
         val amtp = AMTreeProof(path, leaf2)
         val close =
-            CloseTransferDeliveryChallenge(amtp, update2, MerklePath.mock(), callUser.keyPair.public, Hash.of(tx))
+            CloseTransferDeliveryChallenge(amtp, MerklePath.mock(), callUser.address, Hash.of(tx))
 
         val data = close.toRLP()
         val callResult = contract.callFunction("closeTransferDeliveryChallenge", data)
