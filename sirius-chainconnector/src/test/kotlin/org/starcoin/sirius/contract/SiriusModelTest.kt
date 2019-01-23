@@ -106,10 +106,4 @@ class SiriusModelTest : ContractTestBase("solidity/test_all", "test_all") {
         val flag = contract.callConstFunction("verify_proof_test", data1, data2)[0] as Boolean
         Assert.assertTrue(flag)
     }
-
-    @Test
-    fun testSign() {
-        val callResult = contract.callConstFunction("sign_test")[0] as Boolean
-        Assert.assertTrue(callResult)
-    }
 }

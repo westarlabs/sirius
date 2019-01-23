@@ -20,7 +20,6 @@ contract test_all_interface {
     function update_data_test(bytes calldata data) external returns (bytes memory);
     function update_test(bytes calldata data) external returns (bytes memory);
     function verify_proof_test(bytes calldata data1, bytes calldata data2) external returns (bool);
-    function sign_test() external returns (bool);
 }
 
 contract test_all is test_all_interface {
@@ -159,10 +158,5 @@ contract test_all is test_all_interface {
         ModelLib.AMTreePathNode memory root = ModelLib.unmarshalAMTreePathNode(RLPDecoder.toRLPItem(data2, true));
 
         return ModelLib.verifyMembershipProof4AMTreeProof(root, proof);
-    }
-
-    function sign_test() external returns (bool) {
-        ModelLib.Signature memory test = ModelLib.unmarshalSignature(RLPDecoder.toRLPItem(hex"f8431ca003925438bf9bdfed9cb8d9d9467f8fc624f389846f0db71f4f5c84b483077da6a02ca68cb1027ace392bc6a84fe0ba29288aa07942f571f56201dd33c009ee3886", true));
-        return true;
     }
 }
