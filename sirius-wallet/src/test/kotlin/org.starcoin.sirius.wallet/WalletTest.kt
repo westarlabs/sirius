@@ -5,10 +5,7 @@ import io.grpc.Channel
 import io.grpc.inprocess.InProcessChannelBuilder
 import kotlinx.coroutines.runBlocking
 import org.ethereum.util.blockchain.EtherUtil
-import org.junit.After
-import org.junit.Assert
-import org.junit.Before
-import org.junit.Test
+import org.junit.*
 import org.starcoin.proto.HubServiceGrpc
 import org.starcoin.proto.Starcoin
 import org.starcoin.sirius.core.Address
@@ -63,7 +60,7 @@ class WalletTest {
         alice = EthereumAccount(CryptoService.generateCryptoKey())
         bob = EthereumAccount(CryptoService.generateCryptoKey())
 
-        val amount = EtherUtil.convert(100000, EtherUtil.Unit.ETHER)
+        val amount = EtherUtil.convert(10000000, EtherUtil.Unit.ETHER)
         this.sendEther(alice.address, amount)
         this.sendEther(bob.address, amount)
 
@@ -109,27 +106,28 @@ class WalletTest {
     fun testDeposit(){
         testReg()
 
-        val amount = 2000L
+        val amount = EtherUtil.convert(2000, EtherUtil.Unit.ETHER)
         deposit(amount)
 
         var account=stub.getHubAccount(alice.address.toProto())
 
-        Assert.assertEquals(HubAccount.parseFromProtoMessage(account).deposit.toLong(),amount)
+        Assert.assertEquals(HubAccount.parseFromProtoMessage(account).deposit,amount)
 
         account=stub.getHubAccount(bob.address.toProto())
-        Assert.assertEquals(HubAccount.parseFromProtoMessage(account).deposit.toLong(),amount)
+        Assert.assertEquals(HubAccount.parseFromProtoMessage(account).deposit,amount)
 
     }
 
-    fun deposit(amount : Long){
+    fun deposit(amount : BigInteger){
+
         walletAlice.deposit(amount)
         walletBob.deposit(amount)
 
         chain.sb.createBlock()
 
-        Assert.assertEquals(amount*2, chain.getBalance(contract.contractAddress).toLong())
-        Assert.assertEquals(walletAlice.balance().toLong(),amount)
-        Assert.assertEquals(walletBob.balance().toLong(),amount)
+        Assert.assertEquals(amount.multiply(2.toBigInteger()), chain.getBalance(contract.contractAddress))
+        Assert.assertEquals(walletAlice.balance(),amount)
+        Assert.assertEquals(walletBob.balance(),amount)
 
     }
 
@@ -138,6 +136,8 @@ class WalletTest {
         testDeposit()
 
         val amount=20L
+        val depositAmount = EtherUtil.convert(2000, EtherUtil.Unit.ETHER)
+
         val transaction=walletAlice.hubTransfer(bob.address,amount)
 
         Assert.assertNotNull(transaction)
@@ -151,13 +151,13 @@ class WalletTest {
         var account=walletBob.hubAccount()
 
         Assert.assertEquals(account?.address,bob.address)
-        Assert.assertEquals(account?.deposit?.toLong(),2000L)
+        Assert.assertEquals(account?.deposit,depositAmount)
         Assert.assertEquals(account?.update?.receiveAmount?.toLong(),amount)
         Assert.assertEquals(account?.update?.sendAmount?.toLong(),0L)
 
         account=walletAlice.hubAccount()
         Assert.assertEquals(account?.address,alice.address)
-        Assert.assertEquals(account?.deposit?.toLong(),2000L)
+        Assert.assertEquals(account?.deposit,depositAmount)
         Assert.assertEquals(account?.update?.receiveAmount?.toLong(),0L)
         Assert.assertEquals(account?.update?.sendAmount?.toLong(),amount)
 
@@ -169,12 +169,12 @@ class WalletTest {
 
         walletAlice.cheat(Starcoin.HubMaliciousFlag.STEAL_DEPOSIT_VALUE)
 
-        val amount = 2000L
+        val amount = EtherUtil.convert(2000, EtherUtil.Unit.ETHER)
         deposit(amount)
 
         var account=walletAlice.hubAccount()
         Assert.assertEquals(account?.address,alice.address)
-        Assert.assertTrue(account?.deposit?.toLong()?:0<amount)
+        Assert.assertTrue(account?.deposit?:0.toBigInteger()<amount)
 
         waitToNextEon()
 
@@ -204,14 +204,17 @@ class WalletTest {
         testDeposit()
 
         waitToNextEon()
-        waitToNextEon()
 
         runBlocking {
             walletAlice.getMessageChannel()?.receive()
+        }
+
+        waitToNextEon()
+        runBlocking {
             walletAlice.getMessageChannel()?.receive()
         }
 
-        val amount = 20L
+        val amount = EtherUtil.convert(20, EtherUtil.Unit.ETHER)
         walletAlice.withdrawal(amount)
 
         runBlocking {
@@ -219,16 +222,29 @@ class WalletTest {
         }
         Assert.assertTrue(!walletAlice.hub.hubStatus.couldWithDrawal())
 
-        var balance=chain.getBalance(alice.address).toLong()
+        var balance=chain.getBalance(alice.address)
 
         waitToNextEon()
         runBlocking {
-            println(walletAlice.getMessageChannel()?.receive())
+            walletAlice.getMessageChannel()?.receive()
         }
 
-        var balanceAfter=chain.getBalance(alice.address).toLong()
-        println("aaaaa")
+        waitToNextEon()
+        runBlocking {
+            walletAlice.getMessageChannel()?.receive()
+        }
+
+        createBlocks(6)
+        var balanceAfter=chain.getBalance(alice.address)
+
+        var balanceContract=chain.getBalance(contract.contractAddress)
+        println(balanceContract)
+        println(balance-balanceAfter)
+        println(amount)
         Assert.assertEquals(balance,balanceAfter)
+
+        var account=walletAlice.hubAccount()
+        println(account?.balance)
     }
 
     private fun waitToNextEon() {

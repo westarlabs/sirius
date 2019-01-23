@@ -211,7 +211,7 @@ class Hub <T : ChainTransaction, A : ChainAccount> {
             return
         }
         var balanceUpdateProof=this.hubStatus.newChallenge(lastUpdate, lastIndex)
-        this.contract.openBalanceUpdateChallenge(account,balanceUpdateProof)
+        //this.contract.openBalanceUpdateChallenge(account,balanceUpdateProof)
 
         GlobalScope.launch {
             eonChannel?.send(ClientEventType.OPEN_BALANCE_UPDATE_CHALLENGE)
@@ -257,8 +257,8 @@ class Hub <T : ChainTransaction, A : ChainAccount> {
         }
     }
 
-    fun deposit(value :Long) {
-        var chainTransaction=chain.newTransaction(account,contract.contractAddress, BigInteger.valueOf(value))
+    fun deposit(value :BigInteger) {
+        var chainTransaction=chain.newTransaction(account,contract.contractAddress, value)
         var hash=chain.submitTransaction(account,chainTransaction)
         this.hubStatus.addDepositTransaction(hash,chainTransaction)
     }
@@ -304,7 +304,7 @@ class Hub <T : ChainTransaction, A : ChainAccount> {
         return null
     }
 
-    fun withDrawal(value: Long) {
+    fun withDrawal(value: BigInteger) {
         if (!hubStatus.couldWithDrawal()) {
             LOG.info("already have withdrawal in progress.")
             return

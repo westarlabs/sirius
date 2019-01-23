@@ -36,7 +36,7 @@ class Wallet<T : ChainTransaction, A : ChainAccount> {
 
     }
 
-    fun deposit(value:Long){
+    fun deposit(value:BigInteger){
         this.hub.deposit(value)
     }
 
@@ -44,7 +44,7 @@ class Wallet<T : ChainTransaction, A : ChainAccount> {
         return hub.getBalance()
     }
 
-    fun withdrawal(value:Long){
+    fun withdrawal(value:BigInteger){
         return hub.withDrawal(value)
     }
 
