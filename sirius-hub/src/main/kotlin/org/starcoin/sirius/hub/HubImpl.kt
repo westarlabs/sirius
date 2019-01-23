@@ -370,7 +370,7 @@ class HubImpl<T : ChainTransaction, A : ChainAccount>(
         }
         if (txProof != null) {
             val closeChallenge =
-                CloseTransferDeliveryChallenge(accountProof, currentAccount.update, txProof, currentAccount.publicKey)
+                CloseTransferDeliveryChallenge(accountProof, txProof, currentAccount.address, tx.hash())
             this.contract.closeTransferDeliveryChallenge(owner, closeChallenge)
         } else {
             LOG.warning("Can not find tx Proof with challenge:" + challenge.toString())
