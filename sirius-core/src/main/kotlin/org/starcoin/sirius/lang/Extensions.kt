@@ -19,11 +19,9 @@ fun ByteArray.toUnsignedBigInteger() = BigInteger(1, this)
 fun ByteArray.isZeroBytes() = this.all { it == 0.toByte() }
 
 fun String.hexToByteArray(): ByteArray {
-    if (length % 2 != 0)
-        throw IllegalArgumentException("hex-string must have an even number of digits (nibbles)")
-
-    val cleanInput = if (startsWith("0x")) substring(2) else this
-
+    val cleanInput = (if (startsWith("0x")) substring(2) else this).let {
+        if (it.length % 2 != 0) "0$it" else it
+    }
     return ByteArray(cleanInput.length / 2).apply {
         var i = 0
         while (i < cleanInput.length) {
