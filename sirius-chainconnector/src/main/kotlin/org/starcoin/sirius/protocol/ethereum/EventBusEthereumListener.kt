@@ -9,6 +9,7 @@ import org.json.simple.parser.JSONParser
 import org.starcoin.sirius.channel.EventBus
 import org.starcoin.sirius.core.Receipt
 import org.starcoin.sirius.lang.hexToByteArray
+import org.starcoin.sirius.lang.isZeroBytes
 import org.starcoin.sirius.lang.toHEXString
 import org.starcoin.sirius.protocol.EthereumTransaction
 import org.starcoin.sirius.protocol.TransactionResult
@@ -45,7 +46,7 @@ class EventBusEthereumListener : AbstractEthereumListener() {
                         blockSummary.block.header.logsBloom.toHEXString(),
                         BigInteger.valueOf(0),
                         blockSummary.block.header.receiptsRoot.toHEXString(),
-                        txReceipt.isTxStatusOK && txReceipt.isSuccessful && !txReceipt.executionResult.all { it == 0.toByte() }
+                        txReceipt.isTxStatusOK && txReceipt.isSuccessful && (txReceipt.executionResult.isEmpty() || !txReceipt.executionResult.isZeroBytes())
                     )
                 )
                 LOG.info("EventBusEthereumListener tx:${ethereumTransaction.hash()}")
@@ -58,14 +59,17 @@ class EventBusEthereumListener : AbstractEthereumListener() {
                 LOG.info("tx ${ethereumTransaction.hash()}  PostTxState ${txReceipt.postTxState.toHEXString()}")
                 if (!transactionResult.receipt.status) {
                     LOG.warning("tx ${ethereumTransaction.hash()} isTxStatusOK: ${txReceipt.isTxStatusOK} isSuccessful: ${txReceipt.isSuccessful} executionResult: ${txReceipt.executionResult.toHEXString()}")
-                    val file = File.createTempFile("trace", ".txt")
                     val trace = traceMap[ethereumTransaction.hash()]
-                    file.printWriter().use { out -> out.println(trace) }
-                    LOG.warning("Write tx trace file to ${file.absolutePath}")
-                    val parser = JSONParser()
-                    val jsonObject = parser.parse(trace) as JSONObject
-                    val result = (jsonObject["result"] as String).hexToByteArray().toString(Charset.defaultCharset())
-                    LOG.warning("tx ${ethereumTransaction.hash()} trace result $result")
+                    if (trace != null) {
+                        val file = File.createTempFile("trace", ".txt")
+                        file.printWriter().use { out -> out.println(trace) }
+                        LOG.warning("Write tx trace file to ${file.absolutePath}")
+                        val parser = JSONParser()
+                        val jsonObject = parser.parse(trace) as JSONObject
+                        val result =
+                            (jsonObject["result"] as String).hexToByteArray().toString(Charset.defaultCharset())
+                        LOG.warning("tx ${ethereumTransaction.hash()} trace result $result")
+                    }
                 }
                 txEventBus.send(transactionResult)
             }

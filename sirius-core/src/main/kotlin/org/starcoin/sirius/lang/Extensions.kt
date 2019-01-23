@@ -16,6 +16,7 @@ fun ByteArray.toNoPrefixHEXString() = HEX.encode(this)
 fun ByteArray.toBigInteger(offset: Int, length: Int) = BigInteger(1, Arrays.copyOfRange(this, offset, offset + length))
 fun ByteArray.toBigInteger() = BigInteger(this)
 fun ByteArray.toUnsignedBigInteger() = BigInteger(1, this)
+fun ByteArray.isZeroBytes() = this.all { it == 0.toByte() }
 
 fun String.hexToByteArray(): ByteArray {
     if (length % 2 != 0)
