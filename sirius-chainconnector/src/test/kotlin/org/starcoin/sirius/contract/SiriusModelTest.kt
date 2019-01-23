@@ -4,6 +4,7 @@ import org.junit.Assert
 import org.junit.Test
 import org.starcoin.sirius.core.*
 import org.starcoin.sirius.lang.toHEXString
+import org.starcoin.sirius.util.MockUtils
 import kotlin.reflect.KClass
 import kotlin.reflect.full.companionObjectInstance
 
@@ -104,6 +105,38 @@ class SiriusModelTest : ContractTestBase("solidity/test_all", "test_all") {
         val data2 = root.toRLP()
         Assert.assertTrue(AMTree.verifyMembershipProof(tree.root.toAMTreePathNode(), obj))
         val flag = contract.callConstFunction("verify_proof_test", data1, data2)[0] as Boolean
+        Assert.assertTrue(flag)
+    }
+
+    @Test
+    fun testVerifyMerkle() {
+        val eon = 1
+        val txs = mutableListOf<OffchainTransaction>()
+        val txCount = MockUtils.nextLong(10, 20)
+        for (i in 0 until txCount) {
+            val txData = OffchainTransactionData(
+                eon,
+                ethKey2Address(callUser),
+                ethKey2Address(callUser), 1, 1
+            )
+            val txTmp = OffchainTransaction(txData)
+            txTmp.sign(callUser)
+            txs.add(txTmp)
+        }
+        val tree = MerkleTree(txs)
+        tx = txs[9]
+
+        val updateData = UpdateData(eon, 1, txCount, txCount, tree.hash())
+        val update = Update(updateData)
+        update.sign(callUser)
+        update.signHub(callUser)
+
+        val accounts = mutableListOf<HubAccount>()
+        accounts.add(HubAccount(callUser.keyPair.public, update, 100, 0, 0, txs))
+        val am = AMTree(eon + 1, accounts)
+
+        val close = CloseTransferDeliveryChallenge(am.getMembershipProof(callUser.address)!!, tree.getMembershipProof(tx.hash())!!, callUser.address, Hash.of(tx))
+        val flag = contract.callConstFunction("verify_merkle_test", close.toRLP())[0] as Boolean
         Assert.assertTrue(flag)
     }
 }

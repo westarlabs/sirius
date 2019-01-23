@@ -318,7 +318,7 @@ contract SiriusService is Sirius {
                 }
                 uint t2 = close.proof.leaf.update.upData.sendAmount;
                 uint allotment = SafeMath.sub(t1, t2);
-                //require(allotment == close.proof.path.leaf.allotment);
+                //require(allotment == close.proof.path.leaf.allotment);//TODO
 
                 tmpStat.status == ModelLib.ChallengeStatus.CLOSE;
                 balances[0].bucMeta.balanceChallenges[key] = tmpStat;
@@ -366,15 +366,15 @@ contract SiriusService is Sirius {
             require(balances[0].hasRoot, "balances[0].hasRoot false");
 
             address addr = close.fromAddr;
-            //ModelLib.verifyProof(balances[0].eon, addr, owner, close.proof);
+            ModelLib.verifyProof(balances[0].eon, addr, owner, close.proof);
             bytes32 key = close.txHash;
 
             ModelLib.HubRoot memory latestRoot = balances[0].root;
-            //bool proofFlag = ModelLib.verifyMembershipProof4AMTreeProof(latestRoot.node, close.proof);
-            //require(proofFlag);
+            bool proofFlag = ModelLib.verifyMembershipProof4AMTreeProof(latestRoot.node, close.proof);
+            require(proofFlag);
 
             GlobleLib.TransferDeliveryChallengeAndStatus memory challenge = balances[0].tdcMeta.transferChallenges[key];
-            //require(challenge.isVal);
+            //require(challenge.isVal);//TODO
 
             if(challenge.stat == ModelLib.ChallengeStatus.OPEN) {
                 bool verifyFlag = ModelLib.verifyMembershipProof4Merkle(close.proof.leaf.update.upData.root, close.txPath, close.txHash);

@@ -20,6 +20,7 @@ contract test_all_interface {
     function update_data_test(bytes calldata data) external returns (bytes memory);
     function update_test(bytes calldata data) external returns (bytes memory);
     function verify_proof_test(bytes calldata data1, bytes calldata data2) external returns (bool);
+    function verify_merkle_test(bytes calldata data) external returns (bool);
 }
 
 contract test_all is test_all_interface {
@@ -158,5 +159,12 @@ contract test_all is test_all_interface {
         ModelLib.AMTreePathNode memory root = ModelLib.unmarshalAMTreePathNode(RLPDecoder.toRLPItem(data2, true));
 
         return ModelLib.verifyMembershipProof4AMTreeProof(root, proof);
+    }
+
+    function verify_merkle_test(bytes calldata data) external returns (bool) {
+        ModelLib.CloseTransferDeliveryChallenge memory close = ModelLib.unmarshalCloseTransferDeliveryChallenge(RLPDecoder.toRLPItem(data, true));
+        bool verifyFlag = ModelLib.verifyMembershipProof4Merkle(close.proof.leaf.update.upData.root, close.txPath, close.txHash);
+
+        return verifyFlag;
     }
 }
