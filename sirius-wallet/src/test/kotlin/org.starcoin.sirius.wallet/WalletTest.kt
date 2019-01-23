@@ -204,8 +204,10 @@ class WalletTest {
         testDeposit()
 
         waitToNextEon()
+        waitToNextEon()
 
         runBlocking {
+            walletAlice.getMessageChannel()?.receive()
             walletAlice.getMessageChannel()?.receive()
         }
 
@@ -216,13 +218,25 @@ class WalletTest {
             walletAlice.getMessageChannel()?.receive()
         }
         Assert.assertTrue(!walletAlice.hub.hubStatus.couldWithDrawal())
+
+        var balance=chain.getBalance(alice.address).toLong()
+
+        waitToNextEon()
+        runBlocking {
+            println(walletAlice.getMessageChannel()?.receive())
+        }
+
+        var balanceAfter=chain.getBalance(alice.address).toLong()
+        println("aaaaa")
+        Assert.assertEquals(balance,balanceAfter)
     }
 
     private fun waitToNextEon() {
         var height = chain.getBlockNumber()
-        var blockNumber = Eon.waitToEon(hubInfo.startBlockNumber.toLong(),height,hubInfo.blocksPerEon,hubInfo.latestEon+1)
+        var blockNumber = Eon.waitToEon(hubInfo.startBlockNumber.toLong(),height,hubInfo.blocksPerEon,walletAlice.hub.currentEon.id+1)
+        logger.info("need generate $blockNumber blocks")
         for (i in 0..blockNumber) {
-            chain.sb.createBlock()
+            chain.createBlock()
         }
     }
 

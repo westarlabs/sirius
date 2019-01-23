@@ -26,7 +26,8 @@ class Hub <T : ChainTransaction, A : ChainAccount> {
 
     private var account: A  by Delegates.notNull()
 
-    private var currentEon: Eon  by Delegates.notNull();
+    internal var currentEon: Eon  by Delegates.notNull()
+    private set
 
     private var channelManager: ChannelManager by Delegates.notNull()
 
@@ -80,6 +81,7 @@ class Hub <T : ChainTransaction, A : ChainAccount> {
         return Eon.calculateEon(blocksPerEon = hubInfo.blocksPerEon,blockHeight = chain.getBlockNumber().toLong())
     }
 
+    @Synchronized
     fun onHubRootCommit(hubRoot: HubRoot) {
         try {
             // System.out.println("get new hub root"+hubRoot.toString());
@@ -167,7 +169,6 @@ class Hub <T : ChainTransaction, A : ChainAccount> {
         LOG.info("get hub sign")
     }
 
-    @Synchronized
     private fun nextEon(hubRoot: HubRoot) {
         this.currentEon = this.getChainEon()
 
@@ -313,7 +314,7 @@ class Hub <T : ChainTransaction, A : ChainAccount> {
             return
         }
 
-        val withdrawal = Withdrawal(hubStatus.currentEonProof()!!, value)
+        val withdrawal = Withdrawal(hubStatus.lastEonProof()!!, value)
         this.contract.initiateWithdrawal(account,withdrawal)
     }
 

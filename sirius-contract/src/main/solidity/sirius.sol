@@ -150,6 +150,7 @@ contract SiriusService is Sirius {
                        balances[2].withdrawalMeta.withdrawals[wKey] = w;
                        ModelLib.WithdrawalInfo memory wi = ModelLib.unmarshalWithdrawalInfo(RLPDecoder.toRLPItem(w.info, true));
                        addr.transfer(wi.amount);
+                       emit SiriusEvent2(100, wi.amount);
                    }
                 }
 

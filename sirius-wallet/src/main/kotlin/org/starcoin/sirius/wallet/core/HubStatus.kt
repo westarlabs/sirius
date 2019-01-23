@@ -100,6 +100,11 @@ class HubStatus {
         return eonStatus?.treeProof
     }
 
+    internal fun lastEonProof(): AMTreeProof? {
+        val eonStatus = eonStatuses[getEonByIndex(lastIndex)]
+        return eonStatus?.treeProof
+    }
+
     internal fun currentTransactions(): List<OffchainTransaction> {
         return eonStatuses[currentEonStatusIndex].transactionHistory
     }
