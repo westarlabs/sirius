@@ -45,7 +45,7 @@ class EventBusEthereumListener : AbstractEthereumListener() {
                         blockSummary.block.header.logsBloom.toHEXString(),
                         BigInteger.valueOf(0),
                         blockSummary.block.header.receiptsRoot.toHEXString(),
-                        txReceipt.isTxStatusOK
+                        txReceipt.isTxStatusOK && txReceipt.isSuccessful && !txReceipt.executionResult.all { it == 0.toByte() }
                     )
                 )
                 LOG.info("EventBusEthereumListener tx:${ethereumTransaction.hash()}")
@@ -55,7 +55,9 @@ class EventBusEthereumListener : AbstractEthereumListener() {
                 for (log in txReceipt.logInfoList) {
                     LOG.fine("tx ${ethereumTransaction.hash()} log $log")
                 }
-                if (!txReceipt.isSuccessful || !txReceipt.isTxStatusOK) {
+                LOG.info("tx ${ethereumTransaction.hash()}  PostTxState ${txReceipt.postTxState.toHEXString()}")
+                if (!transactionResult.receipt.status) {
+                    LOG.warning("tx ${ethereumTransaction.hash()} isTxStatusOK: ${txReceipt.isTxStatusOK} isSuccessful: ${txReceipt.isSuccessful} executionResult: ${txReceipt.executionResult.toHEXString()}")
                     val file = File.createTempFile("trace", ".txt")
                     val trace = traceMap[ethereumTransaction.hash()]
                     file.printWriter().use { out -> out.println(trace) }

@@ -43,7 +43,7 @@ class EthereumHubContract internal constructor(
                 EthereumBaseChain.defaultGasPrice, EthereumBaseChain.defaultGasLimit, data
             )
         )
-        LOG.info("executeContractFunction ${function.name}, input:$input, txHash:$hash")
+        LOG.info("executeContractFunction ${function.name}, txHash:$hash, input:$input")
         return hash
     }
 
