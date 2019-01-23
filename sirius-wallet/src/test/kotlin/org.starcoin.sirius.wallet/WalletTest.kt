@@ -158,8 +158,8 @@ class WalletTest {
         account=walletAlice.hubAccount()
         Assert.assertEquals(account?.address,alice.address)
         Assert.assertEquals(account?.deposit?.toLong(),2000L)
-        //Assert.assertEquals(account?.update?.receiveAmount?.toLong(),0L)
-        //Assert.assertEquals(account?.update?.sendAmount?.toLong(),amount)
+        Assert.assertEquals(account?.update?.receiveAmount?.toLong(),0L)
+        Assert.assertEquals(account?.update?.sendAmount?.toLong(),amount)
 
     }
 

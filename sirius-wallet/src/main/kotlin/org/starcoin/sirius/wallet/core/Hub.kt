@@ -218,9 +218,9 @@ class Hub <T : ChainTransaction, A : ChainAccount> {
     }
 
     internal fun openBalanceUpdateChallenge(){
-        val balanceUpdateProof = BalanceUpdateProof(this.hubStatus.currentUpdate(this.currentEon),this.hubStatus.currentEonProof())
-        var challenge=BalanceUpdateChallenge(balanceUpdateProof,account.key.keyPair.public)
-        this.contract.openBalanceUpdateChallenge(account,challenge)
+        //val balanceUpdateProof = BalanceUpdateProof(this.hubStatus.currentUpdate(this.currentEon),this.hubStatus.currentEonProof())
+        //var challenge=BalanceUpdateChallenge(balanceUpdateProof,account.key.keyPair.public)
+        //this.contract.openBalanceUpdateChallenge(account,challenge)
     }
 
     fun getAvailableCoin():BigInteger {
@@ -245,7 +245,7 @@ class Hub <T : ChainTransaction, A : ChainAccount> {
         val update = Update.newUpdate(
             this.currentEon.id,
             this.hubStatus.currentUpdate(currentEon).version + 1,
-            addr,
+            this.account.address,
             this.hubStatus.currentTransactions()
         )
         update.sign(account.key)
