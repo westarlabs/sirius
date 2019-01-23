@@ -393,12 +393,13 @@ class HubImpl<T : ChainTransaction, A : ChainAccount>(
         {
             val amount = withdrawal.amount
             val hubAccount = this.eonState.getAccount(from) ?: assertAccountNotNull(from)
+            this.withdrawals[from] = withdrawal
             if (!hubAccount.addWithdraw(amount)) {
                 //signed update (e) or update (e − 1), τ (e − 1)
                 //TODO path is nullable?
                 val path = this.eonState.state.getMembershipProof(from)
                 val cancelWithdrawal = CancelWithdrawal(from, hubAccount.update, path ?: AMTreeProof.DUMMY_PROOF)
-                val txHash = contract.cancelWithdrawal(owner, cancelWithdrawal)
+                contract.cancelWithdrawal(owner, cancelWithdrawal)
             } else {
                 val withdrawalStatus = WithdrawalStatus(WithdrawalStatusType.INIT, withdrawal)
                 withdrawalStatus.pass()
@@ -499,13 +500,13 @@ class HubImpl<T : ChainTransaction, A : ChainAccount>(
             is CancelWithdrawalFunction -> {
                 val input = contractFunction.decode(tx.data)
                     ?: throw RuntimeException("$contractFunction decode tx:${txResult.tx} fail.")
-                LOG.info("CancelWithdrawal: ${input.address}, amount: ")
-                //TODO
-//                val withdrawalStatus = WithdrawalStatus(WithdrawalStatusType.INIT, withdrawal)
-//                withdrawalStatus.cancel()
-//                this.fireEvent(
-//                    HubEvent(HubEventType.WITHDRAWAL, withdrawalStatus, address)
-//                )
+                val withdrawal = this.withdrawals[input.address]!!
+                LOG.info("CancelWithdrawal: ${input.address}, amount: ${withdrawal.amount}")
+                val withdrawalStatus = WithdrawalStatus(WithdrawalStatusType.INIT, withdrawal)
+                withdrawalStatus.cancel()
+                this.fireEvent(
+                    HubEvent(HubEventType.WITHDRAWAL, withdrawalStatus, input.address)
+                )
             }
         }
     }
