@@ -2,6 +2,7 @@ package org.starcoin.sirius.protocol.ethereum
 
 import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.channels.Channel
+import kotlinx.coroutines.channels.ReceiveChannel
 import kotlinx.coroutines.channels.sendBlocking
 import kotlinx.coroutines.launch
 import kotlinx.io.IOException
@@ -64,7 +65,7 @@ class EthereumChain constructor(httpUrl: String = DEFAULT_URL, socketPath: Strin
         return resp.transactionHash.toHash()
     }
 
-    override fun watchTransactions(filter: (TransactionResult<EthereumTransaction>) -> Boolean): Channel<TransactionResult<EthereumTransaction>> {
+    override fun watchTransactions(filter: (TransactionResult<EthereumTransaction>) -> Boolean): ReceiveChannel<TransactionResult<EthereumTransaction>> {
         val ch = Channel<TransactionResult<EthereumTransaction>>(10)
         val hx = ArrayList<Hash>(1)
         GlobalScope.launch {
@@ -117,7 +118,7 @@ class EthereumChain constructor(httpUrl: String = DEFAULT_URL, socketPath: Strin
         return ch
     }
 
-    override fun watchBlock(filter: (EthereumBlock) -> Boolean): Channel<EthereumBlock> {
+    override fun watchBlock(filter: (EthereumBlock) -> Boolean): ReceiveChannel<EthereumBlock> {
         val ch = Channel<EthereumBlock>(10)
         GlobalScope.launch {
             web3.blockFlowable(true).subscribe {

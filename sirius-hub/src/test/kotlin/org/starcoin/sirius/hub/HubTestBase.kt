@@ -1,7 +1,6 @@
 package org.starcoin.sirius.hub
 
 import kotlinx.coroutines.GlobalScope
-import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.channels.ReceiveChannel
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
@@ -52,7 +51,7 @@ abstract class HubTestBase<T : ChainTransaction, A : ChainAccount> {
 
     abstract fun createChainAccount(amount: Long): A
 
-    private var txChannel: Channel<TransactionResult<T>> by Delegates.notNull()
+    private var txChannel: ReceiveChannel<TransactionResult<T>> by Delegates.notNull()
 
     @Before
     fun before() {

@@ -2,6 +2,7 @@ package org.starcoin.sirius.protocol.ethereum
 
 import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.channels.Channel
+import kotlinx.coroutines.channels.ReceiveChannel
 import kotlinx.coroutines.channels.SendChannel
 import kotlinx.coroutines.channels.actor
 import kotlinx.coroutines.runBlocking
@@ -29,6 +30,11 @@ class InMemoryChain(val autoGenblock: Boolean = true) : EthereumBaseChain() {
     //StandaloneBlockchain autoblock has concurrent problem
     val sb = StandaloneBlockchain().withAutoblock(false).withGasLimit(500000000)
     val originAccount = sb.sender
+    val eventBus = EventBusEthereumListener()
+
+    init {
+        sb.addEthereumListener(eventBus)
+    }
 
     val chainAcctor = chainActor()
 
@@ -67,11 +73,8 @@ class InMemoryChain(val autoGenblock: Boolean = true) : EthereumBaseChain() {
     }
 
 
-    override fun watchTransactions(filter: (TransactionResult<EthereumTransaction>) -> Boolean): Channel<TransactionResult<EthereumTransaction>> {
-        var transactionChannel = Channel<TransactionResult<EthereumTransaction>>(200)
-        //TODO remove listener on channel close
-        sb.addEthereumListener(TransactionListener(transactionChannel, filter))
-        return transactionChannel
+    override fun watchTransactions(filter: (TransactionResult<EthereumTransaction>) -> Boolean): ReceiveChannel<TransactionResult<EthereumTransaction>> {
+        return eventBus.subscribeTx(filter)
     }
 
     override fun getTransactionReceipts(txHashs: List<Hash>): List<Receipt> {
@@ -85,11 +88,8 @@ class InMemoryChain(val autoGenblock: Boolean = true) : EthereumBaseChain() {
         return block?.let { EthereumBlock(block) }
     }
 
-    override fun watchBlock(filter: (EthereumBlock) -> Boolean): Channel<EthereumBlock> {
-        var blockChannel = Channel<EthereumBlock>(200)
-        //TODO remove listener on channel close
-        sb.addEthereumListener(BlockListener(blockChannel, filter))
-        return blockChannel
+    override fun watchBlock(filter: (EthereumBlock) -> Boolean): ReceiveChannel<EthereumBlock> {
+        return eventBus.subscribeBlock(filter)
     }
 
     override fun getBalance(address: Address): BigInteger {

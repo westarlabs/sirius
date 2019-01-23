@@ -1,6 +1,6 @@
 package org.starcoin.sirius.protocol.ethereum
 
-import kotlinx.coroutines.channels.Channel
+import kotlinx.coroutines.channels.ReceiveChannel
 import kotlinx.coroutines.runBlocking
 import kotlinx.serialization.ImplicitReflectionSerializer
 import org.ethereum.util.blockchain.EtherUtil
@@ -30,8 +30,8 @@ class InMemoryHubContractTest {
     private var owner: EthereumAccount by Delegates.notNull()
     private var alice: EthereumAccount by Delegates.notNull()
 
-    private var ownerChannel: Channel<TransactionResult<EthereumTransaction>> by Delegates.notNull()
-    private var aliceChannel: Channel<TransactionResult<EthereumTransaction>> by Delegates.notNull()
+    private var ownerChannel: ReceiveChannel<TransactionResult<EthereumTransaction>> by Delegates.notNull()
+    private var aliceChannel: ReceiveChannel<TransactionResult<EthereumTransaction>> by Delegates.notNull()
 
     private var blocksPerEon = ContractConstructArgs.DEFAULT_ARG.blocksPerEon
 

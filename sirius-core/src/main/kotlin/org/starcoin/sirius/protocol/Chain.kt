@@ -1,6 +1,7 @@
 package org.starcoin.sirius.protocol
 
 import kotlinx.coroutines.channels.Channel
+import kotlinx.coroutines.channels.ReceiveChannel
 import org.starcoin.sirius.core.*
 import java.io.File
 import java.math.BigInteger
@@ -17,11 +18,11 @@ interface Chain<T : ChainTransaction, B : Block<T>, A : ChainAccount> {
 
     fun getBlock(height: BigInteger = BigInteger.valueOf(-1)): B?
 
-    fun watchBlock(filter: (B) -> Boolean = { true }): Channel<B>
+    fun watchBlock(filter: (B) -> Boolean = { true }): ReceiveChannel<B>
 
     fun getTransactionReceipts(txHashs: List<Hash>): List<Receipt?>
 
-    fun watchTransactions(filter: (TransactionResult<T>) -> Boolean = { true }): Channel<TransactionResult<T>>
+    fun watchTransactions(filter: (TransactionResult<T>) -> Boolean = { true }): ReceiveChannel<TransactionResult<T>>
 
     fun watchEvents(
         contract: Address,
