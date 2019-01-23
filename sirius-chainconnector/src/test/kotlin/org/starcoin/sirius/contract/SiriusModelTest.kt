@@ -12,6 +12,11 @@ class SiriusModelTest : ContractTestBase("solidity/test_all", "test_all") {
     fun <T : SiriusObject> doTest(siriusClass: KClass<T>, functionName: String) {
         val companion = siriusClass.companionObjectInstance as SiriusObjectCompanion<*, *>
         val obj = companion.mock()
+        this.doTest(obj, functionName)
+    }
+
+    fun <T : SiriusObject> doTest(obj: T, functionName: String) {
+        val companion = obj.javaClass.kotlin.companionObjectInstance as SiriusObjectCompanion<*, *>
         val data = obj.toRLP()
         val callResult = contract.callConstFunction(functionName, data)[0] as ByteArray
         Assert.assertArrayEquals("expect ${data.toHEXString()} but get ${callResult.toHEXString()}", data, callResult)
@@ -57,6 +62,13 @@ class SiriusModelTest : ContractTestBase("solidity/test_all", "test_all") {
     @Test
     fun testBalanceUpdateProof() {
         doTest(BalanceUpdateProof::class, "balance_update_proof_test")
+        doTest(BalanceUpdateProof(Update.mock()), "balance_update_proof_test")
+        doTest(BalanceUpdateProof(AMTreePath.mock()), "balance_update_proof_test")
+    }
+
+    @Test
+    fun testAMTreePath() {
+        doTest(AMTreePath::class, "am_tree_path_test")
     }
 
     @Test

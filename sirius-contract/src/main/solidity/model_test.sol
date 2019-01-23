@@ -13,6 +13,7 @@ contract test_all_interface {
     function open_transfer_delivery_challenge_request_test(bytes calldata data) external returns (bytes memory);
     function close_transfer_delivery_challenge_test(bytes calldata data) external returns (bytes memory);
     function am_tree_path_node_test(bytes calldata data) external returns (bytes memory);
+function am_tree_path_test(bytes calldata data) external returns (bytes memory);
     function am_tree_proof_test(bytes calldata data) external returns (bytes memory);
     function balance_update_proof_test(bytes calldata data) external returns (bytes memory);
     function update_data_test(bytes calldata data) external returns (bytes memory);
@@ -57,7 +58,13 @@ contract test_all is test_all_interface {
         return ModelLib.marshalAMTreeProof(proof);
     }
 
-    function am_tree_path_node_test(bytes calldata data) external returns (bytes memory) {
+function am_tree_path_test(bytes calldata data) external returns (bytes memory) {
+ModelLib.AMTreePath memory path = ModelLib.unmarshalAMTreePath(RLPDecoder.toRLPItem(data, true));
+
+return ModelLib.marshalAMTreePath(path);
+}
+
+function am_tree_path_node_test(bytes calldata data) external returns (bytes memory) {
         ModelLib.AMTreePathNode memory leaf = ModelLib.unmarshalAMTreePathNode(RLPDecoder.toRLPItem(data, true));
 
         return ModelLib.marshalAMTreePathNode(leaf);

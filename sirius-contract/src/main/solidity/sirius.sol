@@ -243,30 +243,30 @@ require(allotmentTmp == root.node.allotment, ByteUtilLib.appendUintToString("all
     function openBalanceUpdateChallenge(bytes calldata data) external recovery returns (bool) {
         if(!recoveryMode) {
             ModelLib.BalanceUpdateProof memory open = ModelLib.unmarshalBalanceUpdateProof(RLPDecoder.toRLPItem(data, true));
-            require(open.hasPath || open.hasUp);
-            require(balances[0].hasRoot);
+    require(open.hasPath || open.hasUp, "miss path and update");
+    require(balances[0].hasRoot, "balances[0].hasRoot false");
 
             uint preEon = balances[1].eon;
             bytes32 key = ByteUtilLib.address2hash(msg.sender);
             if(open.hasPath) {//Special case:eon-1 exist a account, evil owner removed it in this eon, so the account has only path
-                require(preEon == open.path.eon);
+    require(preEon == open.path.eon, ByteUtilLib.appendUintToString("expect path eon:", preEon));
 
                 ModelLib.HubRoot memory preRoot = balances[1].root;
                 bool proofFlag = ModelLib.verifyMembershipProof4AMTreePath(preRoot.node, open.path);
-                require(proofFlag);
+    require(proofFlag, "verify proof fail");
             } else {//once the account had deposit, proof must exist
                 GlobleLib.Deposit memory d = all[msg.sender];
-                require(!d.hasVal);
+    require(!d.hasVal, "miss deposit");
             }
 
             if(open.hasUp) {//Special case:new account only update
                 ModelLib.Update memory up = open.update;
-                require(up.upData.eon == preEon);
+            require(up.upData.eon == preEon, ByteUtilLib.appendUintToString("expect update eon:", preEon));
 
                 bool signFlag = ModelLib.verifySign4Update(up.upData, up.sign, msg.sender);
-                require(signFlag);
+            require(signFlag, "verify update sign fail");
                 bool hubSignFlag = ModelLib.verifySign4Update(up.upData, up.hubSign, owner);
-                require(hubSignFlag);
+            require(hubSignFlag, "verify hub sign fail");
             } else {
 
             }

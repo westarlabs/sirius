@@ -18,9 +18,8 @@ data class BalanceUpdateProof(
     val path: AMTreePath = AMTreePath.DUMMY_PATH
 ) : SiriusObject() {
 
-    constructor(proof: AMTreeProof) : this(
-        true, proof.leaf.update, true, proof.path
-    )
+    //do not use proof's update, proof is e-1, proof's update is e-1-1, need update is e-1
+    constructor(proof: AMTreeProof) : this(proof.path)
 
     constructor(update: Update) : this(hasUpdate = true, update = update)
     constructor(path: AMTreePath) : this(hasPath = true, path = path)

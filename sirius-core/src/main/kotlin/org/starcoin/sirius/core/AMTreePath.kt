@@ -56,7 +56,7 @@ data class AMTreePath(
     @SerialId(3)
     @Optional
     private val nodes: MutableList<AMTreePathNode> = mutableListOf()
-) : List<AMTreePathNode> by nodes, SiriusObject() {
+) : SiriusObject(), List<AMTreePathNode> by nodes {
 
     fun append(node: AMTreeNode) {
         this.nodes.add(node.toAMTreePathNode())
