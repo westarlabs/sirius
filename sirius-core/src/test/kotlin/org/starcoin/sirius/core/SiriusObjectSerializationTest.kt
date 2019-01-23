@@ -66,5 +66,9 @@ open class SiriusObjectSerializationTest {
         }
     }
 
-
+    @Test
+    fun testSignature() {
+        Assert.assertTrue(Signature.ZERO_SIGN.isZero())
+        Assert.assertFalse(Signature.random().isZero())
+    }
 }

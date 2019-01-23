@@ -49,7 +49,7 @@ class Signature private constructor(internal val bytes: ByteArray) {
         return bytes.contentHashCode()
     }
 
-    fun isZero() = bytes.all { it == 0.toByte() }
+    fun isZero() = bytes.contentEquals(ZERO_SIGN.bytes)
 
     @Serializer(forClass = Signature::class)
     companion object : KSerializer<Signature> {
@@ -68,7 +68,7 @@ class Signature private constructor(internal val bytes: ByteArray) {
             }
         }
 
-        val ZERO_SIGN = wrap(ByteArray(4))
+        val ZERO_SIGN = ofDummyKey(Hash.EMPTY_DADA_HASH.toBytes())
 
         fun wrap(hexString: String): Signature {
             return wrap(hexString.hexToByteArray())
