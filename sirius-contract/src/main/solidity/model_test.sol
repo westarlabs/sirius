@@ -20,6 +20,7 @@ contract test_all_interface {
     function update_data_test(bytes calldata data) external returns (bytes memory);
     function update_test(bytes calldata data) external returns (bytes memory);
     function verify_proof_test(bytes calldata data1, bytes calldata data2) external returns (bool);
+    function sign_test() external returns (bool);
 }
 
 contract test_all is test_all_interface {
@@ -59,75 +60,82 @@ contract test_all is test_all_interface {
         return ModelLib.marshalAMTreeProof(proof);
     }
 
-function am_tree_path_test(bytes calldata data) external returns (bytes memory) {
-ModelLib.AMTreePath memory path = ModelLib.unmarshalAMTreePath(RLPDecoder.toRLPItem(data, true));
+    function am_tree_path_test(bytes calldata data) external returns (bytes memory) {
+        ModelLib.AMTreePath memory path = ModelLib.unmarshalAMTreePath(RLPDecoder.toRLPItem(data, true));
 
-return ModelLib.marshalAMTreePath(path);
-}
+        return ModelLib.marshalAMTreePath(path);
+    }
 
-function am_tree_path_node_test(bytes calldata data) external returns (bytes memory) {
+    function am_tree_path_node_test(bytes calldata data) external returns (bytes memory) {
         ModelLib.AMTreePathNode memory leaf = ModelLib.unmarshalAMTreePathNode(RLPDecoder.toRLPItem(data, true));
 
         return ModelLib.marshalAMTreePathNode(leaf);
     }
 
-    function balance_update_proof_test2(bytes calldata data) external returns (bytes memory) {
+    function balance_update_proof_test(bytes calldata data) external returns (bytes memory) {
         ModelLib.BalanceUpdateProof memory proof = ModelLib.unmarshalBalanceUpdateProof(RLPDecoder.toRLPItem(data, true));
 
         return ModelLib.marshalBalanceUpdateProof(proof);
     }
 
-    function balance_update_proof_test(bytes calldata data) external returns (bytes memory) {
-            RLPLib.RLPItem memory rlp = RLPDecoder.toRLPItem(data, true);
-            RLPLib.Iterator memory it = RLPDecoder.iterator(rlp);
-            Log.log("11", RLPDecoder.items(rlp));
-            uint idx;
-            ModelLib.BalanceUpdateProof memory bup;
-            while(RLPDecoder.hasNext(it)) {
-                RLPLib.RLPItem memory r = RLPDecoder.next(it);
-                if(idx == 0) bup.hasUp = RLPDecoder.toBool(r);
-                else if(idx == 1) {
-                    RLPLib.Iterator memory it1 = RLPDecoder.iterator(r);
-                    ModelLib.Update memory update;
-                    Log.log("22", RLPDecoder.items(r));
-                    uint idx1;
-                    while (RLPDecoder.hasNext(it1)) {
-                        RLPLib.RLPItem memory r2 = RLPDecoder.next(it1);
-                        if (idx1 == 0) update.upData = ModelLib.unmarshalUpdateData(r2);
-                        else if (idx1 == 1) {
-                            Log.log("33", RLPLib.toData(r2));
+    function balance_update_proof_test2(bytes calldata data) external returns (bytes memory) {
+        RLPLib.RLPItem memory rlp = RLPDecoder.toRLPItem(data, true);
+        RLPLib.Iterator memory it = RLPDecoder.iterator(rlp);
 
-                            //RLPLib.RLPItem memory tmp = RLPDecoder.toRLPItem(RLPLib.toData(r2), true);
-                            //RLPLib.Iterator memory it3 = RLPDecoder.iterator(tmp);
-                            //Log.log("33", RLPDecoder.items(tmp));
-                            //ModelLib.Signature memory sign;
-                            //uint idx3;
-                            //while(RLPDecoder.hasNext(it3)) {
-                            //    RLPLib.RLPItem memory r3 = RLPDecoder.next(it3);
-                            //    if(idx3 == 0) {
-                                    //bytes memory bs = RLPLib.toData(r3);
-                                    //sign.v = bs[0];
-                            //    } else if(idx3 == 1) {
-                                    //sign.r = ByteUtilLib.bytesToBytes32(RLPLib.toData(r3));
-                            //    } else if(idx3 == 2) {
-                                    //sign.s = ByteUtilLib.bytesToBytes32(RLPLib.toData(r3));
-                            //     } else {}
+        uint idx;
+        ModelLib.BalanceUpdateProof memory bup;
+        while(RLPDecoder.hasNext(it)) {
+            RLPLib.RLPItem memory r = RLPDecoder.next(it);
 
-                            //    idx3++;
-                            //}
-                        } else if (idx1 == 2) {}//update.hubSign = ModelLib.unmarshalSignature(r2);
-                        else {}
+            if(idx == 0) bup.hasUp = RLPDecoder.toBool(r);
+            else if(idx == 1) {
+                RLPLib.Iterator memory it1 = RLPDecoder.iterator(r);
+                ModelLib.Update memory update;
+                uint idx1;
+                while (RLPDecoder.hasNext(it1)) {
+                    RLPLib.RLPItem memory r2 = RLPDecoder.next(it1);
 
-                        idx1++;
-                    }
-                } else if(idx == 2) bup.hasPath = RLPDecoder.toBool(r);
-                else if(idx == 3) bup.path = ModelLib.unmarshalAMTreePath(r);
-                else {}
+                    if (idx1 == 0) {
+                        update.upData = ModelLib.unmarshalUpdateData(r2);
+                        Log.log("44", ModelLib.marshalUpdateData(update.upData));
+                    }else if (idx1 == 1) {
+                        RLPLib.RLPItem memory tmp = RLPDecoder.toRLPItem(RLPLib.toData(r2), true);
+                        RLPLib.Iterator memory it3 = RLPDecoder.iterator(tmp);
+                        ModelLib.Signature memory sign;
+                        uint idx3;
+                        while(RLPDecoder.hasNext(it3)) {
+                            RLPLib.RLPItem memory r3 = RLPDecoder.next(it3);
+                            if(idx3 == 0) {
+                                bytes memory bs = RLPLib.toData(r3);
+                                sign.v = bs[0];
+                            } else if(idx3 == 1) {
+                                sign.r = ByteUtilLib.bytesToBytes32(RLPLib.toData(r3));
+                            } else if(idx3 == 2) {
+                                sign.s = ByteUtilLib.bytesToBytes32(RLPLib.toData(r3));
+                             } else {}
 
-                idx++;
-            }
-            return data;
+                            idx3++;
+                        }
+                        Log.log("33", ModelLib.marshalSignature(sign));
+                        update.sign = sign;
+                    } else if (idx1 == 2) update.hubSign = ModelLib.unmarshalSignature(r2);
+                    else {}
+
+                    idx1++;
+                }
+
+                Log.log("22", ModelLib.marshalUpdate(update));
+                bup.update = update;
+            } else if(idx == 2) bup.hasPath = RLPDecoder.toBool(r);
+            else if(idx == 3) bup.path = ModelLib.unmarshalAMTreePath(r);
+            else {}
+
+            idx++;
         }
+
+        Log.log("11", ModelLib.marshalBalanceUpdateProof(bup));
+        return data;
+    }
 
     function contract_return_test(bytes calldata data) external pure returns (bytes memory) {
         ModelLib.ContractReturn memory cr = ModelLib.unmarshalContractReturn(RLPDecoder.toRLPItem(data, true));
@@ -151,5 +159,10 @@ function am_tree_path_node_test(bytes calldata data) external returns (bytes mem
         ModelLib.AMTreePathNode memory root = ModelLib.unmarshalAMTreePathNode(RLPDecoder.toRLPItem(data2, true));
 
         return ModelLib.verifyMembershipProof4AMTreeProof(root, proof);
+    }
+
+    function sign_test() external returns (bool) {
+        ModelLib.Signature memory test = ModelLib.unmarshalSignature(RLPDecoder.toRLPItem(hex"f8431ca003925438bf9bdfed9cb8d9d9467f8fc624f389846f0db71f4f5c84b483077da6a02ca68cb1027ace392bc6a84fe0ba29288aa07942f571f56201dd33c009ee3886", true));
+        return true;
     }
 }
