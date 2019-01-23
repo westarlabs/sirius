@@ -155,16 +155,12 @@ class HubStatus {
         return lastIndex
     }
 
-    internal fun newChallenge(update: Update, keyPair: KeyPair, lastIndex: Int) {
-        //var challenge: BalanceUpdateChallenge? = null
-        //if (eonStatuses[lastIndex] != null && eonStatuses[lastIndex].treeProof != null) {
-        //    var proof = BalanceUpdateProof(hasUp = false, hasPath = true,proof=eonStatuses[lastIndex].treeProof?:AMTreeProof.DUMMY_PROOF)
-        //    challenge = BalanceUpdateChallenge(proof, keyPair.public)
-        //} else {
-        //    var proof = BalanceUpdateProof(hasUp = true,update =update)
-        //    challenge = BalanceUpdateChallenge(proof, keyPair.public)
-        //}
-        //return challenge
+    internal fun newChallenge(update: Update,lastIndex: Int):BalanceUpdateProof {
+        if (eonStatuses[lastIndex] != null && eonStatuses[lastIndex].treeProof != null) {
+            return BalanceUpdateProof(hasUp = false, hasPath = true,path=eonStatuses[lastIndex].treeProof?.path)
+        } else {
+            return BalanceUpdateProof(hasUp = true,update =update)
+        }
     }
 
     internal fun syncAllotment(accountInfo: Starcoin.HubAccount) {

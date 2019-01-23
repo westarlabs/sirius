@@ -181,6 +181,7 @@ class WalletTest {
         runBlocking {
             walletAlice.getMessageChannel()?.receive()
             walletAlice.getMessageChannel()?.receive()
+            walletAlice.getMessageChannel()?.receive()
         }
 
 

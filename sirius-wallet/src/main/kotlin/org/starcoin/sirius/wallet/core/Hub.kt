@@ -209,18 +209,13 @@ class Hub <T : ChainTransaction, A : ChainAccount> {
         if (!needChallenge) {
             return
         }
-        //openBalanceUpdateChallenge(lastUpdate, lastIndex)
-        openBalanceUpdateChallenge()
+        var balanceUpdateProof=this.hubStatus.newChallenge(lastUpdate, lastIndex)
+        this.contract.openBalanceUpdateChallenge(account,balanceUpdateProof)
+
         GlobalScope.launch {
             eonChannel?.send(ClientEventType.OPEN_BALANCE_UPDATE_CHALLENGE)
         }
 
-    }
-
-    internal fun openBalanceUpdateChallenge(){
-        //val balanceUpdateProof = BalanceUpdateProof(this.hubStatus.currentUpdate(this.currentEon),this.hubStatus.currentEonProof())
-        //var challenge=BalanceUpdateChallenge(balanceUpdateProof,account.key.keyPair.public)
-        //this.contract.openBalanceUpdateChallenge(account,challenge)
     }
 
     fun getAvailableCoin():BigInteger {
@@ -393,4 +388,9 @@ class Hub <T : ChainTransaction, A : ChainAccount> {
         }
     }
 
+    internal fun onBalanceUpdateChallenge(proof:BalanceUpdateProof){
+        GlobalScope.launch {
+            eonChannel?.send(ClientEventType.OPEN_BALANCE_UPDATE_CHALLENGE_PASS)
+        }
+    }
 }
