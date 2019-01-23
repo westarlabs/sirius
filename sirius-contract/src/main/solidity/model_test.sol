@@ -13,9 +13,10 @@ contract test_all_interface {
     function open_transfer_delivery_challenge_request_test(bytes calldata data) external returns (bytes memory);
     function close_transfer_delivery_challenge_test(bytes calldata data) external returns (bytes memory);
     function am_tree_path_node_test(bytes calldata data) external returns (bytes memory);
-function am_tree_path_test(bytes calldata data) external returns (bytes memory);
+    function am_tree_path_test(bytes calldata data) external returns (bytes memory);
     function am_tree_proof_test(bytes calldata data) external returns (bytes memory);
     function balance_update_proof_test(bytes calldata data) external returns (bytes memory);
+    function balance_update_proof_test2(bytes calldata data) external returns (bytes memory);
     function update_data_test(bytes calldata data) external returns (bytes memory);
     function update_test(bytes calldata data) external returns (bytes memory);
     function verify_proof_test(bytes calldata data1, bytes calldata data2) external returns (bool);
@@ -70,11 +71,63 @@ function am_tree_path_node_test(bytes calldata data) external returns (bytes mem
         return ModelLib.marshalAMTreePathNode(leaf);
     }
 
-    function balance_update_proof_test(bytes calldata data) external returns (bytes memory) {
+    function balance_update_proof_test2(bytes calldata data) external returns (bytes memory) {
         ModelLib.BalanceUpdateProof memory proof = ModelLib.unmarshalBalanceUpdateProof(RLPDecoder.toRLPItem(data, true));
 
         return ModelLib.marshalBalanceUpdateProof(proof);
     }
+
+    function balance_update_proof_test(bytes calldata data) external returns (bytes memory) {
+            RLPLib.RLPItem memory rlp = RLPDecoder.toRLPItem(data, true);
+            RLPLib.Iterator memory it = RLPDecoder.iterator(rlp);
+            Log.log("11", RLPDecoder.items(rlp));
+            uint idx;
+            ModelLib.BalanceUpdateProof memory bup;
+            while(RLPDecoder.hasNext(it)) {
+                RLPLib.RLPItem memory r = RLPDecoder.next(it);
+                if(idx == 0) bup.hasUp = RLPDecoder.toBool(r);
+                else if(idx == 1) {
+                    RLPLib.Iterator memory it1 = RLPDecoder.iterator(r);
+                    ModelLib.Update memory update;
+                    Log.log("22", RLPDecoder.items(r));
+                    uint idx1;
+                    while (RLPDecoder.hasNext(it1)) {
+                        RLPLib.RLPItem memory r2 = RLPDecoder.next(it1);
+                        if (idx1 == 0) update.upData = ModelLib.unmarshalUpdateData(r2);
+                        else if (idx1 == 1) {
+                            Log.log("33", RLPLib.toData(r2));
+
+                            //RLPLib.RLPItem memory tmp = RLPDecoder.toRLPItem(RLPLib.toData(r2), true);
+                            //RLPLib.Iterator memory it3 = RLPDecoder.iterator(tmp);
+                            //Log.log("33", RLPDecoder.items(tmp));
+                            //ModelLib.Signature memory sign;
+                            //uint idx3;
+                            //while(RLPDecoder.hasNext(it3)) {
+                            //    RLPLib.RLPItem memory r3 = RLPDecoder.next(it3);
+                            //    if(idx3 == 0) {
+                                    //bytes memory bs = RLPLib.toData(r3);
+                                    //sign.v = bs[0];
+                            //    } else if(idx3 == 1) {
+                                    //sign.r = ByteUtilLib.bytesToBytes32(RLPLib.toData(r3));
+                            //    } else if(idx3 == 2) {
+                                    //sign.s = ByteUtilLib.bytesToBytes32(RLPLib.toData(r3));
+                            //     } else {}
+
+                            //    idx3++;
+                            //}
+                        } else if (idx1 == 2) {}//update.hubSign = ModelLib.unmarshalSignature(r2);
+                        else {}
+
+                        idx1++;
+                    }
+                } else if(idx == 2) bup.hasPath = RLPDecoder.toBool(r);
+                else if(idx == 3) bup.path = ModelLib.unmarshalAMTreePath(r);
+                else {}
+
+                idx++;
+            }
+            return data;
+        }
 
     function contract_return_test(bytes calldata data) external pure returns (bytes memory) {
         ModelLib.ContractReturn memory cr = ModelLib.unmarshalContractReturn(RLPDecoder.toRLPItem(data, true));

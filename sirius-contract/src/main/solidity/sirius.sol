@@ -89,7 +89,6 @@ contract SiriusService is Sirius {
         require(msg.value > 0);
         if(!recoveryMode) {
             GlobleLib.deposit(balances[0].depositMeta, msg.sender, msg.value);
-            bytes32 key = ByteUtilLib.address2hash(msg.sender);
             dataStore.depositData[balances[0].eon][msg.sender] = SafeMath.add(dataStore.depositData[balances[0].eon][msg.sender], msg.value);
 
             GlobleLib.Deposit memory d = all[msg.sender];

@@ -715,9 +715,9 @@ library ModelLib {
         while(RLPDecoder.hasNext(it)) {
             RLPLib.RLPItem memory r = RLPDecoder.next(it);
             if(idx == 0) bup.hasUp = RLPDecoder.toBool(r);
-            else if(idx == 1) bup.update = unmarshalUpdate(r);
+            else if(idx == 1 && bup.hasUp) bup.update = unmarshalUpdate(r);
             else if(idx == 2) bup.hasPath = RLPDecoder.toBool(r);
-            else if(idx == 3) bup.path = unmarshalAMTreePath(r);
+            else if(idx == 3 && bup.hasPath) bup.path = unmarshalAMTreePath(r);
             else {}
 
             idx++;
