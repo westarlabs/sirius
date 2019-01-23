@@ -262,16 +262,15 @@ abstract class HubServerIntegrationTestBase<T : ChainTransaction, A : ChainAccou
         Assert.assertEquals(depositAmount - transferAmount, a0.hubAccount!!.allotment)
         Assert.assertEquals(depositAmount + transferAmount, a1.hubAccount!!.allotment)
 
-        //this.transferDeliveryChallenge(a0, tx)
+        this.transferDeliveryChallenge(a0, tx)
         this.waitToNextEon()
 
         withdrawal(a0, a0.hubAccount!!.balance, true)
 
         this.waitToNextEon()
-//        this.balanceUpdateChallenge(a0)
-//        this.produceBlock(1)
-//        this.balanceUpdateChallenge(a1)
-//        this.waitToNextEon()
+        this.balanceUpdateChallenge(a0)
+        this.balanceUpdateChallenge(a1)
+        this.waitToNextEon()
     }
 
     @Ignore
