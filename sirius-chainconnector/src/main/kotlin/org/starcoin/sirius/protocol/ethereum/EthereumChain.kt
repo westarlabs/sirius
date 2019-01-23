@@ -66,12 +66,14 @@ class EthereumChain constructor(httpUrl: String = DEFAULT_URL, socketPath: Strin
     }
 
     override fun watchTransactions(filter: (TransactionResult<EthereumTransaction>) -> Boolean): ReceiveChannel<TransactionResult<EthereumTransaction>> {
-        val ch = Channel<TransactionResult<EthereumTransaction>>(10)
+        val ch = Channel<TransactionResult<EthereumTransaction>>()
         val hx = ArrayList<Hash>(1)
         GlobalScope.launch {
             web3.transactionFlowable().subscribe {
+                hx.add(Hash.wrap(it.hash))
+                val receipts = getTransactionReceipts(hx)
                 val txr = TransactionResult(
-                    EthereumTransaction(it), getTransactionReceipts(hx)[0]!!
+                    EthereumTransaction(it), receipts[0]!!
                 )
                 if (filter(txr)) ch.sendBlocking(txr)
             }
