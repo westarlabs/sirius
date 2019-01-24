@@ -135,7 +135,7 @@ class WalletTest {
     fun testTransfer(){
         testDeposit()
 
-        val amount=20L
+        val amount=EtherUtil.convert(20, EtherUtil.Unit.ETHER)
         val depositAmount = EtherUtil.convert(2000, EtherUtil.Unit.ETHER)
 
         val transaction=walletAlice.hubTransfer(bob.address,amount)
@@ -152,14 +152,14 @@ class WalletTest {
 
         Assert.assertEquals(account?.address,bob.address)
         Assert.assertEquals(account?.deposit,depositAmount)
-        Assert.assertEquals(account?.update?.receiveAmount?.toLong(),amount)
-        Assert.assertEquals(account?.update?.sendAmount?.toLong(),0L)
+        Assert.assertEquals(account?.update?.receiveAmount,amount)
+        Assert.assertEquals(account?.update?.sendAmount,BigInteger.ZERO)
 
         account=walletAlice.hubAccount()
         Assert.assertEquals(account?.address,alice.address)
         Assert.assertEquals(account?.deposit,depositAmount)
-        Assert.assertEquals(account?.update?.receiveAmount?.toLong(),0L)
-        Assert.assertEquals(account?.update?.sendAmount?.toLong(),amount)
+        Assert.assertEquals(account?.update?.receiveAmount,BigInteger.ZERO)
+        Assert.assertEquals(account?.update?.sendAmount,amount)
 
     }
 
@@ -234,17 +234,77 @@ class WalletTest {
             walletAlice.getMessageChannel()?.receive()
         }
 
-        createBlocks(6)
+        var account=walletAlice.hubAccount()
+        var remaining= EtherUtil.convert(2000, EtherUtil.Unit.ETHER) - amount
+        Assert.assertEquals(account?.allotment,remaining)
+        Assert.assertEquals(walletAlice.balance(),remaining)
+
         var balanceAfter=chain.getBalance(alice.address)
 
-        var balanceContract=chain.getBalance(contract.contractAddress)
-        println(balanceContract)
-        println(balance-balanceAfter)
-        println(amount)
-        Assert.assertEquals(balance,balanceAfter)
+        Assert.assertTrue(balance>balanceAfter)
 
-        var account=walletAlice.hubAccount()
-        println(account?.balance)
+    }
+
+    @Test
+    fun testCancelWithdrawal() {
+        testDeposit()
+
+        val depositAmount = EtherUtil.convert(2000, EtherUtil.Unit.ETHER)
+        var amount = EtherUtil.convert(1500, EtherUtil.Unit.ETHER)
+        var transaction=walletBob.hubTransfer(alice.address,amount)
+        Assert.assertNotNull(transaction)
+
+        runBlocking {
+            walletAlice.getMessageChannel()?.receive()
+            walletBob.getMessageChannel()?.receive()
+            walletAlice.getMessageChannel()?.receive()
+        }
+
+        waitToNextEon()
+
+        runBlocking {
+            walletAlice.getMessageChannel()?.receive()
+        }
+
+        Assert.assertEquals(walletAlice.hubAccount()?.balance,amount+depositAmount)
+        Assert.assertEquals(walletAlice.balance(),amount+depositAmount)
+
+        waitToNextEon()
+        runBlocking {
+            walletAlice.getMessageChannel()?.receive()
+        }
+
+        transaction=walletAlice.hubTransfer(bob.address,amount)
+        Assert.assertNotNull(transaction)
+
+        runBlocking {
+            walletBob.getMessageChannel()?.receive()
+            walletAlice.getMessageChannel()?.receive()
+            walletBob.getMessageChannel()?.receive()
+        }
+
+        Assert.assertEquals(walletAlice.hubAccount()?.balance,depositAmount)
+        Assert.assertEquals(walletAlice.balance(),depositAmount)
+
+        amount = EtherUtil.convert(3000, EtherUtil.Unit.ETHER)
+        walletAlice.withdrawal(amount)
+
+        runBlocking {
+            walletAlice.getMessageChannel()?.receive()
+        }
+
+        createBlocks(1)
+
+        runBlocking {
+            walletAlice.getMessageChannel()?.receive()
+        }
+        Assert.assertTrue(walletAlice.hub.hubStatus.couldWithDrawal())
+        Assert.assertEquals(walletAlice.hubAccount()?.balance,depositAmount)
+        Assert.assertEquals(walletBob.hubAccount()?.balance,depositAmount)
+
+        Assert.assertEquals(walletBob.balance(),depositAmount)
+        Assert.assertEquals(walletAlice.balance(),depositAmount)
+
     }
 
     private fun waitToNextEon() {

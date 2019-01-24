@@ -46,6 +46,14 @@ class BlockChain <T : ChainTransaction, A : ChainAccount> (chain: Chain<T, out B
                             hub.onWithdrawal(withdrawalStatus)
                         }
                     }
+                    is CancelWithdrawalFunction -> {
+                        val input = contractFunction.decode(tx.data)
+                            ?: throw RuntimeException("$contractFunction decode tx:${txResult.tx} fail.")
+                        LOG.info("$contractFunction: $input")
+                        if(input.address.equals(account.address)){
+                            hub.cancelWithdrawal(input)
+                        }
+                    }
                     is OpenTransferDeliveryChallengeFunction -> {
                         val input = contractFunction.decode(tx.data)
                             ?: throw RuntimeException("$contractFunction decode tx:${txResult.tx} fail.")

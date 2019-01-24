@@ -3,9 +3,12 @@ package org.starcoin.sirius.wallet.core
 import org.starcoin.proto.Starcoin
 import org.starcoin.sirius.core.*
 import org.starcoin.sirius.lang.toBigInteger
+import org.starcoin.sirius.util.WithLogging
 import java.math.BigInteger
 
 class HubStatus {
+
+    companion object : WithLogging()
 
     var allotment: BigInteger = BigInteger.ZERO
         private set
@@ -22,9 +25,11 @@ class HubStatus {
 
     private var depositingTransactions: MutableMap<Hash, ChainTransaction> = mutableMapOf()
 
-    private var withdrawalStatus: WithdrawalStatus? = null
+    internal var withdrawalStatus: WithdrawalStatus? = null
 
     var height: Int = 0
+
+    internal var update:Update?=null
 
     internal constructor(eon: Eon) {
         val eonStatus = EonStatus(eon, BigInteger.ZERO)
@@ -32,22 +37,8 @@ class HubStatus {
         this.eonStatuses[currentEonStatusIndex] = eonStatus
     }
 
-    internal fun syncWithDrawal(value: WithdrawalStatus) {
-        if (value == null) {
-            this.withdrawalStatus = null
-            return
-        }
-        if (this.withdrawalStatus?.withdrawalAmount==value?.withdrawalAmount
-            && this.withdrawalStatus?.status === Starcoin.WithdrawalStatusType.WITHDRAWAL_STATUS_CLIENT_CONFIRMED_VALUE
-        ) {
-            return
-        }
-        if (value?.status != Starcoin.WithdrawalStatusType.WITHDRAWAL_STATUS_CLIENT_CONFIRMED_VALUE || value.status != Starcoin.WithdrawalStatusType.WITHDRAWAL_STATUS_CANCEL_VALUE)
-            this.withdrawalStatus = value
-    }
-
     internal fun cancelWithDrawal() {
-        this.allotment += this.withdrawalStatus?.withdrawalAmount ?: BigInteger.ZERO
+        //this.allotment += this.withdrawalStatus?.withdrawalAmount ?: BigInteger.ZERO
         this.withdrawalStatus = null
     }
 
@@ -137,14 +128,17 @@ class HubStatus {
 //            .confirmedTransactions
 //            .stream()
 //            .map { it.amount }.reduce(BigInteger.ZERO) { a, b -> a.add(b) }
-        this.allotment += this.currentUpdate(eon).receiveAmount
-        this.allotment -= this.currentUpdate(eon).sendAmount
-        if ((this.withdrawalStatus?.status == Starcoin.WithdrawalStatusType.WITHDRAWAL_STATUS_PASSED_VALUE || this.withdrawalStatus?.status === Starcoin.WithdrawalStatusType.WITHDRAWAL_STATUS_CLIENT_CONFIRMED_VALUE)
-            && this.withdrawalStatus?.eon === eon.id - 2
-        ) {
+        val currentUpdate = this.currentUpdate(eon)
+        this.allotment += currentUpdate.receiveAmount
+        this.allotment -= currentUpdate.sendAmount
+        if (this.withdrawalStatus?.eon == eon.id - 2) {
             this.allotment -= this.withdrawalStatus?.withdrawalAmount ?: BigInteger.ZERO
             this.withdrawalStatus?.clientConfirm()
+            this.withdrawalStatus = null
         }
+
+        LOG.info("current update is $currentUpdate")
+        LOG.info("allotment is $allotment")
 
         val lastIndex = currentEonStatusIndex
         val maybe = currentEonStatusIndex + 1
@@ -156,6 +150,7 @@ class HubStatus {
         this.eonStatuses[currentEonStatusIndex] = EonStatus(eon, this.allotment)
 
         this.eonStatuses[currentEonStatusIndex].treeProof = path
+
         return lastIndex
     }
 
@@ -203,6 +198,14 @@ class HubStatus {
         if (this.withdrawalStatus == null) return true else return false
     }
 
-    internal fun addWithDrawal(value:WithdrawalStatus){
+    internal fun getAvailableCoin(eon: Eon): BigInteger {
+        var allotment = this.allotment
+        if (this.withdrawalStatus != null) {
+            allotment -= this.withdrawalStatus?.withdrawalAmount?:BigInteger.ZERO
+        }
+        allotment += this.currentUpdate(eon).receiveAmount
+        allotment -= this.currentUpdate(eon).sendAmount
+        return allotment
     }
+
 }

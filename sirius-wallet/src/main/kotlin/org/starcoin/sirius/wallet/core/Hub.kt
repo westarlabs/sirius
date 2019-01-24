@@ -110,20 +110,20 @@ class Hub <T : ChainTransaction, A : ChainAccount> {
         serverEventHandler?.onDeposit(deposit)
     }
 
+    internal fun cancelWithdrawal(cancelWithdrawal: CancelWithdrawal){
+        this.hubStatus.cancelWithDrawal()
+        GlobalScope.launch {
+            eonChannel?.send(ClientEventType.CANCEL_WITHDRAWAL)
+        }
+        LOG.info("cancel withdrawal")
+    }
+
     internal fun onWithdrawal(withdrawalStatus: WithdrawalStatus) {
         var clientEventType = ClientEventType.INIT_WITHDRAWAL
         when (withdrawalStatus.status) {
             WithdrawalStatusType.INIT.number -> {
-                this.hubStatus.syncWithDrawal(withdrawalStatus)
+                this.hubStatus.withdrawalStatus=withdrawalStatus
                 clientEventType = ClientEventType.INIT_WITHDRAWAL
-            }
-            WithdrawalStatusType.CANCEL.number -> {
-                this.hubStatus.cancelWithDrawal()
-                LOG.info("cancel")
-            }
-            WithdrawalStatusType.PASSED.number -> {
-                this.hubStatus.syncWithDrawal(withdrawalStatus)
-                LOG.info("pass")
             }
             else -> LOG.info(withdrawalStatus.toJSON()
             )
@@ -150,6 +150,9 @@ class Hub <T : ChainTransaction, A : ChainAccount> {
         val iou = IOU(offchainTransaction, recieveUpdate)
         LOG.info("IOU is $iou")
         val succResponse = hubServiceBlockingStub.receiveNewTransfer(iou.toProto())
+        if(succResponse.succ){
+           this.hubStatus.update=recieveUpdate
+        }
         LOG.info("recieve new transfer from " + offchainTransaction.from + succResponse)
 
         serverEventHandler?.onNewTransaction(offchainTransaction)
@@ -164,6 +167,9 @@ class Hub <T : ChainTransaction, A : ChainAccount> {
     }
 
     private fun onNewUpdate(update: Update) {
+        if(!(this.hubStatus.update?.sign?.equals(update.sign)?:false)){
+            return
+        }
         this.hubStatus.addUpdate(update)
         serverEventHandler?.onNewUpdate(update)
         LOG.info("get hub sign")
@@ -219,8 +225,8 @@ class Hub <T : ChainTransaction, A : ChainAccount> {
 
     }
 
-    fun getAvailableCoin():BigInteger {
-        return this.hubStatus.allotment
+    internal fun getAvailableCoin():BigInteger {
+        return hubStatus.getAvailableCoin(this.currentEon)
     }
 
     fun getWithdrawalCoin():Long {
@@ -231,7 +237,7 @@ class Hub <T : ChainTransaction, A : ChainAccount> {
     fun sync() {
     }
 
-    fun newTransfer(addr:Address, value:Long) :OffchainTransaction{
+    fun newTransfer(addr:Address, value:BigInteger) :OffchainTransaction{
         val hubServiceBlockingStub = HubServiceGrpc.newBlockingStub(channelManager.hubChannel)
 
         val tx = OffchainTransaction(this.currentEon.id, account.address, addr, value)
@@ -250,8 +256,9 @@ class Hub <T : ChainTransaction, A : ChainAccount> {
 
         val succResponse = hubServiceBlockingStub.sendNewTransfer(iou.toProto())
         //dataStore.save(this.hubStatusData)
-        return if (succResponse.getSucc() == true) {
-            tx
+        if (succResponse.getSucc() == true) {
+            this.hubStatus.update = update
+            return tx
         } else {
             throw RuntimeException("offlien transfer failed")
         }
@@ -305,6 +312,7 @@ class Hub <T : ChainTransaction, A : ChainAccount> {
     }
 
     fun withDrawal(value: BigInteger) {
+        // 这里需要增加value是否大于本地余额的校验
         if (!hubStatus.couldWithDrawal()) {
             LOG.info("already have withdrawal in progress.")
             return
@@ -339,10 +347,6 @@ class Hub <T : ChainTransaction, A : ChainAccount> {
     internal fun confirmDeposit(transaction: ChainTransaction){
         if(transaction.from?.equals(account.address)?:false)
             this.hubStatus.confirmDeposit(transaction)
-    }
-
-    internal fun getBalance():BigInteger{
-        return hubStatus.allotment
     }
 
     @Synchronized
@@ -380,8 +384,10 @@ class Hub <T : ChainTransaction, A : ChainAccount> {
             }
             }
             GlobalScope.launch {
-                if(clientEvent!=ClientEventType.NOTHING)
-                eonChannel?.send(clientEvent)
+                if(clientEvent!=ClientEventType.NOTHING){
+                    eonChannel?.send(clientEvent)
+                    LOG.info("send event $clientEvent to ${account.address}")
+                }
             }
             //dataStore.save(this.hubStatusData)
         } catch (e: InvalidProtocolBufferException) {

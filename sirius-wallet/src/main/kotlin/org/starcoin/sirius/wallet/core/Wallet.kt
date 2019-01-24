@@ -41,7 +41,7 @@ class Wallet<T : ChainTransaction, A : ChainAccount> {
     }
 
     fun balance():BigInteger{
-        return hub.getBalance()
+        return hub.getAvailableCoin()
     }
 
     fun withdrawal(value:BigInteger){
@@ -60,7 +60,7 @@ class Wallet<T : ChainTransaction, A : ChainAccount> {
         return hub.eonChannel
     }
 
-    fun hubTransfer(to:Address,value:Long):OffchainTransaction{
+    fun hubTransfer(to:Address,value:BigInteger):OffchainTransaction{
         return hub.newTransfer(to,value)
     }
 
