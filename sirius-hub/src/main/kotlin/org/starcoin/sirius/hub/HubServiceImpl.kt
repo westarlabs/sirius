@@ -37,10 +37,6 @@ class HubServiceImpl<T : ChainTransaction, A : ChainAccount>(
         return this.hub.registerParticipant(participant, initUpdate)
     }
 
-    override fun deposit(participant: Address, amount: Long) {
-        this.hub.deposit(participant, amount)
-    }
-
     override fun sendNewTransfer(iou: IOU) {
         this.hub.sendNewTransfer(iou)
     }
@@ -49,12 +45,12 @@ class HubServiceImpl<T : ChainTransaction, A : ChainAccount>(
         this.hub.receiveNewTransfer(receiverIOU)
     }
 
-    override fun queryNewTransfer(blockAddress: Address): OffchainTransaction? {
-        return this.hub.queryNewTransfer(blockAddress)
+    override fun queryNewTransfer(address: Address): OffchainTransaction? {
+        return this.hub.queryNewTransfer(address)
     }
 
-    override fun querySignedUpdate(blockAddress: Address): Update? {
-        val hubAccount = this.hub.getHubAccount(blockAddress)
+    override fun querySignedUpdate(address: Address): Update? {
+        val hubAccount = this.hub.getHubAccount(address)
         return hubAccount?.update
     }
 
@@ -63,8 +59,8 @@ class HubServiceImpl<T : ChainTransaction, A : ChainAccount>(
         return hubAccount?.update
     }
 
-    override fun getProof(blockAddress: Address): AMTreeProof? {
-        return hub.getProof(blockAddress)
+    override fun getProof(address: Address): AMTreeProof? {
+        return hub.getProof(address)
     }
 
     override fun getProof(eon: Int, blockAddress: Address): AMTreeProof? {
@@ -75,12 +71,12 @@ class HubServiceImpl<T : ChainTransaction, A : ChainAccount>(
         return hub.watch(address)
     }
 
-    override fun watch(predicate: (HubEvent) -> Boolean): ReceiveChannel<HubEvent> {
-        return hub.watch(predicate)
+    override fun watchHubRoot(): ReceiveChannel<HubEvent> {
+        return hub.watch { event -> event.type === HubEventType.NEW_HUB_ROOT }
     }
 
-    override fun getHubAccount(blockAddress: Address): HubAccount? {
-        return this.hub.getHubAccount(blockAddress)
+    override fun getHubAccount(address: Address): HubAccount? {
+        return this.hub.getHubAccount(address)
     }
 
     override fun resetHubMaliciousFlag(): EnumSet<HubMaliciousFlag> {

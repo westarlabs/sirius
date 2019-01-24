@@ -138,7 +138,7 @@ class HubRpcService<T : ChainTransaction, A : ChainAccount>(val hubService: HubS
     }
 
     override fun watchHubRoot(request: Empty?, responseObserver: StreamObserver<Starcoin.HubRoot>) {
-        val queue = this.hubService.watch { event -> event.type === HubEventType.NEW_HUB_ROOT }
+        val queue = this.hubService.watchHubRoot()
         GlobalScope.launch {
             for (event in queue) {
                 responseObserver.onNext(event.getPayload<HubRoot>().toProto())
