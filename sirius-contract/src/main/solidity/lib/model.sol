@@ -62,19 +62,6 @@ library GlobleLib {
         mapping(bytes32 => Withdrawal) withdrawals;
     }
 
-    ////////////////////////////////////////Deposit
-
-    struct DepositMeta {
-        uint total;
-        mapping(bytes32 => uint) deposits;
-    }
-
-    function deposit(DepositMeta storage self, address addr, uint amount) internal {
-        bytes32 key = ByteUtilLib.address2hash(addr);
-        self.deposits[key] = SafeMath.add(self.deposits[key], amount);
-        self.total = SafeMath.add(self.total, amount);
-    }
-
     ////////////////////////////////////////Transfer challenge
 
     struct TransferDeliveryChallengeMeta {
@@ -122,7 +109,6 @@ library GlobleLib {
         bool hasRoot;
         ModelLib.HubRoot root;
         uint depositTotal;
-        DepositMeta depositMeta;
         WithdrawalMeta withdrawalMeta;
         BalanceUpdateChallengeMeta bucMeta;
         TransferDeliveryChallengeMeta tdcMeta;

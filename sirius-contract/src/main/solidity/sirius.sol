@@ -88,7 +88,6 @@ contract SiriusService is Sirius {
         doRecovery();
         require(msg.value > 0);
         if(!recoveryMode) {
-            //GlobleLib.deposit(balances[0].depositMeta, msg.sender, msg.value);
             balances[0].depositTotal = SafeMath.add(balances[0].depositTotal, msg.value);
             dataStore.depositData[balances[0].eon][msg.sender] = SafeMath.add(dataStore.depositData[balances[0].eon][msg.sender], msg.value);
         } else {
@@ -129,7 +128,6 @@ contract SiriusService is Sirius {
                 require(root.eon > 0, "eon == 0");
                 require(balances[0].eon == root.eon, "eon err");
                 ModelLib.hubRootCommonVerify(root);
-                //uint tmp = SafeMath.add(balances[1].root.node.allotment, balances[1].depositMeta.total);
                 uint tmp = SafeMath.add(balances[1].root.node.allotment, balances[1].depositTotal);
                 uint allotmentTmp = SafeMath.sub(tmp, balances[1].withdrawalMeta.total);
                 require(allotmentTmp == root.node.allotment, ByteUtilLib.appendUintToString("allotment error:",allotmentTmp));
@@ -294,7 +292,6 @@ contract SiriusService is Sirius {
             ModelLib.BalanceUpdateChallengeStatus memory stat = GlobleLib.change2BalanceUpdateChallengeStatus(tmpStat);
 
             if(stat.status == ModelLib.ChallengeStatus.OPEN) {
-                //uint d = balances[1].depositMeta.deposits[key];
                 uint d = dataStore.depositData[balances[1].eon][close.addr];
 
                 uint preAllotment = 0;
@@ -398,8 +395,6 @@ contract SiriusService is Sirius {
         bool proofFlag = ModelLib.verifyMembershipProof4AMTreeProof(preRoot.node, proof);
         require(proofFlag);
 
-        //uint amount = SafeMath.add(proof.path.leaf.allotment, balances[0].depositMeta.deposits[key]);
-        //amount = SafeMath.add(amount, balances[1].depositMeta.deposits[key]);
         uint amount = SafeMath.add(proof.path.leaf.allotment, dataStore.depositData[balances[0].eon][msg.sender]);
         amount = SafeMath.add(amount, dataStore.depositData[balances[1].eon][msg.sender]);
         require(amount > 0);
@@ -499,12 +494,11 @@ contract SiriusService is Sirius {
     /** private methods **/
 
     function newBalance(uint newEon) private pure returns(GlobleLib.Balance memory latest) {
-        GlobleLib.DepositMeta memory depositMeta;
         GlobleLib.WithdrawalMeta memory withdrawalMeta;
         ModelLib.HubRoot memory root;
         GlobleLib.TransferDeliveryChallengeMeta memory tdc;
         GlobleLib.BalanceUpdateChallengeMeta memory buc;
-        return GlobleLib.Balance(newEon, false, root, 0, depositMeta, withdrawalMeta, buc, tdc);
+        return GlobleLib.Balance(newEon, false, root, 0, withdrawalMeta, buc, tdc);
     }
 
     function checkBalances(GlobleLib.Balance memory latest) private {
