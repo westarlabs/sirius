@@ -7,7 +7,6 @@ import kotlinx.coroutines.channels.SendChannel
 import kotlinx.coroutines.channels.actor
 import kotlinx.coroutines.runBlocking
 import org.ethereum.core.CallTransaction.createRawTransaction
-import org.ethereum.solidity.SolidityType
 import org.ethereum.util.blockchain.StandaloneBlockchain
 import org.starcoin.sirius.core.Address
 import org.starcoin.sirius.core.Hash
@@ -120,8 +119,6 @@ class InMemoryChain(val autoGenblock: Boolean = true) : EthereumBaseChain() {
         transaction.hash()
     }
 
-    val bytesType: SolidityType.BytesType = SolidityType.BytesType()
-
     override fun callConstFunction(caller: CryptoKey, contractAddress: Address, data: ByteArray): ByteArray {
         val tx = createRawTransaction(0, 0, 100000000000000L, contractAddress.toBytes().toNoPrefixHEXString(), 0, data)
         tx.sign((caller as EthCryptoKey).ecKey)
@@ -143,8 +140,7 @@ class InMemoryChain(val autoGenblock: Boolean = true) : EthereumBaseChain() {
                 //TODO define custom error.
                 throw RuntimeException("callConstFunction fail")
             }
-            val bytes = executor.result.hReturn
-            return bytesType.decode(bytes, SolidityType.IntType.decodeInt(bytes, 0).toInt()) as ByteArray
+            return executor.result.hReturn
         } finally {
             repository.rollback()
         }
@@ -154,7 +150,7 @@ class InMemoryChain(val autoGenblock: Boolean = true) : EthereumBaseChain() {
         return sb.blockchain.bestBlock.number
     }
 
-    override fun newTransaction(account: EthereumAccount,to:Address,value:BigInteger):EthereumTransaction {
+    override fun newTransaction(account: EthereumAccount, to: Address, value: BigInteger): EthereumTransaction {
         var ethereumTransaction = EthereumTransaction(
             to, account.getNonce(), defaultGasPrice,
             defaultGasLimit, value

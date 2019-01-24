@@ -6,7 +6,6 @@ import kotlinx.serialization.ImplicitReflectionSerializer
 import org.ethereum.util.blockchain.EtherUtil
 import org.junit.Assert
 import org.junit.Before
-import org.junit.Ignore
 import org.junit.Test
 import org.starcoin.sirius.core.*
 import org.starcoin.sirius.crypto.CryptoKey
@@ -63,11 +62,14 @@ class InMemoryHubContractTest {
         Assert.assertEquals(amount, chain.getBalance(address))
     }
 
-    @Ignore
     @Test
-    @ImplicitReflectionSerializer
     fun testCurrentEon() {
-        Assert.assertEquals(contract.getCurrentEon(), 0)
+        Assert.assertEquals(contract.getCurrentEon(owner), 0)
+    }
+
+    @Test
+    fun testIsRecoveryMode() {
+        Assert.assertEquals(contract.isRecoveryMode(owner), false)
     }
 
     fun deposit(alice: EthereumAccount, amount: BigInteger) {

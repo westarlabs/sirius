@@ -124,6 +124,14 @@ abstract class HubContract<A : ChainAccount> {
         )
     }
 
+    fun getCurrentEon(account: A): Int {
+        return this.queryContractFunction(account, "getCurrentEon", Int::class)
+    }
+
+    fun isRecoveryMode(account: A): Boolean {
+        return this.queryContractFunction(account, "isRecoveryMode", Boolean::class)
+    }
+
     fun initiateWithdrawal(account: A, input: Withdrawal): Hash {
         return this.executeContractFunction(account, InitiateWithdrawalFunction, input)
     }
@@ -174,7 +182,7 @@ abstract class HubContract<A : ChainAccount> {
         arguments: S
     ): Hash
 
-    abstract fun <S : SiriusObject> queryContractFunction(
+    abstract fun <S : Any> queryContractFunction(
         account: A,
         functionName: String,
         clazz: KClass<S>,
