@@ -40,7 +40,9 @@ contract SiriusService is Sirius {
 
     using SafeMath for uint;
     event SiriusEvent(bytes32 indexed hash, uint indexed num, bytes value);
-    event SiriusEvent2(uint indexed num, uint value);
+    event SiriusEvent2(address indexed addr, uint indexed num, bytes value);
+    event SiriusEvent3(uint indexed num, bool value);
+    event SiriusEvent4(uint indexed num, uint value);
 
     constructor(bytes memory data) public {
         owner = msg.sender;
@@ -109,6 +111,7 @@ contract SiriusService is Sirius {
                 }
             }
 
+
             //transfer
             if(flag) {
                 uint tLen = balances[1].transferChallenges.length;
@@ -144,7 +147,6 @@ contract SiriusService is Sirius {
                         dataStore.withdrawalData[balances[2].eon][addr] = w;
                         ModelLib.WithdrawalInfo memory wi = ModelLib.unmarshalWithdrawalInfo(RLPDecoder.toRLPItem(w.info, true));
                         addr.transfer(wi.amount);
-                        emit SiriusEvent2(100, wi.amount);
                     }
                 }
 
@@ -161,9 +163,8 @@ contract SiriusService is Sirius {
             ModelLib.WithdrawalInfo memory init = ModelLib.unmarshalWithdrawalInfo(RLPDecoder.toRLPItem(data, true));
             require(init.amount > 0);
             require(init.proof.path.eon > 0);
-            require(init.proof.path.leaf.allotment >= init.amount);//TODO  proof decode bug, allotment is wrong
+            require(init.proof.path.leaf.allotment >= init.amount);
             uint preEon = balances[1].eon;
-            bytes32 key = ByteUtilLib.address2hash(addr);
             ModelLib.verifyProof(preEon, addr, owner, init.proof);
 
             bool processingFlag = withdrawalProcessing(addr);
@@ -218,7 +219,7 @@ contract SiriusService is Sirius {
                                 with.stat = GlobleLib.WithdrawalStatusType.CANCEL;
                                 dataStore.withdrawalData[balances[i].eon][cancel.addr] = with;
                                 balances[i].withdrawalTotal = SafeMath.sub(balances[i].withdrawalTotal, tmpInfo.amount);
-                                //TODO emit SiriusEvent(key, 1, );
+                                emit SiriusEvent2(cancel.addr, 1, ByteUtilLib.uint2byte(tmpInfo.amount));
                             }
                         }
                     }
@@ -239,7 +240,6 @@ contract SiriusService is Sirius {
             require(balances[0].hasRoot, "balances[0].hasRoot false");
 
             uint preEon = balances[1].eon;
-            bytes32 key = ByteUtilLib.address2hash(msg.sender);
             if(open.hasPath) {//Special case:eon-1 exist a account, evil owner removed it in this eon, so the account has only path
                 require(preEon == open.path.eon, ByteUtilLib.appendUintToString("expect path eon:", preEon));
 
@@ -278,7 +278,6 @@ contract SiriusService is Sirius {
             require(balances[0].hasRoot);
 
             uint eon = currentEon();
-            bytes32 key = ByteUtilLib.address2hash(close.addr);
             ModelLib.verifyProof(eon, close.addr, owner, close.proof);
 
             ModelLib.HubRoot memory root = balances[0].root;
@@ -307,11 +306,11 @@ contract SiriusService is Sirius {
                 }
                 uint t2 = close.proof.leaf.update.upData.sendAmount;
                 uint allotment = SafeMath.sub(t1, t2);
-                //require(allotment == close.proof.path.leaf.allotment);//TODO
+                require(allotment == close.proof.path.leaf.allotment);
 
                 tmpStat.status == ModelLib.ChallengeStatus.CLOSE;
                 dataStore.bucData[balances[0].eon][close.addr] = tmpStat;
-                emit SiriusEvent(key, 2, tmpStat.challenge);
+                emit SiriusEvent2(close.addr, 2, tmpStat.challenge);
             }
             return true;
         } else {
@@ -363,7 +362,7 @@ contract SiriusService is Sirius {
             require(proofFlag);
 
             GlobleLib.TransferDeliveryChallengeAndStatus memory challenge = dataStore.tdcData[balances[0].eon][key];
-            //require(challenge.isVal);//TODO
+            require(challenge.isVal);
 
             if(challenge.stat == ModelLib.ChallengeStatus.OPEN) {
                 bool verifyFlag = ModelLib.verifyMembershipProof4Merkle(close.proof.leaf.update.upData.root, close.txPath, close.txHash);
@@ -439,7 +438,6 @@ contract SiriusService is Sirius {
     function queryWithdrawal(uint eon) external returns (bytes memory) {
         GlobleLib.Withdrawal memory tmp;
         ModelLib.ContractReturn memory cr;
-        bytes32 key = ByteUtilLib.address2hash(msg.sender);
         for (uint i=0; i < balances.length; i++) {
             if(balances[i].eon == eon) {
                 tmp = dataStore.withdrawalData[balances[i].eon][msg.sender];
@@ -457,7 +455,6 @@ contract SiriusService is Sirius {
     function queryBalance(uint eon) external view returns (bytes memory) {
         GlobleLib.BalanceUpdateChallengeAndStatus memory tmp;
         ModelLib.ContractReturn memory cr;
-        bytes32 key = ByteUtilLib.address2hash(msg.sender);
         for (uint i=0; i < balances.length; i++) {
             if(balances[i].eon == eon) {
                 tmp = dataStore.bucData[balances[i].eon][msg.sender];

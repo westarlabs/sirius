@@ -489,8 +489,7 @@ library ModelLib {
             } else {}
         }
 
-        return true;
-        //return root == hash;
+        return root == hash;
     }
 
 //////////////////////////////////

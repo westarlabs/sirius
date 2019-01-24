@@ -139,6 +139,21 @@ class SiriusContractTest : ContractTestBase("solidity/SiriusService", "SiriusSer
         openBalanceUpdateChallenge(false)
     }
 
+    @Test
+    fun testOpenChallengeAndCommit() {
+        openBalanceUpdateChallenge(false)
+
+        val eon = 2
+        for (i in 0..5) {
+            testDeposit(true)
+        }
+
+        val update = newUpdate(eon + 1, 1, 0)
+
+        val txs = mutableListOf<OffchainTransaction>()
+        commitRealData(eon + 1, update, currentTree.allotment.longValueExact() , 0, false, txs)
+    }
+
     private fun openBalanceUpdateChallenge(flag: Boolean) {
         val eon = 1
         val total = createEon(eon, true, true)
@@ -153,8 +168,10 @@ class SiriusContractTest : ContractTestBase("solidity/SiriusService", "SiriusSer
             testDeposit(true)
         }
 
-        val update2 = newUpdate(eon + 1, 1, deposit)
-        currentTree = commitRealData(eon + 1, update2, total, blocksPerEon * deposit, true, txs)
+        val sendAmount = deposit
+        val update2 = newUpdate(eon + 1, 1, sendAmount)
+
+        currentTree = commitRealData(eon + 1, update2, total , count, true, txs)
 
         var update3: Update
         when (flag) {
@@ -222,7 +239,7 @@ class SiriusContractTest : ContractTestBase("solidity/SiriusService", "SiriusSer
 
         val amtp = currentTree.getMembershipProof(callUser.address)!!
         val close =
-            CloseTransferDeliveryChallenge(amtp, tree.getMembershipProof(tx.hash())!!, callUser.address, Hash.of(tx))
+            CloseTransferDeliveryChallenge(amtp, tree.getMembershipProof(tx.hash())!!, callUser.address, Hash.of(tx.data))
 
         val data = close.toRLP()
         val callResult = contract.callFunction("closeTransferDeliveryChallenge", data)
@@ -253,7 +270,7 @@ class SiriusContractTest : ContractTestBase("solidity/SiriusService", "SiriusSer
     }
 
     private fun newUpdate(eon: Int, version: Long, sendAmount: Long): Update {
-        val updateData = UpdateData(eon, version, sendAmount, 0, Hash.random())
+        val updateData = UpdateData(eon, version, sendAmount, sendAmount, Hash.random())
         val update = Update(updateData)
         update.sign(callUser)
         update.signHub(callUser)
