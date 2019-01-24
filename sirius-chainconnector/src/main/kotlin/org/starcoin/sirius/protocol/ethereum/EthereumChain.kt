@@ -51,8 +51,8 @@ class EthereumChain constructor(httpUrl: String = DEFAULT_URL, socketPath: Strin
     override fun getNonce(address: Address): BigInteger {
         //TODO use transactionCount is right?
         return web3.ethGetTransactionCount(
-            Numeric.toHexString(address.toBytes()),
-            DefaultBlockParameterName.LATEST
+            address.toString(),
+            DefaultBlockParameterName.PENDING
         ).send().transactionCount
     }
 

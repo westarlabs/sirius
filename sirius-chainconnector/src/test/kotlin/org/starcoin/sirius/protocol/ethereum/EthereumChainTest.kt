@@ -97,7 +97,7 @@ class EthereumChainTest : EtherumServer(true) {
     @Test
     fun testWatchTransactions() {
         val ch = chain.watchTransactions {
-            it.tx.to == alice.address
+            it.tx.to == alice.address && it.tx.from == etherbase.address
         }
         Thread.sleep(2000)
         val transAmount = 100.toBigInteger()
