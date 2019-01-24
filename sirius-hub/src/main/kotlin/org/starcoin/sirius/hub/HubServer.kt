@@ -16,7 +16,7 @@ class HubServer<T : ChainTransaction, A : ChainAccount>(val configuration: Confi
 
     fun start() {
         contract = chain.deployContract(owner, ContractConstructArgs.DEFAULT_ARG)
-        val hubService = HubService(owner, chain, contract)
+        val hubService = HubServiceImpl(owner, chain, contract)
         val hubRpcService = HubRpcService(hubService)
         grpcServer.registerService(hubRpcService)
         hubService.start()
