@@ -27,7 +27,7 @@ interface Sirius {
 contract SiriusService is Sirius {
     address private owner;
     bytes32 private ownerHash;
-    bool private recoveryMode = false;
+    bool private recoveryMode;
     uint private startHeight;
     uint private blocksPerEon;
     bytes private hubPK;
@@ -36,7 +36,6 @@ contract SiriusService is Sirius {
     GlobleLib.Balance[3] balances;
     GlobleLib.DataStore dataStore;
 
-    mapping(address => GlobleLib.Deposit) private all;//used when evil owner remove a account, the removed account can also withdrawal
     mapping(address => bool) private recoverys;//used for recovery model
 
     using SafeMath for uint;
@@ -61,6 +60,7 @@ contract SiriusService is Sirius {
         balances[0].root = root;
         balances[0].hasRoot = true;
         startHeight = block.number;
+        recoveryMode = false;
     }
 
     modifier onlyOwner() {
@@ -88,13 +88,9 @@ contract SiriusService is Sirius {
         doRecovery();
         require(msg.value > 0);
         if(!recoveryMode) {
-            GlobleLib.deposit(balances[0].depositMeta, msg.sender, msg.value);
+            //GlobleLib.deposit(balances[0].depositMeta, msg.sender, msg.value);
+            balances[0].depositTotal = SafeMath.add(balances[0].depositTotal, msg.value);
             dataStore.depositData[balances[0].eon][msg.sender] = SafeMath.add(dataStore.depositData[balances[0].eon][msg.sender], msg.value);
-
-            GlobleLib.Deposit memory d = all[msg.sender];
-            d.amount = SafeMath.add(d.amount, msg.value);
-            d.hasVal = true;
-            all[msg.sender] = d;
         } else {
             msg.sender.transfer(msg.value);
         }
@@ -133,7 +129,8 @@ contract SiriusService is Sirius {
                 require(root.eon > 0, "eon == 0");
                 require(balances[0].eon == root.eon, "eon err");
                 ModelLib.hubRootCommonVerify(root);
-                uint tmp = SafeMath.add(balances[1].root.node.allotment, balances[1].depositMeta.total);
+                //uint tmp = SafeMath.add(balances[1].root.node.allotment, balances[1].depositMeta.total);
+                uint tmp = SafeMath.add(balances[1].root.node.allotment, balances[1].depositTotal);
                 uint allotmentTmp = SafeMath.sub(tmp, balances[1].withdrawalMeta.total);
                 require(allotmentTmp == root.node.allotment, ByteUtilLib.appendUintToString("allotment error:",allotmentTmp));
                 balances[0].root = root;
@@ -145,13 +142,13 @@ contract SiriusService is Sirius {
                     address payable addr = balances[2].withdrawalMeta.addrs[i];
                     bytes32 wKey = ByteUtilLib.address2hash(addr);
                     GlobleLib.Withdrawal memory w = balances[2].withdrawalMeta.withdrawals[wKey];
-                   if(w.isVal && w.stat == GlobleLib.WithdrawalStatusType.INIT) {
-                       w.stat = GlobleLib.WithdrawalStatusType.CONFIRMED;
-                       balances[2].withdrawalMeta.withdrawals[wKey] = w;
-                       ModelLib.WithdrawalInfo memory wi = ModelLib.unmarshalWithdrawalInfo(RLPDecoder.toRLPItem(w.info, true));
-                       addr.transfer(wi.amount);
-                       emit SiriusEvent2(100, wi.amount);
-                   }
+                    if(w.isVal && w.stat == GlobleLib.WithdrawalStatusType.INIT) {
+                        w.stat = GlobleLib.WithdrawalStatusType.CONFIRMED;
+                        balances[2].withdrawalMeta.withdrawals[wKey] = w;
+                        ModelLib.WithdrawalInfo memory wi = ModelLib.unmarshalWithdrawalInfo(RLPDecoder.toRLPItem(w.info, true));
+                        addr.transfer(wi.amount);
+                        emit SiriusEvent2(100, wi.amount);
+                    }
                 }
 
                 return true;
@@ -241,33 +238,28 @@ contract SiriusService is Sirius {
     function openBalanceUpdateChallenge(bytes calldata data) external recovery returns (bool) {
         if(!recoveryMode) {
             ModelLib.BalanceUpdateProof memory open = ModelLib.unmarshalBalanceUpdateProof(RLPDecoder.toRLPItem(data, true));
-    require(open.hasPath || open.hasUp, "miss path and update");
-    require(balances[0].hasRoot, "balances[0].hasRoot false");
+            require(open.hasPath || open.hasUp, "miss path and update");
+            require(balances[0].hasRoot, "balances[0].hasRoot false");
 
             uint preEon = balances[1].eon;
             bytes32 key = ByteUtilLib.address2hash(msg.sender);
             if(open.hasPath) {//Special case:eon-1 exist a account, evil owner removed it in this eon, so the account has only path
-    require(preEon == open.path.eon, ByteUtilLib.appendUintToString("expect path eon:", preEon));
+                require(preEon == open.path.eon, ByteUtilLib.appendUintToString("expect path eon:", preEon));
 
                 ModelLib.HubRoot memory preRoot = balances[1].root;
                 bool proofFlag = ModelLib.verifyMembershipProof4AMTreePath(preRoot.node, open.path);
-    require(proofFlag, "verify proof fail");
-            } else {//once the account had deposit, proof must exist
-                GlobleLib.Deposit memory d = all[msg.sender];
-    require(d.hasVal, "miss deposit");
-            }
+                require(proofFlag, "verify proof fail");
+            } else {}
 
             if(open.hasUp) {//Special case:new account only update
                 ModelLib.Update memory up = open.update;
-            require(up.upData.eon == preEon, ByteUtilLib.appendUintToString("expect update eon:", preEon));
+                require(up.upData.eon == preEon, ByteUtilLib.appendUintToString("expect update eon:", preEon));
 
                 bool signFlag = ModelLib.verifySign4Update(up.upData, up.sign, msg.sender);
-            require(signFlag, "verify update sign fail");
+                require(signFlag, "verify update sign fail");
                 bool hubSignFlag = ModelLib.verifySign4Update(up.upData, up.hubSign, owner);
-            require(hubSignFlag, "verify hub sign fail");
-            } else {
-
-            }
+                require(hubSignFlag, "verify hub sign fail");
+            } else {}
 
             GlobleLib.BalanceUpdateChallengeAndStatus memory cs = balances[0].bucMeta.balanceChallenges[key];
             cs.challenge = data;
@@ -302,7 +294,8 @@ contract SiriusService is Sirius {
             ModelLib.BalanceUpdateChallengeStatus memory stat = GlobleLib.change2BalanceUpdateChallengeStatus(tmpStat);
 
             if(stat.status == ModelLib.ChallengeStatus.OPEN) {
-                uint d = balances[1].depositMeta.deposits[key];
+                //uint d = balances[1].depositMeta.deposits[key];
+                uint d = dataStore.depositData[balances[1].eon][close.addr];
 
                 uint preAllotment = 0;
                 if(stat.proof.hasPath) {
@@ -405,8 +398,10 @@ contract SiriusService is Sirius {
         bool proofFlag = ModelLib.verifyMembershipProof4AMTreeProof(preRoot.node, proof);
         require(proofFlag);
 
-        uint amount = SafeMath.add(proof.path.leaf.allotment, balances[0].depositMeta.deposits[key]);
-        amount = SafeMath.add(amount, balances[1].depositMeta.deposits[key]);
+        //uint amount = SafeMath.add(proof.path.leaf.allotment, balances[0].depositMeta.deposits[key]);
+        //amount = SafeMath.add(amount, balances[1].depositMeta.deposits[key]);
+        uint amount = SafeMath.add(proof.path.leaf.allotment, dataStore.depositData[balances[0].eon][msg.sender]);
+        amount = SafeMath.add(amount, dataStore.depositData[balances[1].eon][msg.sender]);
         require(amount > 0);
 
         bool flag = recoverys[msg.sender];
@@ -509,7 +504,7 @@ contract SiriusService is Sirius {
         ModelLib.HubRoot memory root;
         GlobleLib.TransferDeliveryChallengeMeta memory tdc;
         GlobleLib.BalanceUpdateChallengeMeta memory buc;
-        return GlobleLib.Balance(newEon, false, root, depositMeta, withdrawalMeta, buc, tdc);
+        return GlobleLib.Balance(newEon, false, root, 0, depositMeta, withdrawalMeta, buc, tdc);
     }
 
     function checkBalances(GlobleLib.Balance memory latest) private {

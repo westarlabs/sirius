@@ -63,11 +63,6 @@ library GlobleLib {
     }
 
     ////////////////////////////////////////Deposit
-    struct Deposit {
-        bool hasVal;
-        address addr;
-        uint amount;
-    }
 
     struct DepositMeta {
         uint total;
@@ -126,6 +121,7 @@ library GlobleLib {
         uint eon;
         bool hasRoot;
         ModelLib.HubRoot root;
+        uint depositTotal;
         DepositMeta depositMeta;
         WithdrawalMeta withdrawalMeta;
         BalanceUpdateChallengeMeta bucMeta;
