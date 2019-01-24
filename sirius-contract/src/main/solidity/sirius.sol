@@ -98,11 +98,11 @@ contract SiriusService is Sirius {
     function commit(bytes calldata data) external onlyOwner returns (bool) {
         if(!recoveryMode) {
             bool flag = true;
-            uint bLen = balances[1].bucMeta.balanceChallengeKeys.length;
+            uint bLen = balances[1].balanceChallenges.length;
             //balance
             for(uint i=0;i<bLen;i++) {
-                bytes32 bKey = balances[1].bucMeta.balanceChallengeKeys[i];
-                GlobleLib.BalanceUpdateChallengeAndStatus memory s = balances[1].bucMeta.balanceChallenges[bKey];
+                address addr = balances[1].balanceChallenges[i];
+                GlobleLib.BalanceUpdateChallengeAndStatus memory s = dataStore.bucData[balances[1].eon][addr];
                 if(s.isVal && s.status != ModelLib.ChallengeStatus.CLOSE) {
                     flag = false;
                     break;
@@ -258,14 +258,14 @@ contract SiriusService is Sirius {
                 require(hubSignFlag, "verify hub sign fail");
             } else {}
 
-            GlobleLib.BalanceUpdateChallengeAndStatus memory cs = balances[0].bucMeta.balanceChallenges[key];
+            GlobleLib.BalanceUpdateChallengeAndStatus memory cs = dataStore.bucData[balances[0].eon][msg.sender];
             cs.challenge = data;
             cs.status = ModelLib.ChallengeStatus.OPEN;
             if(!cs.isVal) {
-                balances[0].bucMeta.balanceChallengeKeys.push(key);
+                balances[0].balanceChallenges.push(msg.sender);
             }
             cs.isVal = true;
-            balances[0].bucMeta.balanceChallenges[key] = cs;
+            dataStore.bucData[balances[0].eon][msg.sender] = cs;
             return true;
         }else {
             return false;
@@ -285,7 +285,7 @@ contract SiriusService is Sirius {
             bool proofFlag = ModelLib.verifyMembershipProof4AMTreeProof(root.node, close.proof);
             require(proofFlag);
 
-            GlobleLib.BalanceUpdateChallengeAndStatus storage tmpStat = balances[0].bucMeta.balanceChallenges[key];
+            GlobleLib.BalanceUpdateChallengeAndStatus storage tmpStat = dataStore.bucData[balances[0].eon][close.addr];
             require(tmpStat.isVal);
 
             ModelLib.BalanceUpdateChallengeStatus memory stat = GlobleLib.change2BalanceUpdateChallengeStatus(tmpStat);
@@ -310,7 +310,7 @@ contract SiriusService is Sirius {
                 //require(allotment == close.proof.path.leaf.allotment);//TODO
 
                 tmpStat.status == ModelLib.ChallengeStatus.CLOSE;
-                balances[0].bucMeta.balanceChallenges[key] = tmpStat;
+                dataStore.bucData[balances[0].eon][close.addr] = tmpStat;
                 emit SiriusEvent(key, 2, tmpStat.challenge);
             }
             return true;
@@ -460,7 +460,7 @@ contract SiriusService is Sirius {
         bytes32 key = ByteUtilLib.address2hash(msg.sender);
         for (uint i=0; i < balances.length; i++) {
             if(balances[i].eon == eon) {
-                tmp = balances[i].bucMeta.balanceChallenges[key];
+                tmp = dataStore.bucData[balances[i].eon][msg.sender];
                 break;
             }
         }
@@ -495,9 +495,9 @@ contract SiriusService is Sirius {
     function newBalance(uint newEon) private pure returns(GlobleLib.Balance memory latest) {
         ModelLib.HubRoot memory root;
         GlobleLib.TransferDeliveryChallengeMeta memory tdc;
-        GlobleLib.BalanceUpdateChallengeMeta memory buc;
         address payable[] memory withdrawals;
-        return GlobleLib.Balance(newEon, false, root, 0, 0, withdrawals, buc, tdc);
+        address[] memory balanceChallenges;
+        return GlobleLib.Balance(newEon, false, root, 0, 0, withdrawals, balanceChallenges, tdc);
     }
 
     function checkBalances(GlobleLib.Balance memory latest) private {

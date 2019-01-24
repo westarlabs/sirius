@@ -91,11 +91,6 @@ library GlobleLib {
         bs.status = bas.status;
     }
 
-    struct BalanceUpdateChallengeMeta {
-        bytes32[] balanceChallengeKeys;
-        mapping(bytes32 => BalanceUpdateChallengeAndStatus) balanceChallenges;//Use address hash as the key
-    }
-
     ////////////////////////////////////////Balance
 
     struct Balance {
@@ -105,7 +100,7 @@ library GlobleLib {
         uint depositTotal;
         uint withdrawalTotal;
         address payable[] withdrawals;
-        BalanceUpdateChallengeMeta bucMeta;
+        address[] balanceChallenges;
         TransferDeliveryChallengeMeta tdcMeta;
     }
 
