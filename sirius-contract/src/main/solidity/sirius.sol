@@ -129,20 +129,19 @@ contract SiriusService is Sirius {
                 require(balances[0].eon == root.eon, "eon err");
                 ModelLib.hubRootCommonVerify(root);
                 uint tmp = SafeMath.add(balances[1].root.node.allotment, balances[1].depositTotal);
-                uint allotmentTmp = SafeMath.sub(tmp, balances[1].withdrawalMeta.total);
+                uint allotmentTmp = SafeMath.sub(tmp, balances[1].withdrawalTotal);
                 require(allotmentTmp == root.node.allotment, ByteUtilLib.appendUintToString("allotment error:",allotmentTmp));
                 balances[0].root = root;
                 balances[0].hasRoot = true;
 
                 //withdrawal
-                uint wLen = balances[2].withdrawalMeta.addrs.length;
+                uint wLen = balances[2].withdrawals.length;
                 for(uint i=0;i<wLen;i++) {
-                    address payable addr = balances[2].withdrawalMeta.addrs[i];
-                    bytes32 wKey = ByteUtilLib.address2hash(addr);
-                    GlobleLib.Withdrawal memory w = balances[2].withdrawalMeta.withdrawals[wKey];
+                    address payable addr = balances[2].withdrawals[i];
+                    GlobleLib.Withdrawal memory w = dataStore.withdrawalData[balances[2].eon][addr];
                     if(w.isVal && w.stat == GlobleLib.WithdrawalStatusType.INIT) {
                         w.stat = GlobleLib.WithdrawalStatusType.CONFIRMED;
-                        balances[2].withdrawalMeta.withdrawals[wKey] = w;
+                        dataStore.withdrawalData[balances[2].eon][addr] = w;
                         ModelLib.WithdrawalInfo memory wi = ModelLib.unmarshalWithdrawalInfo(RLPDecoder.toRLPItem(w.info, true));
                         addr.transfer(wi.amount);
                         emit SiriusEvent2(100, wi.amount);
@@ -167,7 +166,7 @@ contract SiriusService is Sirius {
             bytes32 key = ByteUtilLib.address2hash(addr);
             ModelLib.verifyProof(preEon, addr, owner, init.proof);
 
-            bool processingFlag = withdrawalProcessing(key);
+            bool processingFlag = withdrawalProcessing(addr);
             require(!processingFlag);
 
             ModelLib.HubRoot memory preRoot = getPreRoot();
@@ -179,9 +178,9 @@ contract SiriusService is Sirius {
             with.isVal = true;
             with.stat = GlobleLib.WithdrawalStatusType.INIT;
 
-            balances[0].withdrawalMeta.addrs.push(addr);
-            balances[0].withdrawalMeta.withdrawals[key] = with;
-            balances[0].withdrawalMeta.total = SafeMath.add(balances[0].withdrawalMeta.total, init.amount);
+            balances[0].withdrawals.push(addr);
+            dataStore.withdrawalData[balances[0].eon][addr] = with;
+            balances[0].withdrawalTotal = SafeMath.add(balances[0].withdrawalTotal, init.amount);
             return true;
         } else {
             return false;
@@ -208,22 +207,22 @@ contract SiriusService is Sirius {
             require(hubSignFlag);
 
             for(uint i=0;i<balances.length;i++) {
-                GlobleLib.Withdrawal memory tmpWith = balances[i].withdrawalMeta.withdrawals[key];
+                GlobleLib.Withdrawal storage with = dataStore.withdrawalData[balances[i].eon][cancel.addr];
 
-                if(tmpWith.isVal && tmpWith.stat != GlobleLib.WithdrawalStatusType.CANCEL && tmpWith.stat != GlobleLib.WithdrawalStatusType.CONFIRMED) {
-                    GlobleLib.Withdrawal storage with = balances[i].withdrawalMeta.withdrawals[key];
-                    if(with.stat == GlobleLib.WithdrawalStatusType.INIT) {
-                        ModelLib.WithdrawalInfo memory tmpInfo = ModelLib.unmarshalWithdrawalInfo(RLPDecoder.toRLPItem(with.info, true));
-                        uint tmp = SafeMath.sub(SafeMath.add(cancel.proof.path.leaf.allotment, cancel.update.upData.receiveAmount), cancel.update.upData.sendAmount);
-                        if (tmpInfo.amount > tmp) {
-                            with.stat = GlobleLib.WithdrawalStatusType.CANCEL;
-                            balances[i].withdrawalMeta.total = SafeMath.sub(balances[i].withdrawalMeta.total, tmpInfo.amount);
-                            //TODO emit SiriusEvent(key, 1, );
+                if(with.isVal) {
+                    if(with.stat != GlobleLib.WithdrawalStatusType.CANCEL && with.stat != GlobleLib.WithdrawalStatusType.CONFIRMED) {
+                        if(with.stat == GlobleLib.WithdrawalStatusType.INIT) {
+                            ModelLib.WithdrawalInfo memory tmpInfo = ModelLib.unmarshalWithdrawalInfo(RLPDecoder.toRLPItem(with.info, true));
+                            uint tmp = SafeMath.sub(SafeMath.add(cancel.proof.path.leaf.allotment, cancel.update.upData.receiveAmount), cancel.update.upData.sendAmount);
+                            if (tmpInfo.amount > tmp) {
+                                with.stat = GlobleLib.WithdrawalStatusType.CANCEL;
+                                dataStore.withdrawalData[balances[i].eon][cancel.addr] = with;
+                                balances[i].withdrawalTotal = SafeMath.sub(balances[i].withdrawalTotal, tmpInfo.amount);
+                                //TODO emit SiriusEvent(key, 1, );
+                            }
                         }
                     }
-                }
 
-                if(tmpWith.isVal) {
                     break;
                 }
             }
@@ -301,7 +300,7 @@ contract SiriusService is Sirius {
 
                 uint t1 = SafeMath.add(close.proof.leaf.update.upData.receiveAmount, preAllotment);
                 t1 = SafeMath.add(t1, d);
-                GlobleLib.Withdrawal memory w = balances[1].withdrawalMeta.withdrawals[key];
+                GlobleLib.Withdrawal memory w = dataStore.withdrawalData[balances[1].eon][close.addr];
                 if(w.isVal) {
                     ModelLib.WithdrawalInfo memory info = ModelLib.unmarshalWithdrawalInfo(RLPDecoder.toRLPItem(w.info, true));
                     t1 = SafeMath.sub(t1, info.amount);
@@ -443,7 +442,7 @@ contract SiriusService is Sirius {
         bytes32 key = ByteUtilLib.address2hash(msg.sender);
         for (uint i=0; i < balances.length; i++) {
             if(balances[i].eon == eon) {
-                tmp = balances[i].withdrawalMeta.withdrawals[key];
+                tmp = dataStore.withdrawalData[balances[i].eon][msg.sender];
                 break;
             }
         }
@@ -494,11 +493,11 @@ contract SiriusService is Sirius {
     /** private methods **/
 
     function newBalance(uint newEon) private pure returns(GlobleLib.Balance memory latest) {
-        GlobleLib.WithdrawalMeta memory withdrawalMeta;
         ModelLib.HubRoot memory root;
         GlobleLib.TransferDeliveryChallengeMeta memory tdc;
         GlobleLib.BalanceUpdateChallengeMeta memory buc;
-        return GlobleLib.Balance(newEon, false, root, 0, withdrawalMeta, buc, tdc);
+        address payable[] memory withdrawals;
+        return GlobleLib.Balance(newEon, false, root, 0, 0, withdrawals, buc, tdc);
     }
 
     function checkBalances(GlobleLib.Balance memory latest) private {
@@ -512,11 +511,11 @@ contract SiriusService is Sirius {
         }
     }
 
-    function withdrawalProcessing(bytes32 key) private view returns (bool flag) {
+    function withdrawalProcessing(address addr) private view returns (bool flag) {
         flag = false;
 
         for(uint i=0;i<balances.length;i++) {
-            GlobleLib.Withdrawal memory with = balances[i].withdrawalMeta.withdrawals[key];
+            GlobleLib.Withdrawal memory with =dataStore.withdrawalData[balances[i].eon][addr];
 
             if(with.isVal && with.stat != GlobleLib.WithdrawalStatusType.CANCEL && with.stat != GlobleLib.WithdrawalStatusType.CONFIRMED) {
                 flag = true;

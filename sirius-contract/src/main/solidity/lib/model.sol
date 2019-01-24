@@ -56,12 +56,6 @@ library GlobleLib {
         return RLPEncoder.encodeList(ByteUtilLib.append(w.info, stat));
     }
 
-    struct WithdrawalMeta {
-        uint total;
-        address payable[] addrs;
-        mapping(bytes32 => Withdrawal) withdrawals;
-    }
-
     ////////////////////////////////////////Transfer challenge
 
     struct TransferDeliveryChallengeMeta {
@@ -109,7 +103,8 @@ library GlobleLib {
         bool hasRoot;
         ModelLib.HubRoot root;
         uint depositTotal;
-        WithdrawalMeta withdrawalMeta;
+        uint withdrawalTotal;
+        address payable[] withdrawals;
         BalanceUpdateChallengeMeta bucMeta;
         TransferDeliveryChallengeMeta tdcMeta;
     }
