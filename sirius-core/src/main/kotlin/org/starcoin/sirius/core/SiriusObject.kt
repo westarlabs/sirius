@@ -131,3 +131,8 @@ abstract class SiriusObjectCompanion<T : SiriusObject, P : GeneratedMessageV3>(v
         return ProtoBuf.load(RLP.plain.context.getOrDefault(objClass), bytes)
     }
 }
+
+inline fun <reified P : GeneratedMessageV3, reified T : SiriusObject> P.toSiriusObject(): T {
+    val companion = T::class.companionObjectInstance as SiriusObjectCompanion<T, P>
+    return companion.parseFromProtoMessage(this)
+}
