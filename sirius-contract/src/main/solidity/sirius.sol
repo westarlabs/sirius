@@ -111,10 +111,10 @@ contract SiriusService is Sirius {
 
             //transfer
             if(flag) {
-                uint tLen = balances[1].tdcMeta.transferChallengeKeys.length;
+                uint tLen = balances[1].transferChallenges.length;
                 for(uint i=0;i<tLen;i++) {
-                    bytes32 tKey = balances[1].tdcMeta.transferChallengeKeys[i];
-                    GlobleLib.TransferDeliveryChallengeAndStatus memory t = balances[1].tdcMeta.transferChallenges[tKey];
+                    bytes32 tKey = balances[1].transferChallenges[i];
+                    GlobleLib.TransferDeliveryChallengeAndStatus memory t = dataStore.tdcData[balances[1].eon][tKey];
                    if(t.isVal && t.stat != ModelLib.ChallengeStatus.CLOSE) {
                        flag = false;
                        break;
@@ -335,14 +335,14 @@ contract SiriusService is Sirius {
             bool verifyFlag = ModelLib.verifyMembershipProof4Merkle(open.update.upData.root, open.path, hash);
             require(verifyFlag);
 
-            GlobleLib.TransferDeliveryChallengeAndStatus memory challenge = balances[0].tdcMeta.transferChallenges[hash];
+            GlobleLib.TransferDeliveryChallengeAndStatus memory challenge = dataStore.tdcData[balances[0].eon][hash];
             challenge.challenge = data;
             challenge.stat = ModelLib.ChallengeStatus.OPEN;
             if(!challenge.isVal) {
-                balances[0].tdcMeta.transferChallengeKeys.push(hash);
+                balances[0].transferChallenges.push(hash);
             }
             challenge.isVal = true;
-            balances[0].tdcMeta.transferChallenges[hash] = challenge;
+            dataStore.tdcData[balances[0].eon][hash] = challenge;
             return true;
         } else {
             return false;
@@ -362,7 +362,7 @@ contract SiriusService is Sirius {
             bool proofFlag = ModelLib.verifyMembershipProof4AMTreeProof(latestRoot.node, close.proof);
             require(proofFlag);
 
-            GlobleLib.TransferDeliveryChallengeAndStatus memory challenge = balances[0].tdcMeta.transferChallenges[key];
+            GlobleLib.TransferDeliveryChallengeAndStatus memory challenge = dataStore.tdcData[balances[0].eon][key];
             //require(challenge.isVal);//TODO
 
             if(challenge.stat == ModelLib.ChallengeStatus.OPEN) {
@@ -370,7 +370,7 @@ contract SiriusService is Sirius {
                 require(verifyFlag);
 
                 challenge.stat = ModelLib.ChallengeStatus.CLOSE;
-                balances[0].tdcMeta.transferChallenges[key] = challenge;
+                dataStore.tdcData[balances[0].eon][key] = challenge;
                 emit SiriusEvent(key, 3, challenge.challenge);
             }
             return true;
@@ -478,7 +478,7 @@ contract SiriusService is Sirius {
         ModelLib.ContractReturn memory cr;
         for (uint i=0; i < balances.length; i++) {
             if(balances[i].eon == eon) {
-                tmp = balances[i].tdcMeta.transferChallenges[txHash];
+                tmp = dataStore.tdcData[balances[i].eon][txHash];
                 break;
             }
         }
@@ -494,10 +494,10 @@ contract SiriusService is Sirius {
 
     function newBalance(uint newEon) private pure returns(GlobleLib.Balance memory latest) {
         ModelLib.HubRoot memory root;
-        GlobleLib.TransferDeliveryChallengeMeta memory tdc;
         address payable[] memory withdrawals;
         address[] memory balanceChallenges;
-        return GlobleLib.Balance(newEon, false, root, 0, 0, withdrawals, balanceChallenges, tdc);
+        bytes32[] memory transferChallenges;
+        return GlobleLib.Balance(newEon, false, root, 0, 0, withdrawals, balanceChallenges, transferChallenges);
     }
 
     function checkBalances(GlobleLib.Balance memory latest) private {

@@ -58,11 +58,6 @@ library GlobleLib {
 
     ////////////////////////////////////////Transfer challenge
 
-    struct TransferDeliveryChallengeMeta {
-        bytes32[] transferChallengeKeys;
-        mapping(bytes32 => TransferDeliveryChallengeAndStatus) transferChallenges;
-    }
-
     struct TransferDeliveryChallengeAndStatus {
         bytes challenge;//bytes for ModelLib.TransferDeliveryChallenge
         ModelLib.ChallengeStatus stat;
@@ -101,14 +96,14 @@ library GlobleLib {
         uint withdrawalTotal;
         address payable[] withdrawals;
         address[] balanceChallenges;
-        TransferDeliveryChallengeMeta tdcMeta;
+        bytes32[] transferChallenges;
     }
 
     struct DataStore {
         mapping (uint => mapping (address => uint)) depositData;
         mapping (uint => mapping (address => Withdrawal)) withdrawalData;
         mapping (uint => mapping (address => BalanceUpdateChallengeAndStatus)) bucData;
-        mapping (uint => mapping (address => TransferDeliveryChallengeAndStatus)) tdcData;
+        mapping (uint => mapping (bytes32 => TransferDeliveryChallengeAndStatus)) tdcData;
     }
 }
 
