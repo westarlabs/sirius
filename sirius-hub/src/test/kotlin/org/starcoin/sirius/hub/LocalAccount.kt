@@ -4,14 +4,20 @@ import com.google.common.eventbus.EventBus
 import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.launch
 import org.junit.Assert
-import org.starcoin.proto.HubServiceGrpc
 import org.starcoin.sirius.core.*
 import org.starcoin.sirius.crypto.CryptoKey
+import org.starcoin.sirius.protocol.Chain
 import org.starcoin.sirius.protocol.ChainAccount
+import org.starcoin.sirius.protocol.HubContract
 import org.starcoin.sirius.util.WithLogging
 import java.math.BigInteger
 
-class LocalAccount<A : ChainAccount>(val chainAccount: A, val hubService: HubServiceGrpc.HubServiceBlockingStub) {
+class LocalAccount<T : ChainTransaction, A : ChainAccount>(
+    val chainAccount: A,
+    val chain: Chain<T, out Block<T>, A>,
+    val contract: HubContract<A>,
+    val hubService: HubService
+) {
 
     val kp: CryptoKey = chainAccount.key
     val address = chainAccount.address
@@ -43,7 +49,7 @@ class LocalAccount<A : ChainAccount>(val chainAccount: A, val hubService: HubSer
         update.sign(kp)
         this.state = LocalEonState(this.state, eon, update)
         this.state!!.hubRoot = hubRoot
-        this.state!!.proof = AMTreeProof.parseFromProtoMessage(hubService.getProof(this.address.toProto()))
+        this.state!!.proof = hubService.getProof(this.address)
         Assert.assertTrue(
             AMTree.verifyMembershipProof(
                 this.state?.hubRoot?.root,
@@ -51,8 +57,7 @@ class LocalAccount<A : ChainAccount>(val chainAccount: A, val hubService: HubSer
             )
         )
 
-        this.state!!.hubAccount =
-            HubAccount.parseFromProtoMessage(hubService.getHubAccount(this.address.toProto()))
+        this.state!!.hubAccount = hubService.getHubAccount(this.address)
         LOG.info(this.address.toString() + " to new eon:" + eon)
     }
 
@@ -84,24 +89,20 @@ class LocalAccount<A : ChainAccount>(val chainAccount: A, val hubService: HubSer
     fun register(update: Update, hubAccount: HubAccount) {
         this.state!!.update = update
         this.state!!.hubAccount = hubAccount
+        this.processHubEvents()
+    }
+
+    private fun processHubEvents() {
         GlobalScope.launch {
-            try {
-                //executorService.submit {
-                hubService
-                    .watch(address.toProto())
-                    .forEachRemaining { protoHubEvent ->
-                        val event = HubEvent.parseFromProtoMessage(protoHubEvent)
-                        HubServerIntegrationTestBase.LOG.info("onEvent:" + event.toString())
-                        if (event.type === HubEventType.NEW_TX) {
-                            onTx(event.getPayload() as OffchainTransaction)
-                        } else if (event.type === HubEventType.NEW_UPDATE) {
-                            onUpdate(event.getPayload() as Update)
-                        }
-                        eventBus.post(event)
-                    }
-                //}
-            } catch (e: Exception) {
-                e.printStackTrace()
+            val channel = hubService.watch(address)
+            for (event in channel) {
+                LOG.info("$address onEvent: $event")
+                if (event.type === HubEventType.NEW_TX) {
+                    onTx(event.getPayload() as OffchainTransaction)
+                } else if (event.type === HubEventType.NEW_UPDATE) {
+                    onUpdate(event.getPayload() as Update)
+                }
+                eventBus.post(event)
             }
         }
     }
@@ -113,13 +114,50 @@ class LocalAccount<A : ChainAccount>(val chainAccount: A, val hubService: HubSer
     fun onTx(tx: OffchainTransaction) {
         this.addTx(tx)
         val toIOU = IOU(tx, this.update)
-        Assert.assertTrue(hubService.receiveNewTransfer(toIOU.toProto()).getSucc())
+        hubService.receiveNewTransfer(toIOU)
     }
 
     fun onUpdate(update: Update) {
         this.update = update
-        this.hubAccount =
-            HubAccount.parseFromProtoMessage(hubService.getHubAccount(this.address.toProto()))
+        this.hubAccount = hubService.getHubAccount(this.address)
+    }
+
+    fun deposit(amount: BigInteger) {
+        val previousAccount = hubService.getHubAccount(address)
+        // deposit
+
+        val hubEventFuture =
+            HubEventFuture { event -> event.type === HubEventType.NEW_DEPOSIT && event.address == address }
+        watch(hubEventFuture)
+
+        val txHash = chain.submitTransaction(
+            chainAccount,
+            chain.newTransaction(chainAccount, contract.contractAddress, amount)
+        )
+
+        //val future = this.registerTxHook(txHash)
+        //future.get(4, TimeUnit.SECONDS)
+
+//        try {
+//            val hubEvent = hubEventFuture.get(2, TimeUnit.SECONDS)
+//            if (expectSuccess) {
+//                Assert.assertEquals(amount, hubEvent.getPayload<Deposit>().amount)
+//            } else {
+//                Assert.fail("expect get Deposit event timeout")
+//            }
+//        } catch (e: Exception) {
+//            if (expectSuccess) {
+//                Assert.fail(e.message)
+//            }
+//        }
+//        //TODO ensure
+//        HubServerIntegrationTestBase.sleep(1000)
+//        val hubAccount = HubAccount.parseFromProtoMessage(hubService.getHubAccount(a.address.toProto()))
+//        Assert.assertEquals(
+//            if (expectSuccess) previousAccount.deposit + amount else previousAccount.deposit,
+//            hubAccount.deposit
+//        )
+//        a.hubAccount = hubAccount
     }
 
     companion object : WithLogging() {
