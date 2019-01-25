@@ -192,6 +192,7 @@ class WalletTest {
             walletAlice.getMessageChannel()?.receive()
         }
 
+        Assert.assertTrue(contract.isRecoveryMode(alice))
     }
 
     @Test
