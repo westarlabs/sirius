@@ -16,7 +16,6 @@ interface Sirius {
     function getCurrentEon() external view returns (uint);
     function isRecoveryMode() external view returns (bool);
     function test() external view returns (bool);
-    function testRecovery() external;
     function hubIp(bytes calldata data) external;
     function hubInfo() external view returns (bytes memory);
     function queryWithdrawal(uint eon) external returns (bytes memory);
@@ -164,7 +163,7 @@ contract SiriusService is Sirius {
             require(init.proof.path.eon > 0);
             require(init.proof.path.leaf.allotment >= init.amount);
             uint preEon = balances[1].eon;
-            ModelLib.verifyProof(preEon, addr, owner, init.proof);
+            ModelLib.verifyProof(preEon, addr, owner, init.proof, true);
 
             bool processingFlag = withdrawalProcessing(addr);
             require(!processingFlag);
@@ -276,9 +275,6 @@ contract SiriusService is Sirius {
             ModelLib.CloseBalanceUpdateChallenge memory close = ModelLib.unmarshalCloseBalanceUpdateChallenge(RLPDecoder.toRLPItem(data, true));
             require(balances[0].hasRoot, "require root");
 
-            uint eon = currentEon();
-            ModelLib.verifyProof(eon, close.addr, owner, close.proof);
-
             ModelLib.HubRoot memory root = balances[0].root;
             bool proofFlag = ModelLib.verifyMembershipProof4AMTreeProof(root.node, close.proof);
             require(proofFlag, "verify membership proof fail.");
@@ -288,7 +284,15 @@ contract SiriusService is Sirius {
 
             ModelLib.BalanceUpdateChallengeStatus memory stat = GlobleLib.change2BalanceUpdateChallengeStatus(tmpStat);
 
+
             if(stat.status == ModelLib.ChallengeStatus.OPEN) {
+
+                if(!stat.proof.hasUp || (close.proof.leaf.update.upData.sendAmount == 0 && close.proof.leaf.update.upData.receiveAmount == 0)) {
+                    ModelLib.verifyProof(balances[0].eon, close.addr, owner, close.proof, false);
+                } else {
+                    ModelLib.verifyProof(balances[0].eon, close.addr, owner, close.proof, true);
+                }
+
                 uint d = dataStore.depositData[balances[1].eon][close.addr];
 
                 uint preAllotment = 0;
@@ -353,7 +357,7 @@ contract SiriusService is Sirius {
             require(balances[0].hasRoot, "balances[0].hasRoot false");
 
             address addr = close.fromAddr;
-            ModelLib.verifyProof(balances[0].eon, addr, owner, close.proof);
+            ModelLib.verifyProof(balances[0].eon, addr, owner, close.proof, true);
             bytes32 key = close.txHash;
 
             ModelLib.HubRoot memory latestRoot = balances[0].root;
@@ -435,11 +439,6 @@ contract SiriusService is Sirius {
         chi.blocksPerEon = blocksPerEon;
         chi.latestEon = currentEon();
         return ModelLib.marshalContractHubInfo(chi);
-    }
-
-    function testRecovery() external {
-        require(msg.sender == owner);
-        recoveryMode = true;
     }
 
     function queryWithdrawal(uint eon) external returns (bytes memory) {

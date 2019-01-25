@@ -50,23 +50,7 @@ data class ContractData(val sb: StandaloneBlockchain, val contract: SolidityCont
 
 abstract class ContractTestBase(val contractPath: String, val contractName: String) {
 
-    companion object : WithLogging() {
-        fun bytesToHexString(src: ByteArray?): String? {
-            val stringBuilder = StringBuilder("")
-            if (src == null || src.isEmpty()) {
-                return null
-            }
-            for (i in 0..src.size - 1) {
-                val v = src[i].toInt() and 0xFF
-                val hv = Integer.toHexString(v)
-                if (hv.length < 2) {
-                    stringBuilder.append(0)
-                }
-                stringBuilder.append(hv)
-            }
-            return stringBuilder.toString()
-        }
-    }
+    companion object : WithLogging()
 
     lateinit var sb: StandaloneBlockchain
     lateinit var contract: SolidityContract
@@ -88,7 +72,7 @@ abstract class ContractTestBase(val contractPath: String, val contractName: Stri
 
     @Suppress("INACCESSIBLE_TYPE")
     fun deployContract(): ContractData {
-        val sb = StandaloneBlockchain().withAutoblock(true).withGasLimit(8000000).withGasPrice(2147483647)
+        val sb = StandaloneBlockchain().withAutoblock(true).withGasLimit(9000000).withGasPrice(2147483647)
 
 
         val contractMetadata = loadContractMetadata(contractPath)
