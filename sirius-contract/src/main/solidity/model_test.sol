@@ -15,6 +15,7 @@ contract test_all_interface {
     function am_tree_path_node_test(bytes calldata data) external returns (bytes memory);
     function am_tree_path_test(bytes calldata data) external returns (bytes memory);
     function am_tree_proof_test(bytes calldata data) external returns (bytes memory);
+function close_balance_update_challenge_test(bytes calldata data) external returns (bytes memory);
     function balance_update_proof_test(bytes calldata data) external returns (bytes memory);
     function balance_update_proof_test2(bytes calldata data) external returns (bytes memory);
     function update_data_test(bytes calldata data) external returns (bytes memory);
@@ -136,6 +137,11 @@ contract test_all is test_all_interface {
         Log.log("11", ModelLib.marshalBalanceUpdateProof(bup));
         return data;
     }
+
+function close_balance_update_challenge_test(bytes calldata data) external returns (bytes memory){
+ModelLib.CloseBalanceUpdateChallenge memory close = ModelLib.unmarshalCloseBalanceUpdateChallenge(RLPDecoder.toRLPItem(data, true));
+return ModelLib.marshalCloseBalanceUpdateChallenge(close);
+}
 
     function contract_return_test(bytes calldata data) external pure returns (bytes memory) {
         ModelLib.ContractReturn memory cr = ModelLib.unmarshalContractReturn(RLPDecoder.toRLPItem(data, true));

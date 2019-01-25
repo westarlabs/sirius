@@ -221,10 +221,10 @@ library ModelLib {
     }
 
     function verifyProof(uint eon, address userAddr, address hubAddr, AMTreeProof memory proof) internal pure {
-        require(eon == proof.path.eon);
-        require(ByteUtilLib.address2hash(userAddr) == proof.leaf.addressHash);
-        require(verifySign4Update(proof.leaf.update.upData, proof.leaf.update.sign, userAddr));
-        require(verifySign4Update(proof.leaf.update.upData, proof.leaf.update.hubSign, hubAddr));
+        require(eon == proof.path.eon, ByteUtilLib.appendUintToString("expect path eon:", eon));
+        require(ByteUtilLib.address2hash(userAddr) == proof.leaf.addressHash, "address hash mismatching");
+        require(verifySign4Update(proof.leaf.update.upData, proof.leaf.update.sign, userAddr), "verify user sign fail");
+        require(verifySign4Update(proof.leaf.update.upData, proof.leaf.update.hubSign, hubAddr), "verify hub sign fail");
     }
 
     struct AMTreeNode {

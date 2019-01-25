@@ -275,17 +275,17 @@ contract SiriusService is Sirius {
     function closeBalanceUpdateChallenge(bytes calldata data) external onlyOwner returns (bool) {
         if(!recoveryMode) {
             ModelLib.CloseBalanceUpdateChallenge memory close = ModelLib.unmarshalCloseBalanceUpdateChallenge(RLPDecoder.toRLPItem(data, true));
-            require(balances[0].hasRoot);
+            require(balances[0].hasRoot, "require root");
 
             uint eon = currentEon();
             ModelLib.verifyProof(eon, close.addr, owner, close.proof);
 
             ModelLib.HubRoot memory root = balances[0].root;
             bool proofFlag = ModelLib.verifyMembershipProof4AMTreeProof(root.node, close.proof);
-            require(proofFlag);
+            require(proofFlag, "verify membership proof fail.");
 
             GlobleLib.BalanceUpdateChallengeAndStatus storage tmpStat = dataStore.bucData[balances[0].eon][close.addr];
-            require(tmpStat.isVal);
+require(tmpStat.isVal, "check challenge status fail");
 
             ModelLib.BalanceUpdateChallengeStatus memory stat = GlobleLib.change2BalanceUpdateChallengeStatus(tmpStat);
 
@@ -306,7 +306,7 @@ contract SiriusService is Sirius {
                 }
                 uint t2 = close.proof.leaf.update.upData.sendAmount;
                 uint allotment = SafeMath.sub(t1, t2);
-                require(allotment == close.proof.path.leaf.allotment);
+require(allotment == close.proof.path.leaf.allotment, "check proof allotment fail.");
 
                 tmpStat.status == ModelLib.ChallengeStatus.CLOSE;
                 dataStore.bucData[balances[0].eon][close.addr] = tmpStat;
