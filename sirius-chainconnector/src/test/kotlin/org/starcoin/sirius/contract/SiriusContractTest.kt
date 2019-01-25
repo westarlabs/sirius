@@ -208,8 +208,8 @@ class SiriusContractTest : ContractTestBase("solidity/SiriusService", "SiriusSer
         for (i in 0 until txCount) {
             val txData = OffchainTransactionData(
                 eon,
-                ethKey2Address(callUser),
-                ethKey2Address(callUser), 1, 1
+                callUser.address,
+                callUser.address, 1, 1
             )
             val txTmp = OffchainTransaction(txData)
             txTmp.sign(callUser)
@@ -249,23 +249,16 @@ class SiriusContractTest : ContractTestBase("solidity/SiriusService", "SiriusSer
 
     @Test
     fun testRecoverFunds() {
-        var eon = 2
-        createEon(eon, false, false)
+        testInitiateWithdrawal()
 
-        eon = ("" + currentEon()).toInt() - 1
-        if (eon < 0)
-            eon = 0
+        for (i in 0..(blocksPerEon + 2)) {
+            testDeposit(false)
+        }
 
         var recovery = contract.callConstFunction("isRecoveryMode")[0] as Boolean
         assert(recovery)
-        val update3 = newUpdate(eon, 3, 0)//other
-        val update4 = newUpdate(eon, 4, 0)//mine
-        val path = newPath(ethKey2Address(callUser), update3)
-        val leaf3 = newLeafNodeInfo(ethKey2Address(callUser), update4)
 
-        val refund = AMTreeProof(path, leaf3)
-        val data = refund.toRLP()
-        val callResult = contract.callFunction("recoverFunds", data)
+        val callResult = contract.callFunction("recoverFunds", preProof.toRLP())
         verifyReturn(callResult)
     }
 

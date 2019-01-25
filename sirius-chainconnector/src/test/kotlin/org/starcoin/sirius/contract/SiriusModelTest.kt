@@ -126,8 +126,8 @@ class SiriusModelTest : ContractTestBase("solidity/test_all", "test_all") {
         for (i in 0 until txCount) {
             val txData = OffchainTransactionData(
                 eon,
-                ethKey2Address(callUser),
-                ethKey2Address(callUser), 1, 1
+                callUser.address,
+                callUser.address, 1, 1
             )
             val txTmp = OffchainTransaction(txData)
             txTmp.sign(callUser)

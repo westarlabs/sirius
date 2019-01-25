@@ -66,10 +66,6 @@ abstract class ContractTestBase(val contractPath: String, val contractName: Stri
             }
             return stringBuilder.toString()
         }
-
-        fun ethKey2Address(ethKey: EthCryptoKey): Address {
-            return ethKey.address
-        }
     }
 
     lateinit var sb: StandaloneBlockchain
@@ -116,31 +112,6 @@ abstract class ContractTestBase(val contractPath: String, val contractName: Stri
 
         return ContractData(sb, contract, sb.sender)
     }
-
-    fun call(data: ByteArray, method: String, hasReturn: Boolean) {
-        val dataStr = bytesToHexString(data)!!
-
-        LOG.info("contract args:$dataStr")
-
-        val callResult = contract.callFunction(method, data)
-
-        LOG.warning("conract err:$callResult.receipt.error")
-
-        assert(callResult.receipt.isTxStatusOK)
-        if (hasReturn) {
-            val resultStr = bytesToHexString(callResult.receipt.executionResult)!!
-
-            LOG.info("contract return:$resultStr")
-        } else {
-            callResult.receipt.logInfoList.forEach { logInfo ->
-                LOG.info("event:$logInfo")
-            }
-        }
-    }
-
-//    fun commitData(eon: Int, amount: Long, flag: Boolean) {
-//        commitData(this.contract, eon, amount, flag)
-//    }
 
     fun commitData(eon: Int, amount: Long, flag: Boolean) {
         val info = AMTreeInternalNodeInfo(Hash.random(), amount, Hash.random())

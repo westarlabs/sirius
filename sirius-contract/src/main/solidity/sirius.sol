@@ -111,7 +111,6 @@ contract SiriusService is Sirius {
                 }
             }
 
-
             //transfer
             if(flag) {
                 uint tLen = balances[1].transferChallenges.length;
@@ -285,7 +284,7 @@ contract SiriusService is Sirius {
             require(proofFlag, "verify membership proof fail.");
 
             GlobleLib.BalanceUpdateChallengeAndStatus storage tmpStat = dataStore.bucData[balances[0].eon][close.addr];
-require(tmpStat.isVal, "check challenge status fail");
+            require(tmpStat.isVal, "check challenge status fail");
 
             ModelLib.BalanceUpdateChallengeStatus memory stat = GlobleLib.change2BalanceUpdateChallengeStatus(tmpStat);
 
@@ -306,7 +305,7 @@ require(tmpStat.isVal, "check challenge status fail");
                 }
                 uint t2 = close.proof.leaf.update.upData.sendAmount;
                 uint allotment = SafeMath.sub(t1, t2);
-require(allotment == close.proof.path.leaf.allotment, "check proof allotment fail.");
+                require(allotment == close.proof.path.leaf.allotment, "check proof allotment fail.");
 
                 tmpStat.status == ModelLib.ChallengeStatus.CLOSE;
                 dataStore.bucData[balances[0].eon][close.addr] = tmpStat;
@@ -381,15 +380,25 @@ require(allotment == close.proof.path.leaf.allotment, "check proof allotment fai
     function recoverFunds(bytes calldata data) external {
         require(recoveryMode);
 
+        bool flag = recoverys[msg.sender];
+        require(!flag);
+
         ModelLib.AMTreeProof memory proof = ModelLib.unmarshalAMTreeProof(RLPDecoder.toRLPItem(data, true));
 
         bytes32 key = ByteUtilLib.address2hash(msg.sender);
         require(proof.leaf.addressHash == key);
 
-        uint preEon = balances[1].eon;
+        uint preEon;
+        ModelLib.HubRoot memory preRoot;
+        if(balances[0].hasRoot) {
+            preEon = balances[1].eon;
+            preRoot = balances[0].root;
+        } else if(!balances[0].hasRoot) {
+            preEon = balances[2].eon;
+            preRoot = balances[1].root;
+        }
         require(preEon == proof.leaf.update.upData.eon);
 
-        ModelLib.HubRoot memory preRoot = getPreRoot();
         bool proofFlag = ModelLib.verifyMembershipProof4AMTreeProof(preRoot.node, proof);
         require(proofFlag);
 
@@ -397,8 +406,6 @@ require(allotment == close.proof.path.leaf.allotment, "check proof allotment fai
         amount = SafeMath.add(amount, dataStore.depositData[balances[1].eon][msg.sender]);
         require(amount > 0);
 
-        bool flag = recoverys[msg.sender];
-        require(!flag);
         recoverys[msg.sender] = true;
         msg.sender.transfer(amount);
     }
