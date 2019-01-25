@@ -138,13 +138,13 @@ contract SiriusService is Sirius {
                 balances[0].hasRoot = true;
 
                 //withdrawal
-                uint wLen = balances[2].withdrawals.length;
+                uint wLen = balances[1].withdrawals.length;
                 for(uint i=0;i<wLen;i++) {
-                    address payable addr = balances[2].withdrawals[i];
-                    GlobleLib.Withdrawal memory w = dataStore.withdrawalData[balances[2].eon][addr];
+                    address payable addr = balances[1].withdrawals[i];
+                    GlobleLib.Withdrawal memory w = dataStore.withdrawalData[balances[1].eon][addr];
                     if(w.isVal && w.stat == GlobleLib.WithdrawalStatusType.INIT) {
                         w.stat = GlobleLib.WithdrawalStatusType.CONFIRMED;
-                        dataStore.withdrawalData[balances[2].eon][addr] = w;
+                        dataStore.withdrawalData[balances[1].eon][addr] = w;
                         ModelLib.WithdrawalInfo memory wi = ModelLib.unmarshalWithdrawalInfo(RLPDecoder.toRLPItem(w.info, true));
                         addr.transfer(wi.amount);
                     }
