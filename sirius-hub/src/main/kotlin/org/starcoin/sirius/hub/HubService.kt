@@ -17,7 +17,7 @@ interface HubService {
     fun getProof(address: Address): AMTreeProof?
     fun getProof(eon: Int, blockAddress: Address): AMTreeProof?
     fun watch(address: Address): ReceiveChannel<HubEvent>
-    fun watchHubRoot(): ReceiveChannel<HubEvent>
+    fun watchHubRoot(): ReceiveChannel<HubRoot>
     fun getHubAccount(address: Address): HubAccount?
     fun resetHubMaliciousFlag(): EnumSet<Hub.HubMaliciousFlag>
 }

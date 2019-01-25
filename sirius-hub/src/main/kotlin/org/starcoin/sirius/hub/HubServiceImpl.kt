@@ -1,6 +1,7 @@
 package org.starcoin.sirius.hub
 
 import kotlinx.coroutines.channels.ReceiveChannel
+import kotlinx.coroutines.channels.map
 import org.starcoin.sirius.core.*
 import org.starcoin.sirius.hub.Hub.HubMaliciousFlag
 import org.starcoin.sirius.protocol.Chain
@@ -71,8 +72,8 @@ class HubServiceImpl<T : ChainTransaction, A : ChainAccount>(
         return hub.watch(address)
     }
 
-    override fun watchHubRoot(): ReceiveChannel<HubEvent> {
-        return hub.watch { event -> event.type === HubEventType.NEW_HUB_ROOT }
+    override fun watchHubRoot(): ReceiveChannel<HubRoot> {
+        return hub.watch { event -> event.type === HubEventType.NEW_HUB_ROOT }.map { it.getPayload<HubRoot>() }
     }
 
     override fun getHubAccount(address: Address): HubAccount? {

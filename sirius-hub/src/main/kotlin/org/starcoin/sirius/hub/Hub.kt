@@ -71,6 +71,9 @@ interface Hub {
             }
 
             fun of(flags: HubMaliciousFlags): EnumSet<HubMaliciousFlag> {
+                if (flags.flagsList.size == 0) {
+                    return EnumSet.noneOf(HubMaliciousFlag::class.java)
+                }
                 return EnumSet.copyOf(
                     flags
                         .flagsList

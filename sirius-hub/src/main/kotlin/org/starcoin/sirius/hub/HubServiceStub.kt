@@ -84,14 +84,14 @@ class HubServiceStub(val stub: HubServiceGrpc.HubServiceBlockingStub) : HubServi
         return channel
     }
 
-    override fun watchHubRoot(): ReceiveChannel<HubEvent> {
-        val channel = Channel<HubEvent>()
+    override fun watchHubRoot(): ReceiveChannel<HubRoot> {
+        val channel = Channel<HubRoot>()
         GlobalScope.launch {
             try {
                 stub
                     .watchHubRoot(Empty.getDefaultInstance())
-                    .forEachRemaining { protoHubEvent ->
-                        launch { channel.send(protoHubEvent.toSiriusObject()) }
+                    .forEachRemaining { protoHubRoot ->
+                        launch { channel.send(protoHubRoot.toSiriusObject()) }
                     }
             } catch (e: Exception) {
                 e.printStackTrace()

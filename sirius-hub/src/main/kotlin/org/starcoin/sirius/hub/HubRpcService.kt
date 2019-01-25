@@ -141,7 +141,7 @@ class HubRpcService<T : ChainTransaction, A : ChainAccount>(val hubService: HubS
         val queue = this.hubService.watchHubRoot()
         GlobalScope.launch {
             for (event in queue) {
-                responseObserver.onNext(event.getPayload<HubRoot>().toProto())
+                responseObserver.onNext(event.toProto())
             }
         }
     }
