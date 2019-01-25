@@ -38,5 +38,4 @@ data class Receipt(
         if (to == null || to.isEmpty()) null else Address.wrap(to),
         gasUsed, logBloom, cumulativeGasUsed, root, status
     )
-
 }

@@ -4,15 +4,13 @@ import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
 import org.junit.*
-import org.starcoin.sirius.core.Block
-import org.starcoin.sirius.core.ChainTransaction
-import org.starcoin.sirius.core.Hash
-import org.starcoin.sirius.core.Receipt
+import org.starcoin.sirius.core.*
 import org.starcoin.sirius.crypto.CryptoKey
 import org.starcoin.sirius.crypto.CryptoService
 import org.starcoin.sirius.crypto.eth.EthCryptoKey
 import org.starcoin.sirius.protocol.Chain
 import org.starcoin.sirius.protocol.ChainAccount
+import org.starcoin.sirius.protocol.ChainEvent
 import org.starcoin.sirius.protocol.EthereumTransaction
 import org.starcoin.sirius.util.WithLogging
 import org.web3j.crypto.WalletUtils
@@ -72,7 +70,6 @@ class EthereumChainTest : EtherumServer(true) {
         val hash = chain.submitTransaction(etherbase, tx1)
         val txFind = chain.findTransaction(hash)
         Assert.assertNotNull(txFind?.from)
-
     }
 
     @Test
@@ -122,7 +119,11 @@ class EthereumChainTest : EtherumServer(true) {
 
     }
 
-
+    fun testWatchEvents() {
+        val contracAddress: Address = Address.DUMMY_ADDRESS
+        val events = listOf(ChainEvent.MockTopic)
+        chain.watchEvents(contracAddress, events)
+    }
 }
 
 open class EtherumServer(var started: Boolean) {

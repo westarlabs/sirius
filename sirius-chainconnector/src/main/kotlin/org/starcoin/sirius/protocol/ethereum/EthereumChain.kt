@@ -6,7 +6,6 @@ import kotlinx.coroutines.channels.ReceiveChannel
 import kotlinx.coroutines.channels.sendBlocking
 import kotlinx.coroutines.launch
 import kotlinx.io.IOException
-import org.ethereum.crypto.HashUtil
 import org.starcoin.sirius.core.Address
 import org.starcoin.sirius.core.Hash
 import org.starcoin.sirius.core.Receipt
@@ -15,8 +14,8 @@ import org.starcoin.sirius.crypto.CryptoKey
 import org.starcoin.sirius.crypto.eth.EthCryptoKey
 import org.starcoin.sirius.lang.hexToByteArray
 import org.starcoin.sirius.lang.toHEXString
+import org.starcoin.sirius.protocol.ChainEvent
 import org.starcoin.sirius.protocol.EthereumTransaction
-import org.starcoin.sirius.protocol.EventTopic
 import org.starcoin.sirius.protocol.TransactionResult
 import org.web3j.protocol.Web3j
 import org.web3j.protocol.core.DefaultBlockParameter
@@ -28,7 +27,6 @@ import org.web3j.protocol.core.methods.response.EthLog.LogObject
 import org.web3j.protocol.core.methods.response.Transaction
 import org.web3j.protocol.http.HttpService
 import org.web3j.protocol.ipc.UnixIpcService
-import org.web3j.utils.Numeric
 import java.math.BigInteger
 
 
@@ -67,11 +65,9 @@ class EthereumChain constructor(httpUrl: String = DEFAULT_URL, socketPath: Strin
 
     override fun watchTransactions(filter: (TransactionResult<EthereumTransaction>) -> Boolean): ReceiveChannel<TransactionResult<EthereumTransaction>> {
         val ch = Channel<TransactionResult<EthereumTransaction>>()
-        val hx = ArrayList<Hash>(1)
         GlobalScope.launch {
             web3.transactionFlowable().subscribe {
-                hx.add(Hash.wrap(it.hash))
-                val receipts = getTransactionReceipts(hx)
+                val receipts = getTransactionReceipts(listOf(Hash.wrap(it.hash)))
                 val txr = TransactionResult(
                     EthereumTransaction(it), receipts[0]!!
                 )
@@ -84,17 +80,16 @@ class EthereumChain constructor(httpUrl: String = DEFAULT_URL, socketPath: Strin
     override
     fun watchEvents(
         contract: Address,
-        topic: EventTopic,
+        events: Collection<ChainEvent>,
         filter: (TransactionResult<EthereumTransaction>) -> Boolean
     ): Channel<TransactionResult<EthereumTransaction>> {
         val ch = Channel<TransactionResult<EthereumTransaction>>(10)
         val ethFilter = EthFilter(
             DefaultBlockParameterName.LATEST,
             DefaultBlockParameterName.LATEST,
-            Numeric.toHexString(contract.toBytes())
+            contract.toString()
         )
-        val topicHex = Numeric.toHexString(HashUtil.sha256(topic.name.toByteArray()))
-        ethFilter.addSingleTopic(topicHex)
+        events.forEach { ethFilter.addSingleTopic(it.encode()) }
         val newFilterResp = web3.ethNewFilter(ethFilter).sendAsync().get()
         if (newFilterResp.hasError()) throw NewFilterException(newFilterResp.error)
         val filterChangeResp = web3.ethGetFilterChanges(newFilterResp.filterId).sendAsync().get()
@@ -134,7 +129,7 @@ class EthereumChain constructor(httpUrl: String = DEFAULT_URL, socketPath: Strin
 
     override fun getBalance(address: Address): BigInteger {
         val req =
-            web3.ethGetBalance(Numeric.toHexString(address.toBytes()), DefaultBlockParameterName.LATEST).sendAsync()
+            web3.ethGetBalance(address.toString(), DefaultBlockParameterName.LATEST).sendAsync()
                 .get()
         if (req.hasError()) throw IOException(req.error.message)
 

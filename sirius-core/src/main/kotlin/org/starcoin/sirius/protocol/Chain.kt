@@ -3,13 +3,19 @@ package org.starcoin.sirius.protocol
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.channels.ReceiveChannel
 import org.starcoin.sirius.core.*
+import org.starcoin.sirius.lang.toHEXString
+import org.starcoin.sirius.util.HashUtil
 import java.io.File
 import java.math.BigInteger
 
 data class TransactionResult<T : ChainTransaction>(val tx: T, val receipt: Receipt)
 
-enum class EventTopic(val event: String) {
-    Deposit("DepositEvent(byte[])")
+enum class ChainEvent private constructor(val event: String) {
+    MockTopic("DepositEvent(byte[])"),
+    SiriusEvent("SiriusEvent(bytes32 indexed hash,uint indexed num,bytes value)");
+
+    fun encode() = HashUtil.sha256(name.toByteArray()).toHEXString()
+
 }
 
 interface Chain<T : ChainTransaction, B : Block<T>, A : ChainAccount> {
@@ -26,7 +32,7 @@ interface Chain<T : ChainTransaction, B : Block<T>, A : ChainAccount> {
 
     fun watchEvents(
         contract: Address,
-        topic: EventTopic,
+        events: Collection<ChainEvent>,
         filter: (TransactionResult<T>) -> Boolean = { true }
     ): Channel<TransactionResult<T>>
 

@@ -14,8 +14,8 @@ import org.starcoin.sirius.core.Receipt
 import org.starcoin.sirius.crypto.CryptoKey
 import org.starcoin.sirius.crypto.eth.EthCryptoKey
 import org.starcoin.sirius.lang.toNoPrefixHEXString
+import org.starcoin.sirius.protocol.ChainEvent
 import org.starcoin.sirius.protocol.EthereumTransaction
-import org.starcoin.sirius.protocol.EventTopic
 import org.starcoin.sirius.protocol.TransactionResult
 import java.math.BigInteger
 
@@ -65,7 +65,7 @@ class InMemoryChain(val autoGenblock: Boolean = true) : EthereumBaseChain() {
 
     override fun watchEvents(
         contract: Address,
-        topic: EventTopic,
+        events: Collection<ChainEvent>,
         filter: (TransactionResult<EthereumTransaction>) -> Boolean
     ): Channel<TransactionResult<EthereumTransaction>> {
         TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
