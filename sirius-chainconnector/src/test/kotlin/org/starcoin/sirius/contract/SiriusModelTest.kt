@@ -68,6 +68,16 @@ class SiriusModelTest : ContractTestBase("solidity/test_all", "test_all") {
     }
 
     @Test
+    fun testCloseBalanceUpdateChallenge() {
+        doTest(CloseBalanceUpdateChallenge::class, "close_balance_update_challenge_test")
+        doTest(CloseBalanceUpdateChallenge(Address.random(), AMTreeProof.mock()), "close_balance_update_challenge_test")
+        doTest(
+            CloseBalanceUpdateChallenge(Address.DUMMY_ADDRESS, AMTreeProof.DUMMY_PROOF),
+            "close_balance_update_challenge_test"
+        )
+    }
+
+    @Test
     fun testAMTreePath() {
         doTest(AMTreePath::class, "am_tree_path_test")
     }
