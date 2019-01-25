@@ -196,6 +196,39 @@ class WalletTest {
     }
 
     @Test
+    fun testTransferChallenge() {
+        testDeposit()
+
+        walletAlice.cheat(Starcoin.HubMaliciousFlag.STEAL_TRANSACTION_IOU_VALUE)
+
+        val amount=EtherUtil.convert(20, EtherUtil.Unit.ETHER)
+
+        val transaction=walletAlice.hubTransfer(bob.address,amount)
+
+        Assert.assertNotNull(transaction)
+
+        waitToNextEon()
+        runBlocking {
+            walletAlice.getMessageChannel()?.receive()
+            walletAlice.getMessageChannel()?.receive()
+        }
+
+        this.walletAlice.openTransferChallenge(transaction.hash())
+        runBlocking {
+            walletAlice.getMessageChannel()?.receive()
+            walletAlice.getMessageChannel()?.receive()
+        }
+
+        waitToNextEon()
+        runBlocking {
+            walletAlice.getMessageChannel()?.receive()
+            walletAlice.getMessageChannel()?.receive()
+        }
+
+        Assert.assertTrue(contract.isRecoveryMode(alice))
+    }
+
+    @Test
     fun testReg(){
         waitHubReady(stub)
 

@@ -69,7 +69,7 @@ class HubStatus {
     internal fun addOffchainTransaction(transaction: OffchainTransaction) {
         this.eonStatuses[currentEonStatusIndex].transactionHistory.add(transaction)
         this.eonStatuses[currentEonStatusIndex].transactionMap.put(
-            transaction.hash().toMD5Hex(), transaction
+            transaction.hash(), transaction
         )
     }
 
@@ -82,7 +82,7 @@ class HubStatus {
         return merkleTree.getMembershipProof(hash)
     }
 
-    internal fun getTransactionByHash(hash: String): OffchainTransaction? {
+    internal fun getTransactionByHash(hash: Hash): OffchainTransaction? {
         return eonStatuses[getEonByIndex(lastIndex)].transactionMap[hash]
     }
 
@@ -206,6 +206,17 @@ class HubStatus {
         allotment += this.currentUpdate(eon).receiveAmount
         allotment -= this.currentUpdate(eon).sendAmount
         return allotment
+    }
+
+    internal fun lastUpdate(eon: Eon):Update{
+        val updateList = this.eonStatuses[getEonByIndex(lastIndex)].updateHistory
+        if (updateList.size == 0) {
+            return Update(eon.id, 0, 0, 0)
+        } else {
+            val index = updateList.size - 1
+            return updateList[index]
+        }
+
     }
 
 }

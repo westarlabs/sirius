@@ -301,14 +301,17 @@ class Hub <T : ChainTransaction, A : ChainAccount> {
         return hubAccount
     }
 
-    fun openTransferChallenge(transactionHash:Hash) :Boolean?{
-        return true
+    internal fun openTransferChallenge(transactionHash:Hash){
+        val offchainTransaction=this.hubStatus.getTransactionByHash(transactionHash)
+        val lastUpdate = this.hubStatus.lastUpdate(this.currentEon)
+        val path = this.hubStatus.transactionPath(transactionHash)
+        val transferDeliveryChallenge = TransferDeliveryChallenge(lastUpdate,offchainTransaction!!,path)
+        this.contract.openTransferDeliveryChallenge(this.account,transferDeliveryChallenge)
+        GlobalScope.launch { eonChannel?.send(ClientEventType.OPEN_TRANSFER_DELIVERY_CHALLENGE) }
     }
 
-    fun newTransferChallenge (
-        update: Update, path: MerkleTree, transaction: OffchainTransaction
-    ): ChainTransaction? {
-        return null
+    internal fun onTransferDeliveryChallenge(transferDeliveryChallenge: TransferDeliveryChallenge){
+        GlobalScope.launch { eonChannel?.send(ClientEventType.OPEN_TRANSFER_DELIVERY_CHALLENGE_PASS) }
     }
 
     fun withDrawal(value: BigInteger) {
@@ -396,6 +399,7 @@ class Hub <T : ChainTransaction, A : ChainAccount> {
     }
 
     internal fun onBalanceUpdateChallenge(proof:BalanceUpdateProof){
+        LOG.info("open balance update challenge succ $proof")
         GlobalScope.launch {
             eonChannel?.send(ClientEventType.OPEN_BALANCE_UPDATE_CHALLENGE_PASS)
         }

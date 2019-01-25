@@ -52,6 +52,10 @@ class Wallet<T : ChainTransaction, A : ChainAccount> {
         return hub.register()
     }
 
+    fun openTransferChallenge(hash:Hash){
+        this.hub.openTransferChallenge(hash)
+    }
+
     internal fun initMessageChannel(){
         hub.eonChannel = Channel(200)
     }

@@ -55,16 +55,20 @@ class BlockChain <T : ChainTransaction, A : ChainAccount> (chain: Chain<T, out B
                         }
                     }
                     is OpenTransferDeliveryChallengeFunction -> {
-                        val input = contractFunction.decode(tx.data)
+                        if(tx.from?.equals(account.address)?:false){
+                            val input = contractFunction.decode(tx.data)
                             ?: throw RuntimeException("$contractFunction decode tx:${txResult.tx} fail.")
-                        LOG.info("$contractFunction: $input")
-                        //hub.processTransferDeliveryChallenge(input)
+                            LOG.info("$contractFunction: $input")
+                            hub.onTransferDeliveryChallenge(input)
+                        }
                     }
                     is OpenBalanceUpdateChallengeFunction -> {
-                        val input = contractFunction.decode(tx.data)
-                            ?: throw RuntimeException("$contractFunction decode tx:${txResult.tx} fail.")
-                        LOG.info("$contractFunction: $input")
-                        hub.onBalanceUpdateChallenge(input)
+                        if(tx.from?.equals(account.address)?:false) {
+                            val input = contractFunction.decode(tx.data)
+                                ?: throw RuntimeException("$contractFunction decode tx:${txResult.tx} fail.")
+                            LOG.info("$contractFunction: $input")
+                            hub.onBalanceUpdateChallenge(input)
+                        }
                     }
                     is CommitFunction ->{
                         val input = contractFunction.decode(tx.data)

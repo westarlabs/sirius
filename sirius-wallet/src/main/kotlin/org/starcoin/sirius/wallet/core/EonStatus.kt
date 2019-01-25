@@ -14,7 +14,7 @@ class EonStatus() {
 
     internal var updateHistory: MutableList<Update> = mutableListOf()
 
-    internal var transactionMap: MutableMap<String, OffchainTransaction> = mutableMapOf()
+    internal var transactionMap: MutableMap<Hash, OffchainTransaction> = mutableMapOf()
 
     internal var confirmedTransactions: MutableList<ChainTransaction> = mutableListOf()
 
