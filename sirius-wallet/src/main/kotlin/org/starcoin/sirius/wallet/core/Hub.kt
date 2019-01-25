@@ -217,7 +217,7 @@ class Hub <T : ChainTransaction, A : ChainAccount> {
             return
         }
         var balanceUpdateProof=this.hubStatus.newChallenge(lastUpdate, lastIndex)
-        //this.contract.openBalanceUpdateChallenge(account,balanceUpdateProof)
+        this.contract.openBalanceUpdateChallenge(account,balanceUpdateProof)
 
         GlobalScope.launch {
             eonChannel?.send(ClientEventType.OPEN_BALANCE_UPDATE_CHALLENGE)

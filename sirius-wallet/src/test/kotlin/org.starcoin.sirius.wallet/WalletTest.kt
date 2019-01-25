@@ -182,8 +182,15 @@ class WalletTest {
             walletAlice.getMessageChannel()?.receive()
             walletAlice.getMessageChannel()?.receive()
             walletAlice.getMessageChannel()?.receive()
+            walletAlice.getMessageChannel()?.receive()
+
         }
 
+        waitToNextEon()
+        runBlocking {
+            walletAlice.getMessageChannel()?.receive()
+            walletAlice.getMessageChannel()?.receive()
+        }
 
     }
 
