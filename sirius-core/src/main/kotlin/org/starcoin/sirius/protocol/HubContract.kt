@@ -67,7 +67,7 @@ object OpenBalanceUpdateChallengeFunction :
     ContractFunction<BalanceUpdateProof>("openBalanceUpdateChallenge", BalanceUpdateProof::class)
 
 object CloseBalanceUpdateChallengeFunction :
-    ContractFunction<AMTreeProof>("closeBalanceUpdateChallenge", AMTreeProof::class)
+    ContractFunction<CloseBalanceUpdateChallenge>("closeBalanceUpdateChallenge", CloseBalanceUpdateChallenge::class)
 
 object OpenTransferDeliveryChallengeFunction :
     ContractFunction<TransferDeliveryChallenge>("openTransferDeliveryChallenge", TransferDeliveryChallenge::class)
@@ -147,7 +147,7 @@ abstract class HubContract<A : ChainAccount> {
         )
     }
 
-    fun closeBalanceUpdateChallenge(account: A, input: AMTreeProof): Hash {
+    fun closeBalanceUpdateChallenge(account: A, input: CloseBalanceUpdateChallenge): Hash {
         return this.executeContractFunction(
             account,
             CloseBalanceUpdateChallengeFunction, input

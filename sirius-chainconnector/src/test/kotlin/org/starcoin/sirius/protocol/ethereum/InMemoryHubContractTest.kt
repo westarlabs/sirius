@@ -299,7 +299,7 @@ class InMemoryHubContractTest {
         val amtp = AMTreeProof(path, leaf2)
         val bup = BalanceUpdateProof(true, update2, true, amtp.path)
 
-        var hash = contract.openBalanceUpdateChallenge(owner, bup)
+        var hash = contract.openBalanceUpdateChallenge(alice, bup)
 
         //TODO
         Thread.sleep(500)
@@ -312,7 +312,7 @@ class InMemoryHubContractTest {
         val path3 = newPath(alice.address, update3, BigInteger.ZERO, 20.toBigInteger())
         val leaf3 = newLeafNodeInfo(alice.address, update4)
         val amtp2 = AMTreeProof(path, leaf3)
-        hash = contract.closeBalanceUpdateChallenge(alice, amtp2)
+        hash = contract.closeBalanceUpdateChallenge(owner, CloseBalanceUpdateChallenge(alice.address, amtp2))
         //TODO
         Thread.sleep(500)
         transaction = chain.findTransaction(hash)

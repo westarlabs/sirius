@@ -380,11 +380,7 @@ class HubImpl<T : ChainTransaction, A : ChainAccount>(
     private fun processBalanceUpdateChallenge(address: Address, challenge: BalanceUpdateProof) {
         //TODO is nullable
         val proofPath = this.eonState.state.getMembershipProof(address) ?: assertAccountNotNull(address)
-        val leafNodeInfo =
-            this.eonState.state.findLeafNode(address)?.info as AMTreeLeafNodeInfo? ?: assertAccountNotNull(address)
-        //val proof = BalanceUpdateProof(proofPath?.leaf?.nodeInfo?.update, proofPath)
-        //val closeBalanceUpdateChallengeRequest = BalanceUpdateProof(proofPath)
-        this.contract.closeBalanceUpdateChallenge(owner, proofPath)
+        this.contract.closeBalanceUpdateChallenge(owner, CloseBalanceUpdateChallenge(address, proofPath))
     }
 
     private suspend fun processWithdrawal(from: Address, withdrawal: Withdrawal) {
