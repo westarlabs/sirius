@@ -41,7 +41,7 @@ class AMTreeTest {
 
     @Test
     fun testMembershipProofMany() {
-        for (i in 0..100) {
+        for (i in 0..10) {
             testMembershipProof()
         }
     }
