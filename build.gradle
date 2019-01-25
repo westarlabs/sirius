@@ -70,6 +70,7 @@ subprojects {
 
         compile group: 'org.ethereum', name: 'solcJ-all', version: '0.4.25'
         compile group: 'org.ethereum', name: 'ethereumj-core', version: '1.9.1-RELEASE'
+        compile 'com.github.kizitonwose.time:time:1.0.2'
 
         //TODO move to subproject
         compile "com.github.walleth.kethereum:rlp:0.66"

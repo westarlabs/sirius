@@ -43,3 +43,8 @@ data class ClassPathResource(val path: String) {
 fun String.toClassPathResource() = ClassPathResource(this)
 
 fun InputStream.readText() = this.readBytes().toString(Charset.defaultCharset())
+
+inline fun Number.toBigInteger(): BigInteger = when (this) {
+    is BigInteger -> this
+    else -> BigInteger.valueOf(this.toLong())
+}
