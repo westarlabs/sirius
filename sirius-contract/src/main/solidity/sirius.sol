@@ -148,10 +148,9 @@ contract SiriusService is Sirius {
                     }
                 }
 
-                return true;
+return flag;
             }
         }
-
         return false;
     }
 
