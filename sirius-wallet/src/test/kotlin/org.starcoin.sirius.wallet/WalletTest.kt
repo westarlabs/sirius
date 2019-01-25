@@ -222,7 +222,6 @@ class WalletTest {
         waitToNextEon()
         runBlocking {
             walletAlice.getMessageChannel()?.receive()
-            walletAlice.getMessageChannel()?.receive()
         }
 
         Assert.assertTrue(contract.isRecoveryMode(alice))
