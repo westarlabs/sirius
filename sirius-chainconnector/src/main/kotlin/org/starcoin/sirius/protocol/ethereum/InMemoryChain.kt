@@ -25,6 +25,11 @@ sealed class ChainCtlMessage {
 }
 
 class InMemoryChain(val autoGenblock: Boolean = true) : EthereumBaseChain() {
+    
+    override fun waitBlocks(blockCount: Int) {
+        for (i in blockCount.downTo(0))
+            sb.createBlock()
+    }
 
     //StandaloneBlockchain autoblock has concurrent problem
     val sb = StandaloneBlockchain().withAutoblock(false).withGasLimit(500000000)

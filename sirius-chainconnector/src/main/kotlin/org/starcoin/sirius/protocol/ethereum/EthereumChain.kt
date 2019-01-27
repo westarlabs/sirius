@@ -36,6 +36,9 @@ const val blockGasIncreasePercent = 0
 
 class EthereumChain constructor(httpUrl: String = DEFAULT_URL, socketPath: String? = null) :
     EthereumBaseChain() {
+    override fun waitBlocks(blockCount: Int) {
+        TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
+    }
 
     override fun getBlockNumber(): Long {
         val resp = web3.ethBlockNumber().sendAsync().get()

@@ -10,9 +10,7 @@ import org.junit.Test
 import org.starcoin.sirius.core.*
 import org.starcoin.sirius.crypto.CryptoKey
 import org.starcoin.sirius.crypto.CryptoService
-import org.starcoin.sirius.protocol.ContractConstructArgs
-import org.starcoin.sirius.protocol.EthereumTransaction
-import org.starcoin.sirius.protocol.TransactionResult
+import org.starcoin.sirius.protocol.*
 import org.starcoin.sirius.protocol.ethereum.contract.EthereumHubContract
 import org.starcoin.sirius.util.MockUtils
 import org.starcoin.sirius.util.WithLogging
@@ -23,43 +21,34 @@ class InMemoryHubContractTest {
 
     companion object : WithLogging()
 
-    private var chain: InMemoryChain by Delegates.notNull()
+    private val chain: EthereumBaseChain by lazy {
+        InMemoryChain(true)
+        // EthereumChain()
+    }
     private var contract: EthereumHubContract by Delegates.notNull()
-
     private var owner: EthereumAccount by Delegates.notNull()
     private var alice: EthereumAccount by Delegates.notNull()
-
     private var ownerChannel: ReceiveChannel<TransactionResult<EthereumTransaction>> by Delegates.notNull()
     private var aliceChannel: ReceiveChannel<TransactionResult<EthereumTransaction>> by Delegates.notNull()
-
     private var blocksPerEon = ContractConstructArgs.DEFAULT_ARG.blocksPerEon
-
     private var startBlockNumber: Long by Delegates.notNull()
 
     @Before
     fun beforeTest() {
-        chain = InMemoryChain(true)
-
         owner = EthereumAccount(CryptoService.generateCryptoKey())
         alice = EthereumAccount(CryptoService.generateCryptoKey())
 
         val amount = EtherUtil.convert(100000, EtherUtil.Unit.ETHER)
-        this.sendEther(owner.address, amount)
-        this.sendEther(alice.address, amount)
+        chain.sendEther(owner, amount)
+        chain.sendEther(alice, amount)
 
         this.contract = chain.deployContract(owner, ContractConstructArgs.DEFAULT_ARG)
         aliceChannel =
-            chain.watchTransactions { it.tx.from == alice.address && it.tx.to == contract.contractAddress }
+                chain.watchTransactions { it.tx.from == alice.address && it.tx.to == contract.contractAddress }
         ownerChannel =
-            chain.watchTransactions { it.tx.from == owner.address && it.tx.to == contract.contractAddress }
+                chain.watchTransactions { it.tx.from == owner.address && it.tx.to == contract.contractAddress }
         val hubInfo = this.contract.queryHubInfo(owner)
         startBlockNumber = hubInfo.startBlockNumber.longValueExact()
-    }
-
-    fun sendEther(address: Address, amount: BigInteger) {
-        chain.sb.sendEther(address.toBytes(), amount)
-        chain.sb.createBlock()
-        Assert.assertEquals(amount, chain.getBalance(address))
     }
 
     @Test
@@ -72,28 +61,28 @@ class InMemoryHubContractTest {
         Assert.assertEquals(contract.isRecoveryMode(owner), false)
     }
 
-    fun deposit(alice: EthereumAccount, amount: BigInteger) {
-        var ethereumTransaction = EthereumTransaction(
+    private fun deposit(alice: EthereumAccount, amount: BigInteger) {
+        val ethereumTransaction = EthereumTransaction(
             contract.contractAddress, alice.getNonce(), 21000.toBigInteger(),
             210000.toBigInteger(), amount
         )
 
         chain.submitTransaction(alice, ethereumTransaction)
 
-        //chain.sb.sendEther(alice.address.toBytes(), BigInteger.valueOf(1))
-        chain.sb.createBlock()
+        // chain.sendEther(alice, 1.toBigInteger())
+        chain.waitBlocks()
     }
 
     @Test
     @ImplicitReflectionSerializer
     fun testDeposit() {
 
-        var amount = EtherUtil.convert(100, EtherUtil.Unit.GWEI)
+        val amount = EtherUtil.convert(100, EtherUtil.Unit.GWEI)
 
         deposit(alice, amount)
 
         runBlocking {
-            var transaction = aliceChannel.receive()
+            val transaction = aliceChannel.receive()
             Assert.assertTrue(transaction.receipt.status)
             Assert.assertEquals(transaction.tx.from, alice.address)
             Assert.assertEquals(transaction.tx.to, contract.contractAddress)
@@ -118,7 +107,7 @@ class InMemoryHubContractTest {
         deposit(alice, amount)
 
         runBlocking {
-            var transaction = aliceChannel.receive()
+            val transaction = aliceChannel.receive()
             Assert.assertTrue(transaction.receipt.status)
             Assert.assertEquals(transaction.tx.from, alice.address)
             Assert.assertEquals(transaction.tx.to, contract.contractAddress)
@@ -137,7 +126,7 @@ class InMemoryHubContractTest {
         val eon = 1
         val path = newProof(alice.address, newUpdate(eon, 1, BigInteger.ZERO, alice), BigInteger.ZERO, amount)
 
-        var contractAddr = contract.contractAddress
+        val contractAddr = contract.contractAddress
 
         //var owner = chain.sb.sender
         //chain.sb.sender = (alice as EthCryptoKey).ecKey
@@ -232,20 +221,18 @@ class InMemoryHubContractTest {
         Assert.assertEquals(root, root1)
     }
 
-    fun newHubRoot(eon: Int, amount: BigInteger): HubRoot {
+    private fun newHubRoot(eon: Int, amount: BigInteger): HubRoot {
         val info = AMTreeInternalNodeInfo(Hash.random(), amount, Hash.random())
         val node = AMTreePathNode(info.hash(), PathDirection.ROOT, 0.toBigInteger(), amount)
         return HubRoot(node, eon)
     }
 
-    fun waitToEon(eon: Int) {
+    private fun waitToEon(eon: Int) {
         if (eon == 0) {
             return
         }
         val currentBlockNumber = chain.getBlockNumber()
-        for (i in 0..Eon.waitToEon(startBlockNumber, currentBlockNumber, blocksPerEon, eon)) {
-            chain.sb.createBlock()
-        }
+        chain.waitBlocks(Eon.waitToEon(startBlockNumber, currentBlockNumber, blocksPerEon, eon))
     }
 
     private fun commitHubRoot(eon: Int, amount: BigInteger): Hash {
@@ -270,10 +257,10 @@ class InMemoryHubContractTest {
     @Test
     @ImplicitReflectionSerializer
     fun testHubInfo() {
-        var ip = "192.168.0.0.1:80"
+        val ip = "192.168.0.0.1:80"
         contract.setHubIp(owner, ip)
 
-        var hubInfo = contract.queryHubInfo(EthereumAccount.DUMMY_ACCOUNT)
+        val hubInfo = contract.queryHubInfo(EthereumAccount.DUMMY_ACCOUNT)
         Assert.assertNotNull(hubInfo)
         Assert.assertEquals(hubInfo.hubAddress, ip)
     }
@@ -283,7 +270,7 @@ class InMemoryHubContractTest {
     fun testBalanceUpdateChallenge() {
 
         //var transactions = List<EthereumTransaction>
-        var amount = EtherUtil.convert(100, EtherUtil.Unit.GWEI)
+        val amount = EtherUtil.convert(100, EtherUtil.Unit.GWEI)
 
         deposit(alice, amount)
 
@@ -307,9 +294,9 @@ class InMemoryHubContractTest {
         Assert.assertNotNull(transaction)
 
         //chain.sb.sender = owner
-        val update3 = newUpdate(0, 3, BigInteger.ZERO, alice)//other
+        // val update3 = newUpdate(0, 3, BigInteger.ZERO, alice)//other
         val update4 = newUpdate(0, 4, BigInteger.ZERO, alice)//mine
-        val path3 = newPath(alice.address, update3, BigInteger.ZERO, 20.toBigInteger())
+        // val path3 = newPath(alice.address, update3, BigInteger.ZERO, 20.toBigInteger())
         val leaf3 = newLeafNodeInfo(alice.address, update4)
         val amtp2 = AMTreeProof(path, leaf3)
         hash = contract.closeBalanceUpdateChallenge(owner, CloseBalanceUpdateChallenge(alice.address, amtp2))
@@ -325,7 +312,7 @@ class InMemoryHubContractTest {
     fun testTransferChallenge() {
 
         //var transactions = List<EthereumTransaction>
-        var amount = EtherUtil.convert(100, EtherUtil.Unit.GWEI)
+        val amount = EtherUtil.convert(100, EtherUtil.Unit.GWEI)
 
         deposit(alice, amount)
 
@@ -360,4 +347,27 @@ class InMemoryHubContractTest {
         transaction = chain.findTransaction(hash)
         Assert.assertNotNull(transaction)
     }
+}
+
+
+fun EthereumBaseChain.sendEther(to: EthereumAccount, value: BigInteger) {
+    when (this) {
+        is EthereumChain -> {
+            val from = EthereumAccount(EthereumServer.etherbaseKey())
+            val tx = newTransaction(from, to.address, value)
+            var receipt: Receipt?
+            while ({
+                    receipt =
+                            getTransactionReceipts(listOf(submitTransaction(from, tx)))[0];receipt!!.status
+                }()) {
+                Thread.sleep(200)
+            }
+        }
+        is InMemoryChain -> {
+            this.sb.sendEther(to.address.toBytes(), value)
+            this.waitBlocks()
+
+        }
+    }
+    Assert.assertEquals(value, getBalance(to.address))
 }

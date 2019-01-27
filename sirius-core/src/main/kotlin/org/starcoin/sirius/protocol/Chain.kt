@@ -51,4 +51,6 @@ interface Chain<T : ChainTransaction, B : Block<T>, A : ChainAccount> {
     fun getBlockNumber(): Long
 
     fun newTransaction(account: A, to: Address, value: BigInteger): T
+
+    fun waitBlocks(blockCount: Int = 1)
 }

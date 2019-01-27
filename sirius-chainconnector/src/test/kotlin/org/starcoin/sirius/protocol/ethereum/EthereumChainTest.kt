@@ -5,7 +5,6 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
 import org.junit.*
 import org.starcoin.sirius.core.*
-import org.starcoin.sirius.crypto.CryptoKey
 import org.starcoin.sirius.crypto.CryptoService
 import org.starcoin.sirius.crypto.eth.EthCryptoKey
 import org.starcoin.sirius.protocol.Chain
@@ -13,13 +12,11 @@ import org.starcoin.sirius.protocol.ChainAccount
 import org.starcoin.sirius.protocol.ChainEvent
 import org.starcoin.sirius.protocol.EthereumTransaction
 import org.starcoin.sirius.util.WithLogging
-import org.web3j.crypto.WalletUtils
-import java.io.File
 import java.util.concurrent.atomic.AtomicLong
 import kotlin.properties.Delegates
 
 
-class EthereumChainTest : EtherumServer(true) {
+class EthereumChainTest : EthereumServer(true) {
     companion object : WithLogging()
 
     private var chain: Chain<ChainTransaction, Block<ChainTransaction>, ChainAccount> by Delegates.notNull()
@@ -45,15 +42,13 @@ class EthereumChainTest : EtherumServer(true) {
     fun testSubmitTransaction() {
         val transAmount = 100.toBigInteger()
         val tx = chain.newTransaction(etherbase, alice.address, transAmount)
-        val hash = chain.submitTransaction(etherbase, tx)
-        var receipt: Receipt? = null
-        while (true) { // Wait transaction being processed
-            Thread.sleep(1000)
-            receipt = chain.getTransactionReceipts(ArrayList<Hash>(1).apply { this.add(hash) })[0]
-            if (receipt != null) break
+        var receipt: Receipt?
+        while ({
+                receipt =
+                        chain.getTransactionReceipts(listOf(chain.submitTransaction(etherbase, tx)))[0];receipt!!.status
+            }()) {
+            Thread.sleep(200)
         }
-
-        Assert.assertEquals(true, receipt!!.status)
         Assert.assertEquals(transAmount, chain.getBalance(alice.address))
     }
 
@@ -123,40 +118,5 @@ class EthereumChainTest : EtherumServer(true) {
         val contracAddress: Address = Address.DUMMY_ADDRESS
         val events = listOf(ChainEvent.MockTopic)
         chain.watchEvents(contracAddress, events)
-    }
-}
-
-open class EtherumServer(var started: Boolean) {
-    private val keystore = "/tmp/geth_data/keystore"
-    private val script = "scrpts/docker.sh"
-    private val etherbasePasswd = "starcoinmakeworldbetter"
-
-    fun ethStart() {
-        if (this.started) return
-        scriptExec("clean")
-        scriptExec("run")
-    }
-
-    fun ethStop() {
-        if (this.started) return
-        scriptExec("clean")
-    }
-
-    fun etherbaseKey(): CryptoKey {
-        val credentials = WalletUtils.loadCredentials(
-            etherbasePasswd,
-            File(keystore).let {
-                while (!it.exists() || it.name.contentEquals("tmp")) {
-                    Thread.sleep(1000)
-                }; it
-            }.listFiles().first()
-        )
-        return CryptoService.loadCryptoKey(credentials.ecKeyPair.privateKey.toByteArray())
-    }
-
-    private fun scriptExec(cmd: String) {
-        val process = Runtime.getRuntime().exec("$script $cmd")
-        val exit = process.waitFor()
-        if (exit != 0) Assert.fail(process.errorStream.bufferedReader().use { it.readText() })
     }
 }
