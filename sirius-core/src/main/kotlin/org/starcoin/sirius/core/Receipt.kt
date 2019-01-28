@@ -14,13 +14,14 @@ data class Receipt(
     constructor(
         transactionHash: String, transactionIndex: BigInteger,
         blockHash: String, blockNumber: BigInteger,
-        contractAddress: String?, from: String, to: String,
+        contractAddress: String?, from: String, to: String?,
         gasUsed: BigInteger, logBloom: String, cumulativeGasUsed: BigInteger,
         root: String, status: Boolean
     ) : this(
         CryptoService.hash(transactionHash.toByteArray()), transactionIndex,
         CryptoService.hash(blockHash.toByteArray()), blockNumber,
-        contractAddress?.let { Address.wrap(contractAddress) }, Address.wrap(from), Address.wrap(to),
+        contractAddress?.let { Address.wrap(contractAddress) }, Address.wrap(from),
+        if (to == null || to.isEmpty()) null else Address.wrap(to),
         gasUsed, logBloom, cumulativeGasUsed, root, status
     )
 
