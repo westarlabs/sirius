@@ -1,6 +1,7 @@
 package org.starcoin.sirius.hub
 
 import com.google.common.eventbus.EventBus
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.launch
 import org.junit.Assert
@@ -93,7 +94,7 @@ class LocalAccount<T : ChainTransaction, A : ChainAccount>(
     }
 
     private fun processHubEvents() {
-        GlobalScope.launch {
+        GlobalScope.launch(Dispatchers.IO) {
             val channel = hubService.watch(address)
             for (event in channel) {
                 LOG.info("$address onEvent: $event")

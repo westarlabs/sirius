@@ -5,9 +5,14 @@ import com.google.common.eventbus.EventBus
 import com.google.common.eventbus.Subscribe
 import io.grpc.inprocess.InProcessChannelBuilder
 import kotlinx.coroutines.GlobalScope
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.asCoroutineDispatcher
 import kotlinx.coroutines.launch
 import org.ethereum.db.IndexedBlockStore
-import org.junit.*
+import org.junit.After
+import org.junit.Assert
+import org.junit.Before
+import org.junit.Test
 import org.starcoin.proto.HubServiceGrpc
 import org.starcoin.sirius.core.*
 import org.starcoin.sirius.eth.core.EtherUnit
@@ -22,6 +27,7 @@ import java.util.*
 import java.util.concurrent.*
 import java.util.concurrent.atomic.AtomicInteger
 import java.util.concurrent.atomic.AtomicLong
+import kotlin.coroutines.CoroutineContext
 import kotlin.properties.Delegates
 
 class HubEventFuture(private val predicate: (HubEvent) -> Boolean) : CompletableFuture<HubEvent>() {
@@ -68,12 +74,18 @@ abstract class HubServerIntegrationTestBase<T : ChainTransaction, A : ChainAccou
     private var owner: A by Delegates.notNull()
     private var contractHubInfo: ContractHubInfo by Delegates.notNull()
 
+    private var coroutineContext: CoroutineContext by Delegates.notNull()
+    private var watchHubJob: Job by Delegates.notNull()
+    private var watchBlockJob: Job by Delegates.notNull()
+    private var watchTxJob: Job by Delegates.notNull()
+
     abstract fun createChainAccount(amount: Long): A
     abstract fun createChain(configuration: Configuration): C
 
     @Before
     @Throws(InterruptedException::class)
     fun before() {
+        this.coroutineContext = Executors.newFixedThreadPool(10).asCoroutineDispatcher()
         eon = AtomicInteger(0)
         blockHeight = AtomicLong(0)
         this.txMap = ConcurrentHashMap()
@@ -99,8 +111,9 @@ abstract class HubServerIntegrationTestBase<T : ChainTransaction, A : ChainAccou
         this.a1 = LocalAccount(this.createChainAccount(1000), chain, contract, hubService)
 
         this.waitServerStart()
-        this.watchEon()
-        this.watchBlock()
+        this.watchHubJob = this.watchEon()
+        this.watchBlockJob = this.watchBlock()
+        this.watchTxJob = this.watchTxs()
         //this.produceBlock(1)
     }
 
@@ -133,14 +146,12 @@ abstract class HubServerIntegrationTestBase<T : ChainTransaction, A : ChainAccou
         }
     }
 
-    private fun watchEon() {
-        GlobalScope.launch {
-            val channel = hubService.watchHubRoot()
-            for (hubRoot in channel) {
-                LOG.info("new hubRoot: $hubRoot")
-                eon.set(hubRoot.eon)
-                eventBus.post(hubRoot)
-            }
+    private fun watchEon(): Job = GlobalScope.launch(this.coroutineContext) {
+        val channel = hubService.watchHubRoot()
+        for (hubRoot in channel) {
+            LOG.info("new hubRoot: $hubRoot")
+            eon.set(hubRoot.eon)
+            eventBus.post(hubRoot)
         }
     }
 
@@ -164,21 +175,19 @@ abstract class HubServerIntegrationTestBase<T : ChainTransaction, A : ChainAccou
     }
 
 
-    private fun watchBlock() {
-        GlobalScope.launch {
-            val blockChannel = chain.watchBlock()
-            for (block in blockChannel) {
-                blockHeight.set(block.height)
-                eventBus.post(block)
-            }
+    private fun watchBlock() = GlobalScope.launch(this.coroutineContext) {
+        val blockChannel = chain.watchBlock()
+        for (block in blockChannel) {
+            blockHeight.set(block.height)
+            eventBus.post(block)
         }
+    }
 
-        GlobalScope.launch {
-            //TODO add filter
-            val txChannel = chain.watchTransactions()
-            for (txResult in txChannel) {
-                onTransaction(txResult)
-            }
+    private fun watchTxs() = GlobalScope.launch(this.coroutineContext) {
+        //TODO add filter
+        val txChannel = chain.watchTransactions()
+        for (txResult in txChannel) {
+            onTransaction(txResult)
         }
     }
 
@@ -210,7 +219,7 @@ abstract class HubServerIntegrationTestBase<T : ChainTransaction, A : ChainAccou
             )
         )
         try {
-            val hubRoot = future.get(1000, TimeUnit.MILLISECONDS)
+            val hubRoot = future.get(2000, TimeUnit.MILLISECONDS)
             this.eon.set(hubRoot.eon)
             if (expectSuccess) {
                 Assert.assertEquals(expectEon.toLong(), this.eon.get().toLong())
@@ -295,7 +304,6 @@ abstract class HubServerIntegrationTestBase<T : ChainTransaction, A : ChainAccou
         this.waitToNextEon()
     }
 
-    @Ignore
     @Test
     fun testEmptyHubRoot() {
         this.waitToNextEon()
@@ -303,7 +311,6 @@ abstract class HubServerIntegrationTestBase<T : ChainTransaction, A : ChainAccou
         this.waitToNextEon()
     }
 
-    @Ignore
     @Test
     fun testDoNothingChallenge() {
         this.waitToNextEon()
@@ -315,7 +322,6 @@ abstract class HubServerIntegrationTestBase<T : ChainTransaction, A : ChainAccou
         this.waitToNextEon()
     }
 
-    @Ignore
     @Test
     fun testInvalidWithdrawal() {
         register(eon.get(), a0)
@@ -400,7 +406,6 @@ abstract class HubServerIntegrationTestBase<T : ChainTransaction, A : ChainAccou
         waitToNextEon(false)
     }
 
-    @Ignore
     @Test
     fun testStealTxIOU() {
         register(eon.get(), a0)
@@ -466,7 +471,7 @@ abstract class HubServerIntegrationTestBase<T : ChainTransaction, A : ChainAccou
         )
 
         val future = this.registerTxHook(txHash)
-        future.get(4, TimeUnit.SECONDS)
+        future.get(2, TimeUnit.SECONDS)
 
         try {
             val hubEvent = hubEventFuture.get(2, TimeUnit.SECONDS)
@@ -654,8 +659,11 @@ abstract class HubServerIntegrationTestBase<T : ChainTransaction, A : ChainAccou
 
     @After
     fun after() {
+        this.watchHubJob.cancel()
         this.hubService.resetHubMaliciousFlag()
         this.hubServer.stop()
+        this.watchBlockJob.cancel()
+        this.watchTxJob.cancel()
         this.chain.stop()
     }
 
