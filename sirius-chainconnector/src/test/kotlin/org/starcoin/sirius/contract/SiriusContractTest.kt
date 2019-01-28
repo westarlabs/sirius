@@ -1,10 +1,8 @@
 package org.starcoin.sirius.contract
 
-import org.junit.Assert
-import org.junit.Before
+import kotlinx.serialization.serializer
 import org.junit.Test
 import org.starcoin.sirius.core.*
-import org.starcoin.sirius.lang.toHEXString
 import org.starcoin.sirius.protocol.ContractConstructArgs
 import org.starcoin.sirius.serialization.rlp.RLP
 import org.starcoin.sirius.util.MockUtils
@@ -25,30 +23,14 @@ class SiriusContractTest : ContractTestBase("solidity/SiriusService", "SiriusSer
         return ContractConstructArgs.DEFAULT_ARG.toRLP()
     }
 
-    @Before
-    fun zeroEonCommit() {
-        //commitData(0, 0, true)
-    }
-
     @Test
-    fun test() {
-        val callResult = contract.callConstFunction("test")
-        val flag = callResult[0] as Boolean
-        Assert.assertTrue(flag)
-    }
-
-    @Test
-    fun testGetCurrentEon() {
+    fun testCurrentEon() {
         testCommit()
-        currentEon()
-    }
-
-    private fun currentEon(): Long {
-        val callResult = contract.callConstFunction("getCurrentEon")
-        val eon = callResult[0] as BigInteger
-        LOG.info("eon:$eon")
-        Assert.assertTrue(eon.longValueExact() >= 0)
-        return eon.longValueExact()
+        val callResult = contract.callConstFunction("queryCurrentEon")
+        val result = callResult[0] as ByteArray
+        val cr = RLP.load(ContractReturn.serializer(), result)
+        val eon = RLP.load(Long.serializer(), cr.payload.toBytes())
+        LOG.info("eon:${eon}")
     }
 
     @Test
@@ -255,8 +237,11 @@ class SiriusContractTest : ContractTestBase("solidity/SiriusService", "SiriusSer
             testDeposit(false)
         }
 
-        var recovery = contract.callConstFunction("isRecoveryMode")[0] as Boolean
-        assert(recovery)
+        val result = contract.callConstFunction("queryRecoveryMode")[0] as ByteArray
+        val cr = RLP.load(ContractReturn.serializer(), result)
+        assert(cr.hasVal)
+        val recovery = RLP.load(Boolean.serializer(), cr.payload.toBytes())
+        LOG.info("eon:${recovery}")
 
         val callResult = contract.callFunction("recoverFunds", preProof.toRLP())
         verifyReturn(callResult)
@@ -329,7 +314,7 @@ class SiriusContractTest : ContractTestBase("solidity/SiriusService", "SiriusSer
     @Test
     fun testHubInfo() {
         testHubIp()
-        val callResult = contract.callConstFunction("hubInfo")[0] as ByteArray
+        val callResult = contract.callConstFunction("queryHubInfo")[0] as ByteArray
         val obj1 = ContractHubInfo.parseFromRLP(callResult)
         assert(ip == obj1.hubAddress)
     }

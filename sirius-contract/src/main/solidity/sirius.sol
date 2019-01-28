@@ -427,14 +427,14 @@ contract SiriusService is Sirius {
     function queryCurrentEon() external view returns (bytes memory) {
         ModelLib.ContractReturn memory cr;
         cr.hasVal = true;
-        cr.payload = ByteUtilLib.uint2byte(currentEon());
+        cr.payload = RLPEncoder.encodeList(ByteUtilLib.uint2byte(currentEon()));
         return ModelLib.marshalContractReturn(cr);
     }
 
     function queryRecoveryMode() external view returns (bytes memory) {
         ModelLib.ContractReturn memory cr;
         cr.hasVal = true;
-        cr.payload = ByteUtilLib.bool2byte(recoveryMode);
+        cr.payload = RLPEncoder.encodeList(ByteUtilLib.bool2byte(recoveryMode));
         return ModelLib.marshalContractReturn(cr);
     }
 
