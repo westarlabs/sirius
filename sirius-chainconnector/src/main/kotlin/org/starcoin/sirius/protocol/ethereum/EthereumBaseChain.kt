@@ -28,6 +28,7 @@ abstract class EthereumBaseChain :
         val defaultGasLimit: BigInteger
             get() = 9000000.toBigInteger()
 
+
         val contractName: String = "SiriusService"
 
         private val compiler = SolidityCompiler(SystemProperties.getDefault())
@@ -67,7 +68,6 @@ abstract class EthereumBaseChain :
         val compilationResult = compileContract(contractFile)
         val contractMetadata = compilationResult.getContract(contractName)
         val address = submitNewContract(account, contractMetadata, args.toRLP())
-        //TODO wait
         return this.loadContract(address, contractMetadata.abi)
     }
 
@@ -96,13 +96,13 @@ abstract class EthereumBaseChain :
             defaultGasLimit,
             contractMetaData.bin.hexToByteArray() + argsEncoded
         )
-        this.submitTransaction(account, tx)
+        if (!this.waitTransactionProcessed(this.submitTransaction(account, tx)))
+            throw java.lang.RuntimeException("Submit contract failed")
         return tx.contractAddress!!
     }
-
-    abstract fun getNonce(address: Address): BigInteger
 
     override fun stop() {
         TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
     }
+
 }

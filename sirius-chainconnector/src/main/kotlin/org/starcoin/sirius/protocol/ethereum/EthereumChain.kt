@@ -36,8 +36,25 @@ const val blockGasIncreasePercent = 0
 
 class EthereumChain constructor(httpUrl: String = DEFAULT_URL, socketPath: String? = null) :
     EthereumBaseChain() {
+    override fun waitTransactionProcessed(hash: Hash, times: Int): Boolean {
+        var receipt: Receipt?
+        repeat(times) {
+            receipt = getTransactionReceipts(listOf(hash))[0]
+            if (receipt?.status == true)
+                return true
+            else if (receipt?.status == false) {
+                return false
+            }
+            Thread.sleep(500)
+        }
+        return false
+    }
+
     override fun waitBlocks(blockCount: Int) {
-        TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
+        val currentBlockNum = getBlockNumber()
+        while (currentBlockNum + blockCount >= getBlockNumber()) {
+            Thread.sleep(1000)
+        }
     }
 
     override fun getBlockNumber(): Long {
@@ -215,6 +232,7 @@ class EthereumChain constructor(httpUrl: String = DEFAULT_URL, socketPath: Strin
             value
         )
     }
+
 
     class NewTxException(error: Error) : Exception(error.message)
     open class WatchTxExecption(error: Error) : Exception(error.message)

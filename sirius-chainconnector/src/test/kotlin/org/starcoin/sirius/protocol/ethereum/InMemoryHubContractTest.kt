@@ -23,7 +23,7 @@ class InMemoryHubContractTest {
 
     private val chain: EthereumBaseChain by lazy {
         InMemoryChain(true)
-        // EthereumChain()
+        //EthereumChain()
     }
     private var contract: EthereumHubContract by Delegates.notNull()
     private var owner: EthereumAccount by Delegates.notNull()
@@ -38,11 +38,12 @@ class InMemoryHubContractTest {
         owner = EthereumAccount(CryptoService.generateCryptoKey())
         alice = EthereumAccount(CryptoService.generateCryptoKey())
 
-        val amount = EtherUtil.convert(100000, EtherUtil.Unit.ETHER)
+        val amount = 1000000000.toBigInteger()//EtherUtil.convert(10, EtherUtil.Unit.ETHER)
         chain.sendEther(owner, amount)
         chain.sendEther(alice, amount)
 
         this.contract = chain.deployContract(owner, ContractConstructArgs.DEFAULT_ARG)
+
         aliceChannel =
                 chain.watchTransactions { it.tx.from == alice.address && it.tx.to == contract.contractAddress }
         ownerChannel =
@@ -353,20 +354,14 @@ class InMemoryHubContractTest {
 fun EthereumBaseChain.sendEther(to: EthereumAccount, value: BigInteger) {
     when (this) {
         is EthereumChain -> {
-            val from = EthereumAccount(EthereumServer.etherbaseKey())
+            val from = EthereumServer.etherbaseAccount(this)
             val tx = newTransaction(from, to.address, value)
-            var receipt: Receipt?
-            while ({
-                    receipt =
-                            getTransactionReceipts(listOf(submitTransaction(from, tx)))[0];receipt!!.status
-                }()) {
-                Thread.sleep(200)
-            }
+            val hash = submitTransaction(from, tx)
+            waitTransactionProcessed(hash)
         }
         is InMemoryChain -> {
             this.sb.sendEther(to.address.toBytes(), value)
             this.waitBlocks()
-
         }
     }
     Assert.assertEquals(value, getBalance(to.address))

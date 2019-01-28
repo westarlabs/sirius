@@ -28,6 +28,10 @@ sealed class ChainCtlMessage {
 }
 
 class InMemoryChain(val autoGenblock: Boolean = true) : EthereumBaseChain() {
+    
+    override fun waitTransactionProcessed(hash: Hash, times: Int): Boolean {
+        return true
+    }
 
     override fun waitBlocks(blockCount: Int) {
         for (i in blockCount.downTo(0))
@@ -106,7 +110,7 @@ class InMemoryChain(val autoGenblock: Boolean = true) : EthereumBaseChain() {
     }
 
     override fun getNonce(address: Address): BigInteger {
-        return sb.getBlockchain().getRepository().getNonce(address.toBytes())
+        return sb.blockchain.repository.getNonce(address.toBytes())
     }
 
     override fun findTransaction(hash: Hash): EthereumTransaction? {
@@ -161,11 +165,10 @@ class InMemoryChain(val autoGenblock: Boolean = true) : EthereumBaseChain() {
     }
 
     override fun newTransaction(account: EthereumAccount, to: Address, value: BigInteger): EthereumTransaction {
-        var ethereumTransaction = EthereumTransaction(
+        return EthereumTransaction(
             to, account.getNonce(), defaultGasPrice,
             defaultGasLimit, value
         )
-        return ethereumTransaction
     }
 
     fun createBlock(): EthereumBlock = runBlocking {

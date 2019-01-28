@@ -5,6 +5,7 @@ import org.starcoin.sirius.crypto.CryptoKey
 import org.starcoin.sirius.crypto.CryptoService
 import org.web3j.crypto.WalletUtils
 import java.io.File
+import java.util.concurrent.atomic.AtomicLong
 
 open class EthereumServer(var started: Boolean) {
     fun ethStart() {
@@ -22,7 +23,7 @@ open class EthereumServer(var started: Boolean) {
         private val etherbasePasswd = "starcoinmakeworldbetter"
         private val keystore = "/tmp/geth_data/keystore"
         private val script = "scrpts/docker.sh"
-        fun etherbaseKey(): CryptoKey {
+        fun etherbaseAccount(chain: EthereumChain): EthereumAccount {
             val credentials = WalletUtils.loadCredentials(
                 etherbasePasswd,
                 File(keystore).let {
@@ -31,7 +32,8 @@ open class EthereumServer(var started: Boolean) {
                     }; it
                 }.listFiles().first()
             )
-            return CryptoService.loadCryptoKey(credentials.ecKeyPair.privateKey.toByteArray())
+            val cryptoKey = CryptoService.loadCryptoKey(credentials.ecKeyPair.privateKey.toByteArray())
+            return EthereumAccount(cryptoKey, AtomicLong(chain.getNonce(cryptoKey.address).longValueExact()))
         }
     }
 

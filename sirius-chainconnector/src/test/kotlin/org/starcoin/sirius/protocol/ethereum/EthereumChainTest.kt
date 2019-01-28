@@ -19,19 +19,13 @@ import kotlin.properties.Delegates
 class EthereumChainTest : EthereumServer(true) {
     companion object : WithLogging()
 
-    private var chain: Chain<ChainTransaction, Block<ChainTransaction>, ChainAccount> by Delegates.notNull()
-    private val alice = EthereumAccount(CryptoService.generateCryptoKey())
-    private var etherbase: EthereumAccount by Delegates.notNull()
-    private var ethchain: EthereumChain by Delegates.notNull()
-
-    @Before
-    fun setUp() {
+    init {
         this.ethStart()
-        ethchain = EthereumChain()
-        val etherbaseKey = etherbaseKey()
-        etherbase = EthereumAccount(etherbaseKey, AtomicLong(ethchain.getNonce(etherbaseKey.address).longValueExact()))
-        chain = ethchain as Chain<ChainTransaction, Block<ChainTransaction>, ChainAccount>
     }
+
+    private val chain: EthereumChain by lazy { EthereumChain() }
+    private val alice = EthereumAccount(CryptoService.generateCryptoKey())
+    private val etherbase: EthereumAccount by lazy { etherbaseAccount(chain) }
 
     @After
     fun tearDown() {
@@ -42,13 +36,10 @@ class EthereumChainTest : EthereumServer(true) {
     fun testSubmitTransaction() {
         val transAmount = 100.toBigInteger()
         val tx = chain.newTransaction(etherbase, alice.address, transAmount)
-        var receipt: Receipt?
-        while ({
-                receipt =
-                        chain.getTransactionReceipts(listOf(chain.submitTransaction(etherbase, tx)))[0];receipt!!.status
-            }()) {
-            Thread.sleep(200)
-        }
+
+        val hash = chain.submitTransaction(etherbase, tx)
+        Assert.assertEquals(hash, tx.txHash())
+        chain.waitTransactionProcessed(hash)
         Assert.assertEquals(transAmount, chain.getBalance(alice.address))
     }
 
