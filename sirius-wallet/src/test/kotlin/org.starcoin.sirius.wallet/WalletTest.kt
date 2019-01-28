@@ -386,11 +386,30 @@ class WalletTest {
 
     @Test
     fun testSync() {
-        testTransfer()
+        testDeposit()
 
         val aliceWalletClone = Wallet(this.contract.contractAddress,channelManager,chain,null,alice)
         aliceWalletClone.sync()
+        Assert.assertEquals(walletAlice.balance(), aliceWalletClone.balance())
+    }
 
+    @Test
+    fun testSyncBytransfer() {
+        testTransfer()
+        val aliceWalletClone = Wallet(this.contract.contractAddress,channelManager,chain,null,alice)
+        aliceWalletClone.sync()
+        Assert.assertEquals(walletAlice.balance(), aliceWalletClone.balance())
+    }
+
+    @Test
+    fun testSyncEon() {
+        testDeposit()
+        waitToNextEon()
+        runBlocking {
+            walletAlice.getMessageChannel()?.receive()
+        }
+
+        val aliceWalletClone = Wallet(this.contract.contractAddress,channelManager,chain,null,alice)
         aliceWalletClone.sync()
         Assert.assertEquals(walletAlice.balance(), aliceWalletClone.balance())
     }
