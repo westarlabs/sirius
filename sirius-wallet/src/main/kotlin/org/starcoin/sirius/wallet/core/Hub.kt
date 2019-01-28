@@ -99,7 +99,8 @@ class Hub <T : ChainTransaction, A : ChainAccount> {
                 nextEon(hubRoot)
                 LOG.info("finish change eon")
             } else {
-                throw RuntimeException("hub eon is not right")
+                GlobalScope.launch { eonChannel?.send(ClientEventType.EON_CHANGE_EXCEPTION) }
+                LOG.warning("hub eon is not right")
             }
         } catch (e: Exception) {
             e.printStackTrace()

@@ -3,7 +3,9 @@ package org.starcoin.sirius.wallet
 import com.google.protobuf.Empty
 import io.grpc.Channel
 import io.grpc.inprocess.InProcessChannelBuilder
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.runBlocking
+import kotlinx.coroutines.withTimeout
 import org.ethereum.util.blockchain.EtherUtil
 import org.junit.*
 import org.starcoin.proto.HubServiceGrpc
@@ -179,17 +181,18 @@ class WalletTest {
         waitToNextEon()
 
         runBlocking {
-            walletAlice.getMessageChannel()?.receive()
-            walletAlice.getMessageChannel()?.receive()
-            walletAlice.getMessageChannel()?.receive()
-            walletAlice.getMessageChannel()?.receive()
-
+            withTimeout(10000L){
+                println(walletAlice.getMessageChannel()?.receive())
+                println(walletAlice.getMessageChannel()?.receive())
+                println(walletAlice.getMessageChannel()?.receive())
+            }
         }
 
         waitToNextEon()
         runBlocking {
-            walletAlice.getMessageChannel()?.receive()
-            walletAlice.getMessageChannel()?.receive()
+            withTimeout(10000L){
+                println(walletAlice.getMessageChannel()?.receive())
+            }
         }
 
         Assert.assertTrue(contract.isRecoveryMode(alice))
@@ -198,6 +201,11 @@ class WalletTest {
     @Test
     fun testTransferChallenge() {
         testDeposit()
+
+        waitToNextEon()
+        runBlocking {
+            walletAlice.getMessageChannel()?.receive()
+        }
 
         walletAlice.cheat(Starcoin.HubMaliciousFlag.STEAL_TRANSACTION_IOU_VALUE)
 
@@ -215,8 +223,8 @@ class WalletTest {
 
         this.walletAlice.openTransferChallenge(transaction.hash())
         runBlocking {
-            walletAlice.getMessageChannel()?.receive()
-            walletAlice.getMessageChannel()?.receive()
+            println(walletAlice.getMessageChannel()?.receive())
+            println(walletAlice.getMessageChannel()?.receive())
         }
 
         waitToNextEon()

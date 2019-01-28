@@ -36,25 +36,15 @@ class Wallet<T : ChainTransaction, A : ChainAccount> {
 
     }
 
-    fun deposit(value:BigInteger){
-        this.hub.deposit(value)
-    }
+    fun deposit(value:BigInteger) = hub.deposit(value)
 
-    fun balance():BigInteger{
-        return hub.getAvailableCoin()
-    }
+    fun balance():BigInteger = hub.getAvailableCoin()
 
-    fun withdrawal(value:BigInteger){
-        return hub.withDrawal(value)
-    }
+    fun withdrawal(value:BigInteger)= hub.withDrawal(value)
 
-    fun register():Update?{
-        return hub.register()
-    }
+    fun register():Update?= hub.register()
 
-    fun openTransferChallenge(hash:Hash){
-        this.hub.openTransferChallenge(hash)
-    }
+    fun openTransferChallenge(hash:Hash)= this.hub.openTransferChallenge(hash)
 
     internal fun initMessageChannel(){
         hub.eonChannel = Channel(200)
@@ -64,15 +54,10 @@ class Wallet<T : ChainTransaction, A : ChainAccount> {
         return hub.eonChannel
     }
 
-    fun hubTransfer(to:Address,value:BigInteger):OffchainTransaction{
-        return hub.newTransfer(to,value)
-    }
+    fun hubTransfer(to:Address,value:BigInteger)=hub.newTransfer(to,value)
 
-    internal fun hubAccount():HubAccount?{
-        return hub.accountInfo()
-    }
+    internal fun hubAccount():HubAccount?=hub.accountInfo()
 
-    internal fun cheat(flag:Int){
-        return hub.cheat(flag)
-    }
+    internal fun cheat(flag:Int)= hub.cheat(flag)
+
 }

@@ -168,7 +168,7 @@ class HubStatus {
     }
 
     @Synchronized
-    internal fun getEonByIndex(i: Int): Int {
+    private fun getEonByIndex(i: Int): Int {
         if (i > 0 || i < -2) {
             return -3
         } else {
