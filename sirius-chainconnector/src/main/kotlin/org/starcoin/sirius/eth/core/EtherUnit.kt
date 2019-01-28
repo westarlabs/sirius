@@ -1,67 +1,116 @@
 package org.starcoin.sirius.eth.core
 
 import org.starcoin.sirius.lang.toBigInteger
+import java.math.BigDecimal
 import java.math.BigInteger
 
-interface EtherUnit {
-    val radio: BigInteger
-    fun <OtherUnit : EtherUnit> conversionRate(otherEtherUnit: OtherUnit): BigInteger {
-        return radio / otherEtherUnit.radio
+sealed class EtherUnit {
+    abstract val radio: BigInteger
+    fun <OtherUnit : EtherUnit> conversionRate(otherEtherUnit: OtherUnit): BigDecimal {
+        return radio.toBigDecimal().divide(otherEtherUnit.radio.toBigDecimal())
+    }
+
+    operator fun compareTo(other: EtherUnit) = this.radio.compareTo(other.radio)
+
+    object Wei : EtherUnit() {
+        override val radio: BigInteger = BigInteger.ONE
+    }
+
+    object Gwei : EtherUnit() {
+        override val radio: BigInteger = 1_000_000_000.toBigInteger()
+    }
+
+    object Szabo : EtherUnit() {
+        override val radio: BigInteger = 1_000_000_000_000L.toBigInteger()
+    }
+
+    object Finney : EtherUnit() {
+        override val radio: BigInteger = 1_000_000_000_000_000L.toBigInteger()
+    }
+
+    object Ether : EtherUnit() {
+        override val radio: BigInteger = 1_000_000_000_000_000_000L.toBigInteger()
+    }
+
+    companion object {
+        val units: List<EtherUnit> by lazy {
+            EtherUnit::class.sealedSubclasses.map { it.objectInstance!! }.sortedByDescending { it.radio }
+        }
     }
 }
 
-class EtherNumber<out T : EtherUnit>(value: Number, factory: () -> T) {
-    companion object {
-        inline operator fun <reified K : EtherUnit> invoke(value: Number) = EtherNumber(value) {
-            K::class.java.newInstance()
+
+class EtherNumber<out T : EtherUnit>(value: Number, val unit: T) {
+
+    val value = value.toBigInteger()
+
+    val inWei: EtherNumber<EtherUnit.Wei>
+        get() = converted()
+
+    val inGWei: EtherNumber<EtherUnit.Gwei>
+        get() = converted()
+
+    val inSzabo: EtherNumber<EtherUnit.Szabo>
+        get() = converted()
+
+    val inFinney: EtherNumber<EtherUnit.Finney>
+        get() = converted()
+
+    val inEther: EtherNumber<EtherUnit.Ether>
+        get() = converted()
+    /**
+     * largest unit that without loss of precision
+     */
+    val inBestUnit: EtherNumber<EtherUnit>
+        get() {
+            //val unit = EtherUnit.bestUnit(this.inWei)
+            //EtherNumber(unit.conversionRate(value), unit)
+            val weiNumber = this.inWei
+            for (unit in EtherUnit.units) {
+                if (unit.radio > weiNumber.value) {
+                    continue
+                }
+                if (weiNumber.value % unit.radio != BigInteger.ZERO) {
+                    continue
+                }
+                val newValue = weiNumber.value.toBigDecimal() * EtherUnit.Wei.conversionRate(unit)
+                return EtherNumber(newValue, unit)
+            }
+            return weiNumber
         }
-    }
-
-    val unit: T = factory()
-
-    val value = value.toLong().toBigInteger()
-
-    val inWei: EtherNumber<Wei>
-        get() = converted()
-
-    val inGWei: EtherNumber<Gwei>
-        get() = converted()
-
-    val inSzabo: EtherNumber<Szabo>
-        get() = converted()
-
-    val inFinney: EtherNumber<Finney>
-        get() = converted()
-
-    val inEther: EtherNumber<Ether>
-        get() = converted()
 
     inline fun <reified OtherUnit : EtherUnit> converted(): EtherNumber<OtherUnit> {
-        val otherInstance = OtherUnit::class.java.newInstance()
-        return EtherNumber(value * unit.conversionRate(otherInstance))
+        val otherInstance = OtherUnit::class.objectInstance!!
+        return EtherNumber(value.toBigDecimal() * unit.conversionRate(otherInstance), otherInstance)
     }
 
-    operator fun plus(other: EtherNumber<EtherUnit>): EtherNumber<T> {
-        val newValue = value + other.value * other.unit.conversionRate(unit)
-        return EtherNumber(newValue) { unit }
+    operator fun plus(other: EtherNumber<EtherUnit>): EtherNumber<EtherUnit> {
+        val newValue =
+            this.value.toBigDecimal() * this.unit.conversionRate(EtherUnit.Wei) + other.value.toBigDecimal() * other.unit.conversionRate(
+                EtherUnit.Wei
+            )
+        return EtherNumber(newValue, EtherUnit.Wei).inBestUnit
     }
 
-    operator fun minus(other: EtherNumber<EtherUnit>): EtherNumber<T> {
-        val newValue = value - other.value * other.unit.conversionRate(unit)
-        return EtherNumber(newValue) { unit }
+    operator fun minus(other: EtherNumber<EtherUnit>): EtherNumber<EtherUnit> {
+        val newValue =
+            this.value.toBigDecimal() * this.unit.conversionRate(EtherUnit.Wei) - other.value.toBigDecimal() * other.unit.conversionRate(
+                EtherUnit.Wei
+            )
+        return EtherNumber(newValue, EtherUnit.Wei).inBestUnit
     }
 
     operator fun times(other: Number): EtherNumber<T> {
-        return EtherNumber(value * other.toBigInteger()) { unit }
+        return EtherNumber(value * other.toBigInteger(), unit)
     }
 
-    operator fun div(other: Number): EtherNumber<T> {
-        return EtherNumber(value / other.toBigInteger()) { unit }
+    operator fun div(other: Number): EtherNumber<EtherUnit> {
+        return EtherNumber(this.inWei.value / other.toBigInteger(), EtherUnit.Wei).inBestUnit
     }
 
-    operator fun inc() = EtherNumber(value + BigInteger.ONE) { unit }
+    operator fun inc() = EtherNumber(value + BigInteger.ONE, unit)
 
-    operator fun dec() = EtherNumber(value - BigInteger.ONE) { unit }
+    operator fun dec() = EtherNumber(value - BigInteger.ONE, unit)
 
     operator fun compareTo(other: EtherNumber<EtherUnit>) = inWei.value.compareTo(other.inWei.value)
 
@@ -70,6 +119,10 @@ class EtherNumber<out T : EtherUnit>(value: Number, factory: () -> T) {
     override fun equals(other: Any?): Boolean {
         if (other == null || other !is EtherNumber<EtherUnit>) return false
         return compareTo(other) == 0
+    }
+
+    fun fuzzyEquals(other: EtherNumber<EtherUnit>, tolerance: EtherUnit): Boolean {
+        return (inWei.value - other.inWei.value).abs() <= tolerance.radio
     }
 
     override fun hashCode() = inWei.value.hashCode()
@@ -82,37 +135,18 @@ class EtherNumber<out T : EtherUnit>(value: Number, factory: () -> T) {
     }
 }
 
-class Wei : EtherUnit {
-    override val radio: BigInteger = BigInteger.ONE
-}
 
-class Gwei : EtherUnit {
-    override val radio: BigInteger = 1_000_000_000.toBigInteger()
-}
+val Number.wei: EtherNumber<EtherUnit.Wei>
+    get() = EtherNumber(this, EtherUnit.Wei)
 
-class Szabo : EtherUnit {
-    override val radio: BigInteger = 1_000_000_000_000L.toBigInteger()
-}
+val Number.gwei: EtherNumber<EtherUnit.Gwei>
+    get() = EtherNumber(this, EtherUnit.Gwei)
 
-class Finney : EtherUnit {
-    override val radio: BigInteger = 1_000_000_000_000_000L.toBigInteger()
-}
+val Number.szabo: EtherNumber<EtherUnit.Szabo>
+    get() = EtherNumber(this, EtherUnit.Szabo)
 
-class Ether : EtherUnit {
-    override val radio: BigInteger = 1_000_000_000_000_000_000L.toBigInteger()
-}
+val Number.finney: EtherNumber<EtherUnit.Finney>
+    get() = EtherNumber(this, EtherUnit.Finney)
 
-val Number.wei: EtherNumber<Wei>
-    get() = EtherNumber(this)
-
-val Number.gwei: EtherNumber<Gwei>
-    get() = EtherNumber(this)
-
-val Number.szabo: EtherNumber<Szabo>
-    get() = EtherNumber(this)
-
-val Number.finney: EtherNumber<Finney>
-    get() = EtherNumber(this)
-
-val Number.ether: EtherNumber<Ether>
-    get() = EtherNumber(this)
+val Number.ether: EtherNumber<EtherUnit.Ether>
+    get() = EtherNumber(this, EtherUnit.Ether)

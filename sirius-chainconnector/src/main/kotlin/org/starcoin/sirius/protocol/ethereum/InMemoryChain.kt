@@ -1,6 +1,8 @@
 package org.starcoin.sirius.protocol.ethereum
 
+import kotlinx.coroutines.CoroutineStart
 import kotlinx.coroutines.GlobalScope
+import kotlinx.coroutines.asCoroutineDispatcher
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.channels.ReceiveChannel
 import kotlinx.coroutines.channels.SendChannel
@@ -18,6 +20,7 @@ import org.starcoin.sirius.protocol.ChainEvent
 import org.starcoin.sirius.protocol.EthereumTransaction
 import org.starcoin.sirius.protocol.TransactionResult
 import java.math.BigInteger
+import java.util.concurrent.Executors
 
 sealed class ChainCtlMessage {
     class NewTransaction(val tx: EthereumTransaction, val response: SendChannel<EthereumBlock?>) : ChainCtlMessage()
@@ -25,7 +28,7 @@ sealed class ChainCtlMessage {
 }
 
 class InMemoryChain(val autoGenblock: Boolean = true) : EthereumBaseChain() {
-    
+
     override fun waitBlocks(blockCount: Int) {
         for (i in blockCount.downTo(0))
             sb.createBlock()
@@ -40,23 +43,25 @@ class InMemoryChain(val autoGenblock: Boolean = true) : EthereumBaseChain() {
         sb.addEthereumListener(eventBus)
     }
 
+    val coroutineContext = Executors.newCachedThreadPool().asCoroutineDispatcher()
     val chainAcctor = chainActor()
 
-    fun chainActor() = GlobalScope.actor<ChainCtlMessage> {
-        for (msg in channel) {
-            when (msg) {
-                is ChainCtlMessage.NewBlock -> msg.response.send(doCreateBlock())
-                is ChainCtlMessage.NewTransaction -> {
-                    sb.submitTransaction(msg.tx.toEthTransaction())
-                    if (autoGenblock) {
-                        msg.response.send(doCreateBlock())
-                    } else {
-                        msg.response.send(null)
+    fun chainActor() =
+        GlobalScope.actor<ChainCtlMessage>(context = coroutineContext, capacity = 10, start = CoroutineStart.LAZY) {
+            for (msg in channel) {
+                when (msg) {
+                    is ChainCtlMessage.NewBlock -> msg.response.send(doCreateBlock())
+                    is ChainCtlMessage.NewTransaction -> {
+                        sb.submitTransaction(msg.tx.toEthTransaction())
+                        if (autoGenblock) {
+                            msg.response.send(doCreateBlock())
+                        } else {
+                            msg.response.send(null)
+                        }
                     }
                 }
             }
         }
-    }
 
     private fun doCreateBlock(): EthereumBlock? {
         try {
@@ -173,5 +178,11 @@ class InMemoryChain(val autoGenblock: Boolean = true) : EthereumBaseChain() {
         this.sb.sender = originAccount
         this.sb.sendEther(account.address.toBytes(), amount)
         this.createBlock()
+    }
+
+    override fun stop() {
+        this.chainAcctor.close()
+        this.coroutineContext.close()
+        this.eventBus.close()
     }
 }
