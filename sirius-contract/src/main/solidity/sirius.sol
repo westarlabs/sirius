@@ -13,8 +13,8 @@ interface Sirius {
     function closeTransferDeliveryChallenge(bytes calldata data) external returns (bool);
     function recoverFunds(bytes calldata data) external;
     function queryLatestRoot() external view returns (bytes memory);
-    function queryCurrentEon() external view returns (bytes memory);
-    function queryRecoveryMode() external view returns (bytes memory);
+    function queryCurrentEon() external view returns (uint);
+    function queryRecoveryMode() external view returns (bool);
     function hubIp(bytes calldata data) external;
     function queryHubInfo() external view returns (bytes memory);
     function queryWithdrawal() external view returns (bytes memory);
@@ -426,18 +426,12 @@ contract SiriusService is Sirius {
         return ModelLib.marshalContractReturn(cr);
     }
 
-    function queryCurrentEon() external view returns (bytes memory) {
-        ModelLib.ContractReturn memory cr;
-        cr.hasVal = true;
-        cr.payload = RLPEncoder.encodeList(ByteUtilLib.uint2byte(currentEon()));
-        return ModelLib.marshalContractReturn(cr);
+    function queryCurrentEon() external view returns (uint) {
+        return currentEon();
     }
 
-    function queryRecoveryMode() external view returns (bytes memory) {
-        ModelLib.ContractReturn memory cr;
-        cr.hasVal = true;
-        cr.payload = RLPEncoder.encodeList(ByteUtilLib.bool2byte(recoveryMode));
-        return ModelLib.marshalContractReturn(cr);
+    function queryRecoveryMode() external view returns (bool) {
+        return recoveryMode;
     }
 
     function queryHubInfo() external view returns (bytes memory) {

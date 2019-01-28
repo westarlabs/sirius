@@ -27,9 +27,7 @@ class SiriusContractTest : ContractTestBase("solidity/SiriusService", "SiriusSer
     fun testCurrentEon() {
         testCommit()
         val callResult = contract.callConstFunction("queryCurrentEon")
-        val result = callResult[0] as ByteArray
-        val cr = RLP.load(ContractReturn.serializer(), result)
-        val eon = RLP.load(Long.serializer(), cr.payload.toBytes())
+        val eon = callResult[0] as BigInteger
         LOG.info("eon:${eon}")
     }
 
@@ -237,11 +235,8 @@ class SiriusContractTest : ContractTestBase("solidity/SiriusService", "SiriusSer
             testDeposit(false)
         }
 
-        val result = contract.callConstFunction("queryRecoveryMode")[0] as ByteArray
-        val cr = RLP.load(ContractReturn.serializer(), result)
-        assert(cr.hasVal)
-        val recovery = RLP.load(Boolean.serializer(), cr.payload.toBytes())
-        LOG.info("eon:${recovery}")
+        val recovery = contract.callConstFunction("queryRecoveryMode")[0] as Boolean
+        LOG.info("recovery:${recovery}")
 
         val callResult = contract.callFunction("recoverFunds", preProof.toRLP())
         verifyReturn(callResult)
