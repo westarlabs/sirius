@@ -1,13 +1,7 @@
 package org.starcoin.sirius.protocol.ethereum
 
-import kotlinx.coroutines.CoroutineStart
-import kotlinx.coroutines.GlobalScope
-import kotlinx.coroutines.asCoroutineDispatcher
-import kotlinx.coroutines.channels.Channel
-import kotlinx.coroutines.channels.ReceiveChannel
-import kotlinx.coroutines.channels.SendChannel
-import kotlinx.coroutines.channels.actor
-import kotlinx.coroutines.runBlocking
+import kotlinx.coroutines.*
+import kotlinx.coroutines.channels.*
 import org.ethereum.core.CallTransaction.createRawTransaction
 import org.ethereum.util.blockchain.StandaloneBlockchain
 import org.starcoin.sirius.core.Address
@@ -20,7 +14,6 @@ import org.starcoin.sirius.protocol.ChainEvent
 import org.starcoin.sirius.protocol.EthereumTransaction
 import org.starcoin.sirius.protocol.TransactionResult
 import java.math.BigInteger
-import java.util.concurrent.Executors
 
 sealed class ChainCtlMessage {
     class NewTransaction(val tx: EthereumTransaction, val response: SendChannel<EthereumBlock?>) : ChainCtlMessage()
@@ -40,19 +33,19 @@ class InMemoryChain(val autoGenblock: Boolean = true) : EthereumBaseChain() {
 
     //StandaloneBlockchain autoblock has concurrent problem
     val sb = StandaloneBlockchain().withAutoblock(false).withGasLimit(500000000)
-    val originAccount = sb.sender
+    val originAccount = sb.sender!!
     val eventBus = EventBusEthereumListener()
 
     init {
         sb.addEthereumListener(eventBus)
     }
 
-    val coroutineContext = Executors.newCachedThreadPool().asCoroutineDispatcher()
-    val chainAcctor = chainActor()
-
-    fun chainActor() =
-        GlobalScope.actor<ChainCtlMessage>(context = coroutineContext, capacity = 10, start = CoroutineStart.LAZY) {
-            for (msg in channel) {
+    val chainAcctor =
+        GlobalScope.actor<ChainCtlMessage>(start = CoroutineStart.LAZY, onCompletion = {
+            it?.let { ex -> LOG.warning("chain actor onCompletion ${ex.message}") }
+                ?: LOG.info("chain actor onCompletion")
+        }) {
+            consumeEach { msg ->
                 when (msg) {
                     is ChainCtlMessage.NewBlock -> msg.response.send(doCreateBlock())
                     is ChainCtlMessage.NewTransaction -> {
@@ -68,12 +61,14 @@ class InMemoryChain(val autoGenblock: Boolean = true) : EthereumBaseChain() {
         }
 
     private fun doCreateBlock(): EthereumBlock? {
-        try {
+        return try {
             val block = EthereumBlock(sb.createBlock())
             LOG.info("InMemoryChain create NewBlock: ${block.hash}, txs: ${block.transactions.size}")
-            return block
+            block
         } catch (ex: Exception) {
-            return null
+            ex.printStackTrace()
+            LOG.severe(ex.message)
+            null
         }
     }
 
@@ -118,7 +113,7 @@ class InMemoryChain(val autoGenblock: Boolean = true) : EthereumBaseChain() {
         return tx?.let { EthereumTransaction(tx.receipt.transaction) }
     }
 
-    override fun submitTransaction(account: EthereumAccount, transaction: EthereumTransaction): Hash = runBlocking {
+    override fun submitTransaction(account: EthereumAccount, transaction: EthereumTransaction): Hash {
         val key = account.key as EthCryptoKey
         sb.sender = key.ecKey
         transaction.sign(key)
@@ -127,10 +122,16 @@ class InMemoryChain(val autoGenblock: Boolean = true) : EthereumBaseChain() {
         LOG.fine("${account.address} submitTransaction hash:${transaction.hash()} nonce:${transaction.nonce} contractFunction:${transaction.contractFunction} dataSize:${transaction.data?.size}")
         account.incAndGetNonce()
         val response = Channel<EthereumBlock?>(1)
-        chainAcctor.send(ChainCtlMessage.NewTransaction(transaction, response))
+        GlobalScope.launch(Dispatchers.IO) {
+            chainAcctor.send(ChainCtlMessage.NewTransaction(transaction, response))
+        }
         //TODO async, not wait block create.
-        response.receive()
-        transaction.hash()
+        runBlocking {
+            val block = response.receive()
+            block?.let { LOG.fine("submitTransaction receive block ${block.hash}") }
+                ?: LOG.fine("submitTransaction receive block null.")
+        }
+        return transaction.hash()
     }
 
     override fun callConstFunction(caller: CryptoKey, contractAddress: Address, data: ByteArray): ByteArray {
@@ -185,7 +186,6 @@ class InMemoryChain(val autoGenblock: Boolean = true) : EthereumBaseChain() {
 
     override fun stop() {
         this.chainAcctor.close()
-        this.coroutineContext.close()
         this.eventBus.close()
     }
 }

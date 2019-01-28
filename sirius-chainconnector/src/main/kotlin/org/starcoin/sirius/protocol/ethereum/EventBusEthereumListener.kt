@@ -1,5 +1,6 @@
 package org.starcoin.sirius.protocol.ethereum
 
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.channels.ReceiveChannel
 import kotlinx.coroutines.launch
@@ -26,7 +27,7 @@ class EventBusEthereumListener : AbstractEthereumListener() {
     private val txEventBus = EventBus<TransactionResult<EthereumTransaction>>()
 
     override fun onBlock(blockSummary: BlockSummary) {
-        GlobalScope.launch {
+        GlobalScope.launch(Dispatchers.IO) {
             val block = EthereumBlock(blockSummary.block)
             blockEventBus.send(block)
             LOG.info("EventBusEthereumListener onBlock hash:${block.hash}, height:${block.height}, txs:${block.transactions.size}")

@@ -4,6 +4,7 @@ import com.google.protobuf.Empty
 import io.grpc.Status
 import io.grpc.StatusRuntimeException
 import io.grpc.stub.StreamObserver
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.launch
 import org.starcoin.proto.HubServiceGrpc
@@ -129,8 +130,8 @@ class HubRpcService<T : ChainTransaction, A : ChainAccount>(val hubService: HubS
     }
 
     override fun watch(request: Starcoin.ProtoBlockAddress, responseObserver: StreamObserver<Starcoin.HubEvent>) {
-        val queue = this.hubService.watch(Address.wrap(request.address))
-        GlobalScope.launch {
+        GlobalScope.launch(Dispatchers.IO) {
+            val queue = hubService.watch(Address.wrap(request.address))
             for (event in queue) {
                 responseObserver.onNext(event.toProto())
             }
@@ -138,8 +139,8 @@ class HubRpcService<T : ChainTransaction, A : ChainAccount>(val hubService: HubS
     }
 
     override fun watchHubRoot(request: Empty?, responseObserver: StreamObserver<Starcoin.HubRoot>) {
-        val queue = this.hubService.watchHubRoot()
-        GlobalScope.launch {
+        GlobalScope.launch(Dispatchers.IO) {
+            val queue = hubService.watchHubRoot()
             for (event in queue) {
                 responseObserver.onNext(event.toProto())
             }

@@ -3,6 +3,7 @@ package org.starcoin.sirius.hub
 import com.google.protobuf.Empty
 import io.grpc.Status
 import io.grpc.StatusRuntimeException
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.channels.ReceiveChannel
@@ -70,7 +71,7 @@ class HubServiceStub(val stub: HubServiceGrpc.HubServiceBlockingStub) : HubServi
 
     override fun watch(address: Address): ReceiveChannel<HubEvent> {
         val channel = Channel<HubEvent>()
-        GlobalScope.launch {
+        GlobalScope.launch(Dispatchers.IO) {
             try {
                 stub
                     .watch(address.toProto())
@@ -86,7 +87,7 @@ class HubServiceStub(val stub: HubServiceGrpc.HubServiceBlockingStub) : HubServi
 
     override fun watchHubRoot(): ReceiveChannel<HubRoot> {
         val channel = Channel<HubRoot>()
-        GlobalScope.launch {
+        GlobalScope.launch(Dispatchers.IO) {
             try {
                 stub
                     .watchHubRoot(Empty.getDefaultInstance())
