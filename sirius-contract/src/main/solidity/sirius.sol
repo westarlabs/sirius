@@ -12,13 +12,12 @@ interface Sirius {
     function openTransferDeliveryChallenge(bytes calldata data) external returns (bool);
     function closeTransferDeliveryChallenge(bytes calldata data) external returns (bool);
     function recoverFunds(bytes calldata data) external;
-    function getLatestRoot() external returns (bytes memory);
-    function getCurrentEon() external view returns (uint);
-    function isRecoveryMode() external view returns (bool);
-    function test() external view returns (bool);
+    function queryLatestRoot() external view returns (bytes memory);
+    function queryCurrentEon() external view returns (bytes memory);
+    function queryRecoveryMode() external view returns (bytes memory);
     function hubIp(bytes calldata data) external;
-    function hubInfo() external view returns (bytes memory);
-    function queryWithdrawal() external returns (bytes memory);
+    function queryHubInfo() external view returns (bytes memory);
+    function queryWithdrawal() external view returns (bytes memory);
     function queryBalance(uint eon) external view returns (bytes memory);
     function queryTransfer(uint eon, bytes32 txHash) external view returns (bytes memory);
 }
@@ -413,25 +412,33 @@ contract SiriusService is Sirius {
         msg.sender.transfer(amount);
     }
 
-    function getLatestRoot() external returns (bytes memory) {
-        ModelLib.HubRoot memory root = latestRoot();
-        bytes memory tmp = ModelLib.marshalHubRoot(root);
-        return tmp;
+    function queryLatestRoot() external view returns (bytes memory) {
+        ModelLib.ContractReturn memory cr;
+        if(balances[0].hasRoot || balances[1].hasRoot) {
+            ModelLib.HubRoot memory root = latestRoot();
+            bytes memory tmp = ModelLib.marshalHubRoot(root);
+            cr.hasVal = true;
+            cr.payload = tmp;
+        }
+
+        return ModelLib.marshalContractReturn(cr);
     }
 
-    function getCurrentEon() external view returns (uint) {
-        return currentEon();
+    function queryCurrentEon() external view returns (bytes memory) {
+        ModelLib.ContractReturn memory cr;
+        cr.hasVal = true;
+        cr.payload = ByteUtilLib.uint2byte(currentEon());
+        return ModelLib.marshalContractReturn(cr);
     }
 
-    function isRecoveryMode() external view returns (bool) {
-        return recoveryMode;
+    function queryRecoveryMode() external view returns (bytes memory) {
+        ModelLib.ContractReturn memory cr;
+        cr.hasVal = true;
+        cr.payload = ByteUtilLib.bool2byte(recoveryMode);
+        return ModelLib.marshalContractReturn(cr);
     }
 
-    function test() external view returns (bool) {
-        return true;
-    }
-
-    function hubInfo() external view returns (bytes memory) {
+    function queryHubInfo() external view returns (bytes memory) {
         ModelLib.ContractHubInfo memory chi;
         chi.startBlockNum = startHeight;
         chi.hubAddress = ip;
@@ -440,7 +447,7 @@ contract SiriusService is Sirius {
         return ModelLib.marshalContractHubInfo(chi);
     }
 
-    function queryWithdrawal() external returns (bytes memory) {
+    function queryWithdrawal() external view returns (bytes memory) {
         GlobleLib.Withdrawal memory tmp;
         ModelLib.ContractReturn memory cr;
         for (uint i=0; i < balances.length; i++) {
