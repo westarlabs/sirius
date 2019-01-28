@@ -60,4 +60,5 @@ class Wallet<T : ChainTransaction, A : ChainAccount> {
 
     internal fun cheat(flag:Int)= hub.cheat(flag)
 
+    fun sync() = hub.sync()
 }

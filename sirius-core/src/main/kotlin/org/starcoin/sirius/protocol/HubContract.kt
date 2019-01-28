@@ -115,12 +115,11 @@ abstract class HubContract<A : ChainAccount> {
         )
     }
 
-    fun queryWithdrawalStatus(account: A, address: Address): WithdrawalStatus? {
+    fun queryWithdrawalStatus(account: A): WithdrawalStatus? {
         return this.queryContractFunction(
             account,
-            "queryWithdrawalStatus",
-            WithdrawalStatus::class,
-            address
+            "queryWithdrawal",
+            WithdrawalStatus::class
         )
     }
 

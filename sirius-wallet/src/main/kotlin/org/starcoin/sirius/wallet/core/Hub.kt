@@ -276,7 +276,7 @@ class Hub <T : ChainTransaction, A : ChainAccount> {
                 this.hubStatus.syncAllotment(accountInfo)
             }
 
-            var withdrawalStatus=contract.queryWithdrawalStatus(account,account.address)
+            var withdrawalStatus=contract.queryWithdrawalStatus(account)
             if (withdrawalStatus?.status == WithdrawalStatusType.INIT.number) {
                 this.hubStatus.withdrawalStatus = withdrawalStatus
             }

@@ -3,7 +3,6 @@ package org.starcoin.sirius.wallet
 import com.google.protobuf.Empty
 import io.grpc.Channel
 import io.grpc.inprocess.InProcessChannelBuilder
-import kotlinx.coroutines.delay
 import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.withTimeout
 import org.ethereum.util.blockchain.EtherUtil
@@ -51,6 +50,7 @@ class WalletTest {
 
     private var hubInfo:ContractHubInfo by Delegates.notNull()
 
+    private var channelManager:ChannelManager by Delegates.notNull()
 
     @Before
     @Throws(InterruptedException::class)
@@ -69,7 +69,7 @@ class WalletTest {
         hubChannel = InProcessChannelBuilder.forName(configuration.rpcBind.toString()).build()
         stub = HubServiceGrpc.newBlockingStub(hubChannel)
 
-        val channelManager = ChannelManager(hubChannel)
+        channelManager = ChannelManager(hubChannel)
 
         hubServer = HubServer(configuration,chain,owner)
         hubServer.start()
@@ -202,6 +202,16 @@ class WalletTest {
 
         contract.isRecoveryMode(alice)
         //Assert.assertTrue(contract.isRecoveryMode(alice))
+
+        runBlocking {
+            withTimeout(10000L){
+                println(walletAlice.getMessageChannel()?.receive())
+            }
+        }
+
+        println(contract.isRecoveryMode(alice))
+        Assert.assertTrue(contract.isRecoveryMode(alice))
+
     }
 
     @Test
@@ -237,6 +247,11 @@ class WalletTest {
         runBlocking {
             walletAlice.getMessageChannel()?.receive()
         }
+
+        createBlocks(2)
+
+        walletAlice.deposit(amount)
+        createBlocks(1)
 
         Assert.assertTrue(contract.isRecoveryMode(alice))
     }
@@ -360,6 +375,18 @@ class WalletTest {
         Assert.assertEquals(walletAlice.balance(),depositAmount)
 
     }
+
+    @Test
+    fun testSync() {
+        testTransfer()
+
+        val aliceWalletClone = Wallet(this.contract.contractAddress,channelManager,chain,null,alice)
+        aliceWalletClone.sync()
+
+        aliceWalletClone.sync()
+        Assert.assertEquals(walletAlice.balance(), aliceWalletClone.balance())
+    }
+
 
     private fun waitToNextEon() {
         var height = chain.getBlockNumber()
