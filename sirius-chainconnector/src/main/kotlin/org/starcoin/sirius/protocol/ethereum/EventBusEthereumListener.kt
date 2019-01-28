@@ -31,8 +31,9 @@ class EventBusEthereumListener : AbstractEthereumListener() {
             blockEventBus.send(block)
             LOG.info("EventBusEthereumListener onBlock hash:${block.hash}, height:${block.height}, txs:${block.transactions.size}")
             blockSummary.block.transactionsList.forEachIndexed { index, it ->
-                var ethereumTransaction = EthereumTransaction(it)
+                val ethereumTransaction = EthereumTransaction(it)
                 val txReceipt = blockSummary.receipts[index]
+                val executeSummary = blockSummary.summaries[index]
                 val transactionResult = TransactionResult(
                     ethereumTransaction, Receipt(
                         it.hash,
@@ -53,7 +54,7 @@ class EventBusEthereumListener : AbstractEthereumListener() {
                 if (txReceipt.error != null && txReceipt.error.isNotEmpty()) {
                     LOG.warning("tx ${ethereumTransaction.hash()} error: ${txReceipt.error}")
                 }
-                for (log in txReceipt.logInfoList) {
+                for (log in executeSummary.logs) {
                     LOG.fine("tx ${ethereumTransaction.hash()} log $log")
                 }
                 LOG.info("tx ${ethereumTransaction.hash()}  PostTxState ${txReceipt.postTxState.toHEXString()}")
