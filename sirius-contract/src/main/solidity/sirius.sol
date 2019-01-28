@@ -147,9 +147,9 @@ contract SiriusService is Sirius {
                         addr.transfer(wi.amount);
                     }
                 }
-
-return flag;
             }
+
+            return flag;
         }
         return false;
     }
@@ -440,18 +440,17 @@ return flag;
         return ModelLib.marshalContractHubInfo(chi);
     }
 
-    function queryWithdrawal(uint eon) external returns (bytes memory) {
+    function queryWithdrawal() external returns (bytes memory) {
         GlobleLib.Withdrawal memory tmp;
         ModelLib.ContractReturn memory cr;
         for (uint i=0; i < balances.length; i++) {
-            if(balances[i].eon == eon) {
-                tmp = dataStore.withdrawalData[balances[i].eon][msg.sender];
+            tmp = dataStore.withdrawalData[balances[i].eon][msg.sender];
+
+            if(tmp.isVal) {
+                cr.hasVal = true;
+                cr.payload = GlobleLib.marshalWithdrawal(tmp);
                 break;
             }
-        }
-        if(tmp.isVal) {
-            cr.hasVal = true;
-            cr.payload = GlobleLib.marshalWithdrawal(tmp);
         }
 
         return ModelLib.marshalContractReturn(cr);
