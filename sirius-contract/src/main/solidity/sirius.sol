@@ -310,7 +310,7 @@ return flag;
                 uint allotment = SafeMath.sub(t1, t2);
                 require(allotment == close.proof.path.leaf.allotment, "check proof allotment fail.");
 
-                tmpStat.status == ModelLib.ChallengeStatus.CLOSE;
+                tmpStat.status = ModelLib.ChallengeStatus.CLOSE;
                 dataStore.bucData[balances[0].eon][close.addr] = tmpStat;
                 emit SiriusEvent2(close.addr, 2, tmpStat.challenge);
             }
