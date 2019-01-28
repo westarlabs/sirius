@@ -16,7 +16,6 @@ import org.starcoin.sirius.crypto.eth.EthCryptoKey
 import org.starcoin.sirius.lang.hexToByteArray
 import org.starcoin.sirius.protocol.ethereum.loadContractMetadata
 import org.starcoin.sirius.serialization.BigIntegerSerializer
-import org.starcoin.sirius.serialization.rlp.RLP
 import org.starcoin.sirius.util.MockUtils
 import org.starcoin.sirius.util.WithLogging
 import java.math.BigInteger

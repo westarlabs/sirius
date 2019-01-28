@@ -242,7 +242,9 @@ contract SiriusService is Sirius {
                 ModelLib.HubRoot memory preRoot = balances[1].root;
                 bool proofFlag = ModelLib.verifyMembershipProof4AMTreePath(preRoot.node, open.path);
                 require(proofFlag, "verify proof fail");
-            } else {}
+            } else {
+                //todo:update can not be default
+            }
 
             if(open.hasUp) {//Special case:new account only update
                 ModelLib.Update memory up = open.update;
@@ -439,12 +441,16 @@ contract SiriusService is Sirius {
     }
 
     function queryHubInfo() external view returns (bytes memory) {
+        ModelLib.ContractReturn memory cr;
+        cr.hasVal = true;
         ModelLib.ContractHubInfo memory chi;
         chi.startBlockNum = startHeight;
         chi.hubAddress = ip;
         chi.blocksPerEon = blocksPerEon;
         chi.latestEon = currentEon();
-        return ModelLib.marshalContractHubInfo(chi);
+        cr.payload = ModelLib.marshalContractHubInfo(chi);
+
+        return ModelLib.marshalContractReturn(cr);
     }
 
     function queryWithdrawal() external view returns (bytes memory) {
