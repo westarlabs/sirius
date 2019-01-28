@@ -195,13 +195,10 @@ class WalletTest {
             }
         }
 
-        createBlocks(2)
+        createBlocks(1)
 
         walletAlice.deposit(amount)
         createBlocks(1)
-
-        contract.isRecoveryMode(alice)
-        //Assert.assertTrue(contract.isRecoveryMode(alice))
 
         runBlocking {
             withTimeout(10000L){
