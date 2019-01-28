@@ -1,6 +1,7 @@
 package org.starcoin.sirius.protocol
 
 
+import io.netty.buffer.ByteBuf
 import org.ethereum.core.Transaction
 import org.starcoin.sirius.core.*
 import org.starcoin.sirius.crypto.eth.EthCryptoKey
@@ -8,6 +9,8 @@ import org.starcoin.sirius.lang.hexToByteArray
 import org.starcoin.sirius.lang.toHEXString
 import org.starcoin.sirius.lang.toULong
 import org.starcoin.sirius.lang.toUnsignedBigInteger
+import org.starcoin.sirius.serialization.rlp.toByteArray
+import org.starcoin.sirius.serialization.toByteArrayRemoveLeadZero
 import java.math.BigInteger
 
 class EthereumTransaction(private val tx: Transaction) : ChainTransaction() {
@@ -76,9 +79,9 @@ class EthereumTransaction(private val tx: Transaction) : ChainTransaction() {
         Transaction(
             nonce.toBigInteger().toByteArray(),
             gasPrice.toByteArray(),
-            gasLimit.toByteArray(),
+            gasLimit.toByteArrayRemoveLeadZero(),
             toAddress.toBytes(),
-            value.toByteArray(),
+            value.toByteArrayRemoveLeadZero(),
             null
         )
     )
@@ -94,9 +97,9 @@ class EthereumTransaction(private val tx: Transaction) : ChainTransaction() {
         Transaction(
             nonce.toBigInteger().toByteArray(),
             gasPrice.toBigInteger().toByteArray(),
-            gasLimit.toBigInteger().toByteArray(),
+            gasLimit.toBigInteger().toByteArrayRemoveLeadZero(),
             toAddress.toBytes(),
-            value.toBigInteger().toByteArray(),
+            value.toBigInteger().toByteArrayRemoveLeadZero(),
             null
         )
     )
@@ -111,7 +114,7 @@ class EthereumTransaction(private val tx: Transaction) : ChainTransaction() {
         Transaction(
             nonce.toBigInteger().toByteArray(),
             gasPrice.toByteArray(),
-            gasLimit.toByteArray(),
+            gasLimit.toByteArrayRemoveLeadZero(),
             contractAddress.toBytes(),
             BigInteger.ZERO.toByteArray(),
             data
@@ -127,7 +130,7 @@ class EthereumTransaction(private val tx: Transaction) : ChainTransaction() {
         Transaction(
             nonce.toBigInteger().toByteArray(),
             gasPrice.toByteArray(),
-            gasLimit.toByteArray(),
+            gasLimit.toByteArrayRemoveLeadZero(),
             null,
             BigInteger.ZERO.toByteArray(),
             data
