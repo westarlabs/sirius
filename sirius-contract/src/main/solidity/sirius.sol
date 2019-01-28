@@ -18,7 +18,7 @@ interface Sirius {
     function test() external view returns (bool);
     function hubIp(bytes calldata data) external;
     function hubInfo() external view returns (bytes memory);
-    function queryWithdrawal(uint eon) external returns (bytes memory);
+    function queryWithdrawal() external returns (bytes memory);
     function queryBalance(uint eon) external view returns (bytes memory);
     function queryTransfer(uint eon, bytes32 txHash) external view returns (bytes memory);
 }
