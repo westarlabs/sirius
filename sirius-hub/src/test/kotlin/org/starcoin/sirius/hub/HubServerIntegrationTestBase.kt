@@ -7,10 +7,11 @@ import io.grpc.inprocess.InProcessChannelBuilder
 import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.launch
 import org.ethereum.db.IndexedBlockStore
-import org.ethereum.util.blockchain.EtherUtil
 import org.junit.*
 import org.starcoin.proto.HubServiceGrpc
 import org.starcoin.sirius.core.*
+import org.starcoin.sirius.eth.core.EtherUnit
+import org.starcoin.sirius.eth.core.wei
 import org.starcoin.sirius.protocol.Chain
 import org.starcoin.sirius.protocol.ChainAccount
 import org.starcoin.sirius.protocol.HubContract
@@ -42,38 +43,45 @@ class BlockFuture : CompletableFuture<IndexedBlockStore.BlockInfo>() {
 }
 
 
-abstract class HubServerIntegrationTestBase<T : ChainTransaction, A : ChainAccount> {
+abstract class HubServerIntegrationTestBase<T : ChainTransaction, A : ChainAccount, C : Chain<T, out Block<T>, A>> {
 
 
-    var configuration: Configuration by Delegates.notNull()
-    var hubServer: HubServer<T, A> by Delegates.notNull()
+    private var configuration: Configuration by Delegates.notNull()
+    private var hubServer: HubServer<T, A> by Delegates.notNull()
 
-    abstract val chain: Chain<T, out Block<T>, A>
+    protected var chain: C by Delegates.notNull()
 
-    var hubService: HubService by Delegates.notNull()
-    var contract: HubContract<A> by Delegates.notNull()
-    internal var eventBus: EventBus by Delegates.notNull()
+    private var hubService: HubService by Delegates.notNull()
+    private var contract: HubContract<A> by Delegates.notNull()
+    private var eventBus: EventBus by Delegates.notNull()
 
-    internal var txMap: ConcurrentHashMap<Hash, CompletableFuture<TransactionResult<T>>> by Delegates.notNull()
+    private var txMap: ConcurrentHashMap<Hash, CompletableFuture<TransactionResult<T>>> by Delegates.notNull()
 
-    internal var eon = AtomicInteger(0)
-    internal var blockHeight = AtomicLong(0)
+    private var eon: AtomicInteger by Delegates.notNull()
+    private var blockHeight: AtomicLong by Delegates.notNull()
 
 
-    internal var a0: LocalAccount<T, A> by Delegates.notNull()
-    internal var a1: LocalAccount<T, A> by Delegates.notNull()
+    private var a0: LocalAccount<T, A> by Delegates.notNull()
+    private var a1: LocalAccount<T, A> by Delegates.notNull()
+
+
+    private var owner: A by Delegates.notNull()
+    private var contractHubInfo: ContractHubInfo by Delegates.notNull()
 
     abstract fun createChainAccount(amount: Long): A
-    var owner: A by Delegates.notNull()
-    var contractHubInfo: ContractHubInfo by Delegates.notNull()
+    abstract fun createChain(configuration: Configuration): C
 
     @Before
     @Throws(InterruptedException::class)
     fun before() {
+        eon = AtomicInteger(0)
+        blockHeight = AtomicLong(0)
         this.txMap = ConcurrentHashMap()
 
         this.eventBus = EventBus()
         this.configuration = Configuration.configurationForUNIT()
+        this.chain = createChain(this.configuration)
+
         this.owner = this.createChainAccount(10000)
         this.hubServer = HubServer(configuration, chain, owner)
 
@@ -84,7 +92,7 @@ abstract class HubServerIntegrationTestBase<T : ChainTransaction, A : ChainAccou
 
         hubService = HubServiceStub(
             HubServiceGrpc.newBlockingStub(
-            InProcessChannelBuilder.forName(configuration.rpcBind.toString()).build()
+                InProcessChannelBuilder.forName(configuration.rpcBind.toString()).build()
             )
         )
         this.a0 = LocalAccount(this.createChainAccount(1000), chain, contract, hubService)
@@ -287,6 +295,7 @@ abstract class HubServerIntegrationTestBase<T : ChainTransaction, A : ChainAccou
         this.waitToNextEon()
     }
 
+    @Ignore
     @Test
     fun testEmptyHubRoot() {
         this.waitToNextEon()
@@ -294,6 +303,7 @@ abstract class HubServerIntegrationTestBase<T : ChainTransaction, A : ChainAccou
         this.waitToNextEon()
     }
 
+    @Ignore
     @Test
     fun testDoNothingChallenge() {
         this.waitToNextEon()
@@ -305,6 +315,7 @@ abstract class HubServerIntegrationTestBase<T : ChainTransaction, A : ChainAccou
         this.waitToNextEon()
     }
 
+    @Ignore
     @Test
     fun testInvalidWithdrawal() {
         register(eon.get(), a0)
@@ -402,8 +413,8 @@ abstract class HubServerIntegrationTestBase<T : ChainTransaction, A : ChainAccou
         // a1 transfer to a0, but hub change to other user.
         val tx = this.offchainTransfer(a0, a1, depositAmount, false)
         waitToNextEon()
-        Assert.assertEquals(0, this.hubService.getHubAccount(a0.address)?.allotment)
-        Assert.assertEquals(0, this.hubService.getHubAccount(a1.address)?.allotment)
+        Assert.assertEquals(0.toBigInteger(), this.hubService.getHubAccount(a0.address)?.allotment)
+        Assert.assertEquals(0.toBigInteger(), this.hubService.getHubAccount(a1.address)?.allotment)
 
         this.transferDeliveryChallenge(a0, tx)
         waitToNextEon(false)
@@ -571,14 +582,14 @@ abstract class HubServerIntegrationTestBase<T : ChainTransaction, A : ChainAccou
                 waitToNextEon()
                 waitToNextEon()
                 val newChainBalance = this.chain.getBalance(account.address)
-                Assert.assertTrue(chainBalance + amount - newChainBalance < EtherUtil.convert(1, EtherUtil.Unit.ETHER))
+                Assert.assertTrue((chainBalance + amount).wei.fuzzyEquals(newChainBalance.wei, EtherUnit.Gwei))
             } else {
                 val newHubAccount = this.hubService.getHubAccount(account.address)!!
                 Assert.assertEquals(oldHubAccount.withdraw, newHubAccount.withdraw)
                 waitToNextEon()
                 waitToNextEon()
                 val newChainBalance = this.chain.getBalance(account.address)
-                Assert.assertTrue(chainBalance - newChainBalance < EtherUtil.convert(1, EtherUtil.Unit.ETHER))
+                Assert.assertTrue((chainBalance).wei.fuzzyEquals(newChainBalance.wei, EtherUnit.Gwei))
             }
         }
     }
@@ -645,6 +656,7 @@ abstract class HubServerIntegrationTestBase<T : ChainTransaction, A : ChainAccou
     fun after() {
         this.hubService.resetHubMaliciousFlag()
         this.hubServer.stop()
+        this.chain.stop()
     }
 
     companion object : WithLogging() {
