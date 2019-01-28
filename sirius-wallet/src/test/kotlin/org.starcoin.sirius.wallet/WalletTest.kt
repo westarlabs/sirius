@@ -195,6 +195,11 @@ class WalletTest {
             }
         }
 
+        createBlocks(2)
+
+        walletAlice.deposit(amount)
+        createBlocks(1)
+
         Assert.assertTrue(contract.isRecoveryMode(alice))
     }
 

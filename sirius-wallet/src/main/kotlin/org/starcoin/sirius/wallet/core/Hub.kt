@@ -1,6 +1,7 @@
 package org.starcoin.sirius.wallet.core
 
 import com.google.protobuf.InvalidProtocolBufferException
+import io.grpc.Status
 import io.grpc.StatusRuntimeException
 import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.channels.Channel
@@ -15,6 +16,7 @@ import org.starcoin.sirius.util.WithLogging
 import org.starcoin.sirius.wallet.core.store.Store
 import java.lang.RuntimeException
 import java.math.BigInteger
+import java.util.stream.Collectors
 
 import kotlin.properties.Delegates
 
@@ -236,6 +238,55 @@ class Hub <T : ChainTransaction, A : ChainAccount> {
 
     @Synchronized
     fun sync() {
+        val hubServiceBlockingStub = HubServiceGrpc.newBlockingStub(channelManager.hubChannel)
+
+        this.currentEon = this.getChainEon()
+
+        this.hubStatus = HubStatus(this.currentEon)
+
+        for (i in 0..2) {
+            val eonId = this.currentEon.id - i
+            if (eonId < 0) {
+                break
+            }
+            val index = this.hubStatus.getEonByIndex(-i)
+
+            if (this.hubStatus.eonStatuses[index] == null) {
+                this.hubStatus.eonStatuses[index] = EonStatus()
+            }
+
+            val accountInfo = hubServiceBlockingStub.getHubAccount(account.address.toProto())
+            this.hubStatus.eonStatuses[index].updateHistory.add(accountInfo.update.toSiriusObject())
+            this.hubStatus.eonStatuses[index].transactionHistory.addAll(
+               accountInfo.transactionsList.map {  it.toSiriusObject<Starcoin.OffchainTransaction,OffchainTransaction>() }
+            )
+
+            if (i > 0) { // 当前伦次不需要proof
+
+                if (eonId > 0) {
+                    val blockAddressAndEonBuilder = Starcoin.BlockAddressAndEon.newBuilder()
+                    blockAddressAndEonBuilder.address = account.address.toProto().toByteString()
+                    blockAddressAndEonBuilder.eon = eonId
+
+                    val proof = hubServiceBlockingStub.getProofWithEon(blockAddressAndEonBuilder.build())
+
+                    this.hubStatus.eonStatuses[index].treeProof = proof.toSiriusObject()
+                }
+            } else { // 当前轮次同步余额
+                this.hubStatus.syncAllotment(accountInfo)
+            }
+
+            var withdrawalStatus=contract.queryWithdrawalStatus(account,account.address)
+            if (withdrawalStatus?.status == WithdrawalStatusType.INIT.number) {
+                this.hubStatus.withdrawalStatus = withdrawalStatus
+            }
+
+            this.accountInfo()
+            //this.dataStore.save(this.hubStatusData)
+            watchHubEnvent()
+            this.disconnect = false
+        }
+
     }
 
     fun newTransfer(addr:Address, value:BigInteger) :OffchainTransaction{

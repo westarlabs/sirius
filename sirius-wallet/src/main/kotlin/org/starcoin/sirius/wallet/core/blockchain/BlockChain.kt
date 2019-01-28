@@ -1,10 +1,12 @@
 package org.starcoin.sirius.wallet.core.blockchain
 
 import kotlinx.coroutines.GlobalScope
+import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.launch
 import org.starcoin.sirius.core.*
 import org.starcoin.sirius.protocol.*
 import org.starcoin.sirius.util.WithLogging
+import org.starcoin.sirius.wallet.core.ClientEventType
 import org.starcoin.sirius.wallet.core.Hub
 
 class BlockChain <T : ChainTransaction, A : ChainAccount> (chain: Chain<T, out Block<T>, A>, hub: Hub<T,A>, hubContract: HubContract<A>, account: A){
@@ -73,8 +75,11 @@ class BlockChain <T : ChainTransaction, A : ChainAccount> (chain: Chain<T, out B
                     is CommitFunction ->{
                         val input = contractFunction.decode(tx.data)
                             ?: throw RuntimeException("$contractFunction decode tx:${txResult.tx} fail.")
-                        LOG.info("$contractFunction: $input")
-                        hub.onHubRootCommit(input)
+                        LOG.info("$contractFunction: $input ,status: ${txResult.receipt.status}")
+                        if(txResult.receipt.status)
+                            hub.onHubRootCommit(input)
+                        else
+                            GlobalScope.launch { hub.eonChannel?.send(ClientEventType.HUB_COMMIT_FAIL) }
                     }
                 }
 
@@ -88,7 +93,6 @@ class BlockChain <T : ChainTransaction, A : ChainAccount> (chain: Chain<T, out B
             while (startWatch) {
                 var block = channel.receive()
             }
-
         }
     }
 }

@@ -13,7 +13,7 @@ class HubStatus {
     var allotment: BigInteger = BigInteger.ZERO
         private set
 
-    private var eonStatuses = Array(3){EonStatus()}
+    internal val eonStatuses = Array(3){EonStatus()}
 
     var blocksPerEon: Int = 0
         internal set
@@ -168,7 +168,7 @@ class HubStatus {
     }
 
     @Synchronized
-    private fun getEonByIndex(i: Int): Int {
+    internal fun getEonByIndex(i: Int): Int {
         if (i > 0 || i < -2) {
             return -3
         } else {
