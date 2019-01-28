@@ -85,7 +85,7 @@ abstract class HubContract<A : ChainAccount> {
     abstract val contractAddress: Address
 
     fun queryHubInfo(account: A): ContractHubInfo {
-        return this.queryContractFunction(account, "hubInfo", ContractHubInfo::class)
+        return this.queryContractFunction(account, "queryHubInfo", ContractHubInfo::class)
     }
 
     fun getLatestRoot(account: A): HubRoot? {
@@ -128,7 +128,7 @@ abstract class HubContract<A : ChainAccount> {
     }
 
     fun isRecoveryMode(account: A): Boolean {
-        return this.queryContractFunction(account, "isRecoveryMode", Boolean::class)
+        return this.queryContractFunction(account, "queryRecoveryMode", Boolean::class)
     }
 
     fun initiateWithdrawal(account: A, input: Withdrawal): Hash {
