@@ -1,10 +1,10 @@
 package org.starcoin.sirius.protocol.ethereum.contract
 
 import kotlinx.serialization.ImplicitReflectionSerializer
-import kotlinx.serialization.serializer
 import org.ethereum.core.CallTransaction
 import org.ethereum.solidity.SolidityType
 import org.starcoin.sirius.core.Address
+import org.starcoin.sirius.core.ContractReturn
 import org.starcoin.sirius.core.Hash
 import org.starcoin.sirius.core.SiriusObject
 import org.starcoin.sirius.protocol.ContractFunction
@@ -54,19 +54,19 @@ class EthereumHubContract internal constructor(
         functionName: String,
         clazz: KClass<S>,
         vararg args: Any
-    ): S {
+    ): S? {
         val function = this.contract.getByName(functionName)
             ?: throw RuntimeException("Can not find function by name:$functionName")
         val data = function.encode(*args)
         val returnBytes = this.chain.callConstFunction(account.key, this.contractAddress, data)
         val result = function.decodeResult(returnBytes)[0]
-        if (clazz.isSubclassOf(SiriusObject::class)) {
-            //TODO check has value flag.
+        return if (clazz.isSubclassOf(SiriusObject::class)) {
             val bytes =
                 bytesType.decode(returnBytes, SolidityType.IntType.decodeInt(returnBytes, 0).toInt()) as ByteArray
-            return RLP.load(clazz.serializer(), bytes)
+            val contractReturn = RLP.load(ContractReturn.serializer(), bytes)
+            contractReturn.getPayload(clazz as KClass<SiriusObject>) as S?
         } else {
-            return result as S
+            result as S
         }
     }
 

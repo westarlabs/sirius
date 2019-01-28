@@ -85,16 +85,12 @@ abstract class HubContract<A : ChainAccount> {
     abstract val contractAddress: Address
 
     fun queryHubInfo(account: A): ContractHubInfo {
-        return this.queryContractFunction(account, "queryHubInfo", ContractHubInfo::class)
+        return this.queryContractFunction(account, "queryHubInfo", ContractHubInfo::class)!!
     }
 
     fun getLatestRoot(account: A): HubRoot? {
         //TODO check has value.
-        return this.queryContractFunction(account, "getLatestRoot", HubRoot::class)
-    }
-
-    fun queryHubCommit(account: A, eon: Int): HubRoot? {
-        return this.queryContractFunction(account, "queryHubCommit", HubRoot::class, eon)
+        return this.queryContractFunction(account, "queryLatestRoot", HubRoot::class)
     }
 
     fun queryCurrentBalanceUpdateChallenge(account: A, address: Address): BalanceUpdateProof? {
@@ -124,11 +120,11 @@ abstract class HubContract<A : ChainAccount> {
     }
 
     fun getCurrentEon(account: A): Int {
-        return this.queryContractFunction(account, "getCurrentEon", Int::class)
+        return this.queryContractFunction(account, "getCurrentEon", Int::class)!!
     }
 
     fun isRecoveryMode(account: A): Boolean {
-        return this.queryContractFunction(account, "queryRecoveryMode", Boolean::class)
+        return this.queryContractFunction(account, "queryRecoveryMode", Boolean::class)!!
     }
 
     fun initiateWithdrawal(account: A, input: Withdrawal): Hash {
@@ -186,7 +182,7 @@ abstract class HubContract<A : ChainAccount> {
         functionName: String,
         clazz: KClass<S>,
         vararg args: Any
-    ): S
+    ): S?
 
     abstract fun setHubIp(account: A, ip: String)
 }
