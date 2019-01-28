@@ -120,16 +120,21 @@ class WalletTest {
 
     }
 
-    fun deposit(amount : BigInteger){
+    fun deposit(amount : BigInteger) {
+        deposit(amount, true)
+    }
+    fun deposit(amount : BigInteger, flag:Boolean){
 
         walletAlice.deposit(amount)
         walletBob.deposit(amount)
 
         chain.sb.createBlock()
 
-        Assert.assertEquals(amount.multiply(2.toBigInteger()), chain.getBalance(contract.contractAddress))
-        Assert.assertEquals(walletAlice.balance(),amount)
-        Assert.assertEquals(walletBob.balance(),amount)
+        if(flag) {
+            Assert.assertEquals(amount.multiply(2.toBigInteger()), chain.getBalance(contract.contractAddress))
+            Assert.assertEquals(walletAlice.balance(), amount)
+            Assert.assertEquals(walletBob.balance(), amount)
+        }
 
     }
 
@@ -200,8 +205,8 @@ class WalletTest {
         walletAlice.deposit(amount)
         createBlocks(1)
 
-        contract.isRecoveryMode(alice)
-        //Assert.assertTrue(contract.isRecoveryMode(alice))
+        deposit(amount, false)
+        Assert.assertTrue(contract.isRecoveryMode(alice))
     }
 
     @Test
@@ -237,6 +242,8 @@ class WalletTest {
         runBlocking {
             walletAlice.getMessageChannel()?.receive()
         }
+
+        deposit(amount)
 
         Assert.assertTrue(contract.isRecoveryMode(alice))
     }
