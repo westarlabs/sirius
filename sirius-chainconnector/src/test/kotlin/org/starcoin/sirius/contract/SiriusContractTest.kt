@@ -1,10 +1,8 @@
 package org.starcoin.sirius.contract
 
-import kotlinx.serialization.serializer
 import org.junit.Test
 import org.starcoin.sirius.core.*
 import org.starcoin.sirius.protocol.ContractConstructArgs
-import org.starcoin.sirius.serialization.rlp.RLP
 import org.starcoin.sirius.util.MockUtils
 import java.math.BigInteger
 import kotlin.random.Random
