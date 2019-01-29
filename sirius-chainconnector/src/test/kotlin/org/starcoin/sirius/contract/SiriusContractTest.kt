@@ -308,7 +308,8 @@ class SiriusContractTest : ContractTestBase("solidity/SiriusService", "SiriusSer
     fun testHubInfo() {
         testHubIp()
         val callResult = contract.callConstFunction("queryHubInfo")[0] as ByteArray
-        val obj1 = ContractHubInfo.parseFromRLP(callResult)
+        val cr = ContractReturn.parseFromRLP(callResult)
+        val obj1 = ContractHubInfo.parseFromRLP(cr.payload.toBytes())
         assert(ip == obj1.hubAddress)
     }
 }

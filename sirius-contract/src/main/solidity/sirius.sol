@@ -40,7 +40,6 @@ contract SiriusService is Sirius {
     event SiriusEvent(bytes32 indexed hash, uint indexed num, bytes value);
     event SiriusEvent2(address indexed addr, uint indexed num, bytes value);
     event SiriusEvent3(uint indexed num, bool value);
-    event SiriusEvent4(uint indexed num, uint value);
 
     constructor(bytes memory data) public {
         owner = msg.sender;
@@ -144,6 +143,7 @@ contract SiriusService is Sirius {
                         dataStore.withdrawalData[balances[1].eon][addr] = w;
                         ModelLib.WithdrawalInfo memory wi = ModelLib.unmarshalWithdrawalInfo(RLPDecoder.toRLPItem(w.info, true));
                         addr.transfer(wi.amount);
+                        emit SiriusEvent2(addr, 3, ByteUtilLib.uint2byte(wi.amount));
                     }
                 }
             }
@@ -586,6 +586,7 @@ contract SiriusService is Sirius {
         uint tmp3 = SafeMath.add(tmp2, blocksPerEon);
         if ((newEon > addEon) || (newEon == addEon && tmp > tmp3 && balances[0].hasRoot) || (newEon == latestEon && tmp > tmp2 && !balances[0].hasRoot)) {
             recoveryMode = true;
+            emit SiriusEvent3(1, recoveryMode);
         }
 
         if (newEon == addEon && !recoveryMode) {// change eon
