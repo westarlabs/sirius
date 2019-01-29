@@ -1,7 +1,6 @@
 package org.starcoin.sirius.protocol.ethereum
 
 import org.junit.Assert
-import org.starcoin.sirius.crypto.CryptoKey
 import org.starcoin.sirius.crypto.CryptoService
 import org.web3j.crypto.WalletUtils
 import java.io.File
