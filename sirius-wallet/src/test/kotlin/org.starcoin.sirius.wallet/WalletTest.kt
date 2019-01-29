@@ -303,11 +303,6 @@ class WalletTest {
             walletAlice.getMessageChannel()?.receive()
         }
 
-        waitToNextEon()
-        runBlocking {
-            walletAlice.getMessageChannel()?.receive()
-        }
-
         var account=walletAlice.hubAccount()
         var remaining= EtherUtil.convert(2000, EtherUtil.Unit.ETHER) - amount
         Assert.assertEquals(account?.allotment,remaining)
@@ -315,7 +310,11 @@ class WalletTest {
 
         var balanceAfter=chain.getBalance(alice.address)
 
-        Assert.assertTrue(balance>balanceAfter)
+        Assert.assertTrue(balance<balanceAfter)
+        Assert.assertTrue(balance+EtherUtil.convert(19, EtherUtil.Unit.ETHER)<balanceAfter)
+
+        val balanceNoGas = balance+EtherUtil.convert(20, EtherUtil.Unit.ETHER)
+        Assert.assertTrue(balanceNoGas>=balanceAfter)
 
     }
 
