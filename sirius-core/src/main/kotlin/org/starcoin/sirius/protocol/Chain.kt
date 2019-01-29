@@ -58,6 +58,6 @@ interface Chain<T : ChainTransaction, B : Block<T>, A : ChainAccount> {
 
     fun getNonce(address: Address): BigInteger
 
-    fun waitTransactionProcessed(hash: Hash, times: Int = 20): Boolean
+    fun waitTransactionProcessed(hash: Hash, times: Int = 20)
 
 }

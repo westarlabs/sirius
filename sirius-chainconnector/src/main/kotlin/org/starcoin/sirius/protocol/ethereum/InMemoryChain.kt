@@ -22,8 +22,7 @@ sealed class ChainCtlMessage {
 
 class InMemoryChain(val autoGenblock: Boolean = true) : EthereumBaseChain() {
     
-    override fun waitTransactionProcessed(hash: Hash, times: Int): Boolean {
-        return true
+    override fun waitTransactionProcessed(hash: Hash, times: Int) {
     }
 
     override fun waitBlocks(blockCount: Int) {

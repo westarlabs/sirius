@@ -36,18 +36,15 @@ const val blockGasIncreasePercent = 0
 
 class EthereumChain constructor(httpUrl: String = DEFAULT_URL, socketPath: String? = null) :
     EthereumBaseChain() {
-    override fun waitTransactionProcessed(hash: Hash, times: Int): Boolean {
-        var receipt: Receipt?
+    override fun waitTransactionProcessed(hash: Hash, times: Int) {
         repeat(times) {
-            receipt = getTransactionReceipts(listOf(hash))[0]
-            if (receipt?.status == true)
-                return true
-            else if (receipt?.status == false) {
-                return false
+            when (getTransactionReceipts(listOf(hash))[0]?.status) {
+                true -> return
+                false -> throw RuntimeException("Receipt status false")
+                null -> Thread.sleep(500)
             }
-            Thread.sleep(500)
         }
-        return false
+        throw java.lang.RuntimeException("Get receipt timeout")
     }
 
     override fun waitBlocks(blockCount: Int) {
@@ -203,7 +200,7 @@ class EthereumChain constructor(httpUrl: String = DEFAULT_URL, socketPath: Strin
                 caller.address.toString(),
                 contractAddress.toString(),
                 data.toHEXString()
-            ), DefaultBlockParameterName.LATEST
+            ), DefaultBlockParameterName.LATEST //TODO: Pass the blockNum in receipt better?
         ).sendAsync().get()
         if (resp.hasError()) throw RuntimeException(resp.error.message)
         return resp.value.hexToByteArray()
