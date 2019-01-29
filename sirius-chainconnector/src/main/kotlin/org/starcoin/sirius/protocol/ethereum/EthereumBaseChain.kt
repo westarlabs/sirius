@@ -96,8 +96,7 @@ abstract class EthereumBaseChain :
             defaultGasLimit,
             contractMetaData.bin.hexToByteArray() + argsEncoded
         )
-        if (!this.waitTransactionProcessed(this.submitTransaction(account, tx)))
-            throw java.lang.RuntimeException("Submit contract failed")
+        this.waitTransactionProcessed(this.submitTransaction(account, tx))
         return tx.contractAddress!!
     }
 
