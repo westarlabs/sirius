@@ -288,6 +288,7 @@ contract SiriusService is Sirius {
                 if(!stat.proof.hasUp) {
                     ModelLib.verifyProof(balances[0].eon, close.addr, owner, close.proof, false);
                 } else {
+                    require(close.proof.leaf.update.upData.version >= stat.proof.update.upData.version);
                     ModelLib.verifyProof(balances[0].eon, close.addr, owner, close.proof, true);
                 }
 
