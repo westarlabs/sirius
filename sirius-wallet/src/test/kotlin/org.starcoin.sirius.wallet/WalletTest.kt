@@ -205,13 +205,15 @@ class WalletTest {
         walletAlice.deposit(amount)
         createBlocks(1)
 
+        walletAlice.deposit(amount)
+        createBlocks(1)
+
         runBlocking {
             withTimeout(10000L){
                 println(walletAlice.getMessageChannel()?.receive())
             }
         }
 
-        println(contract.isRecoveryMode(alice))
         Assert.assertTrue(contract.isRecoveryMode(alice))
 
     }
