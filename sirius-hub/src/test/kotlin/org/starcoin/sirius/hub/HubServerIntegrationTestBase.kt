@@ -67,10 +67,6 @@ abstract class HubServerIntegrationTestBase<T : ChainTransaction, A : ChainAccou
     private var blockHeight: AtomicLong by Delegates.notNull()
 
 
-    private var a0: LocalAccount<T, A> by Delegates.notNull()
-    private var a1: LocalAccount<T, A> by Delegates.notNull()
-
-
     private var owner: A by Delegates.notNull()
     private var contractHubInfo: ContractHubInfo by Delegates.notNull()
 
@@ -78,9 +74,19 @@ abstract class HubServerIntegrationTestBase<T : ChainTransaction, A : ChainAccou
     private var watchHubJob: Job by Delegates.notNull()
     private var watchBlockJob: Job by Delegates.notNull()
     private var watchTxJob: Job by Delegates.notNull()
+    private val localAccounts: MutableList<LocalAccount<T, A>> = mutableListOf()
 
     abstract fun createChainAccount(amount: Long): A
     abstract fun createChain(configuration: Configuration): C
+
+    private fun createAndInitLocalAccount(): LocalAccount<T, A> {
+        val account =
+            LocalAccount(this.createChainAccount(1000), chain, contract, this.owner.key.keyPair.public, configuration)
+        this.localAccounts.add(account)
+        account.init()
+        Assert.assertTrue(account.update.verifyHubSig(owner.key))
+        return account
+    }
 
     @Before
     @Throws(InterruptedException::class)
@@ -107,8 +113,6 @@ abstract class HubServerIntegrationTestBase<T : ChainTransaction, A : ChainAccou
                 InProcessChannelBuilder.forName(configuration.rpcBind.toString()).build()
             )
         )
-        this.a0 = LocalAccount(this.createChainAccount(1000), chain, contract, hubService)
-        this.a1 = LocalAccount(this.createChainAccount(1000), chain, contract, hubService)
 
         this.waitServerStart()
         this.watchHubJob = this.watchEon()
@@ -225,12 +229,12 @@ abstract class HubServerIntegrationTestBase<T : ChainTransaction, A : ChainAccou
                 Assert.assertEquals(expectEon.toLong(), this.eon.get().toLong())
             }
             this.verifyHubRoot(hubRoot)
-            if (this.a0.isRegister) {
-                this.a0.onEon(hubRoot)
-            }
-            if (this.a1.isRegister) {
-                this.a1.onEon(hubRoot)
-            }
+//            if (this.a0.isRegister) {
+//                this.a0.onEon(hubRoot)
+//            }
+//            if (this.a1.isRegister) {
+//                this.a1.onEon(hubRoot)
+//            }
             if (!expectSuccess) {
                 Assert.fail("expect waitToNextEon fail, but success.")
             }
@@ -256,10 +260,9 @@ abstract class HubServerIntegrationTestBase<T : ChainTransaction, A : ChainAccou
 
     @Test
     fun testHubService() {
-        register(eon.get(), a0)
+        val a0 = this.createAndInitLocalAccount()
         this.waitToNextEon()
-        register(eon.get(), a1)
-
+        val a1 = this.createAndInitLocalAccount()
         val depositAmount = 100.toBigInteger()
         this.deposit(a0, depositAmount)
         this.deposit(a1, depositAmount)
@@ -286,8 +289,8 @@ abstract class HubServerIntegrationTestBase<T : ChainTransaction, A : ChainAccou
 
     @Test
     fun testBalanceUpdateChallengeWithOldUpdate() {
-        register(eon.get(), a0)
-        register(eon.get(), a1)
+        val a0 = this.createAndInitLocalAccount()
+        val a1 = this.createAndInitLocalAccount()
         val depositAmount = 100.toBigInteger()
         this.deposit(a0, depositAmount)
 
@@ -314,7 +317,7 @@ abstract class HubServerIntegrationTestBase<T : ChainTransaction, A : ChainAccou
     @Test
     fun testDoNothingChallenge() {
         this.waitToNextEon()
-        register(eon.get(), a0)
+        val a0 = this.createAndInitLocalAccount()
         val depositAmount = 100.toBigInteger()
         this.deposit(a0, depositAmount)
         this.waitToNextEon()
@@ -324,8 +327,8 @@ abstract class HubServerIntegrationTestBase<T : ChainTransaction, A : ChainAccou
 
     @Test
     fun testInvalidWithdrawal() {
-        register(eon.get(), a0)
-        register(eon.get(), a1)
+        val a0 = this.createAndInitLocalAccount()
+        val a1 = this.createAndInitLocalAccount()
         val depositAmount = 100.toBigInteger()
         this.deposit(a0, depositAmount)
         this.waitToNextEon()
@@ -339,7 +342,7 @@ abstract class HubServerIntegrationTestBase<T : ChainTransaction, A : ChainAccou
 
     @Test
     fun testNewUserBalanceUpdateChallenge() {
-        register(eon.get(), a0)
+        val a0 = this.createAndInitLocalAccount()
         val depositAmount = 100.toBigInteger()
         this.deposit(a0, depositAmount)
         this.waitToNextEon()
@@ -349,7 +352,7 @@ abstract class HubServerIntegrationTestBase<T : ChainTransaction, A : ChainAccou
 
     @Test
     fun testStealDeposit() {
-        register(eon.get(), a0)
+        val a0 = this.createAndInitLocalAccount()
         this.waitToNextEon()
         this.hubService.hubMaliciousFlag = EnumSet.of(Hub.HubMaliciousFlag.STEAL_DEPOSIT)
 
@@ -364,8 +367,8 @@ abstract class HubServerIntegrationTestBase<T : ChainTransaction, A : ChainAccou
 
     @Test
     fun testStealWithdrawal() {
-        register(eon.get(), a0)
-        register(eon.get(), a1)
+        val a0 = this.createAndInitLocalAccount()
+        val a1 = this.createAndInitLocalAccount()
         this.hubService.hubMaliciousFlag = EnumSet.of(Hub.HubMaliciousFlag.STEAL_WITHDRAWAL)
 
         val depositAmount: BigInteger = 100.toBigInteger()
@@ -383,8 +386,8 @@ abstract class HubServerIntegrationTestBase<T : ChainTransaction, A : ChainAccou
 
     @Test
     fun testStealTx() {
-        register(eon.get(), a0)
-        register(eon.get(), a1)
+        val a0 = this.createAndInitLocalAccount()
+        val a1 = this.createAndInitLocalAccount()
         this.hubService.hubMaliciousFlag = EnumSet.of(Hub.HubMaliciousFlag.STEAL_TRANSACTION)
 
         val depositAmount = 100.toBigInteger()
@@ -408,8 +411,8 @@ abstract class HubServerIntegrationTestBase<T : ChainTransaction, A : ChainAccou
 
     @Test
     fun testStealTxIOU() {
-        register(eon.get(), a0)
-        register(eon.get(), a1)
+        val a0 = this.createAndInitLocalAccount()
+        val a1 = this.createAndInitLocalAccount()
         this.hubService.hubMaliciousFlag = EnumSet.of(Hub.HubMaliciousFlag.STEAL_TRANSACTION_IOU)
 
         val depositAmount = 100.toBigInteger()
@@ -439,15 +442,15 @@ abstract class HubServerIntegrationTestBase<T : ChainTransaction, A : ChainAccou
         Assert.assertEquals(hubRoot, contractRoot)
     }
 
-    private fun register(eon: Int, a: LocalAccount<T, A>) {
-        val initUpdate = a.initUpdate(eon)
-
-        // register
-        val updateV0 =
-            hubService.registerParticipant(a.p, initUpdate)
-
-        a.register(updateV0, this.hubService.getHubAccount(a.address)!!)
-    }
+//    private fun register(eon: Int, a: LocalAccount<T, A>) {
+//        val initUpdate = a.initUpdate(eon)
+//
+//        // register
+//        val updateV0 =
+//            hubService.registerParticipant(a.participant, initUpdate)
+//
+//        a.register(updateV0, this.hubService.getHubAccount(a.address)!!)
+//    }
 
     private fun deposit(a: LocalAccount<T, A>, amount: BigInteger) {
         this.deposit(a, amount, true)
@@ -513,7 +516,7 @@ abstract class HubServerIntegrationTestBase<T : ChainTransaction, A : ChainAccou
         to.watch(toFuture)
 
         val tx = from.newTx(to.address, amount)
-        tx.sign(from.kp)
+        tx.sign(from.key)
 
         val fromIOU = IOU(tx, from.update)
         hubService.sendNewTransfer(fromIOU)
@@ -546,7 +549,7 @@ abstract class HubServerIntegrationTestBase<T : ChainTransaction, A : ChainAccou
                 Assert.fail(e.message)
             }
         }
-
+        sleep(1000)
         Assert.assertTrue(from.update.isSignedByHub)
         if (expectToReceive) {
             Assert.assertTrue(to.update.isSignedByHub)
@@ -610,7 +613,9 @@ abstract class HubServerIntegrationTestBase<T : ChainTransaction, A : ChainAccou
     }
 
     private fun balanceUpdateChallenge(account: LocalAccount<T, A>, challenge: BalanceUpdateProof) {
-
+        if (challenge.hasUpdate) {
+            Assert.assertTrue(challenge.update.verifyHubSig(owner.key.keyPair.public))
+        }
         val txHash = contract.openBalanceUpdateChallenge(account.chainAccount, challenge)
         val future = this.registerTxHook(txHash)
         try {
@@ -659,6 +664,10 @@ abstract class HubServerIntegrationTestBase<T : ChainTransaction, A : ChainAccou
 
     @After
     fun after() {
+        for (a in this.localAccounts) {
+            a.destroy()
+        }
+        this.localAccounts.clear()
         this.watchHubJob.cancel()
         this.hubService.resetHubMaliciousFlag()
         this.hubServer.stop()
