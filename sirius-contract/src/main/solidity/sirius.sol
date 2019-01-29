@@ -232,6 +232,9 @@ contract SiriusService is Sirius {
     function openBalanceUpdateChallenge(bytes calldata data) external recovery returns (bool) {
         if(!recoveryMode) {
             ModelLib.BalanceUpdateProof memory open = ModelLib.unmarshalBalanceUpdateProof(RLPDecoder.toRLPItem(data, true));
+            if(open.update.upData.sendAmount == 0 && open.update.upData.receiveAmount == 0) {
+                open.hasUp = false;
+            }
             require(open.hasPath || open.hasUp, "miss path and update");
             require(balances[0].hasRoot, "balances[0].hasRoot false");
 
@@ -243,7 +246,7 @@ contract SiriusService is Sirius {
                 bool proofFlag = ModelLib.verifyMembershipProof4AMTreePath(preRoot.node, open.path);
                 require(proofFlag, "verify proof fail");
             } else {
-                //todo:update can not be default
+
             }
 
             if(open.hasUp) {//Special case:new account only update
@@ -284,10 +287,9 @@ contract SiriusService is Sirius {
 
             ModelLib.BalanceUpdateChallengeStatus memory stat = GlobleLib.change2BalanceUpdateChallengeStatus(tmpStat);
 
-
             if(stat.status == ModelLib.ChallengeStatus.OPEN) {
 
-                if(!stat.proof.hasUp || (close.proof.leaf.update.upData.sendAmount == 0 && close.proof.leaf.update.upData.receiveAmount == 0)) {
+                if(!stat.proof.hasUp) {
                     ModelLib.verifyProof(balances[0].eon, close.addr, owner, close.proof, false);
                 } else {
                     ModelLib.verifyProof(balances[0].eon, close.addr, owner, close.proof, true);
