@@ -84,6 +84,6 @@ class EthereumHubContract internal constructor(
     }
 
     override fun setHubIp(account: EthereumAccount, ip: String) {
-        val callResult = this.callFunction(account, "hubIp", ip.toByteArray())
+        chain.waitTransactionProcessed(this.callFunction(account, "hubIp", ip.toByteArray()))
     }
 }
