@@ -120,7 +120,7 @@ abstract class HubContract<A : ChainAccount> {
     }
 
     fun getCurrentEon(account: A): Int {
-        return this.queryContractFunction(account, "getCurrentEon", Int::class)!!
+        return this.queryContractFunction(account, "queryCurrentEon", Int::class)!!
     }
 
     fun isRecoveryMode(account: A): Boolean {

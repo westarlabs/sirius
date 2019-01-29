@@ -35,7 +35,7 @@ abstract class HubContractTestBase {
         owner = EthereumAccount(CryptoService.generateCryptoKey())
         alice = EthereumAccount(CryptoService.generateCryptoKey())
 
-        val amount = 1000000000.toBigInteger()//EtherUtil.convert(10, EtherUtil.Unit.ETHER)
+        val amount = EtherUtil.convert(10, EtherUtil.Unit.ETHER)
         sendEther(owner, amount)
         sendEther(alice, amount)
 
