@@ -9,14 +9,14 @@ data class Receipt(
     val blockHash: Hash, val blockNumber: BigInteger,
     val contractAddress: Address?, val from: Address, val to: Address?,
     val gasUsed: BigInteger, val logBloom: String, val cumulativeGasUsed: BigInteger,
-    val root: String, val status: Boolean
+    val root: String?, val status: Boolean
 ) {
     constructor(
         transactionHash: String, transactionIndex: BigInteger,
         blockHash: String, blockNumber: BigInteger,
         contractAddress: String?, from: String, to: String?,
         gasUsed: BigInteger, logBloom: String, cumulativeGasUsed: BigInteger,
-        root: String, status: Boolean
+        root: String?, status: Boolean
     ) : this(
         CryptoService.hash(transactionHash.toByteArray()), transactionIndex,
         CryptoService.hash(blockHash.toByteArray()), blockNumber,
@@ -30,7 +30,7 @@ data class Receipt(
         blockHash: ByteArray, blockNumber: BigInteger,
         contractAddress: String?, from: ByteArray, to: ByteArray?,
         gasUsed: BigInteger, logBloom: String, cumulativeGasUsed: BigInteger,
-        root: String, status: Boolean
+        root: String?, status: Boolean
     ) : this(
         CryptoService.hash(transactionHash), transactionIndex,
         CryptoService.hash(blockHash), blockNumber,
