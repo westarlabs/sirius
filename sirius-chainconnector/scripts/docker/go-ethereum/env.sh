@@ -17,6 +17,9 @@ clear(){
 }
 
 init_genesis(){
+    # Note: max code size can not configure in genesis.json
+    # MaxCodeSize = 24576 is hard code in params/protocol_params.go
+    # since https://github.com/ethereum/EIPs/blob/master/EIPS/eip-170.md
     etherbase=0x$(new_account $etherbase_passwd)
     sed  "s/ETHERBASE/${etherbase}/g" genesis.json.template > genesis.json
 }

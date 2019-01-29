@@ -1,19 +1,22 @@
 {
   "config": {
-        "chainId": 42,
-        "homesteadBlock": 0,
-        "eip155Block": 0,
-        "eip158Block": 0
-    },
-  "alloc"      : {
-    "ETHERBASE": {"balance": "100000000000"}
-   },
-  "coinbase"   : "ETHERBASE",
-  "difficulty" : "400",
-  "extraData"  : "",
-  "gasLimit"   : "100000000",
-  "nonce"      : "0x0000000000000042",
-  "mixhash"    : "0x0000000000000000000000000000000000000000000000000000000000000000",
-  "parentHash" : "0x0000000000000000000000000000000000000000000000000000000000000000",
-  "timestamp"  : "0x00"
+    "chainId": 42,
+    "homesteadBlock": 0,
+    "byzantiumBlock": 0,
+    "eip155Block": 0,
+    "eip158Block": 0
+  },
+  "alloc": {
+    "ETHERBASE": {
+      "balance": "10000000000000000000"
+    }
+  },
+  "coinbase": "ETHERBASE",
+  "difficulty": "400",
+  "extraData": "",
+  "gasLimit": "100000000",
+  "nonce": "0x0000000000000042",
+  "mixhash": "0x0000000000000000000000000000000000000000000000000000000000000000",
+  "parentHash": "0x0000000000000000000000000000000000000000000000000000000000000000",
+  "timestamp": "0x00"
 }

@@ -14,3 +14,4 @@ database
 *.iws
 geth_data
 genesis.json
+.ethash
