@@ -138,10 +138,10 @@ contract test_all is test_all_interface {
         return data;
     }
 
-function close_balance_update_challenge_test(bytes calldata data) external returns (bytes memory){
-ModelLib.CloseBalanceUpdateChallenge memory close = ModelLib.unmarshalCloseBalanceUpdateChallenge(RLPDecoder.toRLPItem(data, true));
-return ModelLib.marshalCloseBalanceUpdateChallenge(close);
-}
+    function close_balance_update_challenge_test(bytes calldata data) external returns (bytes memory){
+        ModelLib.CloseBalanceUpdateChallenge memory close = ModelLib.unmarshalCloseBalanceUpdateChallenge(RLPDecoder.toRLPItem(data, true));
+        return ModelLib.marshalCloseBalanceUpdateChallenge(close);
+    }
 
     function contract_return_test(bytes calldata data) external pure returns (bytes memory) {
         ModelLib.ContractReturn memory cr = ModelLib.unmarshalContractReturn(RLPDecoder.toRLPItem(data, true));
