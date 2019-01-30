@@ -23,6 +23,7 @@ data class BalanceUpdateProof(
 
     constructor(update: Update) : this(hasUpdate = true, update = update)
     constructor(path: AMTreePath) : this(hasPath = true, path = path)
+    constructor(update: Update, path: AMTreePath) : this(true, update, true, path)
 
     companion object :
         SiriusObjectCompanion<BalanceUpdateProof, Starcoin.BalanceUpdateProof>(BalanceUpdateProof::class) {

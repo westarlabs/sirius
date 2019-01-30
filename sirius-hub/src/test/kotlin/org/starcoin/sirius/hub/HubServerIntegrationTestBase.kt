@@ -16,6 +16,7 @@ import org.junit.Test
 import org.starcoin.proto.HubServiceGrpc
 import org.starcoin.sirius.core.*
 import org.starcoin.sirius.eth.core.EtherUnit
+import org.starcoin.sirius.eth.core.ether
 import org.starcoin.sirius.eth.core.wei
 import org.starcoin.sirius.protocol.Chain
 import org.starcoin.sirius.protocol.ChainAccount
@@ -291,7 +292,7 @@ abstract class HubServerIntegrationTestBase<T : ChainTransaction, A : ChainAccou
     fun testBalanceUpdateChallengeWithOldUpdate() {
         val a0 = this.createAndInitLocalAccount()
         val a1 = this.createAndInitLocalAccount()
-        val depositAmount = 100.toBigInteger()
+        val depositAmount = 10.ether.inWei.value
         this.deposit(a0, depositAmount)
 
         this.waitToNextEon()
@@ -306,6 +307,27 @@ abstract class HubServerIntegrationTestBase<T : ChainTransaction, A : ChainAccou
         this.balanceUpdateChallenge(a0, oldUpdate)
         this.waitToNextEon()
     }
+
+    @Test
+    fun testBalanceUpdateChallengeWithOldUpdateAndPath() {
+        val a0 = this.createAndInitLocalAccount()
+        val a1 = this.createAndInitLocalAccount()
+        val depositAmount = 10.ether.inWei.value
+        this.deposit(a0, depositAmount)
+
+        this.waitToNextEon()
+
+        val balance = a0.hubAccount!!.balance
+        this.offchainTransfer(a0, a1, balance / 2.toBigInteger())
+
+        val oldUpdate = a0.update
+        this.offchainTransfer(a0, a1, balance / 2.toBigInteger())
+
+        this.waitToNextEon()
+        this.balanceUpdateChallenge(a0, BalanceUpdateProof(oldUpdate, a0.state!!.previous!!.proof!!.path))
+        this.waitToNextEon()
+    }
+
 
     @Test
     fun testEmptyHubRoot() {
@@ -454,10 +476,6 @@ abstract class HubServerIntegrationTestBase<T : ChainTransaction, A : ChainAccou
 
     private fun deposit(a: LocalAccount<T, A>, amount: BigInteger) {
         this.deposit(a, amount, true)
-    }
-
-    private fun deposit(a: LocalAccount<T, A>, amount: Long) {
-        this.deposit(a, amount.toBigInteger())
     }
 
     private fun deposit(a: LocalAccount<T, A>, amount: BigInteger, expectSuccess: Boolean) {

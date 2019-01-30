@@ -413,7 +413,7 @@ class HubImpl<T : ChainTransaction, A : ChainAccount>(
             this.fireEvent(
                 HubEvent(
                     HubEventType.NEW_DEPOSIT,
-                    Deposit(deposit.address, deposit.amount),
+                    deposit,
                     deposit.address
                 )
             )

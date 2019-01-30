@@ -75,15 +75,21 @@ class LocalAccount<T : ChainTransaction, A : ChainAccount>(
 
     var update: Update
         get() = this.state!!.update
-        set(update) {
+        set(value) {
             if (this.state?.update != null) {
                 LOG.info("Set $address update")
-                assert(update.verifyHubSig(owner))
-                assert(this.state!!.update.sign == update.sign)
-                this.state!!.update = update
+                assert(value.verifyHubSig(owner))
+                assert(this.state!!.update.sign == value.sign)
+                this.state!!.update = value
             } else {
-                this.state!!.update = update
+                this.state!!.update = value
             }
+        }
+
+    var proof: AMTreeProof
+        get() = this.state!!.proof!!
+        set(value) {
+            this.state!!.proof = value
         }
 
     val txs: List<OffchainTransaction>
