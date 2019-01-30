@@ -295,10 +295,7 @@ contract SiriusService is Sirius {
                 if(stat.proof.hasPath) {
                     uint d = dataStore.depositData[balances[1].eon][close.addr];
 
-                    uint preAllotment = 0;
-                    if(stat.proof.hasPath) {
-                        preAllotment = stat.proof.path.leaf.allotment;
-                    }
+                    uint preAllotment = stat.proof.path.leaf.allotment;
 
                     uint t1 = SafeMath.add(close.proof.leaf.update.upData.receiveAmount, preAllotment);
                     t1 = SafeMath.add(t1, d);
