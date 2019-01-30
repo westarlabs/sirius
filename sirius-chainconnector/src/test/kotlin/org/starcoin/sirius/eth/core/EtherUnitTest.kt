@@ -36,6 +36,11 @@ class EtherUnitTest {
     fun testEtherUnit() {
         Assert.assertEquals(1.ether, EtherUtil.convert(1, EtherUtil.Unit.ETHER).wei)
         Assert.assertEquals(2.ether + 3.ether, EtherUtil.convert(5, EtherUtil.Unit.ETHER).wei)
+        Assert.assertEquals(10.ether.inWei.value, EtherUtil.convert(10, EtherUtil.Unit.ETHER))
+        Assert.assertEquals(
+            Integer.MAX_VALUE.ether,
+            EtherUtil.convert(Integer.MAX_VALUE.toLong(), EtherUtil.Unit.ETHER).wei
+        )
         //println(10.ether)
     }
 

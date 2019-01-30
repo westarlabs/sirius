@@ -2,6 +2,7 @@ package org.starcoin.sirius.lang
 
 import com.google.common.io.BaseEncoding
 import java.io.InputStream
+import java.math.BigDecimal
 import java.math.BigInteger
 import java.nio.charset.Charset
 import java.util.*
@@ -46,5 +47,6 @@ fun InputStream.readText() = this.readBytes().toString(Charset.defaultCharset())
 
 inline fun Number.toBigInteger(): BigInteger = when (this) {
     is BigInteger -> this
+    is BigDecimal -> this.toBigInteger()
     else -> BigInteger.valueOf(this.toLong())
 }
