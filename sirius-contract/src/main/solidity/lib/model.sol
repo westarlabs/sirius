@@ -16,19 +16,6 @@ library GlobleLib {
         CONFIRMED
     }
 
-    function unmarshalWithdrawalStatusType(RLPLib.RLPItem memory rlp) internal pure returns (WithdrawalStatusType stat) {
-        uint tmp = RLPDecoder.toUint(rlp);
-        if(tmp == 0) {
-            return WithdrawalStatusType.INIT;
-        } else if(tmp == 1) {
-            return WithdrawalStatusType.CANCEL;
-        } else if(tmp == 2) {
-            return WithdrawalStatusType.CONFIRMED;
-        } else {
-            revert();
-        }
-    }
-
     function marshalWithdrawalStatusType(WithdrawalStatusType stat) internal pure returns (bytes memory) {
         uint tmp;
 
@@ -62,10 +49,6 @@ library GlobleLib {
         bytes challenge;//bytes for ModelLib.TransferDeliveryChallenge
         ModelLib.ChallengeStatus stat;
         bool isVal;
-    }
-
-    function change2TransferDeliveryChallenge(TransferDeliveryChallengeAndStatus memory tdcas) internal pure returns(ModelLib.TransferDeliveryChallenge memory bs) {
-        return ModelLib.unmarshalTransferDeliveryChallenge(RLPDecoder.toRLPItem(tdcas.challenge, true));
     }
 
     function marshalTransferDeliveryChallengeAndStatus(TransferDeliveryChallengeAndStatus memory tdcas) internal pure returns (bytes memory) {
@@ -530,16 +513,6 @@ library ModelLib {
         return RLPEncoder.encodeList(ByteUtilLib.append(ByteUtilLib.append(ByteUtilLib.append(ByteUtilLib.append(eon, version), sendAmount), receiveAmount), root));
     }
 
-    function updateDataHash(UpdateData memory ud) private pure returns (bytes memory) {
-        bytes memory eon = ByteUtilLib.uint2byte(ud.eon);
-        bytes memory version = ByteUtilLib.uint2byte(ud.version);
-        bytes memory sendAmount = ByteUtilLib.uint2byte(ud.sendAmount);
-        bytes memory receiveAmount = ByteUtilLib.uint2byte(ud.receiveAmount);
-        bytes memory root = ByteUtilLib.bytes32ToBytes(ud.root);
-
-        return ByteUtilLib.append(ByteUtilLib.append(ByteUtilLib.append(ByteUtilLib.append(eon, version), sendAmount), receiveAmount), root);
-    }
-
     function verifySign4Update(UpdateData memory data, Signature memory sign, address addr) internal pure returns (bool flag) {
         bytes32 hash = keccak256(marshalUpdateData(data));
         address signer = ecrecover(hash, uint8(sign.v), sign.r, sign.s);
@@ -601,27 +574,6 @@ library ModelLib {
         return RLPEncoder.encodeList(ByteUtilLib.append(proof, amount));
     }
 
-    struct Participant {
-        bytes publicKey;
-    }
-
-    function unmarshalParticipant(RLPLib.RLPItem memory rlp) internal pure returns (Participant memory participant) {
-        RLPLib.Iterator memory it = RLPDecoder.iterator(rlp);
-
-        uint idx;
-        while (RLPDecoder.hasNext(it)) {
-            RLPLib.RLPItem memory r = RLPDecoder.next(it);
-            if (idx == 0) participant.publicKey = RLPLib.toData(r);
-            else {}
-
-            idx++;
-        }
-    }
-
-    function marshalParticipant(Participant memory participant) internal pure returns (bytes memory) {
-        return RLPEncoder.encodeList(RLPEncoder.encodeBytes(participant.publicKey));
-    }
-
     struct CancelWithdrawal {
         address addr;
         Update update;
@@ -648,27 +600,6 @@ library ModelLib {
         bytes memory proof = marshalAMTreeProof(cancel.proof);
 
         return RLPEncoder.encodeList(ByteUtilLib.append(ByteUtilLib.append(addr, update), proof));
-    }
-
-    struct BalanceUpdateChallenge {
-        bool flag;
-    }
-
-    function unmarshalBalanceUpdateChallenge(RLPLib.RLPItem memory rlp) internal pure returns (BalanceUpdateChallenge memory buc) {
-        RLPLib.Iterator memory it = RLPDecoder.iterator(rlp);
-        uint idx;
-        while(RLPDecoder.hasNext(it)) {
-            RLPLib.RLPItem memory r = RLPDecoder.next(it);
-            if(idx == 0) buc.flag = RLPDecoder.toBool(r);
-            else {}
-
-            idx++;
-        }
-    }
-
-    function marshalBalanceUpdateChallenge(BalanceUpdateChallenge memory buc) internal pure returns (bytes memory) {
-        bytes memory flag = RLPEncoder.encodeBool(buc.flag);
-        return RLPEncoder.encodeList(flag);
     }
 
     struct BalanceUpdateProof {
@@ -851,10 +782,6 @@ library ModelLib {
         return keccak256(bs);
     }
 
-    function equals4OffchainTransaction(OffchainTransaction memory tran1, OffchainTransaction memory tran2) internal pure returns(bool) {
-        return (hash4OffchainTransaction(tran1) == hash4OffchainTransaction(tran2));
-    }
-
     struct TransferDeliveryChallenge {
         Update update;
         OffchainTransaction tran;
@@ -919,19 +846,6 @@ library ModelLib {
         ChallengeStatus status;
     }
 
-    function unmarshalBalanceUpdateChallengeStatus(RLPLib.RLPItem memory rlp) internal pure returns (BalanceUpdateChallengeStatus memory challengeStatus) {
-        RLPLib.Iterator memory it = RLPDecoder.iterator(rlp);
-        uint idx;
-        while(RLPDecoder.hasNext(it)) {
-            RLPLib.RLPItem memory r = RLPDecoder.next(it);
-            if(idx == 0) challengeStatus.proof = unmarshalBalanceUpdateProof(r);
-            else if(idx == 1) challengeStatus.status = unmarshalChallengeStatus(r);
-            else {}
-
-            idx++;
-        }
-    }
-
     function marshalBalanceUpdateChallengeStatus(BalanceUpdateChallengeStatus memory challengeStatus) internal pure returns (bytes memory) {
         bytes memory proof = marshalBalanceUpdateProof(challengeStatus.proof);
         bytes memory status = marshalChallengeStatus(challengeStatus.status);
@@ -987,19 +901,6 @@ library ModelLib {
     struct ContractReturn {
        bool hasVal;
        bytes payload;
-    }
-
-    function unmarshalContractReturn(RLPLib.RLPItem memory rlp) internal pure returns (ContractReturn memory cr) {
-        RLPLib.Iterator memory it = RLPDecoder.iterator(rlp);
-        uint idx;
-        while(RLPDecoder.hasNext(it)) {
-            RLPLib.RLPItem memory r = RLPDecoder.next(it);
-            if(idx == 0) cr.hasVal = RLPDecoder.toBool(r);
-            else if(idx == 1) cr.payload = RLPLib.toData(r);
-            else {}
-
-            idx++;
-        }
     }
 
     function marshalContractReturn(ContractReturn memory cr) internal pure returns (bytes memory) {

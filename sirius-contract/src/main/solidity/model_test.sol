@@ -144,7 +144,7 @@ contract test_all is test_all_interface {
     }
 
     function contract_return_test(bytes calldata data) external pure returns (bytes memory) {
-        ModelLib.ContractReturn memory cr = ModelLib.unmarshalContractReturn(RLPDecoder.toRLPItem(data, true));
+        ModelLib.ContractReturn memory cr = unmarshalContractReturn(RLPDecoder.toRLPItem(data, true));
 
         return ModelLib.marshalContractReturn(cr);
     }
@@ -172,5 +172,18 @@ contract test_all is test_all_interface {
         bool verifyFlag = ModelLib.verifyMembershipProof4Merkle(close.proof.leaf.update.upData.root, close.txPath, close.txHash);
 
         return verifyFlag;
+    }
+
+    function unmarshalContractReturn(RLPLib.RLPItem memory rlp) private pure returns (ModelLib.ContractReturn memory cr) {
+        RLPLib.Iterator memory it = RLPDecoder.iterator(rlp);
+        uint idx;
+        while(RLPDecoder.hasNext(it)) {
+            RLPLib.RLPItem memory r = RLPDecoder.next(it);
+            if(idx == 0) cr.hasVal = RLPDecoder.toBool(r);
+            else if(idx == 1) cr.payload = RLPLib.toData(r);
+            else {}
+
+            idx++;
+        }
     }
 }

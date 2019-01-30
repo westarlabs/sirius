@@ -6,7 +6,6 @@ import "./lib/log_util.sol";
 import "./lib/byte_util.sol";
 import "./lib/model.sol";
 
-
 interface rlp_test_interface {
     function testUint(uint data) external returns (uint);
     function testString() external;
