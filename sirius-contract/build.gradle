@@ -6,7 +6,7 @@ solidity {
     outputComponents = ["BIN", "ABI", "METADATA"]
     optimize = true
     overwrite = true
-    optimizeRuns = 500
+    optimizeRuns = 1
 }
 
 configurations {
@@ -16,6 +16,22 @@ configurations {
 task solidityJar(type:Jar, dependsOn:['compileSolidity']) {
     from sourceSets.main.output
     classifier = 'solidity'
+
+    doLast {
+        processContractBin.execute()
+    }
+}
+
+task processContractBin(){
+    doLast {
+        logger.quiet("====== Contract bin file bytes length ======")
+        project.layout.buildDirectory.dir("resources/main/solidity").get().getAsFileTree().matching{
+            include "*.bin"
+        }.each {
+            def length = it.text.decodeHex().size()
+            logger.quiet("$it.name length: $length")
+        }
+    }
 }
 
 artifacts {
