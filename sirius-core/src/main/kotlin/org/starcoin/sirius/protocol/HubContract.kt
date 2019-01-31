@@ -25,24 +25,7 @@ sealed class ContractFunction<S : SiriusObject>(val name: String, val inputClass
 
     companion object {
         val functions by lazy {
-            mapOf(
-                CommitFunction.signature to
-                        CommitFunction,
-                InitiateWithdrawalFunction.signature to
-                        InitiateWithdrawalFunction,
-                CancelWithdrawalFunction.signature to
-                        CancelWithdrawalFunction,
-                OpenBalanceUpdateChallengeFunction.signature to
-                        OpenBalanceUpdateChallengeFunction,
-                CloseBalanceUpdateChallengeFunction.signature to
-                        CloseBalanceUpdateChallengeFunction,
-                OpenTransferDeliveryChallengeFunction.signature to
-                        OpenTransferDeliveryChallengeFunction,
-                CloseTransferDeliveryChallengeFunction.signature to
-                        CloseTransferDeliveryChallengeFunction,
-                RecoverFundsFunction.signature to
-                        RecoverFundsFunction
-            )
+            ContractFunction::class.sealedSubclasses.map { it.objectInstance!! }.map { it.signature to it }.toMap()
         }
     }
 
