@@ -24,11 +24,9 @@ interface Sirius {
 
 contract SiriusService is Sirius {
     address private owner;
-    bytes32 private ownerHash;
     bool private recoveryMode;
     uint private startHeight;
     uint private blocksPerEon;
-    bytes private hubPK;
     string ip;
 
     GlobleLib.Balance[3] balances;
@@ -43,7 +41,6 @@ contract SiriusService is Sirius {
 
     constructor(bytes memory data) public {
         owner = msg.sender;
-        ownerHash = ByteUtilLib.address2hash(msg.sender);
         GlobleLib.Balance memory initBalance = newBalance(0);
         checkBalances(initBalance);
 
@@ -95,6 +92,7 @@ contract SiriusService is Sirius {
     }
 
     function commit(bytes calldata data) external onlyOwner returns (bool) {
+        bool returnFlag = false;
         if(!recoveryMode) {
             bool flag = true;
             uint bLen = balances[1].balanceChallenges.length;
@@ -148,12 +146,15 @@ contract SiriusService is Sirius {
                 }
             }
 
-            return flag;
+            returnFlag = flag;
         }
-        return false;
+
+        emit SiriusEvent3(2, returnFlag);
+        return returnFlag;
     }
 
     function initiateWithdrawal(bytes calldata data) external recovery returns (bool) {
+        bool returnFlag = false;
         if(!recoveryMode) {
             address payable addr = msg.sender;
             ModelLib.WithdrawalInfo memory init = ModelLib.unmarshalWithdrawalInfo(RLPDecoder.toRLPItem(data, true));
@@ -178,13 +179,15 @@ contract SiriusService is Sirius {
             balances[0].withdrawals.push(addr);
             dataStore.withdrawalData[balances[0].eon][addr] = with;
             balances[0].withdrawalTotal = SafeMath.add(balances[0].withdrawalTotal, init.amount);
-            return true;
-        } else {
-            return false;
+            returnFlag = true;
         }
+
+        emit SiriusEvent3(3, returnFlag);
+        return returnFlag;
     }
 
     function cancelWithdrawal(bytes calldata data) external returns (bool) {
+        bool returnFlag = false;
         if(!recoveryMode) {
             ModelLib.CancelWithdrawal memory cancel = ModelLib.unmarshalCancelWithdrawal(RLPDecoder.toRLPItem(data, true));
             require((cancel.update.upData.eon > cancel.proof.leaf.update.upData.eon || (cancel.update.upData.eon == cancel.proof.leaf.update.upData.eon && cancel.update.upData.version > cancel.proof.leaf.update.upData.version)));
@@ -224,12 +227,15 @@ contract SiriusService is Sirius {
                 }
             }
 
-            return true;
+            returnFlag = true;
         }
-        return false;
+
+        emit SiriusEvent3(4, returnFlag);
+        return returnFlag;
     }
 
     function openBalanceUpdateChallenge(bytes calldata data) external recovery returns (bool) {
+        bool returnFlag = false;
         if(!recoveryMode) {
             ModelLib.BalanceUpdateProof memory open = ModelLib.unmarshalBalanceUpdateProof(RLPDecoder.toRLPItem(data, true));
             require(open.hasPath || open.hasUp, "miss path and update");
@@ -264,13 +270,15 @@ contract SiriusService is Sirius {
             }
             cs.isVal = true;
             dataStore.bucData[balances[0].eon][msg.sender] = cs;
-            return true;
-        }else {
-            return false;
+            returnFlag = true;
         }
+
+        emit SiriusEvent3(5, returnFlag);
+        return returnFlag;
     }
 
     function closeBalanceUpdateChallenge(bytes calldata data) external onlyOwner returns (bool) {
+        bool returnFlag = false;
         if(!recoveryMode) {
             ModelLib.CloseBalanceUpdateChallenge memory close = ModelLib.unmarshalCloseBalanceUpdateChallenge(RLPDecoder.toRLPItem(data, true));
             require(balances[0].hasRoot, "require root");
@@ -313,13 +321,15 @@ contract SiriusService is Sirius {
                 dataStore.bucData[balances[0].eon][close.addr] = tmpStat;
                 emit SiriusEvent2(close.addr, 2, tmpStat.challenge);
             }
-            return true;
-        } else {
-            return false;
+            returnFlag = true;
         }
+
+        emit SiriusEvent3(6, returnFlag);
+        return returnFlag;
     }
 
     function openTransferDeliveryChallenge(bytes calldata data) external recovery returns (bool) {
+        bool returnFlag = false;
         if(!recoveryMode) {
             ModelLib.TransferDeliveryChallenge memory open = ModelLib.unmarshalTransferDeliveryChallenge(RLPDecoder.toRLPItem(data, true));
             require(balances[0].hasRoot, "balances[0].hasRoot false");
@@ -343,13 +353,15 @@ contract SiriusService is Sirius {
             }
             challenge.isVal = true;
             dataStore.tdcData[balances[0].eon][hash] = challenge;
-            return true;
-        } else {
-            return false;
+            returnFlag = true;
         }
+
+        emit SiriusEvent3(7, returnFlag);
+        return returnFlag;
     }
 
     function closeTransferDeliveryChallenge(bytes calldata data) external onlyOwner returns (bool) {
+        bool returnFlag = false;
         if(!recoveryMode) {
             ModelLib.CloseTransferDeliveryChallenge memory close = ModelLib.unmarshalCloseTransferDeliveryChallenge(RLPDecoder.toRLPItem(data, true));
             require(balances[0].hasRoot, "balances[0].hasRoot false");
@@ -373,10 +385,11 @@ contract SiriusService is Sirius {
                 dataStore.tdcData[balances[0].eon][key] = challenge;
                 emit SiriusEvent(key, 3, challenge.challenge);
             }
-            return true;
-        } else {
-            return false;
+            returnFlag = true;
         }
+
+        emit SiriusEvent3(8, returnFlag);
+        return returnFlag;
     }
 
     function recoverFunds(bytes calldata data) external {
