@@ -37,7 +37,8 @@ contract SiriusService is Sirius {
     using SafeMath for uint;
     event SiriusEvent(bytes32 indexed hash, uint indexed num, bytes value);
     event SiriusEvent2(address indexed addr, uint indexed num, bytes value);
-    event SiriusEvent3(uint indexed num, bool value);
+    event ReturnEvent(uint indexed num, bool value);
+    event RecoveryModeEvent();
 
     constructor(bytes memory data) public {
         owner = msg.sender;
@@ -149,7 +150,7 @@ contract SiriusService is Sirius {
             returnFlag = flag;
         }
 
-        emit SiriusEvent3(2, returnFlag);
+        emit ReturnEvent(1, returnFlag);
         return returnFlag;
     }
 
@@ -182,7 +183,7 @@ contract SiriusService is Sirius {
             returnFlag = true;
         }
 
-        emit SiriusEvent3(3, returnFlag);
+        emit ReturnEvent(2, returnFlag);
         return returnFlag;
     }
 
@@ -230,7 +231,7 @@ contract SiriusService is Sirius {
             returnFlag = true;
         }
 
-        emit SiriusEvent3(4, returnFlag);
+        emit ReturnEvent(3, returnFlag);
         return returnFlag;
     }
 
@@ -273,7 +274,7 @@ contract SiriusService is Sirius {
             returnFlag = true;
         }
 
-        emit SiriusEvent3(5, returnFlag);
+        emit ReturnEvent(4, returnFlag);
         return returnFlag;
     }
 
@@ -324,7 +325,7 @@ contract SiriusService is Sirius {
             returnFlag = true;
         }
 
-        emit SiriusEvent3(6, returnFlag);
+        emit ReturnEvent(5, returnFlag);
         return returnFlag;
     }
 
@@ -356,7 +357,7 @@ contract SiriusService is Sirius {
             returnFlag = true;
         }
 
-        emit SiriusEvent3(7, returnFlag);
+        emit ReturnEvent(6, returnFlag);
         return returnFlag;
     }
 
@@ -388,7 +389,7 @@ contract SiriusService is Sirius {
             returnFlag = true;
         }
 
-        emit SiriusEvent3(8, returnFlag);
+        emit ReturnEvent(7, returnFlag);
         return returnFlag;
     }
 
@@ -595,7 +596,7 @@ contract SiriusService is Sirius {
         uint tmp3 = SafeMath.add(tmp2, blocksPerEon);
         if ((newEon > addEon) || (newEon == addEon && tmp > tmp3 && balances[0].hasRoot) || (newEon == latestEon && tmp > tmp2 && !balances[0].hasRoot)) {
             recoveryMode = true;
-            emit SiriusEvent3(1, recoveryMode);
+            emit RecoveryModeEvent();
         }
 
         if (newEon == addEon && !recoveryMode) {// change eon
