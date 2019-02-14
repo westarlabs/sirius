@@ -39,6 +39,7 @@ class EthereumChainTest : EthereumServer(true) {
 
         val hash = chain.submitTransaction(etherbase, tx)
         Assert.assertEquals(hash, tx.txHash())
+        Assert.assertEquals(hash, tx.hash())
         chain.waitTransactionProcessed(hash)
         Assert.assertEquals(transAmount, chain.getBalance(alice.address))
     }
@@ -96,12 +97,13 @@ class EthereumChainTest : EthereumServer(true) {
         runBlocking {
             for (i in 5 downTo 0) {
                 val txResult = ch.receive()
-                LOG.info("tx recived ${txResult.tx.toString()}")
+                LOG.info("tx recived ${txResult.tx}")
                 Assert.assertEquals(transAmount, txResult.tx.amount)
                 Assert.assertEquals(etherbase.address, txResult.tx.from)
                 Assert.assertEquals(alice.address, txResult.tx.to)
             }
         }
+        ch.cancel()
 
     }
 

@@ -40,8 +40,8 @@ class EthereumChain constructor(httpUrl: String = DEFAULT_URL, socketPath: Strin
         repeat(times) {
             when (getTransactionReceipts(listOf(hash))[0]?.status) {
                 true -> return
-                false -> throw RuntimeException("Receipt status false")
-                null -> Thread.sleep(500)
+                false -> return //FIXME: throw RuntimeException("Receipt status false")
+                null -> Thread.sleep(1000)
             }
         }
         throw java.lang.RuntimeException("Get receipt timeout")

@@ -50,7 +50,7 @@ abstract class HubContractTestBase {
     }
 
     @Test
-    fun testCurrentEon() {
+    open fun testCurrentEon() {
         Assert.assertEquals(contract.getCurrentEon(owner), 0)
     }
 
@@ -59,21 +59,9 @@ abstract class HubContractTestBase {
         Assert.assertEquals(contract.isRecoveryMode(owner), false)
     }
 
-    private fun deposit(alice: EthereumAccount, amount: BigInteger) {
-        val ethereumTransaction = EthereumTransaction(
-            contract.contractAddress, alice.getNonce(), 21000.toBigInteger(),
-            210000.toBigInteger(), amount
-        )
-
-        chain.submitTransaction(alice, ethereumTransaction)
-
-        // chain.sendEther(alice, 1.toBigInteger())
-        chain.waitBlocks()
-    }
-
     @Test
     @ImplicitReflectionSerializer
-    fun testDeposit() {
+    open fun testDeposit() {
 
         val amount = EtherUtil.convert(100, EtherUtil.Unit.GWEI)
 
@@ -96,7 +84,7 @@ abstract class HubContractTestBase {
 
     @Test
     @ImplicitReflectionSerializer
-    fun testWithDrawal() {
+    open fun testWithDrawal() {
 
         //chain.sb.withAccountBalance(alice.address.toBytes(), EtherUtil.convert(100000, EtherUtil.Unit.ETHER))
         //println(chain.sb.getBlockchain().getRepository().getBalance(alice.address.toBytes()))
@@ -193,7 +181,7 @@ abstract class HubContractTestBase {
 
     @Test
     @ImplicitReflectionSerializer
-    fun testCommit() {
+    open fun testCommit() {
 
         val amount = EtherUtil.convert(1000, EtherUtil.Unit.GWEI)
 
@@ -241,6 +229,7 @@ abstract class HubContractTestBase {
         LOG.info("current block height is :${chain.getBlockNumber()}, commit root: $root")
         waitToEon(eon)
         val hash = contract.commit(owner, root)
+        chain.waitTransactionProcessed(hash)
         runBlocking {
             val txResult = ownerChannel.receive()
             Assert.assertTrue(txResult.receipt.status)
@@ -254,7 +243,7 @@ abstract class HubContractTestBase {
 
     @Test
     @ImplicitReflectionSerializer
-    fun testHubInfo() {
+    open fun testHubInfo() {
         val ip = "192.168.0.0.1:80"
         contract.setHubIp(owner, ip)
 
@@ -265,7 +254,7 @@ abstract class HubContractTestBase {
 
     @Test
     @ImplicitReflectionSerializer
-    fun testBalanceUpdateChallenge() {
+    open fun testBalanceUpdateChallenge() {
 
         //var transactions = List<EthereumTransaction>
         val amount = EtherUtil.convert(100, EtherUtil.Unit.GWEI)
@@ -285,12 +274,7 @@ abstract class HubContractTestBase {
         val bup = BalanceUpdateProof(true, update2, true, amtp.path)
 
         var hash = contract.openBalanceUpdateChallenge(alice, bup)
-
-        //TODO
-        Thread.sleep(500)
-        var transaction = chain.findTransaction(hash)
-        Assert.assertNotNull(transaction)
-
+        chain.waitTransactionProcessed(hash)
         //chain.sb.sender = owner
         // val update3 = newUpdate(0, 3, BigInteger.ZERO, alice)//other
         val update4 = newUpdate(0, 4, BigInteger.ZERO, alice)//mine
@@ -298,16 +282,12 @@ abstract class HubContractTestBase {
         val leaf3 = newLeafNodeInfo(alice.address, update4)
         val amtp2 = AMTreeProof(path, leaf3)
         hash = contract.closeBalanceUpdateChallenge(owner, CloseBalanceUpdateChallenge(alice.address, amtp2))
-        //TODO
-        Thread.sleep(500)
-        transaction = chain.findTransaction(hash)
-        Assert.assertNotNull(transaction)
-
+        chain.waitTransactionProcessed(hash)
     }
 
     @Test
     @ImplicitReflectionSerializer
-    fun testTransferChallenge() {
+    open fun testTransferChallenge() {
 
         //var transactions = List<EthereumTransaction>
         val amount = EtherUtil.convert(100, EtherUtil.Unit.GWEI)
@@ -325,12 +305,7 @@ abstract class HubContractTestBase {
         tx.sign(alice.key)
         val open = TransferDeliveryChallenge(update, tx, MerklePath.mock())
         var hash = contract.openTransferDeliveryChallenge(alice, open)
-        //TODO
-        Thread.sleep(500)
-        var transaction = chain.findTransaction(hash)
-        Assert.assertNotNull(transaction)
-
-        //chain.sb.sender = owner
+        chain.waitTransactionProcessed(hash)
 
         val update1 = newUpdate(0, 1, BigInteger.ZERO, alice)//other
         val path = newPath(alice.address, update1, BigInteger.ZERO, 200.toBigInteger())
@@ -340,10 +315,16 @@ abstract class HubContractTestBase {
         val close =
             CloseTransferDeliveryChallenge(amtp, MerklePath.mock(), alice.address, Hash.of(tx))
         hash = contract.closeTransferDeliveryChallenge(owner, close)
-        //TODO
-        Thread.sleep(500)
-        transaction = chain.findTransaction(hash)
-        Assert.assertNotNull(transaction)
+        chain.waitTransactionProcessed(hash)
     }
-    abstract fun sendEther(to: EthereumAccount, value:BigInteger)
+
+    private fun deposit(alice: EthereumAccount, amount: BigInteger) {
+        val ethereumTransaction = EthereumTransaction(
+            contract.contractAddress, alice.getNonce(), 21000.toBigInteger(),
+            210000.toBigInteger(), amount
+        )
+        val hash = chain.submitTransaction(alice, ethereumTransaction)
+        chain.waitTransactionProcessed(hash)
+    }
+    abstract fun sendEther(to: EthereumAccount, value: BigInteger)
 }

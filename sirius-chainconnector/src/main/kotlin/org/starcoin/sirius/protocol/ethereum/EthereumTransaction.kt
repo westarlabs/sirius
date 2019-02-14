@@ -56,11 +56,11 @@ class EthereumTransaction(private val tx: Transaction) : ChainTransaction() {
 
     constructor(web3Tx: org.web3j.protocol.core.methods.response.Transaction) : this(
         Transaction(
-            web3Tx.nonce.toByteArray(),
-            web3Tx.gasPrice.toByteArray(),
-            web3Tx.gas.toByteArray(),
+            web3Tx.nonce.toByteArrayRemoveLeadZero(),
+            web3Tx.gasPrice.toByteArrayRemoveLeadZero(),
+            web3Tx.gas.toByteArrayRemoveLeadZero(),
             web3Tx.to?.toAddress()?.toBytes(),
-            web3Tx.value.toByteArray(),
+            web3Tx.value.toByteArrayRemoveLeadZero(),
             web3Tx.input.hexToByteArray(),
             web3Tx.r.hexToByteArray(),
             web3Tx.s.hexToByteArray(),
@@ -77,8 +77,8 @@ class EthereumTransaction(private val tx: Transaction) : ChainTransaction() {
 
     ) : this(
         Transaction(
-            nonce.toBigInteger().toByteArray(),
-            gasPrice.toByteArray(),
+            nonce.toBigInteger().toByteArrayRemoveLeadZero(),
+            gasPrice.toByteArrayRemoveLeadZero(),
             gasLimit.toByteArrayRemoveLeadZero(),
             toAddress.toBytes(),
             value.toByteArrayRemoveLeadZero(),
@@ -95,8 +95,8 @@ class EthereumTransaction(private val tx: Transaction) : ChainTransaction() {
 
     ) : this(
         Transaction(
-            nonce.toBigInteger().toByteArray(),
-            gasPrice.toBigInteger().toByteArray(),
+            nonce.toBigInteger().toByteArrayRemoveLeadZero(),
+            gasPrice.toBigInteger().toByteArrayRemoveLeadZero(),
             gasLimit.toBigInteger().toByteArrayRemoveLeadZero(),
             toAddress.toBytes(),
             value.toBigInteger().toByteArrayRemoveLeadZero(),
@@ -112,8 +112,8 @@ class EthereumTransaction(private val tx: Transaction) : ChainTransaction() {
         data: ByteArray
     ) : this(
         Transaction(
-            nonce.toBigInteger().toByteArray(),
-            gasPrice.toByteArray(),
+            nonce.toBigInteger().toByteArrayRemoveLeadZero(),
+            gasPrice.toByteArrayRemoveLeadZero(),
             gasLimit.toByteArrayRemoveLeadZero(),
             contractAddress.toBytes(),
             BigInteger.ZERO.toByteArray(),
@@ -128,8 +128,8 @@ class EthereumTransaction(private val tx: Transaction) : ChainTransaction() {
         data: ByteArray
     ) : this(
         Transaction(
-            nonce.toBigInteger().toByteArray(),
-            gasPrice.toByteArray(),
+            nonce.toBigInteger().toByteArrayRemoveLeadZero(),
+            gasPrice.toByteArrayRemoveLeadZero(),
             gasLimit.toByteArrayRemoveLeadZero(),
             null,
             BigInteger.ZERO.toByteArray(),
@@ -142,7 +142,7 @@ class EthereumTransaction(private val tx: Transaction) : ChainTransaction() {
         //tx hash will change after sign, so reset hash cache.
         this.resetHash()
     }
-
+                                             
     override fun txHash(): Hash {
         return Hash.wrap(this.tx.hash)
     }
