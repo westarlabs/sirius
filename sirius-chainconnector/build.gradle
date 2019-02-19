@@ -11,6 +11,10 @@ dependencies{
     compile project(path:":sirius-contract", configuration:"solidityOutput")
     compile ('org.web3j:core:4.0.0')
 
+    compile("org.ethereum:ethereumj-core:1.9.1-RELEASE"){
+        exclude group:"io.netty",module:"netty-all"
+    }
+    
     testCompile project(path: ':sirius-core', configuration: 'testOutput')
 }
 

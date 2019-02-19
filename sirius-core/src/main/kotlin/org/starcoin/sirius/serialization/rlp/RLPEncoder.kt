@@ -1,8 +1,6 @@
 package org.starcoin.sirius.serialization.rlp
 
 
-import org.kethereum.extensions.toMinimalByteArray
-
 /**
 RLP as of Appendix B. Recursive Length Prefix at https://github.com/ethereum/yellowpaper
  */
