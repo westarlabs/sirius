@@ -3,6 +3,7 @@ package org.starcoin.sirius.protocol.ethereum.contract
 import kotlinx.serialization.ImplicitReflectionSerializer
 import org.ethereum.core.CallTransaction
 import org.ethereum.solidity.SolidityType
+import org.ethereum.vm.LogInfo
 import org.starcoin.sirius.core.Address
 import org.starcoin.sirius.core.ContractReturn
 import org.starcoin.sirius.core.Hash
@@ -85,5 +86,9 @@ class EthereumHubContract internal constructor(
 
     override fun setHubIp(account: EthereumAccount, ip: String) {
         chain.waitTransactionProcessed(this.callFunction(account, "hubIp", ip.toByteArray()))
+    }
+
+    fun parseEvent(eventLog: LogInfo): CallTransaction.Invocation {
+        return this.contract.parseEvent(eventLog)
     }
 }

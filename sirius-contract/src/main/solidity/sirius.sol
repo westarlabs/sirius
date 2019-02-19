@@ -37,7 +37,7 @@ contract SiriusService is Sirius {
     using SafeMath for uint;
     event SiriusEvent(bytes32 indexed hash, uint indexed num, bytes value);
     event SiriusEvent2(address indexed addr, uint indexed num, bytes value);
-    event ReturnEvent(uint indexed num, bool value);
+event ReturnEvent(bool value);
     event RecoveryModeEvent();
 
     constructor(bytes memory data) public {
@@ -150,7 +150,7 @@ contract SiriusService is Sirius {
             returnFlag = flag;
         }
 
-        emit ReturnEvent(1, returnFlag);
+emit ReturnEvent(returnFlag);
         return returnFlag;
     }
 
@@ -183,7 +183,7 @@ contract SiriusService is Sirius {
             returnFlag = true;
         }
 
-        emit ReturnEvent(2, returnFlag);
+emit ReturnEvent(returnFlag);
         return returnFlag;
     }
 
@@ -231,7 +231,7 @@ contract SiriusService is Sirius {
             returnFlag = true;
         }
 
-        emit ReturnEvent(3, returnFlag);
+emit ReturnEvent(returnFlag);
         return returnFlag;
     }
 
@@ -274,7 +274,7 @@ contract SiriusService is Sirius {
             returnFlag = true;
         }
 
-        emit ReturnEvent(4, returnFlag);
+emit ReturnEvent(returnFlag);
         return returnFlag;
     }
 
@@ -325,7 +325,7 @@ contract SiriusService is Sirius {
             returnFlag = true;
         }
 
-        emit ReturnEvent(5, returnFlag);
+emit ReturnEvent(returnFlag);
         return returnFlag;
     }
 
@@ -357,7 +357,7 @@ contract SiriusService is Sirius {
             returnFlag = true;
         }
 
-        emit ReturnEvent(6, returnFlag);
+emit ReturnEvent(returnFlag);
         return returnFlag;
     }
 
@@ -389,7 +389,7 @@ contract SiriusService is Sirius {
             returnFlag = true;
         }
 
-        emit ReturnEvent(7, returnFlag);
+emit ReturnEvent(returnFlag);
         return returnFlag;
     }
 
