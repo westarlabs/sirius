@@ -73,10 +73,6 @@ class HubStatus {
         )
     }
 
-    internal fun transactionTree(): MerkleTree{
-        return MerkleTree(eonStatuses[currentEonStatusIndex].transactionHistory)
-    }
-
     internal fun transactionPath(hash: Hash): MerklePath? {
         val merkleTree = MerkleTree(eonStatuses[getEonByIndex(lastIndex)].transactionHistory)
         return merkleTree.getMembershipProof(hash)
@@ -100,34 +96,7 @@ class HubStatus {
         return eonStatuses[currentEonStatusIndex].transactionHistory
     }
 
-    internal fun getCurrentEonStatus(eon: Eon): EonStatus? {
-        for (eonStatus in this.eonStatuses) {
-            if (eonStatus != null && eonStatus.eon.id === eon.id) {
-                return eonStatus
-            }
-        }
-        return null
-    }
-
-    internal fun findCurrentEonStatusIndex(eon: Eon): Int {
-        for (i in 0..2) {
-            val eonStatus = this.eonStatuses[i]
-            if (eonStatus != null && eonStatus.eon.id.equals(eon.id)) {
-                return i
-            }
-        }
-        return -1
-    }
-
-    internal fun depositTransaction(chainTransaction: ChainTransaction) {
-        this.depositingTransactions[chainTransaction.hash()] = chainTransaction
-    }
-
-    internal fun nextEon(eon: Eon, path: AMTreeProof): Int {
-//        this.allotment += this.eonStatuses[currentEonStatusIndex]
-//            .confirmedTransactions
-//            .stream()
-//            .map { it.amount }.reduce(BigInteger.ZERO) { a, b -> a.add(b) }
+    internal fun nextEon(eon: Eon, path: AMTreeProof) {
         val currentUpdate = this.currentUpdate(eon)
         this.allotment += currentUpdate.receiveAmount
         this.allotment -= currentUpdate.sendAmount
@@ -140,7 +109,6 @@ class HubStatus {
         LOG.info("current update is $currentUpdate")
         LOG.info("allotment is $allotment")
 
-        val lastIndex = currentEonStatusIndex
         val maybe = currentEonStatusIndex + 1
         if (maybe > 2) {
             currentEonStatusIndex = 0
@@ -150,13 +118,12 @@ class HubStatus {
         this.eonStatuses[currentEonStatusIndex] = EonStatus(eon, this.allotment)
 
         this.eonStatuses[currentEonStatusIndex].treeProof = path
-
-        return lastIndex
     }
 
-    internal fun newChallenge(update: Update,lastIndex: Int):BalanceUpdateProof {
-        if (eonStatuses[lastIndex] != null && eonStatuses[lastIndex].treeProof != null) {
-            return BalanceUpdateProof(eonStatuses[lastIndex].treeProof!!.path!!)
+    internal fun newChallenge(update: Update):BalanceUpdateProof {
+        val index= getEonByIndex(lastIndex)
+        if (eonStatuses[index] != null && eonStatuses[index].treeProof != null) {
+            return BalanceUpdateProof(eonStatuses[index].treeProof!!.path!!)
         } else {
             return BalanceUpdateProof(update)
         }
@@ -179,19 +146,6 @@ class HubStatus {
                 index
             }
         }
-    }
-
-    internal fun findMaxEon(): Eon {
-        var maxEonStatus = this.eonStatuses[0]
-        for (eonStatus in this.eonStatuses) {
-            if (eonStatus == null) {
-                continue
-            }
-            if (maxEonStatus.eon.id < eonStatus.eon.id) {
-                maxEonStatus = eonStatus
-            }
-        }
-        return maxEonStatus.eon
     }
 
     fun couldWithDrawal():Boolean {

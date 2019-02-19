@@ -199,7 +199,7 @@ class Hub <T : ChainTransaction, A : ChainAccount> {
         val lastUpdate = hubStatus.currentUpdate(this.currentEon)
 
         // 加上已经确认的转进来的钱,加上别人转过来的钱，减去转给别人的钱
-        val lastIndex = this.hubStatus.nextEon(this.currentEon, proof)
+        this.hubStatus.nextEon(this.currentEon, proof)
 
         val selfNode = proof.path.leafNode
 
@@ -210,7 +210,6 @@ class Hub <T : ChainTransaction, A : ChainAccount> {
         }else {
             LOG.info("challenge is not necessary")
         }
-        //this.dataStore?.save(this.hubStatus)
 
         GlobalScope.launch {
             eonChannel?.send(ClientEventType.FINISH_EON_CHANGE)
@@ -219,7 +218,7 @@ class Hub <T : ChainTransaction, A : ChainAccount> {
         if (!needChallenge) {
             return
         }
-        var balanceUpdateProof=this.hubStatus.newChallenge(lastUpdate, lastIndex)
+        var balanceUpdateProof=this.hubStatus.newChallenge(lastUpdate)
         this.contract.openBalanceUpdateChallenge(account,balanceUpdateProof)
 
         GlobalScope.launch {
