@@ -12,7 +12,7 @@ class ChannelManager {
     var hubChannel: Channel? = null
         private set
 
-    constructor(hubServer: InetAddressPort, contractServer: InetAddressPort) {
+    constructor(hubServer: InetAddressPort) {
         this.hubServer = hubServer
         this.hubChannel = NettyChannelBuilder.forAddress(hubServer.toInetSocketAddress()).usePlaintext().build()
     }

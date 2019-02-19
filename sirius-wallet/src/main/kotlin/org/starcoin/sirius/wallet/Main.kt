@@ -24,7 +24,6 @@ import java.nio.file.Paths
 import java.util.*
 
 
-class Main {
 
     private val PRIVATE_KEY_FILENAME = "private"
     private val PUBLIC_KEY_FILENAME = "public"
@@ -41,21 +40,19 @@ class Main {
         try {
             val properties = loadConfig()
             val hubAddr = properties.getProperty("hub_addr")
-            val contractAddr = properties.getProperty("contract_addr")
             val chainAddr = properties.getProperty("chain_addr")
 
-            var contractAddress = contractAddr.toByteArray()
+            println(hubAddr)
+
             val reader = ConsoleReader()
             reader.prompt = String.format("%s>", name)
 
             val cmd = CommandLine(CliCommands(reader))
-            val channelManager = ChannelManager(
-                InetAddressPort.valueOf(hubAddr), InetAddressPort.valueOf(contractAddr)
-            )
+            val channelManager = ChannelManager(InetAddressPort.valueOf(hubAddr))
 
             val key = generateKey(name)
             val chain = EthereumChain(chainAddr)
-            var store = FileStore(this.getWalletDir(name).path, HubStatus::class.java)
+            var store = FileStore(getWalletDir(name).path, HubStatus::class.java)
             //var wallet=Wallet(Address.wrap(contractAddress),channelManager,chain,store,key)
 
             //cmd.addSubcommand("wallet", WalletCommand(wallet))
@@ -104,7 +101,7 @@ class Main {
             if (Files.exists(path)) {
                 inputStream = FileInputStream("./conf.properties")
             } else {
-                inputStream = Main::class.java!!.getClassLoader().getResourceAsStream("conf.properties")
+                //inputStream = this::class.java!!.getClassLoader().getResourceAsStream("conf.properties")
             }
         }
         prop.load(inputStream)
@@ -139,4 +136,3 @@ class Main {
         )
     }
 
-}
