@@ -32,9 +32,9 @@ sealed class HubAction {
     data class ChainTransactionAction<T : ChainTransaction>(val txResult: TransactionResult<T>) : HubAction()
 }
 
-class HubImpl<T : ChainTransaction, A : ChainAccount>(
+class HubImpl<A : ChainAccount>(
     private val owner: A,
-    private val chain: Chain<T, out Block<T>, out A>,
+    private val chain: Chain<out ChainTransaction, out Block<out ChainTransaction>, A>,
     private val contract: HubContract<A>
 ) : Hub {
 

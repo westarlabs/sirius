@@ -1,17 +1,13 @@
 package org.starcoin.sirius.hub
 
-import org.ethereum.util.blockchain.EtherUtil
-import org.starcoin.sirius.protocol.ethereum.EthereumAccount
-import org.starcoin.sirius.protocol.ethereum.InMemoryChain
+import org.starcoin.sirius.chain.ChainProvider
 
 
 fun main(args: Array<String>) {
     val configuration = Configuration.loadConfiguration()
-    val chain = InMemoryChain()
-    val owner = EthereumAccount(configuration.ownerKey)
-    chain.miningCoin(owner, EtherUtil.convert(Int.MAX_VALUE.toLong(), EtherUtil.Unit.ETHER))
+    val chain = ChainProvider.createChain(configuration.connector)
 
-    val hubServer = HubServer(configuration,chain,owner)
+    val hubServer = HubServer(configuration, chain)
     hubServer.start()
     hubServer.awaitTermination()
 }

@@ -9,9 +9,9 @@ import org.starcoin.sirius.protocol.ChainAccount
 import org.starcoin.sirius.protocol.HubContract
 import java.util.*
 
-class HubServiceImpl<T : ChainTransaction, A : ChainAccount>(
+class HubServiceImpl<A : ChainAccount>(
     private val owner: A,
-    chain: Chain<T, out Block<T>, out A>,
+    chain: Chain<out ChainTransaction, out Block<out ChainTransaction>, A>,
     contract: HubContract<A>
 ) : HubService {
 

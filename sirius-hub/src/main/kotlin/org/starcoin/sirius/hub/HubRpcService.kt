@@ -9,11 +9,14 @@ import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.launch
 import org.starcoin.proto.HubServiceGrpc
 import org.starcoin.proto.Starcoin
-import org.starcoin.sirius.core.*
+import org.starcoin.sirius.core.Address
+import org.starcoin.sirius.core.IOU
+import org.starcoin.sirius.core.Participant
+import org.starcoin.sirius.core.Update
 import org.starcoin.sirius.protocol.ChainAccount
 import org.starcoin.sirius.util.WithLogging
 
-class HubRpcService<T : ChainTransaction, A : ChainAccount>(val hubService: HubServiceImpl<T, A>) :
+class HubRpcService<A : ChainAccount>(val hubService: HubServiceImpl<A>) :
     HubServiceGrpc.HubServiceImplBase() {
 
     companion object : WithLogging()

@@ -54,7 +54,7 @@ abstract class HubServerIntegrationTestBase<T : ChainTransaction, A : ChainAccou
 
 
     private var configuration: Configuration by Delegates.notNull()
-    private var hubServer: HubServer<T, A> by Delegates.notNull()
+    private var hubServer: HubServer<A> by Delegates.notNull()
 
     protected var chain: C by Delegates.notNull()
 
@@ -102,7 +102,7 @@ abstract class HubServerIntegrationTestBase<T : ChainTransaction, A : ChainAccou
         this.chain = createChain(this.configuration)
 
         this.owner = this.createChainAccount(10000)
-        this.hubServer = HubServer(configuration, chain, owner)
+        this.hubServer = HubServer(configuration, chain, this.owner)
 
         hubServer.start()
         contract = this.hubServer.contract

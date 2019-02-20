@@ -6,7 +6,10 @@ import io.grpc.inprocess.InProcessChannelBuilder
 import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.withTimeout
 import org.ethereum.util.blockchain.EtherUtil
-import org.junit.*
+import org.junit.After
+import org.junit.Assert
+import org.junit.Before
+import org.junit.Test
 import org.starcoin.proto.HubServiceGrpc
 import org.starcoin.proto.Starcoin
 import org.starcoin.sirius.core.Address
@@ -40,7 +43,7 @@ class WalletTest {
     private var walletAlice : Wallet<EthereumTransaction,EthereumAccount> by Delegates.notNull()
     private var walletBob : Wallet<EthereumTransaction,EthereumAccount> by Delegates.notNull()
 
-    private var hubServer: HubServer<EthereumTransaction,EthereumAccount> by Delegates.notNull()
+    private var hubServer: HubServer<EthereumAccount> by Delegates.notNull()
 
     private val configuration = Configuration.configurationForUNIT()
 
@@ -57,8 +60,7 @@ class WalletTest {
     fun before() {
         chain = InMemoryChain(true)
 
-        val owner = EthereumAccount(configuration.ownerKey)
-        chain.miningCoin(owner, EtherUtil.convert(Int.MAX_VALUE.toLong(), EtherUtil.Unit.ETHER))
+
         alice = EthereumAccount(CryptoService.generateCryptoKey())
         bob = EthereumAccount(CryptoService.generateCryptoKey())
 
@@ -71,7 +73,9 @@ class WalletTest {
 
         channelManager = ChannelManager(hubChannel)
 
-        hubServer = HubServer(configuration,chain,owner)
+        hubServer = HubServer(configuration, chain)
+        val owner = hubServer.owner
+        chain.tryMiningCoin(owner, EtherUtil.convert(Int.MAX_VALUE.toLong(), EtherUtil.Unit.ETHER))
         hubServer.start()
         contract = hubServer.contract
 

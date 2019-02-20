@@ -32,7 +32,7 @@ abstract class HubTestBase<T : ChainTransaction, A : ChainAccount> {
 
     abstract val chain: Chain<T, out Block<T>, A>
 
-    private var hub: HubImpl<T, A> by Delegates.notNull()
+    private var hub: HubImpl<A> by Delegates.notNull()
     private var txs: MutableList<ChainTransaction> = ArrayList()
     private var listenerReference: AtomicReference<(Block<*>) -> Unit>? = null
     private var blockHeight = AtomicInteger()

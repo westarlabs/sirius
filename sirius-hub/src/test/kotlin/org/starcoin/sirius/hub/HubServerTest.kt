@@ -12,7 +12,6 @@ import org.starcoin.proto.Starcoin
 import org.starcoin.sirius.core.Participant
 import org.starcoin.sirius.core.Update
 import org.starcoin.sirius.crypto.CryptoService
-import org.starcoin.sirius.protocol.EthereumTransaction
 import org.starcoin.sirius.protocol.ethereum.EthereumAccount
 import org.starcoin.sirius.protocol.ethereum.InMemoryChain
 import org.starcoin.sirius.util.WithLogging
@@ -21,17 +20,15 @@ import kotlin.properties.Delegates
 class HubServerTest {
     companion object : WithLogging()
 
-    var hubServer: HubServer<EthereumTransaction,EthereumAccount> by Delegates.notNull()
+    var hubServer: HubServer<EthereumAccount> by Delegates.notNull()
     val configuration = Configuration.configurationForUNIT()
 
     @Before
     fun before() {
 
         val chain = InMemoryChain()
-        val owner = EthereumAccount(configuration.ownerKey)
-        chain.miningCoin(owner, EtherUtil.convert(Int.MAX_VALUE.toLong(), EtherUtil.Unit.ETHER))
-
-        hubServer = HubServer(configuration,chain,owner)
+        hubServer = HubServer(configuration, chain)
+        chain.tryMiningCoin(hubServer.owner, EtherUtil.convert(Int.MAX_VALUE.toLong(), EtherUtil.Unit.ETHER))
         hubServer.start()
     }
 
