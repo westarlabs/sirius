@@ -1,0 +1,39 @@
+From 7cf58bab596ec725d46b92fac08f5982c703695d Mon Sep 17 00:00:00 2001
+From: fikgol <hit.cs.lijun@gmail.com>
+Date: Wed, 20 Feb 2019 14:15:36 +0800
+Subject: [PATCH] Increase tx size and contract size limitation
+
+---
+ core/tx_pool.go           | 2 +-
+ params/protocol_params.go | 2 +-
+ 2 files changed, 2 insertions(+), 2 deletions(-)
+
+diff --git a/core/tx_pool.go b/core/tx_pool.go
+index 552d369..1e5497e 100644
+--- a/core/tx_pool.go
++++ b/core/tx_pool.go
+@@ -587,7 +587,7 @@ func (pool *TxPool) local() map[common.Address]types.Transactions {
+ // rules and adheres to some heuristic limits of the local node (price and size).
+ func (pool *TxPool) validateTx(tx *types.Transaction, local bool) error {
+ 	// Heuristic limit, reject transactions over 32KB to prevent DOS attacks
+-	if tx.Size() > 32*1024 {
++	if tx.Size() > 32*10240 {
+ 		return ErrOversizedData
+ 	}
+ 	// Transactions can't be negative. This may never happen using RLP decoded
+diff --git a/params/protocol_params.go b/params/protocol_params.go
+index c8b6609..f0283cb 100644
+--- a/params/protocol_params.go
++++ b/params/protocol_params.go
+@@ -69,7 +69,7 @@ const (
+ 	MemoryGas        uint64 = 3     // Times the address of the (highest referenced byte in memory + 1). NOTE: referencing happens on read, write and in instructions such as RETURN and CALL.
+ 	TxDataNonZeroGas uint64 = 68    // Per byte of data attached to a transaction that is not equal to zero. NOTE: Not payable on data of calls between transactions.
+ 
+-	MaxCodeSize = 24576 // Maximum bytecode to permit for a contract
++	MaxCodeSize = 245760 // Maximum bytecode to permit for a contract
+ 
+ 	// Precompiled contract gas prices
+ 
+-- 
+2.6.3
+
