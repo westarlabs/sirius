@@ -7,6 +7,8 @@ import org.starcoin.sirius.core.Address
 import org.starcoin.sirius.core.InetAddressPort
 import org.starcoin.sirius.crypto.CryptoKey
 import org.starcoin.sirius.crypto.CryptoService
+import org.starcoin.sirius.protocol.EthereumTransaction
+import org.starcoin.sirius.protocol.ethereum.EthereumAccount
 import org.starcoin.sirius.protocol.ethereum.EthereumChain
 import org.starcoin.sirius.wallet.command.CliCommands
 import org.starcoin.sirius.wallet.command.WalletCommand
@@ -41,8 +43,7 @@ import java.util.*
             val properties = loadConfig()
             val hubAddr = properties.getProperty("hub_addr")
             val chainAddr = properties.getProperty("chain_addr")
-
-            println(hubAddr)
+            val contractAddr = properties.getProperty("contract_addr")
 
             val reader = ConsoleReader()
             reader.prompt = String.format("%s>", name)
@@ -51,11 +52,12 @@ import java.util.*
             val channelManager = ChannelManager(InetAddressPort.valueOf(hubAddr))
 
             val key = generateKey(name)
+            var account = EthereumAccount(CryptoService.loadCryptoKey(key.toBytes()))
             val chain = EthereumChain(chainAddr)
             var store = FileStore(getWalletDir(name).path, HubStatus::class.java)
-            //var wallet=Wallet(Address.wrap(contractAddress),channelManager,chain,store,key)
+            var wallet= Wallet<EthereumTransaction, EthereumAccount>(Address.wrap(contractAddr),channelManager,chain,store,account)
 
-            //cmd.addSubcommand("wallet", WalletCommand(wallet))
+            cmd.addSubcommand("wallet", WalletCommand(wallet))
 
             var line: String
 
