@@ -9,7 +9,6 @@ import java.util.concurrent.atomic.AtomicLong
 open class EthereumServer(var started: Boolean) {
     fun ethStart() {
         if (this.started) return
-        scriptExec("clean")
         scriptExec("run")
     }
 
@@ -21,7 +20,7 @@ open class EthereumServer(var started: Boolean) {
     companion object {
         private val etherbasePasswd = "starcoinmakeworldbetter"
         private val keystore = "/tmp/geth_data/keystore"
-        private val script = "scrpts/docker.sh"
+        private val script = "scripts/docker.sh"
         fun etherbaseAccount(chain: EthereumChain): EthereumAccount {
             val credentials = WalletUtils.loadCredentials(
                 etherbasePasswd,

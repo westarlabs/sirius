@@ -7,29 +7,40 @@ import org.junit.*
 import org.starcoin.sirius.core.*
 import org.starcoin.sirius.crypto.CryptoService
 import org.starcoin.sirius.crypto.eth.EthCryptoKey
-import org.starcoin.sirius.protocol.Chain
-import org.starcoin.sirius.protocol.ChainAccount
 import org.starcoin.sirius.protocol.ChainEvent
 import org.starcoin.sirius.protocol.EthereumTransaction
+import org.starcoin.sirius.protocol.ethereum.EthereumServer.Companion.etherbaseAccount
 import org.starcoin.sirius.util.WithLogging
-import java.util.concurrent.atomic.AtomicLong
-import kotlin.properties.Delegates
 
 
-class EthereumChainTest : EthereumServer(true) {
-    companion object : WithLogging()
-
-    init {
-        this.ethStart()
-    }
+class EthereumChainTest {
 
     private val chain: EthereumChain by lazy { EthereumChain() }
     private val alice = EthereumAccount(CryptoService.generateCryptoKey())
     private val etherbase: EthereumAccount by lazy { etherbaseAccount(chain) }
 
-    @After
-    fun tearDown() {
-        this.ethStop()
+    companion object : WithLogging() {
+        private val server = EthereumServer(false)
+        
+        @BeforeClass
+        @JvmStatic
+        fun setup() {
+            server.ethStart()
+            Thread.sleep(1000)
+        }
+
+        @AfterClass
+        @JvmStatic
+        fun tearDown() {
+            server.ethStop()
+        }
+    }
+
+    @Before
+    fun checkServerReady() {
+        while (chain.getBlockNumber() == 0.toLong()) {
+            Thread.sleep(1000)
+        }
     }
 
     @Test
@@ -47,12 +58,12 @@ class EthereumChainTest : EthereumServer(true) {
     @Test
     fun testFindTransaction() {
         val transAmount = 100.toBigInteger()
-        val tx = chain.newTransaction(etherbase, alice.address, transAmount) as EthereumTransaction
+        val tx = chain.newTransaction(etherbase, alice.address, transAmount)
         tx.sign(etherbase.key as EthCryptoKey)
         tx.verify()
         LOG.info("tx from:${tx.from}")
         Assert.assertNotNull(tx.from)
-        val tx1 = chain.newTransaction(etherbase, alice.address, transAmount) as EthereumTransaction
+        val tx1 = chain.newTransaction(etherbase, alice.address, transAmount)
         tx1.verify()
         val hash = chain.submitTransaction(etherbase, tx1)
         val txFind = chain.findTransaction(hash)

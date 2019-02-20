@@ -1,12 +1,43 @@
 package org.starcoin.sirius.protocol.ethereum
 
-import kotlinx.serialization.ImplicitReflectionSerializer
+import org.junit.AfterClass
 import org.junit.Assert
-import org.junit.Test
+import org.junit.BeforeClass
+import org.starcoin.sirius.util.WithLogging
 import java.math.BigInteger
 
 class EthereumHubContractTest : HubContractTestBase() {
+    companion object : WithLogging() {
+        private val server = EthereumServer(false)
+
+        @BeforeClass
+        @JvmStatic
+        fun setup() {
+            server.ethStart()
+            Thread.sleep(1000)
+        }
+
+        @AfterClass
+        @JvmStatic
+        fun tearDown() {
+            server.ethStop()
+        }
+    }
+
     override val chain: EthereumBaseChain by lazy { EthereumChain() }
+
+
+    init {
+        while (true) {
+            try {
+                chain.waitBlocks(3)
+            } catch (e: Exception) {
+                HubContractTestBase.LOG.info("$e")
+                continue
+            }
+            break
+        }
+    }
 
     override fun sendEther(to: EthereumAccount, value: BigInteger) {
         val from = EthereumServer.etherbaseAccount(chain as EthereumChain)
@@ -14,48 +45,5 @@ class EthereumHubContractTest : HubContractTestBase() {
         val hash = chain.submitTransaction(from, tx)
         chain.waitTransactionProcessed(hash)
         Assert.assertEquals(value, chain.getBalance(to.address))
-    }
-
-    @Test
-    @ImplicitReflectionSerializer
-    override fun testHubInfo() {
-        super.testHubInfo()
-    }
-
-    @Test
-    @ImplicitReflectionSerializer
-    override fun testCurrentEon() {
-        super.testCurrentEon()
-    }
-
-    @Test
-    @ImplicitReflectionSerializer
-    override fun testDeposit() {
-        super.testDeposit()
-    }
-
-    @Test
-    @ImplicitReflectionSerializer
-    override fun testWithDrawal() {
-        super.testWithDrawal()
-    }
-
-    @Test
-    @ImplicitReflectionSerializer
-    override fun testCommit() {
-        super.testCommit()
-    }
-
-    @Test
-    @ImplicitReflectionSerializer
-    override fun testBalanceUpdateChallenge() {
-        super.testBalanceUpdateChallenge()
-    }
-
-
-    @Test
-    @ImplicitReflectionSerializer
-    override fun testTransferChallenge() {
-        super.testTransferChallenge()
     }
 }
