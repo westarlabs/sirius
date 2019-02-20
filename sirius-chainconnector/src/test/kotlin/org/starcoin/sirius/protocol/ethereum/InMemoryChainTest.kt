@@ -20,10 +20,10 @@ class InMemoryChainTest {
         val account1 = EthereumAccount()
         val account2 = EthereumAccount()
         val oneEther = EtherUtil.convert(1, EtherUtil.Unit.ETHER)
-        chain.miningCoin(account1, oneEther * 1000.toBigInteger())
+        chain.tryMiningCoin(account1, oneEther * 1000.toBigInteger())
         Assert.assertEquals(chain.getBalance(account1.address), oneEther * 1000.toBigInteger())
 
-        chain.miningCoin(account2, oneEther * 1000.toBigInteger())
+        chain.tryMiningCoin(account2, oneEther * 1000.toBigInteger())
         Assert.assertEquals(chain.getBalance(account2.address), oneEther * 1000.toBigInteger())
 
         chain.submitTransaction(
@@ -34,7 +34,7 @@ class InMemoryChainTest {
         Assert.assertTrue(chain.getBalance(account1.address) > oneEther * 499.toBigInteger())
         Assert.assertEquals(oneEther * 1500.toBigInteger(), chain.getBalance(account2.address))
 
-        chain.miningCoin(account1, oneEther * 10000.toBigInteger())
+        chain.tryMiningCoin(account1, oneEther * 10000.toBigInteger())
         Assert.assertTrue(chain.getBalance(account1.address) > oneEther * 10499.toBigInteger())
 
         Assert.assertEquals(1, account1.getNonce())

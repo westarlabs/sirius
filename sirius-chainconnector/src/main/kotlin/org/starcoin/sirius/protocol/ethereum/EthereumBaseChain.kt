@@ -6,14 +6,17 @@ import org.ethereum.solidity.compiler.CompilationResult
 import org.ethereum.solidity.compiler.SolidityCompiler
 import org.starcoin.sirius.core.Address
 import org.starcoin.sirius.crypto.CryptoKey
+import org.starcoin.sirius.crypto.CryptoService
 import org.starcoin.sirius.lang.hexToByteArray
 import org.starcoin.sirius.protocol.Chain
 import org.starcoin.sirius.protocol.ContractConstructArgs
 import org.starcoin.sirius.protocol.EthereumTransaction
 import org.starcoin.sirius.protocol.ethereum.contract.EthereumHubContract
 import org.starcoin.sirius.util.WithLogging
+import org.web3j.crypto.WalletUtils
 import java.io.File
 import java.math.BigInteger
+import java.util.concurrent.atomic.AtomicLong
 
 
 abstract class EthereumBaseChain :
@@ -104,4 +107,23 @@ abstract class EthereumBaseChain :
         TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
     }
 
+    override fun createAccount(key: CryptoKey): EthereumAccount {
+        return EthereumAccount(key)
+    }
+
+    override fun createAccount(): EthereumAccount {
+        return EthereumAccount()
+    }
+
+    override fun createAccount(keystore: File, password: String): EthereumAccount {
+        val credentials = WalletUtils.loadCredentials(
+            password, keystore
+        )
+        val cryptoKey = CryptoService.loadCryptoKey(credentials.ecKeyPair.privateKey.toByteArray())
+        return EthereumAccount(cryptoKey, AtomicLong(this.getNonce(cryptoKey.address).longValueExact()))
+    }
+
+    override fun tryMiningCoin(account: EthereumAccount, amount: BigInteger): Boolean {
+        return false
+    }
 }

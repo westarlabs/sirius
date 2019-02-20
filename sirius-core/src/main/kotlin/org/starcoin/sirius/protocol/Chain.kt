@@ -3,6 +3,7 @@ package org.starcoin.sirius.protocol
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.channels.ReceiveChannel
 import org.starcoin.sirius.core.*
+import org.starcoin.sirius.crypto.CryptoKey
 import org.starcoin.sirius.lang.toHEXString
 import org.starcoin.sirius.util.HashUtil
 import java.io.File
@@ -60,4 +61,14 @@ interface Chain<T : ChainTransaction, B : Block<T>, A : ChainAccount> {
 
     fun waitTransactionProcessed(hash: Hash, times: Int = 20)
 
+    fun createAccount(key: CryptoKey): A
+
+    fun createAccount(keystore:File, password:String): A
+
+    fun createAccount(): A
+
+    /**
+     * try to pre mining coin to account, if chain implements not support, just return false.
+     */
+    fun tryMiningCoin(account: A, amount: BigInteger) :Boolean
 }

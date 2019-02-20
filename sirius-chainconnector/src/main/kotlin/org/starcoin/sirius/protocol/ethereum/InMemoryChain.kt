@@ -177,10 +177,11 @@ class InMemoryChain(val autoGenblock: Boolean = true) : EthereumBaseChain() {
         response.receive() ?: throw RuntimeException("Create Block fail.")
     }
 
-    fun miningCoin(account: EthereumAccount, amount: BigInteger) {
+    override fun tryMiningCoin(account: EthereumAccount, amount: BigInteger) :Boolean {
         this.sb.sender = originAccount
         this.sb.sendEther(account.address.toBytes(), amount)
         this.createBlock()
+        return false
     }
 
     override fun stop() {
