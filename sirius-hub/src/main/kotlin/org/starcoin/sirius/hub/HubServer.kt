@@ -6,16 +6,14 @@ import org.starcoin.sirius.protocol.Chain
 import org.starcoin.sirius.protocol.ChainAccount
 import org.starcoin.sirius.protocol.ContractConstructArgs
 import org.starcoin.sirius.protocol.HubContract
+import org.starcoin.sirius.util.WithLogging
 import kotlin.properties.Delegates
 
 class HubServer<A : ChainAccount>(
     val configuration: Configuration,
     val chain: Chain<out ChainTransaction, out Block<out ChainTransaction>, A>,
-    val owner: A = if (configuration.ownerKeystore != null && configuration.ownerKeystorePassword != null) {
-        chain.createAccount(configuration.ownerKeystore!!, configuration.ownerKeystorePassword!!)
-    } else {
-        chain.createAccount(configuration.ownerKey)
-    }
+    val owner: A = configuration.ownerKeystore?.let { chain.createAccount(it, configuration.ownerKeystorePassword) }
+        ?: chain.createAccount(configuration.ownerKey)
 ) {
 
     var grpcServer = GrpcServer(configuration)
@@ -23,7 +21,11 @@ class HubServer<A : ChainAccount>(
         private set
 
     fun start() {
-        contract = chain.deployContract(owner, ContractConstructArgs.DEFAULT_ARG)
+        contract = configuration.contractAddress?.let { chain.loadContract(it) } ?: chain.deployContract(
+            owner,
+            ContractConstructArgs.DEFAULT_ARG
+        )
+        LOG.info("HubContract Address: ${contract.contractAddress}")
         val hubService = HubServiceImpl(owner, chain, contract)
         val hubRpcService = HubRpcService(hubService)
         grpcServer.registerService(hubRpcService)
@@ -38,4 +40,6 @@ class HubServer<A : ChainAccount>(
     fun awaitTermination() {
         grpcServer.awaitTermination()
     }
+
+    companion object : WithLogging()
 }

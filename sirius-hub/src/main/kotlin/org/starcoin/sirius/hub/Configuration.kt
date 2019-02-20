@@ -1,6 +1,7 @@
 package org.starcoin.sirius.hub
 
 
+import org.starcoin.sirius.core.Address
 import org.starcoin.sirius.core.InetAddressPort
 import org.starcoin.sirius.crypto.CryptoKey
 import org.starcoin.sirius.crypto.CryptoService
@@ -39,8 +40,8 @@ class Configuration private constructor(val properties: Properties) {
     val ownerKeystore: File?
         get() = properties.getProperty("ownerKeystore")?.let { File(it) }
 
-    val ownerKeystorePassword: String?
-        get() = properties.getProperty("ownerKeystorePassword")
+    val ownerKeystorePassword: String
+        get() = properties.getProperty("ownerKeystorePassword", "")
 
     val isUnitNetwork: Boolean
         get() = this.network == Network.UINT
@@ -53,6 +54,9 @@ class Configuration private constructor(val properties: Properties) {
 
     val autoDeployContract: Boolean
         get() = properties.getProperty("autoDeployContract", "true").equals("true", true)
+
+    val contractAddress: Address?
+        get() = properties.getProperty("contractAddress")?.let { Address.wrap(it) }
 
     companion object {
 
