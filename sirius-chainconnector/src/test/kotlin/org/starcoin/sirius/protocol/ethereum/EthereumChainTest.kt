@@ -36,10 +36,15 @@ class EthereumChainTest {
         }
     }
 
-    @Before
-    fun checkServerReady() {
-        while (chain.getBlockNumber() == 0.toLong()) {
-            Thread.sleep(1000)
+    init {
+        while (true) {
+            try {
+                chain.waitBlocks(3)
+            } catch (e: Exception) {
+                HubContractTestBase.LOG.info("$e")
+                continue
+            }
+            break
         }
     }
 

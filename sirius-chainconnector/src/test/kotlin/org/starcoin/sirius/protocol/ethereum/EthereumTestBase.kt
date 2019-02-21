@@ -18,7 +18,7 @@ open class EthereumServer(var started: Boolean) {
     }
 
     companion object {
-        private val etherbasePasswd = "starcoinmakeworldbetter"
+        private val etherbasePasswd = ""
         private val keystore = "/tmp/geth_data/keystore"
         private val script = "scripts/docker.sh"
         fun etherbaseAccount(chain: EthereumChain): EthereumAccount {
