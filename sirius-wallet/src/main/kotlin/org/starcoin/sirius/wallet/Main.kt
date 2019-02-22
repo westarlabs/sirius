@@ -5,9 +5,7 @@ import jline.console.ConsoleReader
 import jline.console.completer.ArgumentCompleter
 import org.starcoin.sirius.core.Address
 import org.starcoin.sirius.core.InetAddressPort
-import org.starcoin.sirius.crypto.CryptoKey
 import org.starcoin.sirius.crypto.CryptoService
-import org.starcoin.sirius.protocol.EthereumTransaction
 import org.starcoin.sirius.protocol.ethereum.EthereumAccount
 import org.starcoin.sirius.protocol.ethereum.EthereumChain
 import org.starcoin.sirius.wallet.command.CliCommands
@@ -16,6 +14,7 @@ import org.starcoin.sirius.wallet.core.ChannelManager
 import org.starcoin.sirius.wallet.core.HubStatus
 import org.starcoin.sirius.wallet.core.Wallet
 import org.starcoin.sirius.wallet.core.store.FileStore
+import org.web3j.crypto.WalletUtils
 import picocli.CommandLine
 import java.io.File
 import java.io.FileInputStream
@@ -24,117 +23,111 @@ import java.io.InputStream
 import java.nio.file.Files
 import java.nio.file.Paths
 import java.util.*
+import java.util.concurrent.atomic.AtomicLong
 
+fun main(args: Array<String>) {
 
+    var name = ""
+    if (args.size <= 0) {
+        System.err.println("cli app should have name!")
+        System.exit(1)
+    } else {
+        name = args[0]
+    }
+    try {
+        val properties = loadConfig()
+        val hubAddr = properties.getProperty("hub_addr")
+        val chainAddr = properties.getProperty("chain_addr")
+        val contractAddr = properties.getProperty("contract_addr")
+        val keyStoreFilePath = properties.getProperty("key_store")
+        val password = properties.getProperty("password")
 
-    private val PRIVATE_KEY_FILENAME = "private"
-    private val PUBLIC_KEY_FILENAME = "public"
-    private val ADDRESS_FILENAME = "address"
+        val reader = ConsoleReader()
+        reader.prompt = String.format("%s>", name)
 
-    fun main(args : Array<String>) {
-        var name = ""
-        if (args.size <= 0) {
-            System.err.println("cli app should have name!")
-            System.exit(1)
+        val cmd = CommandLine(CliCommands(reader))
+        val channelManager = ChannelManager(InetAddressPort.valueOf(hubAddr))
+
+        val chain = EthereumChain(chainAddr)
+        var account = loadAccount(keyStoreFilePath, password, chain)
+        var store = FileStore(getWalletDir(name).path, HubStatus::class.java)
+        var wallet = Wallet(Address.wrap(contractAddr), channelManager, chain, store, account)
+
+        cmd.addSubcommand("wallet", WalletCommand(wallet))
+
+        var line: String
+
+        while (reader.readLine().let { line = it;it != null }) {
+            val list = ArgumentCompleter.WhitespaceArgumentDelimiter().delimit(line, line.length)
+
+            cmd.registerConverter(Address::class.java!!, Address.Companion::wrap)
+                .parseWithHandlers(
+                    CommandLine.RunLast(),
+                    object : CommandLine.DefaultExceptionHandler<List<Any>>() {
+                        override fun handleExecutionException(
+                            ex: CommandLine.ExecutionException?, parseResult: CommandLine.ParseResult?
+                        ): List<Any> {
+                            super.err().println(ex!!.message)
+                            // TODO exception define and handler
+                            ex.printStackTrace(super.err())
+                            ex.commandLine.usage(super.out(), super.ansi())
+                            return emptyList()
+                        }
+                    },
+                    *list.arguments
+                )
+        }
+    } catch (t: Throwable) {
+        t.printStackTrace()
+    }
+
+}
+
+@Throws(IOException::class)
+private fun loadConfig(): Properties {
+    val prop = Properties()
+    var inputStream: InputStream? = null
+    val configFile = File(
+        System.getProperty("user.home"),
+        ".starcoin" + File.separator + "liq" + File.separator + "conf.properties"
+    )
+
+    if (configFile.exists()) {
+        inputStream = FileInputStream(configFile)
+    } else {
+        val path = Paths.get("./conf.properties")
+        if (Files.exists(path)) {
+            inputStream = FileInputStream("./conf.properties")
         } else {
-            name = args[0]
+            inputStream = object {}.javaClass.getClassLoader().getResourceAsStream("conf.properties")
         }
-        try {
-            val properties = loadConfig()
-            val hubAddr = properties.getProperty("hub_addr")
-            val chainAddr = properties.getProperty("chain_addr")
-            val contractAddr = properties.getProperty("contract_addr")
-
-            val reader = ConsoleReader()
-            reader.prompt = String.format("%s>", name)
-
-            val cmd = CommandLine(CliCommands(reader))
-            val channelManager = ChannelManager(InetAddressPort.valueOf(hubAddr))
-
-            val key = generateKey(name)
-            var account = EthereumAccount(CryptoService.loadCryptoKey(key.toBytes()))
-            val chain = EthereumChain(chainAddr)
-            var store = FileStore(getWalletDir(name).path, HubStatus::class.java)
-            var wallet= Wallet<EthereumTransaction, EthereumAccount>(Address.wrap(contractAddr),channelManager,chain,store,account)
-
-            cmd.addSubcommand("wallet", WalletCommand(wallet))
-
-            var line: String
-
-            while (reader.readLine().let {line=it;it!=null}) {
-                val list = ArgumentCompleter.WhitespaceArgumentDelimiter().delimit(line, line.length)
-
-                cmd.registerConverter(Address::class.java!!, Address.Companion::wrap)
-                    .parseWithHandlers(
-                        CommandLine.RunLast(),
-                        object : CommandLine.DefaultExceptionHandler<List<Any>>() {
-                            override fun handleExecutionException(
-                                ex: CommandLine.ExecutionException?, parseResult: CommandLine.ParseResult?
-                            ): List<Any> {
-                                super.err().println(ex!!.message)
-                                // TODO exception define and handler
-                                ex.printStackTrace(super.err())
-                                ex.commandLine.usage(super.out(), super.ansi())
-                                return emptyList()
-                            }
-                        },
-                        *list.arguments
-                    )
-            }
-        } catch (t: Throwable) {
-            t.printStackTrace()
-        }
-
     }
+    prop.load(inputStream)
+    return prop
+}
 
-    @Throws(IOException::class)
-    private fun loadConfig(): Properties {
-        val prop = Properties()
-        var inputStream: InputStream? = null
-        val configFile = File(
-            System.getProperty("user.home"),
-            ".starcoin" + File.separator + "liq" + File.separator + "conf.properties"
-        )
+fun getWalletDir(name: String): File {
+    val walletDir = genWalletDir(name)
+    Preconditions.checkState(
+        walletDir.exists(),
+        "wallet " + walletDir.absolutePath + " is not exist, please create first."
+    )
+    return walletDir
+}
 
-        if (configFile.exists()) {
-            inputStream = FileInputStream(configFile)
-        } else {
-            val path = Paths.get("./conf.properties")
-            if (Files.exists(path)) {
-                inputStream = FileInputStream("./conf.properties")
-            } else {
-                //inputStream = this::class.java!!.getClassLoader().getResourceAsStream("conf.properties")
-            }
-        }
-        prop.load(inputStream)
-        return prop
-    }
+fun genWalletDir(name: String): File {
+    return File(
+        System.getProperty("user.home"),
+        ".starcoin" + File.separator + "liq" + File.separator + name
+    )
+}
 
-    fun generateKey(name: String):CryptoKey {
-        val walletDir = getWalletDir(name)
-        val keyFile = File(walletDir, PRIVATE_KEY_FILENAME)
-        var key: CryptoKey
-        if (keyFile.exists()) {
-            key=CryptoService.loadCryptoKey(Files.readAllBytes(keyFile.toPath()))
-        } else {
-            key = CryptoService.generateCryptoKey()
-            Files.write(keyFile.toPath(),key.toBytes())
-        }
-        return key
-    }
-
-    fun getWalletDir(name:String): File {
-        val walletDir = genWalletDir(name)
-        Preconditions.checkState(
-            walletDir.exists(),
-            "wallet " + walletDir.absolutePath + " is not exist, please create first.")
-        return walletDir
-    }
-
-    fun genWalletDir(name:String): File {
-        return File(
-            System.getProperty("user.home"),
-            ".starcoin" + File.separator + "liq" + File.separator + name
-        )
-    }
+fun loadAccount(path: String, password: String, chain: EthereumChain): EthereumAccount {
+    val credentials = WalletUtils.loadCredentials(
+        password,
+        File(path)
+    )
+    val cryptoKey = CryptoService.loadCryptoKey(credentials.ecKeyPair.privateKey.toByteArray())
+    return EthereumAccount(cryptoKey, AtomicLong(chain.getNonce(cryptoKey.address).longValueExact()))
+}
 

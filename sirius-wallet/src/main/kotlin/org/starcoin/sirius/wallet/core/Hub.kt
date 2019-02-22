@@ -71,7 +71,7 @@ class Hub <T : ChainTransaction, A : ChainAccount> {
         var hubInfo=contract.queryHubInfo(account)
         hubAddr=hubInfo.hubAddress
 
-        this.currentEon=Eon.calculateEon(blocksPerEon = hubInfo.blocksPerEon,blockHeight = chain.getBlockNumber().toLong())
+        this.currentEon=Eon.calculateEon(startBlockNumber = hubInfo.startBlockNumber.toLong(),blocksPerEon = hubInfo.blocksPerEon,currentBlockNumber = chain.getBlockNumber().toLong())
 
         this.hubStatus = HubStatus(this.currentEon)
         hubStatus.blocksPerEon= hubInfo.blocksPerEon
@@ -80,7 +80,7 @@ class Hub <T : ChainTransaction, A : ChainAccount> {
 
     private fun getChainEon():Eon{
         var hubInfo=contract.queryHubInfo(account)
-        return Eon.calculateEon(blocksPerEon = hubInfo.blocksPerEon,blockHeight = chain.getBlockNumber().toLong())
+        return Eon.calculateEon(startBlockNumber = hubInfo.startBlockNumber.toLong(),blocksPerEon = hubInfo.blocksPerEon,currentBlockNumber = chain.getBlockNumber().toLong())
     }
 
     @Synchronized
@@ -167,6 +167,10 @@ class Hub <T : ChainTransaction, A : ChainAccount> {
     }
 
     fun recieveHubSign() {
+    }
+
+    fun hubInfo():ContractHubInfo{
+        return contract.queryHubInfo(account)
     }
 
     private fun onNewUpdate(update: Update) {

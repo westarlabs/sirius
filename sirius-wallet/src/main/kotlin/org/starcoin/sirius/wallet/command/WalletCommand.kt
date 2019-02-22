@@ -16,11 +16,21 @@ import java.math.BigInteger
     name = "wallet",
     description = arrayOf("manage wallet"),
     mixinStandardHelpOptions = true,
-    subcommands = arrayOf())
+    subcommands = arrayOf(
+        NewTransfer::class,
+        Deposit::class,
+        OpenTransferDeliveryChallenge::class,
+        WithDrawal::class,
+        GetHubAccount::class,
+        Register::class,
+        LocalBalance::class,
+        SyncHub::class,
+        CheatMode::class,
+        RecieveTransaction::class,
+        RecieveHubSign::class,
+        HubInfo::class
+    ))
 class WalletCommand<T : ChainTransaction, A : ChainAccount>(internal var wallet: Wallet<T, A>) : Runnable {
-
-    @CommandLine.ParentCommand
-    var cliCommands: CliCommands? = null
 
     override fun run() {
     }
@@ -30,14 +40,14 @@ class WalletCommand<T : ChainTransaction, A : ChainAccount>(internal var wallet:
 class Deposit<T : ChainTransaction, A : ChainAccount>: Runnable {
 
     @CommandLine.ParentCommand
-    var wallet: Wallet<T,A>? = null
+    var walletCommand: WalletCommand<T,A>? = null
 
     @CommandLine.Option(names = ["value"], description = ["coin amount"], required = true)
     var value: Long = 0
 
     override fun run() {
         try {
-            val succResponse = wallet!!.hub.deposit(BigInteger.valueOf(value))
+            val succResponse = walletCommand!!.wallet.hub.deposit(BigInteger.valueOf(value))
         } catch (e: Exception) {
             System.out.println(e.getLocalizedMessage())
         }
@@ -48,7 +58,7 @@ class Deposit<T : ChainTransaction, A : ChainAccount>: Runnable {
 class NewTransfer<T : ChainTransaction, A : ChainAccount> : Runnable {
 
     @CommandLine.ParentCommand
-    var wallet: Wallet<T,A>? = null
+    var walletCommand: WalletCommand<T,A>? = null
 
     @CommandLine.Option(names = ["addr"], description = ["destination address"], required = true)
     var addr: Address? = null
@@ -58,7 +68,7 @@ class NewTransfer<T : ChainTransaction, A : ChainAccount> : Runnable {
 
     override fun run() {
         try {
-            val tx = wallet!!.hub.newTransfer(addr!!, BigInteger.valueOf(value))
+            val tx = walletCommand!!.wallet.hub.newTransfer(addr!!, BigInteger.valueOf(value))
             if (tx != null) {
                 System.out.println("transaction hash is :" + tx!!.hash().toMD5Hex())
             } else {
@@ -70,160 +80,176 @@ class NewTransfer<T : ChainTransaction, A : ChainAccount> : Runnable {
 
     }
 
-    @CommandLine.Command(name = "reg", description = ["regisger hub account"])
-    class Register<T : ChainTransaction, A : ChainAccount> : Runnable {
+}
 
-        @CommandLine.ParentCommand
-        var wallet: Wallet<T,A>? = null
+@CommandLine.Command(name = "reg", description = ["regisger hub account"])
+class Register<T : ChainTransaction, A : ChainAccount> : Runnable {
 
-        override fun run() {
-            try {
-                val updateResponse = wallet!!.hub.register()
-                System.out.println(updateResponse)
-            } catch (e: StatusRuntimeException) {
-                if (e.status == Status.ALREADY_EXISTS) {
-                    println("user exists,you may need sync status from hub")
-                }
-            }
+    @CommandLine.ParentCommand
+    var walletCommand: WalletCommand<T,A>? = null
 
-        }
-    }
-
-    @CommandLine.Command(name = "account", description = ["get hub account"])
-    class GetHubAccount<T : ChainTransaction, A : ChainAccount> : Runnable {
-
-        @CommandLine.ParentCommand
-        var wallet: Wallet<T,A>? = null
-
-        override fun run() {
-            val hubAccount = wallet!!.hub.accountInfo()
-            if (hubAccount != null) {
-                System.out.println(hubAccount!!.toString())
-                System.out.println(hubAccount!!.address.toBytes().toHEXString())
+    override fun run() {
+        try {
+            val updateResponse = walletCommand!!.wallet.hub.register()
+            System.out.println(updateResponse)
+        } catch (e: StatusRuntimeException) {
+            if (e.status == Status.ALREADY_EXISTS) {
+                println("user exists,you may need sync status from hub")
             }
         }
+
     }
+}
 
-    @CommandLine.Command(name = "otdc", description = ["open transfer delivery challenge"])
-    class OpenTransferDeliveryChallenge<T : ChainTransaction, A : ChainAccount> : Runnable {
+@CommandLine.Command(name = "account", description = ["get hub account"])
+class GetHubAccount<T : ChainTransaction, A : ChainAccount> : Runnable {
 
-        @CommandLine.ParentCommand
-        var wallet: Wallet<T,A>? = null
+    @CommandLine.ParentCommand
+    var walletCommand: WalletCommand<T,A>? = null
 
-        @CommandLine.Option(names = ["txh"], description = ["hash"], required = true)
-        var transactionHash: String? = null
-
-        override fun run() {
-            try {
-                val succResponse = wallet!!.hub.openTransferChallenge(Hash.Companion.wrap(transactionHash!!))
-                println(succResponse)
-            } catch (e: Exception) {
-                System.out.println(e.message)
-            }
-
+    override fun run() {
+        val hubAccount = walletCommand!!.wallet.hub.accountInfo()
+        if (hubAccount != null) {
+            System.out.println(hubAccount!!.toString())
+            System.out.println(hubAccount!!.address.toBytes().toHEXString())
         }
     }
+}
 
-    @CommandLine.Command(name = "wd", description = ["withdrawal"])
-    class WithDrawal<T : ChainTransaction, A : ChainAccount> : Runnable {
+@CommandLine.Command(name = "otdc", description = ["open transfer delivery challenge"])
+class OpenTransferDeliveryChallenge<T : ChainTransaction, A : ChainAccount> : Runnable {
 
-        @CommandLine.ParentCommand
-        var wallet: Wallet<T,A>? = null
+    @CommandLine.ParentCommand
+    var walletCommand: WalletCommand<T,A>? = null
 
-        @CommandLine.Option(names = ["value"], description = ["coin amount"], required = true)
-        var value: Long = 0
+    @CommandLine.Option(names = ["txh"], description = ["hash"], required = true)
+    var transactionHash: String? = null
 
-        override fun run() {
-            try {
-                val succResponse = wallet!!.hub.withDrawal(BigInteger.valueOf(value))
-                println(succResponse)
-            } catch (e: Exception) {
-                System.out.println(e.message)
-            }
-
+    override fun run() {
+        try {
+            val succResponse = walletCommand!!.wallet.hub.openTransferChallenge(Hash.wrap(transactionHash!!))
+            println(succResponse)
+        } catch (e: Exception) {
+            System.out.println(e.message)
         }
+
     }
+}
 
-    @CommandLine.Command(name = "lb", description = ["local balance"])
-    class LocalBalance<T : ChainTransaction, A : ChainAccount> : Runnable {
+@CommandLine.Command(name = "wd", description = ["withdrawal"])
+class WithDrawal<T : ChainTransaction, A : ChainAccount> : Runnable {
 
-        @CommandLine.ParentCommand
-        var wallet: Wallet<T,A>? = null
+    @CommandLine.ParentCommand
+    var walletCommand: WalletCommand<T,A>? = null
 
-        override fun run() {
-            try {
-                System.out.println("hub balance is " + wallet!!.hub.getAvailableCoin())
-                System.out.println("withdrawal coin is " + wallet!!.hub.getWithdrawalCoin())
-                //System.out.println("chain balance is " + wallet!!.hub.checkChainBalance())
-            } catch (e: Exception) {
-                System.out.println(e.message)
-            }
+    @CommandLine.Option(names = ["value"], description = ["coin amount"], required = true)
+    var value: Long = 0
 
+    override fun run() {
+        try {
+            val succResponse = walletCommand!!.wallet.hub.withDrawal(BigInteger.valueOf(value))
+            println(succResponse)
+        } catch (e: Exception) {
+            System.out.println(e.message)
         }
+
     }
+}
 
-    @CommandLine.Command(name = "sync", description = ["sync hub status"])
-    class SyncHub<T : ChainTransaction, A : ChainAccount> : Runnable {
+@CommandLine.Command(name = "lb", description = ["local balance"])
+class LocalBalance<T : ChainTransaction, A : ChainAccount> : Runnable {
 
-        @CommandLine.ParentCommand
-        var wallet: Wallet<T,A>? = null
+    @CommandLine.ParentCommand
+    var walletCommand: WalletCommand<T,A>? = null
 
-        override fun run() {
-            wallet!!.hub.sync()
-            println("sync finish")
+    override fun run() {
+        try {
+            System.out.println("hub balance is " + walletCommand!!.wallet.hub.getAvailableCoin())
+            System.out.println("withdrawal coin is " + walletCommand!!.wallet.hub.getWithdrawalCoin())
+            //System.out.println("chain balance is " + wallet!!.hub.checkChainBalance())
+        } catch (e: Exception) {
+            System.out.println(e.message)
         }
+
     }
+}
 
-    @CommandLine.Command(name = "cheat", description = ["set cheat mode flag"])
-    class CheatMode<T : ChainTransaction, A : ChainAccount> : Runnable {
+@CommandLine.Command(name = "sync", description = ["sync hub status"])
+class SyncHub<T : ChainTransaction, A : ChainAccount> : Runnable {
 
-        @CommandLine.ParentCommand
-        var wallet: Wallet<T,A>? = null
+    @CommandLine.ParentCommand
+    var walletCommand: WalletCommand<T,A>? = null
 
-        @CommandLine.Option(names = ["flag"], description = ["flag"], required = true)
-        var flag: Int = 0
+    override fun run() {
+        walletCommand!!.wallet.hub.sync()
+        println("sync finish")
+    }
+}
 
-        override fun run() {
-            try {
-                val flags = wallet!!.hub.cheat(flag)
-                System.out.println(flags)
-            } catch (e: Exception) {
-                System.out.println(e.message)
-            }
+@CommandLine.Command(name = "cheat", description = ["set cheat mode flag"])
+class CheatMode<T : ChainTransaction, A : ChainAccount> : Runnable {
 
+    @CommandLine.ParentCommand
+    var walletCommand: WalletCommand<T,A>? = null
+
+    @CommandLine.Option(names = ["flag"], description = ["flag"], required = true)
+    var flag: Int = 0
+
+    override fun run() {
+        try {
+            val flags = walletCommand!!.wallet.hub.cheat(flag)
+            System.out.println(flags)
+        } catch (e: Exception) {
+            System.out.println(e.message)
         }
+
     }
+}
 
-    @CommandLine.Command(name = "rt", description = ["recieve transacton"])
-    class RecieveTransaction<T : ChainTransaction, A : ChainAccount> : Runnable {
+@CommandLine.Command(name = "rt", description = ["recieve transacton"])
+class RecieveTransaction<T : ChainTransaction, A : ChainAccount> : Runnable {
 
-        @CommandLine.ParentCommand
-        var wallet: Wallet<T,A>? = null
+    @CommandLine.ParentCommand
+    var walletCommand: WalletCommand<T,A>? = null
 
-        override fun run() {
-            try {
-                wallet!!.hub.recieveTransacion()
-            } catch (e: Exception) {
-                System.out.println(e.message)
-            }
-
+    override fun run() {
+        try {
+            walletCommand!!.wallet.hub.recieveTransacion()
+        } catch (e: Exception) {
+            System.out.println(e.message)
         }
+
     }
+}
 
-    @CommandLine.Command(name = "rhs", description = ["recieve hub signed update"])
-    class RecieveHubSign<T : ChainTransaction, A : ChainAccount> : Runnable {
+@CommandLine.Command(name = "rhs", description = ["recieve hub signed update"])
+class RecieveHubSign<T : ChainTransaction, A : ChainAccount> : Runnable {
 
-        @CommandLine.ParentCommand
-        var wallet: Wallet<T,A>? = null
+    @CommandLine.ParentCommand
+    var walletCommand: WalletCommand<T,A>? = null
 
-        override fun run() {
-            try {
-                wallet!!.hub.recieveHubSign()
-            } catch (e: Exception) {
-                System.out.println(e.message)
-            }
-
+    override fun run() {
+        try {
+            walletCommand!!.wallet.hub.recieveHubSign()
+        } catch (e: Exception) {
+            System.out.println(e.message)
         }
-    }
 
+    }
+}
+
+@CommandLine.Command(name = "hub_info", description = ["query hub info"])
+class HubInfo<T : ChainTransaction, A : ChainAccount> : Runnable {
+
+    @CommandLine.ParentCommand
+    var walletCommand: WalletCommand<T,A>? = null
+
+    override fun run() {
+        try {
+            println(walletCommand!!.wallet.hub.hubInfo())
+        } catch (e: Exception) {
+            System.out.println(e.message)
+        }
+
+    }
 }
