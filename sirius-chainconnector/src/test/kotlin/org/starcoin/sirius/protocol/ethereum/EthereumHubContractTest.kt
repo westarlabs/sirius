@@ -7,32 +7,34 @@ import org.starcoin.sirius.util.WithLogging
 import java.math.BigInteger
 
 class EthereumHubContractTest : HubContractTestBase() {
-    companion object : WithLogging() {
-        private val server = EthereumServer(false)
 
+    override val chain: EthereumBaseChain by lazy { EthereumChain() }
+
+    private val etherbase: EthereumAccount by lazy{
+        chain.createAccount(loadEtherBaseKeyStoreFile("/tmp/geth_data/keystore"), "")}
+
+
+    companion object : WithLogging() {
         @BeforeClass
         @JvmStatic
         fun setup() {
-            server.ethStart()
-            Thread.sleep(1000)
+            scriptExec("scripts/docker.sh run")
         }
 
         @AfterClass
         @JvmStatic
         fun tearDown() {
-            server.ethStop()
+            scriptExec("scripts/docker.sh clean")
         }
     }
-
-    override val chain: EthereumBaseChain by lazy { EthereumChain() }
-
 
     init {
         while (true) {
             try {
-                chain.waitBlocks(3)
+                chain.waitBlocks(1)
             } catch (e: Exception) {
-                HubContractTestBase.LOG.info("$e")
+                EthereumChainTest.LOG.info("waiting block exception: $e")
+                Thread.sleep(1000)
                 continue
             }
             break
@@ -40,9 +42,8 @@ class EthereumHubContractTest : HubContractTestBase() {
     }
 
     override fun sendEther(to: EthereumAccount, value: BigInteger) {
-        val from = EthereumServer.etherbaseAccount(chain as EthereumChain)
-        val tx = chain.newTransaction(from, to.address, value)
-        val hash = chain.submitTransaction(from, tx)
+        val tx = chain.newTransaction(etherbase, to.address, value)
+        val hash = chain.submitTransaction(etherbase, tx)
         chain.waitTransactionProcessed(hash)
         Assert.assertEquals(value, chain.getBalance(to.address))
     }
