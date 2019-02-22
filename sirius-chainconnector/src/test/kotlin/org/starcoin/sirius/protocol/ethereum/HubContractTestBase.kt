@@ -29,7 +29,7 @@ abstract class HubContractTestBase {
     private var aliceChannel: ReceiveChannel<TransactionResult<EthereumTransaction>> by Delegates.notNull()
     private var blocksPerEon = ContractConstructArgs.DEFAULT_ARG.blocksPerEon
     private var startBlockNumber: Long by Delegates.notNull()
-    
+
     @Before
     fun beforeTest() {
 
@@ -204,6 +204,7 @@ abstract class HubContractTestBase {
         waitToEon(eon)
         val hash = contract.commit(owner, root)
         chain.waitTransactionProcessed(hash)
+
         runBlocking {
             val txResult = ownerChannel.receive()
             Assert.assertTrue(txResult.receipt.status)
@@ -239,6 +240,8 @@ abstract class HubContractTestBase {
         val amtp = AMTreeProof(path, leaf2)
         val bup = BalanceUpdateProof(true, update2, true, amtp.path)
         var hash = contract.openBalanceUpdateChallenge(alice, bup)
+        val tx = chain.findTransaction(hash)
+        Assert.assertNotNull(tx)
         chain.waitTransactionProcessed(hash)
         val update4 = newUpdate(0, 4, BigInteger.ZERO, alice)//mine
         val leaf3 = newLeafNodeInfo(alice.address, update4)

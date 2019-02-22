@@ -56,7 +56,7 @@ interface Chain<T : ChainTransaction, B : Block<T>, A : ChainAccount> {
     fun waitBlocks(blockCount: Int = 1)
 
     fun stop()
-
+    fun start()
     fun getNonce(address: Address): BigInteger
 
     fun waitTransactionProcessed(hash: Hash, times: Int = 20)

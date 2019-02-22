@@ -8,8 +8,6 @@ import org.starcoin.sirius.core.*
 import org.starcoin.sirius.crypto.CryptoService
 import org.starcoin.sirius.crypto.eth.EthCryptoKey
 import org.starcoin.sirius.protocol.ChainEvent
-import org.starcoin.sirius.protocol.EthereumTransaction
-import org.starcoin.sirius.protocol.ethereum.EthereumServer.Companion.etherbaseAccount
 import org.starcoin.sirius.util.WithLogging
 
 
@@ -17,31 +15,30 @@ class EthereumChainTest {
 
     private val chain: EthereumChain by lazy { EthereumChain() }
     private val alice = EthereumAccount(CryptoService.generateCryptoKey())
-    private val etherbase: EthereumAccount by lazy { etherbaseAccount(chain) }
+    private val etherbase: EthereumAccount =
+        chain.createAccount(loadEtherBaseKeyStoreFile("/tmp/geth_data/keystore"), "")
 
     companion object : WithLogging() {
-        private val server = EthereumServer(false)
-        
         @BeforeClass
         @JvmStatic
         fun setup() {
-            server.ethStart()
-            Thread.sleep(1000)
+            scriptExec("scripts/docker.sh run")
         }
 
         @AfterClass
         @JvmStatic
         fun tearDown() {
-            server.ethStop()
+            scriptExec("scripts/docker.sh clean")
         }
     }
 
     init {
         while (true) {
             try {
-                chain.waitBlocks(3)
+                chain.waitBlocks(1)
             } catch (e: Exception) {
-                HubContractTestBase.LOG.info("$e")
+                LOG.info("waiting block exception: $e")
+                Thread.sleep(1000)
                 continue
             }
             break
