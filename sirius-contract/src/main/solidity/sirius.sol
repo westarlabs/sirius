@@ -38,7 +38,8 @@ contract SiriusService is Sirius {
     using SafeMath for uint;
     event SiriusEvent(bytes32 indexed hash, uint indexed num, bytes value);
     event SiriusEvent2(address indexed addr, uint indexed num, bytes value);
-    event SiriusEvent3(uint indexed num, bool value);
+    event ReturnEvent(bool value);
+    event RecoveryModeEvent();
 
     constructor(address firstAddress, bytes memory data) public {
         owner = msg.sender;
@@ -139,7 +140,7 @@ contract SiriusService is Sirius {
             returnFlag = flag;
         }
 
-        emit SiriusEvent3(2, returnFlag);
+        emit ReturnEvent(returnFlag);
         return returnFlag;
     }
 
@@ -172,7 +173,7 @@ contract SiriusService is Sirius {
             returnFlag = true;
         }
 
-        emit SiriusEvent3(3, returnFlag);
+        emit ReturnEvent(returnFlag);
         return returnFlag;
     }
 
@@ -220,21 +221,24 @@ contract SiriusService is Sirius {
             returnFlag = true;
         }
 
-        emit SiriusEvent3(4, returnFlag);
+        emit ReturnEvent(returnFlag);
         return returnFlag;
     }
 
     function openBalanceUpdateChallenge(bytes calldata data) external recovery returns (bool) {
+        bool returnFlag = false;
         if(!recoveryMode) {
             require(balances[0].hasRoot, "balances[0].hasRoot false");
             ModelLib.HubRoot memory preRoot = balances[1].root;
             bytes memory preHr = ModelLib.marshalHubRoot(preRoot);
-            return challengeContract.openBalanceUpdateChallenge(data, preHr);
+            returnFlag = challengeContract.openBalanceUpdateChallenge(data, preHr);
         }
-        return false;
+        emit ReturnEvent(returnFlag);
+        return returnFlag;
     }
 
     function closeBalanceUpdateChallenge(address addr, bytes calldata data) external onlyOwner returns (bool) {
+        bool returnFlag = false;
         if(!recoveryMode) {
             require(balances[0].hasRoot, "balances[0].hasRoot false");
             ModelLib.HubRoot memory root = balances[0].root;
@@ -248,25 +252,30 @@ contract SiriusService is Sirius {
                 withdrawalAmount = info.amount;
             }
 
-            return challengeContract.closeBalanceUpdateChallenge(addr, data, hr, withdrawalAmount, depositAmount);
+            returnFlag = challengeContract.closeBalanceUpdateChallenge(addr, data, hr, withdrawalAmount, depositAmount);
         }
-        return false;
+        emit ReturnEvent(returnFlag);
+        return returnFlag;
     }
 
     function openTransferDeliveryChallenge(bytes calldata data) external recovery returns (bool) {
+        bool returnFlag = false;
         if(!recoveryMode) {
-            return challengeContract.openTransferDeliveryChallenge(data);
+            returnFlag = challengeContract.openTransferDeliveryChallenge(data);
         }
-        return false;
+        emit ReturnEvent(returnFlag);
+        return returnFlag;
     }
 
     function closeTransferDeliveryChallenge(bytes calldata data) external onlyOwner returns (bool) {
+        bool returnFlag = false;
         if(!recoveryMode) {
             ModelLib.HubRoot memory latestRoot = balances[0].root;
             bytes memory latestHr = ModelLib.marshalHubRoot(latestRoot);
-            return challengeContract.closeTransferDeliveryChallenge(data, latestHr);
+            returnFlag = challengeContract.closeTransferDeliveryChallenge(data, latestHr);
         }
-        return false;
+        emit ReturnEvent(returnFlag);
+        return returnFlag;
     }
 
     function recoverFunds(bytes calldata data) external {
@@ -440,7 +449,7 @@ contract SiriusService is Sirius {
         uint tmp3 = SafeMath.add(tmp2, blocksPerEon);
         if ((newEon > addEon) || (newEon == addEon && tmp > tmp3 && balances[0].hasRoot) || (newEon == latestEon && tmp > tmp2 && !balances[0].hasRoot)) {
             recoveryMode = true;
-            emit SiriusEvent3(1, recoveryMode);
+            emit RecoveryModeEvent();
         }
 
         if (newEon == addEon && !recoveryMode) {// change eon
@@ -480,7 +489,6 @@ contract ChallengeService is Challenge {
     using SafeMath for uint;
     event ChallengeEvent(bytes32 indexed hash, uint indexed num, bytes value);
     event ChallengeEvent2(address indexed addr, uint indexed num, bytes value);
-    event ChallengeEvent3(uint indexed num, bool value);
 
     modifier checkMain() {
         require(msg.sender == mainContractAddress, "not main");
@@ -588,8 +596,6 @@ contract ChallengeService is Challenge {
         }
         cs.isVal = true;
         dataStore.bucData[balances[0].eon][tx.origin] = cs;
-
-        emit ChallengeEvent3(5, true);
         return true;
     }
 
@@ -629,8 +635,6 @@ contract ChallengeService is Challenge {
             dataStore.bucData[balances[0].eon][close.addr] = tmpStat;
             emit ChallengeEvent2(close.addr, 2, tmpStat.challenge);
         }
-
-        emit ChallengeEvent3(6, true);
         return true;
     }
 
@@ -656,8 +660,6 @@ contract ChallengeService is Challenge {
         }
         challenge.isVal = true;
         dataStore.tdcData[balances[0].eon][hash] = challenge;
-
-        emit ChallengeEvent3(7, true);
         return true;
     }
 
@@ -683,8 +685,6 @@ contract ChallengeService is Challenge {
             dataStore.tdcData[balances[0].eon][key] = challenge;
             emit ChallengeEvent(key, 3, challenge.challenge);
         }
-
-        emit ChallengeEvent3(8, true);
         return true;
     }
 
