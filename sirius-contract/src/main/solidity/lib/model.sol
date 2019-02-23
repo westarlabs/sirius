@@ -25,6 +25,8 @@ library GlobleLib {
             tmp = 1;
         } else if(stat == WithdrawalStatusType.CONFIRMED) {
             tmp = 2;
+        } else {
+            revert("error withdrawal status type");
         }
 
         return RLPEncoder.encodeUint(tmp);
@@ -78,13 +80,20 @@ library GlobleLib {
         uint depositTotal;
         uint withdrawalTotal;
         address payable[] withdrawals;
-        address[] balanceChallenges;
-        bytes32[] transferChallenges;
     }
 
     struct DataStore {
         mapping (uint => mapping (address => uint)) depositData;
         mapping (uint => mapping (address => Withdrawal)) withdrawalData;
+    }
+
+    struct ChallengeBalance {
+        uint eon;
+        address[] balanceChallenges;
+        bytes32[] transferChallenges;
+    }
+
+    struct ChallengeDataStore {
         mapping (uint => mapping (address => BalanceUpdateChallengeAndStatus)) bucData;
         mapping (uint => mapping (bytes32 => TransferDeliveryChallengeAndStatus)) tdcData;
     }
