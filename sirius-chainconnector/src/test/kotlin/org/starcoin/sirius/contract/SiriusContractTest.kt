@@ -16,7 +16,6 @@ class SiriusContractTest : ContractTestBase("solidity/SiriusService", "SiriusSer
     lateinit var currentTree: AMTree
     lateinit var tree: MerkleTree
 
-
     override fun getContractConstructArg(): Any? {
         return ContractConstructArgs.DEFAULT_ARG.toRLP()
     }
@@ -83,7 +82,7 @@ class SiriusContractTest : ContractTestBase("solidity/SiriusService", "SiriusSer
         val count = 7 * deposit
         val preTree = commitRealData(1, update, total - count, count, true, txs)
 
-        for (i in 0..blocksPerEon) {
+        for (i in 1..blocksPerEon) {
             testDeposit(true)
         }
 
@@ -122,7 +121,7 @@ class SiriusContractTest : ContractTestBase("solidity/SiriusService", "SiriusSer
         openBalanceUpdateChallenge(false)
 
         val eon = 2
-        for (i in 0..5) {
+        for (i in 0..3) {
             testDeposit(true)
         }
 
@@ -171,7 +170,7 @@ class SiriusContractTest : ContractTestBase("solidity/SiriusService", "SiriusSer
         val amtp = currentTree.getMembershipProof(callUser.address)!!
         val close = CloseBalanceUpdateChallenge(callUser.address, amtp)
         val data = close.toRLP()
-        val callResult = contract.callFunction("closeBalanceUpdateChallenge", data)
+        val callResult = contract.callFunction("closeBalanceUpdateChallenge", callUser.address.toBytes(), data)
         assert(callResult.returnValue as Boolean)
         verifyReturn(callResult)
     }
@@ -281,9 +280,9 @@ class SiriusContractTest : ContractTestBase("solidity/SiriusService", "SiriusSer
         var total: Long = 0
         for (i in 0..eon) {
             var tmp = if (!flag && i == eon) {
-                (blocksPerEon * (i + 1)) + 2
+                (blocksPerEon * (i + 1)) + 2 + 2
             } else {
-                (blocksPerEon * (i + 1)) - 1
+                (blocksPerEon * (i + 1)) - 1 + 2
             }
 
             while (blockHeight.get() < tmp) {

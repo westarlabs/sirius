@@ -73,25 +73,26 @@ abstract class ContractTestBase(val contractPath: String, val contractName: Stri
     fun deployContract(): ContractData {
         val sb = StandaloneBlockchain().withAutoblock(true).withGasLimit(9000000).withGasPrice(2147483647)
 
-
-        val contractMetadata = loadContractMetadata(contractPath)
-        LOG.info("$contractPath abi ${contractMetadata.abi}")
-        LOG.info("$contractPath bin ${contractMetadata.bin}")
-        LOG.info("Contract bin size: ${contractMetadata.bin.hexToByteArray().size}")
-        val arg = getContractConstructArg()
-        val contract = (arg?.let{sb.submitNewContract(contractMetadata, arg)} ?: sb.submitNewContract(contractMetadata)) as StandaloneBlockchain.SolidityContractImpl
-
-        val lastSummary = StandaloneBlockchain::class.java.getDeclaredField("lastSummary")
-        lastSummary.setAccessible(true)
-        val sum = lastSummary.get(sb) as BlockSummary
-        sum.getReceipts().stream().forEach { receipt -> assert(receipt.isTxStatusOK) }
-
         sb.addEthereumListener(object : EthereumListenerAdapter() {
             override fun onBlock(blockSummary: BlockSummary) {
                 blockHeight.incrementAndGet()
                 LOG.info("block length:$blockHeight")
             }
         })
+
+        val contractMetadata = loadContractMetadata(contractPath)
+        LOG.info("$contractPath abi ${contractMetadata.abi}")
+        LOG.info("$contractPath bin ${contractMetadata.bin}")
+        LOG.info("Contract bin size: ${contractMetadata.bin.hexToByteArray().size}")
+        val arg = getContractConstructArg()
+        val firstMetadata = loadContractMetadata("solidity/ChallengeService")
+        val first = sb.submitNewContract(firstMetadata)
+        val contract = (arg?.let{sb.submitNewContract(contractMetadata, first.address, arg)} ?: sb.submitNewContract(contractMetadata)) as StandaloneBlockchain.SolidityContractImpl
+
+        val lastSummary = StandaloneBlockchain::class.java.getDeclaredField("lastSummary")
+        lastSummary.setAccessible(true)
+        val sum = lastSummary.get(sb) as BlockSummary
+        sum.getReceipts().stream().forEach { receipt -> assert(receipt.isTxStatusOK) }
 
         return ContractData(sb, contract, sb.sender)
     }
