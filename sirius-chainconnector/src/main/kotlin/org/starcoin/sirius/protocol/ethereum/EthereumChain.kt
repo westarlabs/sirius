@@ -36,10 +36,12 @@ const val blockGasIncreasePercent = 0
 
 class EthereumChain constructor(httpUrl: String = DEFAULT_URL, socketPath: String? = null) :
     EthereumBaseChain() {
-    override fun waitTransactionProcessed(hash: Hash, times: Int) {
+    override fun waitTransactionProcessed(hash: Hash, times: Int): Receipt? {
+        var receipt: Receipt?
         repeat(times) {
-            when (getTransactionReceipts(listOf(hash))[0]?.status) {
-                true -> return
+            receipt = getTransactionReceipts(listOf(hash))[0]
+            when (receipt?.status) {
+                true -> return receipt
                 false -> throw RuntimeException("Receipt status false")
                 null -> Thread.sleep(1000)
             }
@@ -120,7 +122,7 @@ class EthereumChain constructor(httpUrl: String = DEFAULT_URL, socketPath: Strin
                     r.transactionHash, r.transactionIndex,
                     r.blockHash, r.blockNumber, r.contractAddress,
                     r.from, r.to, r.gasUsed, r.logsBloom,
-                    r.cumulativeGasUsed, r.root, r.isStatusOK
+                    r.cumulativeGasUsed, r.root, r.isStatusOK, r.logs.map { it.toString() }
                 )
                 val txResp = web3.ethGetTransactionByHash(r.transactionHash).sendAsync().get()
                 if (txResp.hasError()) throw GetTransactionException(txResp.error)
@@ -187,7 +189,8 @@ class EthereumChain constructor(httpUrl: String = DEFAULT_URL, socketPath: Strin
                     r.transactionHash, r.transactionIndex,
                     r.blockHash, r.blockNumber, r.contractAddress,
                     r.from, r.to, r.gasUsed, r.logsBloom,
-                    r.cumulativeGasUsed, r.root, r.isStatusOK
+                    r.cumulativeGasUsed, r.root, r.isStatusOK,
+                    r.logs.map { it.toString() }
                 )
             }
         }

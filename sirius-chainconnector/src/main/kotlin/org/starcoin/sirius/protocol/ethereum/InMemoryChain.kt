@@ -21,8 +21,9 @@ sealed class ChainCtlMessage {
 }
 
 class InMemoryChain(val autoGenblock: Boolean = true) : EthereumBaseChain() {
-    
-    override fun waitTransactionProcessed(hash: Hash, times: Int) {
+
+    override fun waitTransactionProcessed(hash: Hash, times: Int): Receipt? {
+        return null
     }
 
     override fun waitBlocks(blockCount: Int) {
@@ -177,7 +178,7 @@ class InMemoryChain(val autoGenblock: Boolean = true) : EthereumBaseChain() {
         response.receive() ?: throw RuntimeException("Create Block fail.")
     }
 
-    override fun tryMiningCoin(account: EthereumAccount, amount: BigInteger) :Boolean {
+    override fun tryMiningCoin(account: EthereumAccount, amount: BigInteger): Boolean {
         this.sb.sender = originAccount
         this.sb.sendEther(account.address.toBytes(), amount)
         this.createBlock()

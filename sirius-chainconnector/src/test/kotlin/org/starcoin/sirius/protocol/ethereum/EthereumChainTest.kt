@@ -69,6 +69,10 @@ class EthereumChainTest {
         tx1.verify()
         val hash = chain.submitTransaction(etherbase, tx1)
         val txFind = chain.findTransaction(hash)
+        val receipt = chain.waitTransactionProcessed(hash)
+        receipt!!.logs?.forEach {
+            LOG.info(it)
+        }
         Assert.assertNotNull(txFind?.from)
     }
 

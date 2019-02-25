@@ -69,7 +69,7 @@ class EventBusEthereumListener() : AbstractEthereumListener() {
                         BigInteger.valueOf(0),
                         blockSummary.block.header.receiptsRoot.toHEXString(),
                         //txReceipt.isTxStatusOK && txReceipt.isSuccessful && (txReceipt.executionResult.isEmpty() || !txReceipt.executionResult.isZeroBytes())
-                        txReceipt.isTxStatusOK && txReceipt.isSuccessful && (returnEvent == null || returnEvent)
+                        txReceipt.isTxStatusOK && txReceipt.isSuccessful && (returnEvent == null || returnEvent),null
                     )
                 )
                 if (!transactionResult.receipt.status) {

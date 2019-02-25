@@ -57,7 +57,7 @@ interface Chain<T : ChainTransaction, B : Block<T>, A : ChainAccount> {
     fun start()
     fun getNonce(address: Address): BigInteger
 
-    fun waitTransactionProcessed(hash: Hash, times: Int = 20)
+    fun waitTransactionProcessed(hash: Hash, times: Int = 20):Receipt?
 
     fun createAccount(key: CryptoKey): A
 
