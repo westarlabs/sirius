@@ -14,7 +14,7 @@ interface DataSource<K, V> {
 
     fun prefixLookup(key: ByteArray, prefixBytes: Int): V
 
-    fun keys():List<K>
+    fun keys():Set<K>
 
     fun close()
 
