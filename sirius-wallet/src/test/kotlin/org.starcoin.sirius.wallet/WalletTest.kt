@@ -3,6 +3,7 @@ package org.starcoin.sirius.wallet
 import com.google.protobuf.Empty
 import io.grpc.Channel
 import io.grpc.inprocess.InProcessChannelBuilder
+import kotlinx.coroutines.TimeoutCancellationException
 import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.withTimeout
 import org.ethereum.util.blockchain.EtherUtil
@@ -416,6 +417,19 @@ class WalletTest {
         Assert.assertEquals(walletAlice.balance(), aliceWalletClone.balance())
     }
 
+    @Test(expected = TimeoutCancellationException::class)
+    fun testNoReg() {
+        val aliceWalletClone = Wallet(this.contract.contractAddress,channelManager,chain,null,alice)
+
+        waitToNextEon()
+
+        runBlocking {
+            withTimeout(10000L){
+                walletAlice.getMessageChannel()?.receive()
+            }
+        }
+
+    }
 
     private fun waitToNextEon() {
         var height = chain.getBlockNumber()

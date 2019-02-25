@@ -91,10 +91,9 @@ class Hub <T : ChainTransaction, A : ChainAccount> {
             val eon = this.getChainEon()
             LOG.info("finish get eon")
 
-            /**
             if (this.accountInfo() == null) {
                 return
-            }**/
+            }
             LOG.info("current eon is "+eon.id+" hubroot eon is " +hubRoot.eon)
             if (eon.id === hubRoot.eon) {
                 LOG.info("start change eon")
@@ -352,8 +351,17 @@ class Hub <T : ChainTransaction, A : ChainAccount> {
 
     fun  accountInfo():HubAccount ?{
         val stub = HubServiceGrpc.newBlockingStub(channelManager.hubChannel)
-        hubAccount=HubAccount.parseFromProtoMessage(stub.getHubAccount(account.address.toProto()))
-        return hubAccount
+        try{
+            hubAccount=HubAccount.parseFromProtoMessage(stub.getHubAccount(account.address.toProto()))
+            return hubAccount
+        }catch (e :StatusRuntimeException){
+            if(e.status == Status.NOT_FOUND){
+                LOG.warning("no such user")
+                return null
+            }
+            throw e
+        }
+        return null
     }
 
     internal fun openTransferChallenge(transactionHash:Hash){
