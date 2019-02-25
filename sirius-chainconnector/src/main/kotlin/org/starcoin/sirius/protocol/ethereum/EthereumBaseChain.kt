@@ -1,9 +1,7 @@
 package org.starcoin.sirius.protocol.ethereum
 
-import org.ethereum.config.SystemProperties
 import org.ethereum.core.CallTransaction
 import org.ethereum.solidity.compiler.CompilationResult
-import org.ethereum.solidity.compiler.SolidityCompiler
 import org.starcoin.sirius.core.Address
 import org.starcoin.sirius.crypto.CryptoKey
 import org.starcoin.sirius.crypto.CryptoService
@@ -30,25 +28,6 @@ abstract class EthereumBaseChain :
 
         val defaultGasLimit: BigInteger
             get() = 9000000.toBigInteger()
-
-
-        val contractName: String = "SiriusService"
-
-        private val compiler = SolidityCompiler(SystemProperties.getDefault())
-        fun compileContract(contractFile: File): CompilationResult {
-            val srcDir = listOf(contractFile.parentFile.absolutePath)
-            val compiledResult = compiler.compileSrc(
-                contractFile,
-                true,
-                true,
-                SolidityCompiler.Options.ABI,
-                SolidityCompiler.Options.BIN,
-                SolidityCompiler.Options.AllowPaths(srcDir)
-            )
-            LOG.info("compile ${contractFile.absolutePath} results: ${compiledResult.output}")
-            if (compiledResult.isFailed) throw RuntimeException("Compile result: " + compiledResult.errors)
-            return CompilationResult.parse(compiledResult.output)
-        }
     }
 
     abstract fun callConstFunction(caller: CryptoKey, contractAddress: Address, data: ByteArray): ByteArray
@@ -60,25 +39,10 @@ abstract class EthereumBaseChain :
     }
 
     override fun deployContract(account: EthereumAccount, args: ContractConstructArgs): EthereumHubContract {
-        return deployContract(account, loadContractMetadata(), args)
-    }
-
-    override fun deployContract(
-        account: EthereumAccount,
-        contractFile: File,
-        args: ContractConstructArgs
-    ): EthereumHubContract {
-        val compilationResult = compileContract(contractFile)
-        val contractMetadata = compilationResult.getContract(contractName)
-        val address = submitNewContract(account, contractMetadata, args.toRLP())
-        return this.loadContract(address, contractMetadata.abi)
-    }
-
-    private fun deployContract(
-        account: EthereumAccount,
-        contractMetadata: CompilationResult.ContractMetadata, args: ContractConstructArgs
-    ): EthereumHubContract {
-        val address = submitNewContract(account, contractMetadata, args.toRLP())
+        val challengeContract = loadContractMetadata("solidity/ChallengeService")
+        val challengeContractAddress = submitNewContract(account, challengeContract)
+        val contractMetadata = loadContractMetadata("solidity/SiriusService")
+        val address = submitNewContract(account, contractMetadata, challengeContractAddress.toString(), args.toRLP())
         return this.loadContract(address, contractMetadata.abi)
     }
 
@@ -123,6 +87,7 @@ abstract class EthereumBaseChain :
     override fun tryMiningCoin(account: EthereumAccount, amount: BigInteger): Boolean {
         return false
     }
-    override fun start(){}
-    override fun stop(){}
+
+    override fun start() {}
+    override fun stop() {}
 }

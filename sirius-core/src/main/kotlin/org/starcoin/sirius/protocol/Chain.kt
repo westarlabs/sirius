@@ -47,8 +47,6 @@ interface Chain<T : ChainTransaction, B : Block<T>, A : ChainAccount> {
 
     fun deployContract(account: A, args: ContractConstructArgs): HubContract<A>
 
-    fun deployContract(account: A, contractFile: File, args: ContractConstructArgs): HubContract<A>
-
     fun getBlockNumber(): Long
 
     fun newTransaction(account: A, to: Address, value: BigInteger): T
