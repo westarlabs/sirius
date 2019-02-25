@@ -21,7 +21,7 @@ class StarRocksDbDataSource(rocksDbDataSource: RocksDbDataSource) : DataSource<B
     override fun prefixLookup(key: ByteArray, prefixBytes: Int) = this.rocksDbDataSource.prefixLookup(key,prefixBytes)
 
     override fun keys(): Set<ByteArray> = rocksDbDataSource.keys()
-    
+
     override fun close() = rocksDbDataSource.close()
 
     override fun init() = rocksDbDataSource.init()
