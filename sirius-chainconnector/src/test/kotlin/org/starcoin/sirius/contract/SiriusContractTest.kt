@@ -170,7 +170,7 @@ class SiriusContractTest : ContractTestBase("solidity/SiriusService", "SiriusSer
         val amtp = currentTree.getMembershipProof(callUser.address)!!
         val close = CloseBalanceUpdateChallenge(callUser.address, amtp)
         val data = close.toRLP()
-        val callResult = contract.callFunction("closeBalanceUpdateChallenge", callUser.address.toBytes(), data)
+        val callResult = contract.callFunction("closeBalanceUpdateChallenge", data)
         assert(callResult.returnValue as Boolean)
         verifyReturn(callResult)
     }

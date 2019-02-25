@@ -8,7 +8,7 @@ interface Sirius {
     function initiateWithdrawal(bytes calldata data) external returns (bool);
     function cancelWithdrawal(bytes calldata data) external returns (bool);
     function openBalanceUpdateChallenge(bytes calldata data) external returns (bool);
-    function closeBalanceUpdateChallenge(address addr, bytes calldata data) external returns (bool);
+    function closeBalanceUpdateChallenge(bytes calldata data) external returns (bool);
     function openTransferDeliveryChallenge(bytes calldata data) external returns (bool);
     function closeTransferDeliveryChallenge(bytes calldata data) external returns (bool);
     function recoverFunds(bytes calldata data) external;
@@ -237,22 +237,23 @@ contract SiriusService is Sirius {
         return returnFlag;
     }
 
-    function closeBalanceUpdateChallenge(address addr, bytes calldata data) external onlyOwner returns (bool) {
+    function closeBalanceUpdateChallenge(bytes calldata data) external onlyOwner returns (bool) {
         bool returnFlag = false;
         if(!recoveryMode) {
+            ModelLib.CloseBalanceUpdateChallenge memory close = ModelLib.unmarshalCloseBalanceUpdateChallenge(RLPDecoder.toRLPItem(data, true));
             require(balances[0].hasRoot, "balances[0].hasRoot false");
             ModelLib.HubRoot memory root = balances[0].root;
             bytes memory hr = ModelLib.marshalHubRoot(root);
-            uint depositAmount = dataStore.depositData[balances[1].eon][addr];
+            uint depositAmount = dataStore.depositData[balances[1].eon][close.addr];
 
             uint withdrawalAmount = 0;
-            GlobleLib.Withdrawal memory w = dataStore.withdrawalData[balances[1].eon][addr];
+            GlobleLib.Withdrawal memory w = dataStore.withdrawalData[balances[1].eon][close.addr];
             if(w.isVal) {
                 ModelLib.WithdrawalInfo memory info = ModelLib.unmarshalWithdrawalInfo(RLPDecoder.toRLPItem(w.info, true));
                 withdrawalAmount = info.amount;
             }
 
-            returnFlag = challengeContract.closeBalanceUpdateChallenge(addr, data, hr, withdrawalAmount, depositAmount);
+            returnFlag = challengeContract.closeBalanceUpdateChallenge(close.addr, data, hr, withdrawalAmount, depositAmount);
         }
         emit ReturnEvent(returnFlag);
         return returnFlag;
