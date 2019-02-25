@@ -13,8 +13,8 @@ data class TransactionResult<T : ChainTransaction>(val tx: T, val receipt: Recei
 
 enum class ChainEvent private constructor(val event: String) {
     MockTopic("DepositEvent(byte[])"),
-    SiriusEvent("SiriusEvent(bytes32 indexed hash,uint indexed num,bytes value)");
-
+    SiriusEvent("SiriusEvent(bytes32 indexed hash,uint indexed num,bytes value)"),
+    ReturnEvent("ReturnEvent(bool value)");
     fun encode() = HashUtil.sha256(name.toByteArray()).toHEXString()
 
 }

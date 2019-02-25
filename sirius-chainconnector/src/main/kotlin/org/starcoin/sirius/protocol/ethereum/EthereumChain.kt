@@ -102,7 +102,7 @@ class EthereumChain constructor(httpUrl: String = DEFAULT_URL, socketPath: Strin
         events: Collection<ChainEvent>,
         filter: (TransactionResult<EthereumTransaction>) -> Boolean
     ): Channel<TransactionResult<EthereumTransaction>> {
-        val ch = Channel<TransactionResult<EthereumTransaction>>(10)
+        val ch = Channel<TransactionResult<EthereumTransaction>>(1)
         val ethFilter = EthFilter(
             DefaultBlockParameterName.LATEST,
             DefaultBlockParameterName.LATEST,
@@ -119,10 +119,19 @@ class EthereumChain constructor(httpUrl: String = DEFAULT_URL, socketPath: Strin
                 if (recepitResp.hasError()) throw GetRecepitException(recepitResp.error)
                 val r = recepitResp.transactionReceipt.get()
                 val receipt = Receipt(
-                    r.transactionHash, r.transactionIndex,
-                    r.blockHash, r.blockNumber, r.contractAddress,
-                    r.from, r.to, r.gasUsed, r.logsBloom,
-                    r.cumulativeGasUsed, r.root, r.isStatusOK, r.logs.map { it.toString() }
+                    r.transactionHash,
+                    r.transactionIndex,
+                    r.blockHash,
+                    r.blockNumber,
+                    r.contractAddress,
+                    r.from,
+                    r.to,
+                    r.gasUsed,
+                    r.logsBloom,
+                    r.cumulativeGasUsed,
+                    r.root,
+                    r.isStatusOK,
+                    r.logs.map { it.toString() }
                 )
                 val txResp = web3.ethGetTransactionByHash(r.transactionHash).sendAsync().get()
                 if (txResp.hasError()) throw GetTransactionException(txResp.error)

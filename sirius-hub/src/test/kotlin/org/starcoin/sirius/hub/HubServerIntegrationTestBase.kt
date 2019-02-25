@@ -4,9 +4,11 @@ package org.starcoin.sirius.hub
 import com.google.common.eventbus.EventBus
 import com.google.common.eventbus.Subscribe
 import io.grpc.inprocess.InProcessChannelBuilder
+import jdk.nashorn.internal.objects.Global
 import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.asCoroutineDispatcher
+import kotlinx.coroutines.channels.consumeEach
 import kotlinx.coroutines.launch
 import org.ethereum.db.IndexedBlockStore
 import org.junit.After
@@ -18,10 +20,7 @@ import org.starcoin.sirius.core.*
 import org.starcoin.sirius.eth.core.EtherUnit
 import org.starcoin.sirius.eth.core.ether
 import org.starcoin.sirius.eth.core.wei
-import org.starcoin.sirius.protocol.Chain
-import org.starcoin.sirius.protocol.ChainAccount
-import org.starcoin.sirius.protocol.HubContract
-import org.starcoin.sirius.protocol.TransactionResult
+import org.starcoin.sirius.protocol.*
 import org.starcoin.sirius.util.WithLogging
 import java.math.BigInteger
 import java.util.*
@@ -119,6 +118,11 @@ abstract class HubServerIntegrationTestBase<T : ChainTransaction, A : ChainAccou
         this.watchHubJob = this.watchEon()
         this.watchBlockJob = this.watchBlock()
         this.watchTxJob = this.watchTxs()
+        
+        val eventch = this.chain.watchEvents(contract.contractAddress, listOf(ChainEvent.ReturnEvent))
+        GlobalScope.launch {
+            eventch.consumeEach { LOG.info(it.receipt.logs.toString())}
+        }
         //this.produceBlock(1)
     }
 
