@@ -25,10 +25,10 @@ abstract class EthereumBaseChain :
 
         //TODO
         val defaultGasPrice: BigInteger
-            get() = 1000.toBigInteger()
+            get() = 1.toBigInteger()
 
         val defaultGasLimit: BigInteger
-            get() = 9000000.toBigInteger()
+            get() = 7500000.toBigInteger()
     }
 
     abstract fun callConstFunction(caller: CryptoKey, contractAddress: Address, data: ByteArray): ByteArray
