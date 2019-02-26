@@ -73,7 +73,7 @@ class EthereumChain constructor(httpUrl: String = DEFAULT_URL, socketPath: Strin
         ).send().transactionCount
     }
 
-    override fun submitTransaction(account: EthereumAccount, transaction: EthereumTransaction): Hash {
+    override fun doSubmitTransaction(account: EthereumAccount, transaction: EthereumTransaction): Hash {
         transaction.sign(account.key as EthCryptoKey)
         val hexTx = transaction.toHEXString()
         val resp = web3.ethSendRawTransaction(hexTx).sendAsync().get()

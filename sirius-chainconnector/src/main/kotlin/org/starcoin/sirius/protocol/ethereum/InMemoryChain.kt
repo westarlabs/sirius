@@ -113,7 +113,7 @@ class InMemoryChain(val autoGenblock: Boolean = true) : EthereumBaseChain() {
         return tx?.let { EthereumTransaction(tx.receipt.transaction) }
     }
 
-    override fun submitTransaction(account: EthereumAccount, transaction: EthereumTransaction): Hash {
+    override fun doSubmitTransaction(account: EthereumAccount, transaction: EthereumTransaction): Hash {
         val key = account.key as EthCryptoKey
         sb.sender = key.ecKey
         transaction.sign(key)

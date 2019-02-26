@@ -3,6 +3,7 @@ package org.starcoin.sirius.protocol.ethereum
 import org.ethereum.core.CallTransaction
 import org.ethereum.solidity.compiler.CompilationResult
 import org.starcoin.sirius.core.Address
+import org.starcoin.sirius.core.Hash
 import org.starcoin.sirius.crypto.CryptoKey
 import org.starcoin.sirius.crypto.CryptoService
 import org.starcoin.sirius.lang.hexToByteArray
@@ -41,8 +42,10 @@ abstract class EthereumBaseChain :
     override fun deployContract(account: EthereumAccount, args: ContractConstructArgs): EthereumHubContract {
         val challengeContract = loadContractMetadata("solidity/ChallengeService")
         val challengeContractAddress = submitNewContract(account, challengeContract)
+        LOG.info("Deploy ChallengeService Contract success, address: $challengeContractAddress")
         val contractMetadata = loadContractMetadata("solidity/SiriusService")
         val address = submitNewContract(account, contractMetadata, challengeContractAddress.toString(), args.toRLP())
+        LOG.info("Deploy SiriusService Contract success, address: $address")
         return this.loadContract(address, contractMetadata.abi)
     }
 
@@ -51,7 +54,7 @@ abstract class EthereumBaseChain :
         contractMetaData: CompilationResult.ContractMetadata,
         vararg constructorArgs: Any
     ): Address {
-        var contract = CallTransaction.Contract(contractMetaData.abi)
+        val contract = CallTransaction.Contract(contractMetaData.abi)
         val constructor: CallTransaction.Function? = contract.constructor
         if (constructor == null && constructorArgs.isNotEmpty()) {
             throw RuntimeException("No constructor with params found")
@@ -66,6 +69,14 @@ abstract class EthereumBaseChain :
         this.waitTransactionProcessed(this.submitTransaction(account, tx))
         return tx.contractAddress!!
     }
+
+    override fun submitTransaction(account: EthereumAccount, transaction: EthereumTransaction): Hash {
+        val hash = this.doSubmitTransaction(account, transaction)
+        LOG.fine("submitTransaction account:${account.address} tx:$hash")
+        return hash
+    }
+
+    protected abstract fun doSubmitTransaction(account: EthereumAccount, transaction: EthereumTransaction): Hash
 
 
     override fun createAccount(key: CryptoKey): EthereumAccount {
