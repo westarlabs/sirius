@@ -4,7 +4,6 @@ package org.starcoin.sirius.hub
 import com.google.common.eventbus.EventBus
 import com.google.common.eventbus.Subscribe
 import io.grpc.inprocess.InProcessChannelBuilder
-import jdk.nashorn.internal.objects.Global
 import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.asCoroutineDispatcher
@@ -93,7 +92,7 @@ abstract class HubServerIntegrationTestBase<T : ChainTransaction, A : ChainAccou
     fun before() {
         this.coroutineContext = Executors.newFixedThreadPool(10).asCoroutineDispatcher()
         eon = AtomicInteger(0)
-        blockHeight = AtomicLong(0)
+
         this.txMap = ConcurrentHashMap()
 
         this.eventBus = EventBus()
@@ -103,9 +102,12 @@ abstract class HubServerIntegrationTestBase<T : ChainTransaction, A : ChainAccou
         this.owner = this.createChainAccount(10000)
         this.hubServer = HubServer(configuration, chain, this.owner)
 
+        blockHeight = AtomicLong(this.chain.getBlockNumber())
+
         hubServer.start()
         contract = this.hubServer.contract
         contractHubInfo = contract.queryHubInfo(this.owner)
+
         this.eon.set(contractHubInfo.latestEon)
 
         hubService = HubServiceStub(
@@ -129,6 +131,7 @@ abstract class HubServerIntegrationTestBase<T : ChainTransaction, A : ChainAccou
     abstract fun createBlock()
 
     fun produceBlock(n: Int) {
+        LOG.info("produceBlock $n")
         for (i in 0..n) {
             createBlock()
         }
@@ -187,6 +190,7 @@ abstract class HubServerIntegrationTestBase<T : ChainTransaction, A : ChainAccou
     private fun watchBlock() = GlobalScope.launch(this.coroutineContext) {
         val blockChannel = chain.watchBlock()
         for (block in blockChannel) {
+            LOG.info("Current blockNumber ${block.height}")
             blockHeight.set(block.height)
             eventBus.post(block)
         }
@@ -461,7 +465,7 @@ abstract class HubServerIntegrationTestBase<T : ChainTransaction, A : ChainAccou
         // ensure contract and hub root is equals.
         while (hubRoot != contractRoot) {
             //TODO
-            println("Wait to getLatestRoot again.")
+            LOG.info("Wait to getLatestRoot again. localHubRoot:$hubRoot, contractRoot:$contractRoot")
             sleep(1000)
             contractRoot = contract.getLatestRoot(owner)
         }
