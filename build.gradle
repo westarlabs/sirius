@@ -82,4 +82,11 @@ subprojects {
     compileTestKotlin {
         kotlinOptions.jvmTarget = "1.8"
     }
+
+    task customClean(type: Delete) {
+        delete project.relativeProjectPath("database")
+        delete project.relativeProjectPath("logs")
+        //println(project.relativeProjectPath("database"))
+    }
+    clean.dependsOn customClean
 }
