@@ -439,8 +439,7 @@ class HubImpl<A : ChainAccount>(
     private suspend fun processTransaction(txResult: TransactionResult<*>) {
         LOG.info("Hub process tx: ${txResult.tx.hash()}, result: ${txResult.receipt}")
         if (!txResult.receipt.status) {
-            LOG.warning("tx ${txResult.tx.hash()} status is fail, skip.")
-            return
+            LOG.warning("tx ${txResult.tx.hash()} status is fail.")
         }
         val tx = txResult.tx
         val hash = tx.hash()
@@ -448,6 +447,9 @@ class HubImpl<A : ChainAccount>(
         val contractFunction = tx.contractFunction
         when (contractFunction) {
             null -> {
+                if (!txResult.receipt.status) {
+                    return
+                }
                 val deposit = Deposit(tx.from!!, tx.amount)
                 LOG.info("Deposit:" + deposit.toJSON())
                 val blockNumber = txResult.receipt.blockNumber
@@ -467,33 +469,50 @@ class HubImpl<A : ChainAccount>(
             }
             is CommitFunction -> {
                 val hubRoot = contractFunction.decode(tx.data)!!
-                this.ready = true
-                this.fireEvent(
-                    HubEvent(
-                        HubEventType.NEW_HUB_ROOT,
-                        hubRoot
+                if (txResult.receipt.status) {
+                    this.ready = true
+                    this.fireEvent(
+                        HubEvent(
+                            HubEventType.NEW_HUB_ROOT,
+                            hubRoot
+                        )
                     )
-                )
+                } else {
+                    this.ready = false
+                    LOG.warning("Commit hub root $hubRoot fail, hub will reject all new request.")
+                }
             }
             is InitiateWithdrawalFunction -> {
+                if (!txResult.receipt.status) {
+                    return
+                }
                 val input = contractFunction.decode(tx.data)
                     ?: throw RuntimeException("$contractFunction decode tx:${txResult.tx} fail.")
                 LOG.info("$contractFunction: $input")
                 this.processWithdrawal(tx.from!!, input)
             }
             is OpenTransferDeliveryChallengeFunction -> {
+                if (!txResult.receipt.status) {
+                    return
+                }
                 val input = contractFunction.decode(tx.data)
                     ?: throw RuntimeException("$contractFunction decode tx:${txResult.tx} fail.")
                 LOG.info("$contractFunction: $input")
                 this.processTransferDeliveryChallenge(input)
             }
             is OpenBalanceUpdateChallengeFunction -> {
+                if (!txResult.receipt.status) {
+                    return
+                }
                 val input = contractFunction.decode(tx.data)
                     ?: throw RuntimeException("$contractFunction decode tx:${txResult.tx} fail.")
                 LOG.info("$contractFunction: $input")
                 this.processBalanceUpdateChallenge(tx.from!!, input)
             }
             is CancelWithdrawalFunction -> {
+                if (!txResult.receipt.status) {
+                    return
+                }
                 val input = contractFunction.decode(tx.data)
                     ?: throw RuntimeException("$contractFunction decode tx:${txResult.tx} fail.")
                 val withdrawal = this.withdrawals[input.address]!!
