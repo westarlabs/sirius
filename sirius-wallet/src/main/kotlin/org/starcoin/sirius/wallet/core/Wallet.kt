@@ -1,6 +1,7 @@
 package org.starcoin.sirius.wallet.core
 
 import kotlinx.coroutines.channels.Channel
+import org.sql2o.Sql2o
 import org.starcoin.sirius.core.*
 import org.starcoin.sirius.protocol.Chain
 import org.starcoin.sirius.protocol.ChainAccount
@@ -21,19 +22,32 @@ class Wallet<T : ChainTransaction, A : ChainAccount> {
     //TODO
     private var chain: Chain<T, out Block<T>, A> by Delegates.notNull()
 
+    private val h2databaseUrl = "jdbc:h2:%s/data:starcoin;FILE_LOCK=FS;PAGE_SIZE=1024;CACHE_SIZE=819"
+    private val h2databaseUrlMemory = "jdbc:h2:%s:starcoin"
+
     constructor(contractAddress: Address, channelManager: ChannelManager,
-                chain: Chain<T, out Block<T>, A>, store: Store<HubStatus>?, account: A
+                chain: Chain<T, out Block<T>, A>, account: A ,homeDir:String?
     ) {
         this.chain = chain
         this.account = account
 
         val contract=chain.loadContract(contractAddress)
-        hub = Hub(contract,account,channelManager,null,store,chain)
+
+        hub = Hub(contract,account,channelManager,null,chain)
         blockChain = BlockChain(chain,hub,contract,account)
 
         blockChain.startWatch=true
         blockChain.watchTransaction()
 
+    }
+
+    private fun initDB(homeDir: String?,hub:Hub<T,A>){
+        var url :String? = null
+        if(homeDir==null)
+            url=h2databaseUrl.format(homeDir)
+        else
+            url=h2databaseUrlMemory.format(homeDir)
+        val sql2o = Sql2o(url)
     }
 
     fun deposit(value:BigInteger) = hub.deposit(value)

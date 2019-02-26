@@ -4,7 +4,7 @@ interface DataSource<K, V> {
 
     fun put(key: K, `val`: V)
 
-    fun get(key: K): V
+    fun get(key: K): V?
 
     fun delete(key: K)
 

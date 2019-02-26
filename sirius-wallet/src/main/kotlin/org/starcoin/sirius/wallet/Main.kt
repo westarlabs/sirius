@@ -11,9 +11,7 @@ import org.starcoin.sirius.protocol.ethereum.EthereumChain
 import org.starcoin.sirius.wallet.command.CliCommands
 import org.starcoin.sirius.wallet.command.WalletCommand
 import org.starcoin.sirius.wallet.core.ChannelManager
-import org.starcoin.sirius.wallet.core.HubStatus
 import org.starcoin.sirius.wallet.core.Wallet
-import org.starcoin.sirius.wallet.core.store.FileStore
 import org.web3j.crypto.WalletUtils
 import picocli.CommandLine
 import java.io.File
@@ -50,8 +48,8 @@ fun main(args: Array<String>) {
 
         val chain = EthereumChain(chainAddr)
         var account = loadAccount(keyStoreFilePath, password, chain)
-        var store = FileStore(getWalletDir(name).path, HubStatus::class.java)
-        var wallet = Wallet(Address.wrap(contractAddr), channelManager, chain, store, account)
+
+        var wallet = Wallet(Address.wrap(contractAddr), channelManager, chain, account,getWalletDir(name).path)
 
         cmd.addSubcommand("wallet", WalletCommand(wallet))
 

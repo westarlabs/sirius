@@ -13,10 +13,9 @@ import org.starcoin.sirius.protocol.Chain
 import org.starcoin.sirius.protocol.ChainAccount
 import org.starcoin.sirius.protocol.HubContract
 import org.starcoin.sirius.util.WithLogging
-import org.starcoin.sirius.wallet.core.store.Store
+import org.starcoin.sirius.wallet.core.dao.SiriusObjectDao
 import java.lang.RuntimeException
 import java.math.BigInteger
-import java.util.stream.Collectors
 
 import kotlin.properties.Delegates
 
@@ -39,14 +38,16 @@ class Hub <T : ChainTransaction, A : ChainAccount> {
 
     private var hubAccount: HubAccount? = null
 
-    private var dataStore: Store<HubStatus>?
-
     internal var hubStatus: HubStatus by Delegates.notNull()
         private set
 
     private var chain: Chain<T, out Block<T>, A> by Delegates.notNull()
 
     internal var eonChannel :Channel<ClientEventType>? = null
+
+    lateinit internal var updateDao:SiriusObjectDao<Update>
+    lateinit internal var offchainTransactionDao:SiriusObjectDao<OffchainTransaction>
+    lateinit internal var aMTreeProofDao:SiriusObjectDao<AMTreeProof>
 
     // for test lost connect
     var disconnect = true
@@ -58,14 +59,12 @@ class Hub <T : ChainTransaction, A : ChainAccount> {
         account: A,
         channelManager: ChannelManager,
         serverEventHandler: ServerEventHandler?,
-        eonStatusStore: Store<HubStatus>?,
         chain :Chain<T, out Block<T>, A>
     ) {
         this.contract = contract
         this.account = account
         this.channelManager = channelManager
         this.serverEventHandler = serverEventHandler
-        this.dataStore = eonStatusStore
         this.chain = chain
 
         var hubInfo=contract.queryHubInfo(account)
