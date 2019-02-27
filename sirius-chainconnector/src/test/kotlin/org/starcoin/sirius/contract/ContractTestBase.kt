@@ -85,10 +85,18 @@ abstract class ContractTestBase(val contractPath: String, val contractName: Stri
         LOG.info("$contractPath bin ${contractMetadata.bin}")
         LOG.info("Contract bin size: ${contractMetadata.bin.hexToByteArray().size}")
         val arg = getContractConstructArg()
-        val firstMetadata = loadContractMetadata("solidity/ChallengeService")
-        val first = sb.submitNewContract(firstMetadata)
-        val contract = (arg?.let{sb.submitNewContract(contractMetadata, first.address, arg)} ?: sb.submitNewContract(contractMetadata)) as StandaloneBlockchain.SolidityContractImpl
-
+        val contract:StandaloneBlockchain.SolidityContractImpl
+        if(contractPath.equals("solidity/SiriusService")) {
+            val firstMetadata = loadContractMetadata("solidity/ChallengeService")
+            val first = sb.submitNewContract(firstMetadata)
+            contract = (arg?.let { sb.submitNewContract(contractMetadata, first.address, arg) } ?: sb.submitNewContract(
+                contractMetadata
+            )) as StandaloneBlockchain.SolidityContractImpl
+        } else {
+            contract = (arg?.let { sb.submitNewContract(contractMetadata, arg) } ?: sb.submitNewContract(
+                contractMetadata
+            )) as StandaloneBlockchain.SolidityContractImpl
+        }
         val lastSummary = StandaloneBlockchain::class.java.getDeclaredField("lastSummary")
         lastSummary.setAccessible(true)
         val sum = lastSummary.get(sb) as BlockSummary

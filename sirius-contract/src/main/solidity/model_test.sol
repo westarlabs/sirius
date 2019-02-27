@@ -22,9 +22,12 @@ contract test_all_interface {
     function update_test(bytes calldata data) external returns (bytes memory);
     function verify_proof_test(bytes calldata data1, bytes calldata data2) external returns (bool);
     function verify_merkle_test(bytes calldata data) external returns (bool);
+    function verify_merkle_test2(bytes32 root, bytes32 left, bytes32 right) external returns (bool);
 }
 
 contract test_all is test_all_interface {
+    event TestEvent(bytes32 value);
+    event TestEvent2(uint value);
 
     function hub_root_test(bytes calldata data) external returns (bytes memory) {
         ModelLib.HubRoot memory root = ModelLib.unmarshalHubRoot(RLPDecoder.toRLPItem(data, true));
@@ -170,8 +173,15 @@ contract test_all is test_all_interface {
     function verify_merkle_test(bytes calldata data) external returns (bool) {
         ModelLib.CloseTransferDeliveryChallenge memory close = ModelLib.unmarshalCloseTransferDeliveryChallenge(RLPDecoder.toRLPItem(data, true));
         bool verifyFlag = ModelLib.verifyMembershipProof4Merkle(close.proof.leaf.update.upData.root, close.txPath, close.txHash);
-
         return verifyFlag;
+    }
+
+    function verify_merkle_test2(bytes32 root, bytes32 left, bytes32 right) external returns (bool) {
+        bytes32 hash = keccak256(abi.encodePacked(left, right));
+        emit TestEvent(hash);
+        emit TestEvent(root);
+
+        return root == hash;
     }
 
     function unmarshalContractReturn(RLPLib.RLPItem memory rlp) private pure returns (ModelLib.ContractReturn memory cr) {

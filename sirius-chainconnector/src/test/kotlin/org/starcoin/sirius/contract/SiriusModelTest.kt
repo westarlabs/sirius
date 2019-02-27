@@ -145,8 +145,36 @@ class SiriusModelTest : ContractTestBase("solidity/test_all", "test_all") {
         accounts.add(HubAccount(callUser.keyPair.public, update, 100, 0, 0, txs))
         val am = AMTree(eon + 1, accounts)
 
-        val close = CloseTransferDeliveryChallenge(am.getMembershipProof(callUser.address)!!, tree.getMembershipProof(tx.hash())!!, callUser.address, Hash.of(tx))
+        val close = CloseTransferDeliveryChallenge(
+            am.getMembershipProof(callUser.address)!!,
+            tree.getMembershipProof(tx.hash())!!,
+            callUser.address,
+            tx.hash()
+        )
         val flag = contract.callConstFunction("verify_merkle_test", close.toRLP())[0] as Boolean
         Assert.assertTrue(flag)
+    }
+
+    @Test
+    fun testVerifyMerkle2() {
+        val txs = mutableListOf<OffchainTransaction>()
+        for (i in 0 until 2) {
+            val txData = OffchainTransactionData(
+                1,
+                callUser.address,
+                callUser.address, 1, 1
+            )
+            val txTmp = OffchainTransaction(txData)
+            txTmp.sign(callUser)
+            txs.add(txTmp)
+        }
+        val tree = MerkleTree(txs)
+
+        val callResult = contract.callFunction("verify_merkle_test2", tree.getRoot().hash().toBytes(),
+            txs[0].hash().toBytes(),
+            txs[1].hash().toBytes())
+        callResult.receipt.logInfoList.forEach { logInfo ->
+            LOG.info("event:$logInfo")
+        }
     }
 }

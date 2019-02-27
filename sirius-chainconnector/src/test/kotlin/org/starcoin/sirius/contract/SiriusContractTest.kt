@@ -17,7 +17,7 @@ class SiriusContractTest : ContractTestBase("solidity/SiriusService", "SiriusSer
     lateinit var tree: MerkleTree
 
     override fun getContractConstructArg(): Any? {
-        return ContractConstructArgs.DEFAULT_ARG.toRLP()
+        return ContractConstructArgs(8, HubRoot.EMPTY_TREE_HUBROOT).toRLP()
     }
 
     @Test
