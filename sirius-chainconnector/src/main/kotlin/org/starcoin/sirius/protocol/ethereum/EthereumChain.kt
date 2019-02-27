@@ -28,15 +28,16 @@ import org.web3j.protocol.core.methods.response.EthLog.LogObject
 import org.web3j.protocol.core.methods.response.Transaction
 import org.web3j.protocol.http.HttpService
 import org.web3j.protocol.ipc.UnixIpcService
+import org.web3j.protocol.websocket.WebSocketService
 import java.io.IOException
 import java.math.BigInteger
 
 
-const val DEFAULT_URL = "http://127.0.0.1:8545"
+const val DEFAULT_WS = "ws://127.0.0.1:8546"
 const val GAS_LIMIT_BOUND_DIVISOR = 1024
 const val blockGasIncreasePercent = 0
 
-class EthereumChain constructor(httpUrl: String = DEFAULT_URL, socketPath: String? = null) :
+class EthereumChain constructor(httpUrl: String? = null, socketPath: String? = null, webSocket: String = DEFAULT_WS) :
     EthereumBaseChain() {
 
     init {
@@ -70,10 +71,17 @@ class EthereumChain constructor(httpUrl: String = DEFAULT_URL, socketPath: Strin
         val resp = web3.ethBlockNumber().sendAsync().get()
         if (resp.hasError()) throw RuntimeException(resp.error.message)
         return resp.blockNumber.longValueExact()
+
     }
 
     val web3: Web3j =
-        Web3j.build(if (socketPath != null) UnixIpcService(socketPath) else HttpService(httpUrl))
+        Web3j.build(
+            when {
+                socketPath != null -> UnixIpcService(socketPath)
+                httpUrl != null -> HttpService(httpUrl)
+                else -> WebSocketService(webSocket,false).also { it.connect() } //TODO: close connection
+            }
+        )
 
     override fun getNonce(address: Address): BigInteger {
         //TODO use transactionCount is right?

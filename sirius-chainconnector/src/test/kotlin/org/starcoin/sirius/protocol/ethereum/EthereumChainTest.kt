@@ -24,7 +24,7 @@ class EthereumChainTest {
         @JvmStatic
         fun setup() {
             scriptExec("scripts/docker.sh run")
-            Thread.sleep(2000)
+            Thread.sleep(4000)
         }
 
         @AfterClass
@@ -123,6 +123,13 @@ class EthereumChainTest {
             }
         }
         ch.cancel()
+    }
 
+    @Test
+    fun testHeadsNotify() {
+        val headsNotification = chain.web3.newHeadsNotifications()
+        headsNotification.subscribe{
+            LOG.info("new block hash ${it.params.result.hash}")
+        }
     }
 }
