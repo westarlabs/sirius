@@ -17,11 +17,11 @@ data class ContractConstructArgs(@SerialId(1) val blocksPerEon: Int, @SerialId(2
         SiriusObjectCompanion<ContractConstructArgs, Starcoin.ContractConstructArgs>(
             ContractConstructArgs::class
         ) {
-        val DEFAULT_ARG = ContractConstructArgs(8, HubRoot.EMPTY_TREE_HUBROOT)
-        //0xe808e6e4a02066cbab68b2637c42f33fdd66c8085ece5bff04e319e1c95e5e6be2457d887580808080
+        const val TEST_BLOCKS_PER_EON = 16
+        val DEFAULT_ARG = ContractConstructArgs(TEST_BLOCKS_PER_EON, HubRoot.EMPTY_TREE_HUBROOT)
         override fun mock(): ContractConstructArgs {
             return ContractConstructArgs(
-                8,
+                TEST_BLOCKS_PER_EON,
                 HubRoot.mock()
             )
         }
