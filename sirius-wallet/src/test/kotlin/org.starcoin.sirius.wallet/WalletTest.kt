@@ -80,10 +80,10 @@ class WalletTest {
         hubServer.start()
         contract = hubServer.contract
 
-        walletAlice= Wallet(this.contract.contractAddress,channelManager,chain,null,alice)
+        walletAlice= Wallet(this.contract.contractAddress,channelManager,chain,alice,null)
         walletAlice.initMessageChannel()
 
-        walletBob= Wallet(this.contract.contractAddress,channelManager,chain,null,bob)
+        walletBob= Wallet(this.contract.contractAddress,channelManager,chain,bob,null)
         walletBob.initMessageChannel()
 
         hubInfo= contract.queryHubInfo(alice)
@@ -391,7 +391,7 @@ class WalletTest {
     fun testSync() {
         testDeposit()
 
-        val aliceWalletClone = Wallet(this.contract.contractAddress,channelManager,chain,null,alice)
+        val aliceWalletClone = Wallet(this.contract.contractAddress,channelManager,chain,alice,null)
         aliceWalletClone.sync()
         Assert.assertEquals(walletAlice.balance(), aliceWalletClone.balance())
     }
@@ -399,7 +399,7 @@ class WalletTest {
     @Test
     fun testSyncBytransfer() {
         testTransfer()
-        val aliceWalletClone = Wallet(this.contract.contractAddress,channelManager,chain,null,alice)
+        val aliceWalletClone = Wallet(this.contract.contractAddress,channelManager,chain,alice,null)
         aliceWalletClone.sync()
         Assert.assertEquals(walletAlice.balance(), aliceWalletClone.balance())
     }
@@ -412,14 +412,14 @@ class WalletTest {
             walletAlice.getMessageChannel()?.receive()
         }
 
-        val aliceWalletClone = Wallet(this.contract.contractAddress,channelManager,chain,null,alice)
+        val aliceWalletClone = Wallet(this.contract.contractAddress,channelManager,chain,alice,null)
         aliceWalletClone.sync()
         Assert.assertEquals(walletAlice.balance(), aliceWalletClone.balance())
     }
 
     @Test(expected = TimeoutCancellationException::class)
     fun testNoReg() {
-        val aliceWalletClone = Wallet(this.contract.contractAddress,channelManager,chain,null,alice)
+        val aliceWalletClone = Wallet(this.contract.contractAddress,channelManager,chain,alice,null)
 
         waitToNextEon()
 

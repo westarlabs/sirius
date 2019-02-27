@@ -62,7 +62,7 @@ class H2DatabaseStore(sql2o: Sql2o, tableName:String):DataSource<ByteArray,ByteA
 
     override fun init() {
         sql2o.beginTransaction().use { con ->
-            con.createQuery("create table $tableName(key BINARY(100),value BINARY(1000))")
+            con.createQuery("create table IF NOT EXISTS $tableName (key BINARY(100),value BINARY(1000))")
                 .executeUpdate()
             con.commit()
         }

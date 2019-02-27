@@ -6,6 +6,8 @@ import org.starcoin.sirius.core.*
 import org.starcoin.sirius.protocol.Chain
 import org.starcoin.sirius.protocol.ChainAccount
 import org.starcoin.sirius.wallet.core.blockchain.BlockChain
+import org.starcoin.sirius.wallet.core.dao.SiriusObjectDao
+import org.starcoin.sirius.wallet.core.store.H2DatabaseStore
 import org.starcoin.sirius.wallet.core.store.Store
 import java.math.BigInteger
 import kotlin.properties.Delegates
@@ -23,7 +25,7 @@ class Wallet<T : ChainTransaction, A : ChainAccount> {
     private var chain: Chain<T, out Block<T>, A> by Delegates.notNull()
 
     private val h2databaseUrl = "jdbc:h2:%s/data:starcoin;FILE_LOCK=FS;PAGE_SIZE=1024;CACHE_SIZE=819"
-    private val h2databaseUrlMemory = "jdbc:h2:%s:starcoin"
+    private val h2databaseUrlMemory = "jdbc:h2:mem:starcoin"
 
     constructor(contractAddress: Address, channelManager: ChannelManager,
                 chain: Chain<T, out Block<T>, A>, account: A ,homeDir:String?
@@ -34,6 +36,8 @@ class Wallet<T : ChainTransaction, A : ChainAccount> {
         val contract=chain.loadContract(contractAddress)
 
         hub = Hub(contract,account,channelManager,null,chain)
+
+        initDB(homeDir,hub)
         blockChain = BlockChain(chain,hub,contract,account)
 
         blockChain.startWatch=true
@@ -43,11 +47,22 @@ class Wallet<T : ChainTransaction, A : ChainAccount> {
 
     private fun initDB(homeDir: String?,hub:Hub<T,A>){
         var url :String? = null
-        if(homeDir==null)
+        if(homeDir!=null)
             url=h2databaseUrl.format(homeDir)
         else
-            url=h2databaseUrlMemory.format(homeDir)
-        val sql2o = Sql2o(url)
+            url=h2databaseUrlMemory
+        val sql2o = Sql2o(url,"","")
+        val updateH2Ds = H2DatabaseStore(sql2o,"update")
+        val offchainTransactionH2Ds = H2DatabaseStore(sql2o,"offchain_transaction")
+        val proofH2Ds = H2DatabaseStore(sql2o,"proof")
+
+        hub.updateDao = SiriusObjectDao(updateH2Ds,{Update.parseFromProtobuf(it)})
+        hub.offchainTransactionDao = SiriusObjectDao(offchainTransactionH2Ds,{OffchainTransaction.parseFromProtobuf(it)})
+        hub.aMTreeProofDao = SiriusObjectDao(proofH2Ds,{AMTreeProof.parseFromProtobuf(it)})
+
+        hub.updateDao.init()
+        hub.offchainTransactionDao.init()
+        hub.aMTreeProofDao.init()
     }
 
     fun deposit(value:BigInteger) = hub.deposit(value)
