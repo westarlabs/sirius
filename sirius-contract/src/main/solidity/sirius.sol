@@ -98,10 +98,12 @@ contract SiriusService is Sirius {
     }
 
     function commit(bytes calldata data) external onlyOwner returns (bool) {
-        uint currentEon = balances[0].eon;
-        bool succ = challengeContract.changeBalance(currentEon);
-        if(!succ) {
-            recoveryMode = true;
+        if(!recoveryMode) {
+            uint currentEon = balances[0].eon;
+            bool succ = challengeContract.changeBalance(currentEon);
+            if(!succ) {
+                recoveryMode = true;
+            }
         }
 
         bool returnFlag = false;
