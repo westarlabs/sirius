@@ -3,19 +3,13 @@ package org.starcoin.sirius.protocol.ethereum
 import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
-import org.junit.*
+import org.junit.AfterClass
+import org.junit.Assert
+import org.junit.BeforeClass
+import org.junit.Test
 import org.starcoin.sirius.crypto.CryptoService
 import org.starcoin.sirius.crypto.eth.EthCryptoKey
-import org.starcoin.sirius.lang.toHEXString
-import org.starcoin.sirius.protocol.ChainEvent
-import org.starcoin.sirius.util.HashUtil
 import org.starcoin.sirius.util.WithLogging
-import org.web3j.abi.EventEncoder
-import org.web3j.abi.TypeReference
-import org.web3j.abi.datatypes.Bool
-import org.web3j.abi.datatypes.Event
-import org.web3j.crypto.Hash
-import java.util.*
 
 
 class EthereumChainTest {
@@ -79,7 +73,7 @@ class EthereumChainTest {
         val txFind = chain.findTransaction(hash)
         val receipt = chain.waitTransactionProcessed(hash)
         receipt!!.logs?.forEach {
-            LOG.info(it)
+            LOG.info(it.toString())
         }
         Assert.assertNotNull(txFind?.from)
     }

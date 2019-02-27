@@ -39,8 +39,8 @@ data class EthereumReceipt(
     constructor(receipt: TransactionReceipt) : this(
         receipt.transaction.hash.toHash(),
         receipt.isTxStatusOK && receipt.isSuccessful,
-        receipt.gasUsed.toBigInteger(),
-        receipt.cumulativeGas.toBigInteger(),
+        if (receipt.gasUsed.isEmpty()) BigInteger.ZERO else receipt.gasUsed.toBigInteger(),
+        if (receipt.gasUsed.isEmpty()) BigInteger.ZERO else receipt.cumulativeGas.toBigInteger(),
         receipt.bloomFilter.data.toHEXString(), receipt.logInfoList
     )
 

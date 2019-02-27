@@ -20,6 +20,8 @@ import java.math.BigInteger
 sealed class ChainCtlMessage {
     class NewTransaction(val tx: EthereumTransaction, val response: SendChannel<EthereumBlock?>) : ChainCtlMessage()
     class NewBlock(val response: SendChannel<EthereumBlock?>) : ChainCtlMessage()
+    class SendEther(val address: Address, val amount: BigInteger, val response: SendChannel<EthereumBlock?>) :
+        ChainCtlMessage()
 }
 
 class InMemoryChain(val autoGenblock: Boolean = true) : EthereumBaseChain() {
@@ -57,6 +59,11 @@ class InMemoryChain(val autoGenblock: Boolean = true) : EthereumBaseChain() {
                         } else {
                             msg.response.send(null)
                         }
+                    }
+                    is ChainCtlMessage.SendEther -> {
+                        sb.sender = originAccount
+                        sb.sendEther(msg.address.toBytes(), msg.amount)
+                        msg.response.send(doCreateBlock())
                     }
                 }
             }
@@ -196,11 +203,11 @@ class InMemoryChain(val autoGenblock: Boolean = true) : EthereumBaseChain() {
         response.receive() ?: throw RuntimeException("Create Block fail.")
     }
 
-    override fun tryMiningCoin(account: EthereumAccount, amount: BigInteger): Boolean {
-        this.sb.sender = originAccount
-        this.sb.sendEther(account.address.toBytes(), amount)
-        this.createBlock()
-        return false
+    override fun tryMiningCoin(account: EthereumAccount, amount: BigInteger): Boolean = runBlocking {
+        //val tx = EthereumTransaction(account.address, getNonce(originAccount.address.toAddress()).longValueExact(), defaultGasPrice, defaultGasLimit, amount)
+        val response = Channel<EthereumBlock?>(1)
+        chainAcctor.send(ChainCtlMessage.SendEther(account.address, amount, response))
+        response.receive()?.let { true } ?: false
     }
 
     override fun stop() {
