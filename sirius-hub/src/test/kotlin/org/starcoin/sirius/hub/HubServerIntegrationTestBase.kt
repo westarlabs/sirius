@@ -72,7 +72,6 @@ abstract class HubServerIntegrationTestBase<T : ChainTransaction, A : ChainAccou
     private var coroutineContext: CoroutineContext by Delegates.notNull()
     private var watchHubJob: Job by Delegates.notNull()
     private var watchBlockJob: Job by Delegates.notNull()
-    private var watchTxJob: Job by Delegates.notNull()
     private val localAccounts: MutableList<LocalAccount<T, A>> = mutableListOf()
 
     abstract fun createChainAccount(amount: Long): A
@@ -119,8 +118,7 @@ abstract class HubServerIntegrationTestBase<T : ChainTransaction, A : ChainAccou
         this.waitServerStart()
         this.watchHubJob = this.watchEon()
         this.watchBlockJob = this.watchBlock()
-        this.watchTxJob = this.watchTxs()
-        
+
         val eventch = this.chain.watchEvents(contract.contractAddress, listOf(ChainEvent.ReturnEvent))
         GlobalScope.launch {
             eventch.consumeEach { LOG.info(it.receipt.logs.toString())}
@@ -193,14 +191,10 @@ abstract class HubServerIntegrationTestBase<T : ChainTransaction, A : ChainAccou
             LOG.info("Current blockNumber ${block.height}")
             blockHeight.set(block.height)
             eventBus.post(block)
-        }
-    }
-
-    private fun watchTxs() = GlobalScope.launch(this.coroutineContext) {
-        //TODO add filter
-        val txChannel = chain.watchTransactions()
-        for (txResult in txChannel) {
-            onTransaction(txResult)
+            //TODO tx filter
+            block.transactions.forEach {
+                onTransaction(it)
+            }
         }
     }
 
@@ -223,14 +217,17 @@ abstract class HubServerIntegrationTestBase<T : ChainTransaction, A : ChainAccou
         LOG.info("waitToNextEon:$expectEon")
         val future = HubRootFuture(expectEon)
         this.eventBus.register(future)
-        this.produceBlock(
-            Eon.waitToEon(
-                contractHubInfo.startBlockNumber.longValueExact(),
-                blockHeight.toLong(),
-                contractHubInfo.blocksPerEon,
-                expectEon
-            )
+        val blockCount = Eon.waitToEon(
+            contractHubInfo.startBlockNumber.longValueExact(),
+            blockHeight.toLong(),
+            contractHubInfo.blocksPerEon,
+            expectEon
         )
+        //TODO FIXME
+        if (blockCount <= 0) {
+            return
+        }
+        this.produceBlock(blockCount)
         try {
             val hubRoot = future.get(2000, TimeUnit.MILLISECONDS)
             this.eon.set(hubRoot.eon)
@@ -462,6 +459,9 @@ abstract class HubServerIntegrationTestBase<T : ChainTransaction, A : ChainAccou
         LOG.info("verifyHubRoot:" + hubRoot.eon)
         var contractRoot = contract.getLatestRoot(owner)
         Assert.assertNotNull(contractRoot)
+        if (contractRoot!!.eon > hubRoot.eon) {
+            return
+        }
         // ensure contract and hub root is equals.
         while (hubRoot != contractRoot) {
             //TODO
@@ -698,7 +698,6 @@ abstract class HubServerIntegrationTestBase<T : ChainTransaction, A : ChainAccou
         this.hubService.resetHubMaliciousFlag()
         this.hubServer.stop()
         this.watchBlockJob.cancel()
-        this.watchTxJob.cancel()
         this.chain.stop()
     }
 

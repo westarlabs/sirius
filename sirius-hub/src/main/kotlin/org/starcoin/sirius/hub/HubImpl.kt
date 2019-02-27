@@ -29,7 +29,7 @@ sealed class HubAction {
     ) : HubAction()
 
     data class BlockAction<T : ChainTransaction>(val block: Block<T>) : HubAction()
-    data class ChainTransactionAction<T : ChainTransaction>(val txResult: TransactionResult<T>) : HubAction()
+    //data class ChainTransactionAction<T : ChainTransaction>(val txResult: TransactionResult<T>) : HubAction()
 }
 
 class HubImpl<A : ChainAccount>(
@@ -86,9 +86,9 @@ class HubImpl<A : ChainAccount>(
                 is HubAction.BlockAction<*> -> {
                     processBlock(it.block)
                 }
-                is HubAction.ChainTransactionAction<*> -> {
-                    processTransaction(it.txResult)
-                }
+//                is HubAction.ChainTransactionAction<*> -> {
+//                    processTransaction(it.txResult)
+//                }
             }
         }
     }
@@ -140,23 +140,12 @@ class HubImpl<A : ChainAccount>(
         eonState = EonState(currentEon.id)
 
         this.processBlocks()
-        this.processTransactions()
         //first commit create by contract construct.
         // if miss latest commit, should commit root first.
         if (contractHubInfo.latestEon < currentEon.id) {
             this.doCommit()
         } else {
             this.ready = true
-        }
-    }
-
-    private fun processTransactions() {
-        GlobalScope.launch {
-            val txChannel =
-                chain.watchTransactions { it.tx.to == contract.contractAddress }
-            for (tx in txChannel) {
-                hubActor.send(HubAction.ChainTransactionAction(tx))
-            }
         }
     }
 
@@ -347,7 +336,7 @@ class HubImpl<A : ChainAccount>(
     private fun doCommit() {
         val hubRoot =
             HubRoot(this.eonState.state.root.toAMTreePathNode(), this.eonState.eon)
-        LOG.info("doCommit:" + hubRoot.toJSON())
+        LOG.info("doCommit currentBlockNumber:$currentBlockNumber, root:$hubRoot")
         this.contract.commit(owner, hubRoot)
     }
 
@@ -431,6 +420,11 @@ class HubImpl<A : ChainAccount>(
             this.eonState = eonState
             newEon = true
         }
+
+        blockInfo.transactions.filter { it.tx.to == contract.contractAddress }.forEach {
+            processTransaction(it)
+        }
+
         if (newEon) {
             this.doCommit()
         }
@@ -452,8 +446,8 @@ class HubImpl<A : ChainAccount>(
                 }
                 val deposit = Deposit(tx.from!!, tx.amount)
                 LOG.info("Deposit:" + deposit.toJSON())
-                val blockNumber = txResult.receipt.blockNumber
-                val eon = Eon.calculateEon(startBlockNumber, blockNumber.longValueExact(), blocksPerEon)
+                val blockNumber = currentBlockNumber //txResult.receipt.blockNumber
+                val eon = Eon.calculateEon(startBlockNumber, blockNumber, blocksPerEon)
                 if (eon.id > this.currentEon().id) {
                     GlobalScope.launch {
                         while (eon.id > currentEon().id) {
