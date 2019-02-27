@@ -19,6 +19,7 @@ class EthereumHubContractTest : HubContractTestBase() {
         @JvmStatic
         fun setup() {
             scriptExec("scripts/docker.sh run")
+            Thread.sleep(4000)
         }
 
         @AfterClass

@@ -1,10 +1,13 @@
 package org.starcoin.sirius.protocol.ethereum
 
+import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.channels.ReceiveChannel
+import kotlinx.coroutines.channels.consumeEach
+import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
 import kotlinx.serialization.ImplicitReflectionSerializer
+import kotlin.properties.Delegates
 import org.ethereum.util.blockchain.EtherUtil
-import org.junit.After
 import org.junit.Assert
 import org.junit.Before
 import org.junit.Test
@@ -16,7 +19,7 @@ import org.starcoin.sirius.protocol.ethereum.contract.EthereumHubContract
 import org.starcoin.sirius.util.MockUtils
 import org.starcoin.sirius.util.WithLogging
 import java.math.BigInteger
-import kotlin.properties.Delegates
+
 
 abstract class HubContractTestBase {
     companion object : WithLogging()
@@ -160,7 +163,7 @@ abstract class HubContractTestBase {
     @Test
     @ImplicitReflectionSerializer
     open fun testCommit() {
-
+        val eventChannel = chain.watchEvents(contract.contractAddress, listOf(ChainEvent.ReturnEvent))
         val amount = EtherUtil.convert(1000, EtherUtil.Unit.GWEI)
         deposit(alice, amount)
         runBlocking {
@@ -179,6 +182,9 @@ abstract class HubContractTestBase {
         commitHubRoot(1, root)
         val root1 = contract.getLatestRoot(EthereumAccount.DUMMY_ACCOUNT)
         Assert.assertEquals(root, root1)
+        GlobalScope.launch {
+            eventChannel.consumeEach { LOG.info("watched:${it.receipt.logs}") }
+        }
     }
 
     private fun newHubRoot(eon: Int, amount: BigInteger): HubRoot {

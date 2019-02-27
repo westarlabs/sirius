@@ -4,11 +4,18 @@ import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
 import org.junit.*
-import org.starcoin.sirius.core.*
 import org.starcoin.sirius.crypto.CryptoService
 import org.starcoin.sirius.crypto.eth.EthCryptoKey
+import org.starcoin.sirius.lang.toHEXString
 import org.starcoin.sirius.protocol.ChainEvent
+import org.starcoin.sirius.util.HashUtil
 import org.starcoin.sirius.util.WithLogging
+import org.web3j.abi.EventEncoder
+import org.web3j.abi.TypeReference
+import org.web3j.abi.datatypes.Bool
+import org.web3j.abi.datatypes.Event
+import org.web3j.crypto.Hash
+import java.util.*
 
 
 class EthereumChainTest {
@@ -23,6 +30,7 @@ class EthereumChainTest {
         @JvmStatic
         fun setup() {
             scriptExec("scripts/docker.sh run")
+            Thread.sleep(2000)
         }
 
         @AfterClass
@@ -122,11 +130,5 @@ class EthereumChainTest {
         }
         ch.cancel()
 
-    }
-
-    fun testWatchEvents() {
-        val contracAddress: Address = Address.DUMMY_ADDRESS
-        val events = listOf(ChainEvent.MockTopic)
-        chain.watchEvents(contracAddress, events)
     }
 }

@@ -8,15 +8,12 @@ import org.starcoin.sirius.lang.toHEXString
 import org.starcoin.sirius.util.HashUtil
 import java.io.File
 import java.math.BigInteger
-
 data class TransactionResult<T : ChainTransaction>(val tx: T, val receipt: Receipt)
 
-enum class ChainEvent private constructor(val event: String) {
+enum class ChainEvent private constructor(val eventSignature: String) {
     MockTopic("DepositEvent(byte[])"),
-    SiriusEvent("SiriusEvent(bytes32 indexed hash,uint indexed num,bytes value)"),
-    ReturnEvent("ReturnEvent(bool value)");
-    fun encode() = HashUtil.sha256(name.toByteArray()).toHEXString()
-
+    SiriusEvent("SiriusEvent(bytes32,uint,bytes)"),
+    ReturnEvent("ReturnEvent(bool)");
 }
 
 interface Chain<T : ChainTransaction, B : Block<T>, A : ChainAccount> {
@@ -57,16 +54,16 @@ interface Chain<T : ChainTransaction, B : Block<T>, A : ChainAccount> {
     fun start()
     fun getNonce(address: Address): BigInteger
 
-    fun waitTransactionProcessed(hash: Hash, times: Int = 20):Receipt?
+    fun waitTransactionProcessed(hash: Hash, times: Int = 20): Receipt?
 
     fun createAccount(key: CryptoKey): A
 
-    fun createAccount(keystore:File, password:String): A
+    fun createAccount(keystore: File, password: String): A
 
     fun createAccount(): A
 
     /**
      * try to pre mining coin to account, if chain implements not support, just return false.
      */
-    fun tryMiningCoin(account: A, amount: BigInteger) :Boolean
+    fun tryMiningCoin(account: A, amount: BigInteger): Boolean
 }

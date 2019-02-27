@@ -4,8 +4,8 @@ import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.channels.ReceiveChannel
 import kotlinx.coroutines.channels.sendBlocking
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
-import kotlinx.io.IOException
 import org.starcoin.sirius.core.Address
 import org.starcoin.sirius.core.Hash
 import org.starcoin.sirius.core.Receipt
@@ -27,8 +27,8 @@ import org.web3j.protocol.core.methods.response.EthLog.LogObject
 import org.web3j.protocol.core.methods.response.Transaction
 import org.web3j.protocol.http.HttpService
 import org.web3j.protocol.ipc.UnixIpcService
+import java.io.IOException
 import java.math.BigInteger
-
 
 const val DEFAULT_URL = "http://127.0.0.1:8545"
 const val GAS_LIMIT_BOUND_DIVISOR = 1024
@@ -104,16 +104,20 @@ class EthereumChain constructor(httpUrl: String = DEFAULT_URL, socketPath: Strin
     ): Channel<TransactionResult<EthereumTransaction>> {
         val ch = Channel<TransactionResult<EthereumTransaction>>(1)
         val ethFilter = EthFilter(
-            DefaultBlockParameterName.LATEST,
+            DefaultBlockParameterName.EARLIEST,
             DefaultBlockParameterName.LATEST,
             contract.toString()
         )
-        events.forEach { ethFilter.addSingleTopic(it.encode()) }
+        events.forEach { ethFilter.addSingleTopic(org.web3j.crypto.Hash.sha3String(it.eventSignature)) }
         val newFilterResp = web3.ethNewFilter(ethFilter).sendAsync().get()
         if (newFilterResp.hasError()) throw NewFilterException(newFilterResp.error)
-        val filterChangeResp = web3.ethGetFilterChanges(newFilterResp.filterId).sendAsync().get()
-        if (filterChangeResp.hasError()) throw FilterChangeException(filterChangeResp.error)
         GlobalScope.launch {
+            var filterChangeResp = web3.ethGetFilterChanges(newFilterResp.filterId).sendAsync().get()
+            while (filterChangeResp.logs.size == 0) {
+                filterChangeResp = web3.ethGetFilterChanges(newFilterResp.filterId).sendAsync().get()
+                if (filterChangeResp.hasError()) throw FilterChangeException(filterChangeResp.error)
+                delay(1000)
+            }
             filterChangeResp.logs.map { it as LogObject }.forEach {
                 val recepitResp = web3.ethGetTransactionReceipt(it.transactionHash).sendAsync().get()
                 if (recepitResp.hasError()) throw GetRecepitException(recepitResp.error)
@@ -131,8 +135,10 @@ class EthereumChain constructor(httpUrl: String = DEFAULT_URL, socketPath: Strin
                     r.cumulativeGasUsed,
                     r.root,
                     r.isStatusOK,
-                    r.logs.map { it.toString() }
-                )
+                    r.logs.map {
+                        it.toString()
+
+                    })
                 val txResp = web3.ethGetTransactionByHash(r.transactionHash).sendAsync().get()
                 if (txResp.hasError()) throw GetTransactionException(txResp.error)
                 val tx = txResp.transaction.get().chainTransaction()
@@ -232,6 +238,13 @@ class EthereumChain constructor(httpUrl: String = DEFAULT_URL, socketPath: Strin
         .divide(BigInteger.valueOf((GAS_LIMIT_BOUND_DIVISOR * 100).toLong()))**/
     }
 
+    class NewTxException(error: Error) : Exception(error.message)
+    open class WatchTxExecption(error: Error) : Exception(error.message)
+    class NewFilterException(error: Error) : WatchTxExecption(error)
+    class FilterChangeException(error: Error) : WatchTxExecption(error)
+    class GetRecepitException(error: Error) : WatchTxExecption(error)
+    class GetTransactionException(error: Error) : WatchTxExecption(error)
+
     override fun newTransaction(account: EthereumAccount, to: Address, value: BigInteger): EthereumTransaction {
         return EthereumTransaction(
             to,
@@ -241,12 +254,4 @@ class EthereumChain constructor(httpUrl: String = DEFAULT_URL, socketPath: Strin
             value
         )
     }
-
-
-    class NewTxException(error: Error) : Exception(error.message)
-    open class WatchTxExecption(error: Error) : Exception(error.message)
-    class NewFilterException(error: Error) : WatchTxExecption(error)
-    class FilterChangeException(error: Error) : WatchTxExecption(error)
-    class GetRecepitException(error: Error) : WatchTxExecption(error)
-    class GetTransactionException(error: Error) : WatchTxExecption(error)
 }
