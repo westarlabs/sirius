@@ -340,7 +340,7 @@ library ModelLib {
     function verifyMembershipProof4AMTreeProof(AMTreePathNode memory root, AMTreeProof memory proof) internal pure returns(bool) {
         //AMTreeLeafNodeInfo == AMTreePath.leaf
         bytes32 leafHash = keccak256(marshalAMTreeLeafNodeInfo(proof.leaf));
-        require(leafHash == proof.path.leaf.nodeHash);
+        require(leafHash == proof.path.leaf.nodeHash, "leafHash == proof.path.leaf.nodeHash");
 
         return verifyMembershipProof4AMTreePath(root, proof.path);
     }
@@ -360,7 +360,9 @@ library ModelLib {
         }
 
         computeNode.direction = Direction.DIRECTION_ROOT;
-
+        require(root.offset == computeNode.offset, "root.offset == computeNode.offset");
+        require(root.allotment == computeNode.allotment, ByteUtilLib.appendUintToString("root.allotment == computeNode.allotment ", root.allotment));
+        require(keccak256(marshalAMTreePathNode(root)) == keccak256(marshalAMTreePathNode(computeNode)), "keccak256(marshalAMTreePathNode(root)) == keccak256(marshalAMTreePathNode(computeNode))");
         //hash == hash
         return (keccak256(marshalAMTreePathNode(root)) == keccak256(marshalAMTreePathNode(computeNode)) && root.offset == computeNode.offset && root.allotment == computeNode.allotment);
     }
