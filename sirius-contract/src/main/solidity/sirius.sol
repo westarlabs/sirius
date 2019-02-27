@@ -549,7 +549,7 @@ contract ChallengeService is Challenge {
     }
 
     function changeBalance(uint newEon) public onlyOwner returns (bool) {
-        require(newEon > 0);
+require(newEon > 0, "newEon > 0");
         if(newEon == SafeMath.add(balances[0].eon, 1)) {
             for (uint i = balances.length; i > 0; i--) {
                 uint tmp = i - 1;
