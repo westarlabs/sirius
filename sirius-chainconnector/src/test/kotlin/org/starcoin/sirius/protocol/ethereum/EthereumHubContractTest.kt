@@ -1,5 +1,6 @@
 package org.starcoin.sirius.protocol.ethereum
 
+import kotlinx.coroutines.runBlocking
 import org.junit.AfterClass
 import org.junit.Assert
 import org.junit.BeforeClass
@@ -42,10 +43,10 @@ class EthereumHubContractTest : HubContractTestBase() {
         }
     }
 
-    override fun sendEther(to: EthereumAccount, value: BigInteger) {
+    override fun sendEther(to: EthereumAccount, value: BigInteger) = runBlocking {
         val tx = chain.newTransaction(etherbase, to.address, value)
-        val hash = chain.submitTransaction(etherbase, tx)
-        chain.waitTransactionProcessed(hash)
+        val txDeferred = chain.submitTransaction(etherbase, tx)
+        txDeferred.awaitTimoutOrNull()
         Assert.assertEquals(value, chain.getBalance(to.address))
     }
 }

@@ -110,47 +110,47 @@ abstract class HubContract<A : ChainAccount> {
         return this.queryContractFunction(account, "queryRecoveryMode", Boolean::class)!!
     }
 
-    fun initiateWithdrawal(account: A, input: Withdrawal): Hash {
+    fun initiateWithdrawal(account: A, input: Withdrawal): TxDeferred {
         return this.executeContractFunction(account, InitiateWithdrawalFunction, input)
     }
 
-    fun cancelWithdrawal(account: A, input: CancelWithdrawal): Hash {
+    fun cancelWithdrawal(account: A, input: CancelWithdrawal): TxDeferred {
         return this.executeContractFunction(account, CancelWithdrawalFunction, input)
     }
 
-    fun openBalanceUpdateChallenge(account: A, input: BalanceUpdateProof): Hash {
+    fun openBalanceUpdateChallenge(account: A, input: BalanceUpdateProof): TxDeferred {
         return this.executeContractFunction(
             account,
             OpenBalanceUpdateChallengeFunction, input
         )
     }
 
-    fun closeBalanceUpdateChallenge(account: A, input: CloseBalanceUpdateChallenge): Hash {
+    fun closeBalanceUpdateChallenge(account: A, input: CloseBalanceUpdateChallenge): TxDeferred {
         return this.executeContractFunction(
             account,
             CloseBalanceUpdateChallengeFunction, input
         )
     }
 
-    fun commit(account: A, input: HubRoot): Hash {
+    fun commit(account: A, input: HubRoot): TxDeferred {
         return this.executeContractFunction(account, CommitFunction, input)
     }
 
-    fun openTransferDeliveryChallenge(account: A, input: TransferDeliveryChallenge): Hash {
+    fun openTransferDeliveryChallenge(account: A, input: TransferDeliveryChallenge): TxDeferred {
         return this.executeContractFunction(
             account,
             OpenTransferDeliveryChallengeFunction, input
         )
     }
 
-    fun closeTransferDeliveryChallenge(account: A, input: CloseTransferDeliveryChallenge): Hash {
+    fun closeTransferDeliveryChallenge(account: A, input: CloseTransferDeliveryChallenge): TxDeferred {
         return this.executeContractFunction(
             account,
             CloseTransferDeliveryChallengeFunction, input
         )
     }
 
-    fun recoverFunds(account: A, input: AMTreeProof): Hash {
+    fun recoverFunds(account: A, input: AMTreeProof): TxDeferred {
         return this.executeContractFunction(account, RecoverFundsFunction, input)
     }
 
@@ -158,7 +158,7 @@ abstract class HubContract<A : ChainAccount> {
         account: A,
         function: ContractFunction<S>,
         arguments: S
-    ): Hash
+    ): TxDeferred
 
     abstract fun <S : Any> queryContractFunction(
         account: A,

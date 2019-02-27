@@ -15,6 +15,7 @@ import org.starcoin.sirius.lang.toNoPrefixHEXString
 import org.starcoin.sirius.protocol.ChainEvent
 import org.starcoin.sirius.protocol.EthereumTransaction
 import org.starcoin.sirius.protocol.TransactionResult
+import org.starcoin.sirius.protocol.TxDeferred
 import java.math.BigInteger
 
 sealed class ChainCtlMessage {
@@ -26,8 +27,8 @@ sealed class ChainCtlMessage {
 
 class InMemoryChain(val autoGenblock: Boolean = true) : EthereumBaseChain() {
 
-    override fun waitTransactionProcessed(hash: Hash, times: Int): Receipt? {
-        return null
+    override fun waitTransactionProcessed(hash: Hash): TxDeferred {
+        return this.registerDeferred(hash)
     }
 
     override fun waitBlocks(blockCount: Int) {
@@ -42,6 +43,10 @@ class InMemoryChain(val autoGenblock: Boolean = true) : EthereumBaseChain() {
 
     init {
         sb.addEthereumListener(eventBus)
+        val channel = eventBus.subscribeTx()
+        GlobalScope.launch {
+            channel.consumeEach { complateDeferred(it.receipt) }
+        }
     }
 
     val chainAcctor =
@@ -138,7 +143,7 @@ class InMemoryChain(val autoGenblock: Boolean = true) : EthereumBaseChain() {
         return tx?.let { EthereumTransaction(tx.receipt.transaction) }
     }
 
-    override fun doSubmitTransaction(account: EthereumAccount, transaction: EthereumTransaction): Hash {
+    override fun doSubmitTransaction(account: EthereumAccount, transaction: EthereumTransaction): TxDeferred {
         val key = account.key as EthCryptoKey
         sb.sender = key.ecKey
         transaction.sign(key)
@@ -146,17 +151,12 @@ class InMemoryChain(val autoGenblock: Boolean = true) : EthereumBaseChain() {
         LOG.fine("chainNonce ${account.address} $chainNonce")
         LOG.fine("${account.address} submitTransaction hash:${transaction.hash()} nonce:${transaction.nonce} contractFunction:${transaction.contractFunction} dataSize:${transaction.data?.size}")
         account.incAndGetNonce()
+        val deferred = registerDeferred(transaction.hash())
         val response = Channel<EthereumBlock?>(1)
         GlobalScope.launch(Dispatchers.IO) {
             chainAcctor.send(ChainCtlMessage.NewTransaction(transaction, response))
         }
-        //TODO async, not wait block create.
-        runBlocking {
-            val block = response.receive()
-            block?.let { LOG.fine("submitTransaction receive block ${block.hash()}") }
-                ?: LOG.fine("submitTransaction receive block null.")
-        }
-        return transaction.hash()
+        return deferred
     }
 
     override fun callConstFunction(caller: CryptoKey, contractAddress: Address, data: ByteArray): ByteArray {

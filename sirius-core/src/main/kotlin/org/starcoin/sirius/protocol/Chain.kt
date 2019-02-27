@@ -3,10 +3,9 @@ package org.starcoin.sirius.protocol
 import kotlinx.coroutines.channels.ReceiveChannel
 import org.starcoin.sirius.core.*
 import org.starcoin.sirius.crypto.CryptoKey
-import org.starcoin.sirius.lang.toHEXString
-import org.starcoin.sirius.util.HashUtil
 import java.io.File
 import java.math.BigInteger
+
 data class TransactionResult<T : ChainTransaction>(val tx: T, val receipt: Receipt)
 
 enum class ChainEvent private constructor(val eventSignature: String) {
@@ -35,7 +34,7 @@ interface Chain<T : ChainTransaction, B : Block<T>, A : ChainAccount> {
 
     fun getBalance(address: Address): BigInteger
 
-    fun submitTransaction(account: A, transaction: T): Hash
+    fun submitTransaction(account: A, transaction: T): TxDeferred
 
     fun loadContract(contractAddress: Address, jsonInterface: String): HubContract<A>
 
@@ -53,7 +52,7 @@ interface Chain<T : ChainTransaction, B : Block<T>, A : ChainAccount> {
     fun start()
     fun getNonce(address: Address): BigInteger
 
-    fun waitTransactionProcessed(hash: Hash, times: Int = 20): Receipt?
+    fun waitTransactionProcessed(hash: Hash): TxDeferred
 
     fun createAccount(key: CryptoKey): A
 

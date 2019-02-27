@@ -54,7 +54,7 @@ class EventBusEthereumListener() : AbstractEthereumListener() {
         return this.blockEventBus.subscribe(filter)
     }
 
-    fun subscribeTx(filter: (TransactionResult<EthereumTransaction>) -> Boolean): ReceiveChannel<TransactionResult<EthereumTransaction>> {
+    fun subscribeTx(filter: (TransactionResult<EthereumTransaction>) -> Boolean = { true }): ReceiveChannel<TransactionResult<EthereumTransaction>> {
         return this.txEventBus.subscribe(filter)
     }
 

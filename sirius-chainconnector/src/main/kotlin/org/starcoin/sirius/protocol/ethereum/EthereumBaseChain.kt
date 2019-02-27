@@ -1,20 +1,24 @@
 package org.starcoin.sirius.protocol.ethereum
 
+import kotlinx.coroutines.runBlocking
 import org.ethereum.core.CallTransaction
 import org.ethereum.solidity.compiler.CompilationResult
 import org.starcoin.sirius.core.Address
 import org.starcoin.sirius.core.Hash
+import org.starcoin.sirius.core.Receipt
 import org.starcoin.sirius.crypto.CryptoKey
 import org.starcoin.sirius.crypto.CryptoService
 import org.starcoin.sirius.lang.hexToByteArray
 import org.starcoin.sirius.protocol.Chain
 import org.starcoin.sirius.protocol.ContractConstructArgs
 import org.starcoin.sirius.protocol.EthereumTransaction
+import org.starcoin.sirius.protocol.TxDeferred
 import org.starcoin.sirius.protocol.ethereum.contract.EthereumHubContract
 import org.starcoin.sirius.util.WithLogging
 import org.web3j.crypto.WalletUtils
 import java.io.File
 import java.math.BigInteger
+import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.atomic.AtomicLong
 
 
@@ -29,6 +33,20 @@ abstract class EthereumBaseChain :
 
         val defaultGasLimit: BigInteger
             get() = 7500000.toBigInteger()
+    }
+
+    protected val txDeferreds = ConcurrentHashMap<Hash, TxDeferred>()
+
+    protected fun registerDeferred(txHash: Hash): TxDeferred {
+        val deferred = TxDeferred(txHash)
+        this.txDeferreds.put(txHash, deferred)
+        return deferred
+    }
+
+    protected fun complateDeferred(receipt: Receipt): TxDeferred? {
+        val deferred = this.txDeferreds[receipt.transactionHash]
+        deferred?.complete(receipt)
+        return deferred
     }
 
     abstract fun callConstFunction(caller: CryptoKey, contractAddress: Address, data: ByteArray): ByteArray
@@ -66,17 +84,20 @@ abstract class EthereumBaseChain :
             defaultGasLimit,
             contractMetaData.bin.hexToByteArray() + argsEncoded
         )
-        this.waitTransactionProcessed(this.submitTransaction(account, tx))
+        //TODO use coroutine
+        runBlocking {
+            submitTransaction(account, tx).await()
+        }
         return tx.contractAddress!!
     }
 
-    override fun submitTransaction(account: EthereumAccount, transaction: EthereumTransaction): Hash {
+    override fun submitTransaction(account: EthereumAccount, transaction: EthereumTransaction): TxDeferred {
         val hash = this.doSubmitTransaction(account, transaction)
         LOG.fine("submitTransaction account:${account.address} tx:$hash")
         return hash
     }
 
-    protected abstract fun doSubmitTransaction(account: EthereumAccount, transaction: EthereumTransaction): Hash
+    protected abstract fun doSubmitTransaction(account: EthereumAccount, transaction: EthereumTransaction): TxDeferred
 
 
     override fun createAccount(key: CryptoKey): EthereumAccount {

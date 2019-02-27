@@ -1,16 +1,17 @@
 package org.starcoin.sirius.protocol.ethereum.contract
 
+import kotlinx.coroutines.runBlocking
 import kotlinx.serialization.ImplicitReflectionSerializer
 import org.ethereum.core.CallTransaction
 import org.ethereum.solidity.SolidityType
 import org.ethereum.vm.LogInfo
 import org.starcoin.sirius.core.Address
 import org.starcoin.sirius.core.ContractReturn
-import org.starcoin.sirius.core.Hash
 import org.starcoin.sirius.core.SiriusObject
 import org.starcoin.sirius.protocol.ContractFunction
 import org.starcoin.sirius.protocol.EthereumTransaction
 import org.starcoin.sirius.protocol.HubContract
+import org.starcoin.sirius.protocol.TxDeferred
 import org.starcoin.sirius.protocol.ethereum.EthereumAccount
 import org.starcoin.sirius.protocol.ethereum.EthereumBaseChain
 import org.starcoin.sirius.serialization.rlp.RLP
@@ -33,7 +34,7 @@ class EthereumHubContract internal constructor(
         account: EthereumAccount,
         function: ContractFunction<S>,
         input: S
-    ): Hash {
+    ): TxDeferred {
         val data = function.encode(input)
         val hash = chain.submitTransaction(
             account,
@@ -71,7 +72,7 @@ class EthereumHubContract internal constructor(
         }
     }
 
-    fun callFunction(account: EthereumAccount, functionName: String, vararg args: Any): Hash {
+    fun callFunction(account: EthereumAccount, functionName: String, vararg args: Any): TxDeferred {
         val function = this.contract.getByName(functionName)
         val data = function.encode(*args)
         return chain.submitTransaction(
@@ -85,7 +86,7 @@ class EthereumHubContract internal constructor(
     }
 
     override fun setHubIp(account: EthereumAccount, ip: String) {
-        chain.waitTransactionProcessed(this.callFunction(account, "hubIp", ip.toByteArray()))
+        runBlocking { callFunction(account, "hubIp", ip.toByteArray()).await() }
     }
 
     fun parseEvent(eventLog: LogInfo): CallTransaction.Invocation {

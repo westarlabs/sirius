@@ -48,19 +48,19 @@ class EthereumChainTest {
     }
 
     @Test
-    fun testSubmitTransaction() {
+    fun testSubmitTransaction() = runBlocking {
         val transAmount = 100.toBigInteger()
         val tx = chain.newTransaction(etherbase, alice.address, transAmount)
 
-        val hash = chain.submitTransaction(etherbase, tx)
-        Assert.assertEquals(hash, tx.txHash())
-        Assert.assertEquals(hash, tx.hash())
-        chain.waitTransactionProcessed(hash)
+        val deferred = chain.submitTransaction(etherbase, tx)
+        Assert.assertEquals(deferred.txHash, tx.txHash())
+        Assert.assertEquals(deferred.txHash, tx.hash())
+        deferred.await()
         Assert.assertEquals(transAmount, chain.getBalance(alice.address))
     }
 
     @Test
-    fun testFindTransaction() {
+    fun testFindTransaction() = runBlocking {
         val transAmount = 100.toBigInteger()
         val tx = chain.newTransaction(etherbase, alice.address, transAmount)
         tx.sign(etherbase.key as EthCryptoKey)
@@ -69,9 +69,9 @@ class EthereumChainTest {
         Assert.assertNotNull(tx.from)
         val tx1 = chain.newTransaction(etherbase, alice.address, transAmount)
         tx1.verify()
-        val hash = chain.submitTransaction(etherbase, tx1)
-        val txFind = chain.findTransaction(hash)
-        val receipt = chain.waitTransactionProcessed(hash)
+        val deferred = chain.submitTransaction(etherbase, tx1)
+        val receipt = deferred.await()
+        val txFind = chain.findTransaction(deferred.txHash)
         receipt!!.logs?.forEach {
             LOG.info(it.toString())
         }

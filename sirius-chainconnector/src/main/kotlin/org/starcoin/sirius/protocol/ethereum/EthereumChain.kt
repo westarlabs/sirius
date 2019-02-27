@@ -17,6 +17,7 @@ import org.starcoin.sirius.lang.toHEXString
 import org.starcoin.sirius.protocol.ChainEvent
 import org.starcoin.sirius.protocol.EthereumTransaction
 import org.starcoin.sirius.protocol.TransactionResult
+import org.starcoin.sirius.protocol.TxDeferred
 import org.web3j.protocol.Web3j
 import org.web3j.protocol.core.DefaultBlockParameter
 import org.web3j.protocol.core.DefaultBlockParameterName
@@ -37,17 +38,25 @@ const val blockGasIncreasePercent = 0
 
 class EthereumChain constructor(httpUrl: String = DEFAULT_URL, socketPath: String? = null) :
     EthereumBaseChain() {
-    override fun waitTransactionProcessed(hash: Hash, times: Int): Receipt? {
-        var receipt: Receipt?
-        repeat(times) {
-            receipt = getTransactionReceipts(listOf(hash))[0]
-            when (receipt?.status) {
-                true -> return receipt
-                false -> throw RuntimeException("Receipt status false")
-                null -> Thread.sleep(1000)
+
+    init {
+        //TODO destroy job
+        GlobalScope.launch {
+            while (true) {
+                val hashList = txDeferreds.keys.toList()
+                if (hashList.isNotEmpty()) {
+                    val receipts = getTransactionReceipts(hashList)
+                    receipts.forEach { receipt ->
+                        receipt?.let { complateDeferred(it) }
+                    }
+                }
+                delay(2000)
             }
         }
-        throw java.lang.RuntimeException("Get receipt timeout")
+    }
+
+    override fun waitTransactionProcessed(hash: Hash): TxDeferred {
+        return this.registerDeferred(hash)
     }
 
     override fun waitBlocks(blockCount: Int) {
@@ -74,13 +83,13 @@ class EthereumChain constructor(httpUrl: String = DEFAULT_URL, socketPath: Strin
         ).send().transactionCount
     }
 
-    override fun doSubmitTransaction(account: EthereumAccount, transaction: EthereumTransaction): Hash {
+    override fun doSubmitTransaction(account: EthereumAccount, transaction: EthereumTransaction): TxDeferred {
         transaction.sign(account.key as EthCryptoKey)
         val hexTx = transaction.toHEXString()
         val resp = web3.ethSendRawTransaction(hexTx).sendAsync().get()
         if (resp.hasError()) throw NewTxException(resp.error)
         account.incAndGetNonce()
-        return resp.transactionHash.toHash()
+        return registerDeferred(resp.transactionHash.toHash())
     }
 
     override fun watchTransactions(filter: (TransactionResult<EthereumTransaction>) -> Boolean): ReceiveChannel<TransactionResult<EthereumTransaction>> {

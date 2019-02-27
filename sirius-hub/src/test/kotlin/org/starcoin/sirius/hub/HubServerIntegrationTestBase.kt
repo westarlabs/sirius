@@ -4,11 +4,8 @@ package org.starcoin.sirius.hub
 import com.google.common.eventbus.EventBus
 import com.google.common.eventbus.Subscribe
 import io.grpc.inprocess.InProcessChannelBuilder
-import kotlinx.coroutines.GlobalScope
-import kotlinx.coroutines.Job
-import kotlinx.coroutines.asCoroutineDispatcher
+import kotlinx.coroutines.*
 import kotlinx.coroutines.channels.consumeEach
-import kotlinx.coroutines.launch
 import org.ethereum.db.IndexedBlockStore
 import org.junit.After
 import org.junit.Assert
@@ -486,7 +483,7 @@ abstract class HubServerIntegrationTestBase<T : ChainTransaction, A : ChainAccou
         this.deposit(a, amount, true)
     }
 
-    private fun deposit(a: LocalAccount<T, A>, amount: BigInteger, expectSuccess: Boolean) {
+    private fun deposit(a: LocalAccount<T, A>, amount: BigInteger, expectSuccess: Boolean) = runBlocking {
         val previousAccount = hubService.getHubAccount(a.address)!!
         // deposit
 
@@ -494,13 +491,13 @@ abstract class HubServerIntegrationTestBase<T : ChainTransaction, A : ChainAccou
             HubEventFuture { event -> event.type === HubEventType.NEW_DEPOSIT && event.address == a.address }
         a.watch(hubEventFuture)
 
-        val txHash = chain.submitTransaction(
+        val txDeferred = chain.submitTransaction(
             a.chainAccount,
             chain.newTransaction(a.chainAccount, contract.contractAddress, amount)
         )
 
-        val future = this.registerTxHook(txHash)
-        future.get(2, TimeUnit.SECONDS)
+        val receipt = txDeferred.awaitTimoutOrNull()
+        Assert.assertNotNull(receipt)
 
         try {
             val hubEvent = hubEventFuture.get(2, TimeUnit.SECONDS)
@@ -589,40 +586,32 @@ abstract class HubServerIntegrationTestBase<T : ChainTransaction, A : ChainAccou
 
     private fun withdrawal(
         account: LocalAccount<T, A>, amount: BigInteger, expectSuccess: Boolean, doCheck: Boolean
-    ) {
-        val oldHubAccount = this.hubService.getHubAccount(account.address)!!
-        val chainBalance = this.chain.getBalance(account.address)
+    ) = runBlocking {
+        val oldHubAccount = hubService.getHubAccount(account.address)!!
+        val chainBalance = chain.getBalance(account.address)
         val eon = account.state!!.eon
         val proof = account.state!!.previous!!.proof!!
         LOG.info("withdrawal: $eon, path:$proof")
-        val txHash =
-            this.contract.initiateWithdrawal(account.chainAccount, Withdrawal(proof, amount))
-        val future = this.registerTxHook(txHash)
-        try {
-            Assert.assertTrue(future.get(3, TimeUnit.SECONDS).receipt.status)
-        } catch (e: InterruptedException) {
-            Assert.fail(e.message)
-        } catch (e: ExecutionException) {
-            Assert.fail(e.message)
-        } catch (e: TimeoutException) {
-            Assert.fail(e.message)
-        }
+        val txDeferred =
+            contract.initiateWithdrawal(account.chainAccount, Withdrawal(proof, amount))
+        val receipt = txDeferred.awaitTimoutOrNull()
+        Assert.assertNotNull(receipt)
         //TODO
         sleep(1000)
         if (doCheck) {
             if (expectSuccess) {
-                val newHubAccount = this.hubService.getHubAccount(account.address)!!
+                val newHubAccount = hubService.getHubAccount(account.address)!!
                 Assert.assertEquals(oldHubAccount.withdraw + amount, newHubAccount.withdraw)
                 waitToNextEon()
                 waitToNextEon()
-                val newChainBalance = this.chain.getBalance(account.address)
+                val newChainBalance = chain.getBalance(account.address)
                 Assert.assertTrue((chainBalance + amount).wei.fuzzyEquals(newChainBalance.wei, EtherUnit.Gwei))
             } else {
-                val newHubAccount = this.hubService.getHubAccount(account.address)!!
+                val newHubAccount = hubService.getHubAccount(account.address)!!
                 Assert.assertEquals(oldHubAccount.withdraw, newHubAccount.withdraw)
                 waitToNextEon()
                 waitToNextEon()
-                val newChainBalance = this.chain.getBalance(account.address)
+                val newChainBalance = chain.getBalance(account.address)
                 Assert.assertTrue((chainBalance).wei.fuzzyEquals(newChainBalance.wei, EtherUnit.Gwei))
             }
         }
@@ -638,54 +627,23 @@ abstract class HubServerIntegrationTestBase<T : ChainTransaction, A : ChainAccou
         this.balanceUpdateChallenge(account, BalanceUpdateProof(update))
     }
 
-    private fun balanceUpdateChallenge(account: LocalAccount<T, A>, challenge: BalanceUpdateProof) {
+    private fun balanceUpdateChallenge(account: LocalAccount<T, A>, challenge: BalanceUpdateProof) = runBlocking {
         if (challenge.hasUpdate) {
             Assert.assertTrue(challenge.update.verifyHubSig(owner.key.keyPair.public))
         }
-        val txHash = contract.openBalanceUpdateChallenge(account.chainAccount, challenge)
-        val future = this.registerTxHook(txHash)
-        try {
-            Assert.assertTrue(
-                future.get(2, TimeUnit.SECONDS).receipt.status
-            )
-        } catch (e: InterruptedException) {
-            e.printStackTrace()
-            LOG.severe("get tx " + txHash.toString() + " timeout.")
-            Assert.fail(e.message)
-        } catch (e: ExecutionException) {
-            e.printStackTrace()
-            LOG.severe("get tx " + txHash.toString() + " timeout.")
-            Assert.fail(e.message)
-        } catch (e: TimeoutException) {
-            e.printStackTrace()
-            LOG.severe("get tx " + txHash.toString() + " timeout.")
-            Assert.fail(e.message)
-        }
-
+        val txDeferred = contract.openBalanceUpdateChallenge(account.chainAccount, challenge)
+        val receipt = txDeferred.awaitTimoutOrNull()
+        Assert.assertTrue(receipt!!.status)
     }
 
-    private fun transferDeliveryChallenge(account: LocalAccount<T, A>, offchainTx: OffchainTransaction) {
+    private fun transferDeliveryChallenge(account: LocalAccount<T, A>, offchainTx: OffchainTransaction) = runBlocking {
         val tree = MerkleTree(account.state!!.previous!!.txs)
         val path = tree.getMembershipProof(offchainTx.hash())
         Assert.assertNotNull(path)
         val challenge = TransferDeliveryChallenge(account.state!!.previous!!.update, offchainTx, path)
-        val txHash = contract.openTransferDeliveryChallenge(account.chainAccount, challenge)
-        val future = this.registerTxHook(txHash)
-        try {
-            Assert.assertTrue(
-                future.get(2, TimeUnit.SECONDS).receipt.status
-            )
-        } catch (e: InterruptedException) {
-            e.printStackTrace()
-            Assert.fail(e.message)
-        } catch (e: ExecutionException) {
-            e.printStackTrace()
-            Assert.fail(e.message)
-        } catch (e: TimeoutException) {
-            e.printStackTrace()
-            Assert.fail(e.message)
-        }
-
+        val txDeferred = contract.openTransferDeliveryChallenge(account.chainAccount, challenge)
+        val receipt = txDeferred.awaitTimoutOrNull()
+        Assert.assertTrue(receipt!!.status)
     }
 
     @After

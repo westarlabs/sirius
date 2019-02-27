@@ -1,8 +1,8 @@
 package org.starcoin.sirius.hub
 
+import kotlinx.coroutines.runBlocking
 import org.ethereum.util.blockchain.EtherUtil
 import org.junit.AfterClass
-import org.junit.BeforeClass
 import org.starcoin.sirius.crypto.CryptoService
 import org.starcoin.sirius.protocol.EthereumTransaction
 import org.starcoin.sirius.protocol.ethereum.EthereumAccount
@@ -22,14 +22,14 @@ class HubServerIntegrationEthereumChainTest :
         }
     }
 
-    override fun createChainAccount(amount: Long): EthereumAccount {
+    override fun createChainAccount(amount: Long): EthereumAccount = runBlocking {
         val key = CryptoService.generateCryptoKey()
         val account = EthereumAccount(key)
         val etherbase = chain.createAccount(loadEtherBaseKeyStoreFile("/tmp/geth_data/keystore"), "")
         val tx = chain.newTransaction(etherbase, account.address, EtherUtil.convert(amount, EtherUtil.Unit.ETHER))
-        val hash = chain.submitTransaction(etherbase, tx)
-        chain.waitTransactionProcessed(hash)
-        return account
+        val txDeferred = chain.submitTransaction(etherbase, tx)
+        txDeferred.await()
+        account
     }
 
     override fun createBlock() {

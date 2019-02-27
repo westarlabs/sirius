@@ -360,6 +360,7 @@ class HubImpl<A : ChainAccount>(
         if (txProof != null) {
             val closeChallenge =
                 CloseTransferDeliveryChallenge(accountProof, txProof, currentAccount.address, tx.hash())
+            //assert(AMTree.verifyMembershipProof(this.contract.getLatestRoot(owner)!!.root, closeChallenge.proof))
             this.contract.closeTransferDeliveryChallenge(owner, closeChallenge)
         } else {
             LOG.warning("Can not find tx Proof with challenge:" + challenge.toString())

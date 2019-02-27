@@ -14,9 +14,7 @@ import org.starcoin.sirius.protocol.ChainAccount
 import org.starcoin.sirius.protocol.HubContract
 import org.starcoin.sirius.util.WithLogging
 import org.starcoin.sirius.wallet.core.dao.SiriusObjectDao
-import java.lang.RuntimeException
 import java.math.BigInteger
-
 import kotlin.properties.Delegates
 
 class Hub <T : ChainTransaction, A : ChainAccount> {
@@ -319,8 +317,8 @@ class Hub <T : ChainTransaction, A : ChainAccount> {
 
     fun deposit(value :BigInteger) {
         var chainTransaction=chain.newTransaction(account,contract.contractAddress, value)
-        var hash=chain.submitTransaction(account,chainTransaction)
-        this.hubStatus.addDepositTransaction(hash,chainTransaction)
+        var txDeferred = chain.submitTransaction(account, chainTransaction)
+        this.hubStatus.addDepositTransaction(txDeferred.txHash, chainTransaction)
     }
 
     fun register() : Update? {
