@@ -675,14 +675,14 @@ require(newEon > 0, "newEon > 0");
         bytes32 key = close.txHash;
 
         bool proofFlag = ModelLib.verifyMembershipProof4AMTreeProof(latestRoot.node, close.proof);
-        require(proofFlag);
+        require(proofFlag, "proofFlag");
 
         GlobleLib.TransferDeliveryChallengeAndStatus memory challenge = dataStore.tdcData[balances[0].eon][key];
-        require(challenge.isVal);
+require(challenge.isVal, "challenge.isVal");
 
         if(challenge.stat == ModelLib.ChallengeStatus.OPEN) {
             bool verifyFlag = ModelLib.verifyMembershipProof4Merkle(close.proof.leaf.update.upData.root, close.txPath, close.txHash);
-            require(verifyFlag);
+require(verifyFlag, "verifyFlag");
 
             challenge.stat = ModelLib.ChallengeStatus.CLOSE;
             dataStore.tdcData[balances[0].eon][key] = challenge;
