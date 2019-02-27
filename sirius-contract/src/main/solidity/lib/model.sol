@@ -145,6 +145,8 @@ library ModelLib {
     function unmarshalAMTreeLeafNodeInfo(RLPLib.RLPItem memory rlp) internal pure returns (AMTreeLeafNodeInfo memory node) {
         RLPLib.Iterator memory it = RLPDecoder.iterator(rlp);
         uint idx;
+        uint len = RLPDecoder.items(rlp);
+        require(len == 2, "AMTreeLeafNodeInfo unmarshal err");
         while (RLPDecoder.hasNext(it)) {
             RLPLib.RLPItem memory r = RLPDecoder.next(it);
             if (idx == 0) node.addressHash = ByteUtilLib.bytesToBytes32(RLPLib.toData(r));
@@ -170,6 +172,8 @@ library ModelLib {
     function unmarshalCloseBalanceUpdateChallenge(RLPLib.RLPItem memory rlp) internal pure returns (CloseBalanceUpdateChallenge memory close) {
         RLPLib.Iterator memory it = RLPDecoder.iterator(rlp);
         uint idx;
+        uint len = RLPDecoder.items(rlp);
+        require(len == 2, "CloseBalanceUpdateChallenge unmarshal err");
         while(RLPDecoder.hasNext(it)) {
             RLPLib.RLPItem memory r = RLPDecoder.next(it);
             if(idx == 0) close.addr = RLPDecoder.toAddress(r);
@@ -195,6 +199,8 @@ library ModelLib {
     function unmarshalAMTreeProof(RLPLib.RLPItem memory rlp) internal pure returns (AMTreeProof memory proof) {
         RLPLib.Iterator memory it = RLPDecoder.iterator(rlp);
         uint idx;
+        uint len = RLPDecoder.items(rlp);
+        require(len == 2, "AMTreeProof unmarshal err");
         while (RLPDecoder.hasNext(it)) {
             RLPLib.RLPItem memory r = RLPDecoder.next(it);
             if (idx == 0) proof.path = unmarshalAMTreePath(r);
@@ -230,6 +236,8 @@ library ModelLib {
     function unmarshalAMTreeNode(RLPLib.RLPItem memory rlp) internal pure returns (AMTreeNode memory node) {
         RLPLib.Iterator memory it = RLPDecoder.iterator(rlp);
         uint idx;
+        uint len = RLPDecoder.items(rlp);
+        require(len == 3, "AMTreeNode unmarshal err");
         while (RLPDecoder.hasNext(it)) {
             RLPLib.RLPItem memory r = RLPDecoder.next(it);
             if (idx == 0) node.offset = RLPDecoder.toUint(r);
@@ -257,6 +265,8 @@ library ModelLib {
     function unmarshalAMTree(RLPLib.RLPItem memory rlp) internal pure returns (AMTree memory tree) {
         RLPLib.Iterator memory it = RLPDecoder.iterator(rlp);
         uint idx;
+        uint len = RLPDecoder.items(rlp);
+        require(len == 2, "AMTree unmarshal err");
         while (RLPDecoder.hasNext(it)) {
             RLPLib.RLPItem memory r = RLPDecoder.next(it);
             if (idx == 0) tree.eon = RLPDecoder.toUint(r);
@@ -343,11 +353,9 @@ library ModelLib {
             if (node.direction == Direction.DIRECTION_LEFT) {
                 computeNode.direction = Direction.DIRECTION_RIGHT;
                 computeNode = combineAMTreePathNode(node, computeNode);
-                //printAMTreeInternalNodeInfo(computeNode);
             } else if(node.direction == Direction.DIRECTION_RIGHT) {
                 computeNode.direction = Direction.DIRECTION_LEFT;
                 computeNode = combineAMTreePathNode(computeNode, node);
-                //printAMTreeInternalNodeInfo(computeNode);
             } else {}
         }
 
@@ -372,6 +380,8 @@ library ModelLib {
 
     function unmarshalAMTreePath(RLPLib.RLPItem memory rlp) internal pure returns (AMTreePath memory path) {
         RLPLib.Iterator memory it = RLPDecoder.iterator(rlp);
+        uint rlpLen = RLPDecoder.items(rlp);
+        require(rlpLen >= 2, "AMTreePath unmarshal err");
         uint idx;
         while(RLPDecoder.hasNext(it)) {
             RLPLib.RLPItem memory r = RLPDecoder.next(it);
@@ -415,6 +425,8 @@ library ModelLib {
 
     function unmarshalMerklePathNode(RLPLib.RLPItem memory rlp) internal pure returns (MerklePathNode memory node) {
         RLPLib.Iterator memory it = RLPDecoder.iterator(rlp);
+        uint len = RLPDecoder.items(rlp);
+        require(len == 2, "TreePathNode unmarshal err");
         uint idx;
         while (RLPDecoder.hasNext(it)) {
             RLPLib.RLPItem memory r = RLPDecoder.next(it);
@@ -439,6 +451,8 @@ library ModelLib {
 
     function unmarshalMerklePath(RLPLib.RLPItem memory rlp) internal pure returns (MerklePath memory path) {
         RLPLib.Iterator memory it = RLPDecoder.iterator(rlp);
+        uint rlpLen = RLPDecoder.items(rlp);
+        require(rlpLen >= 0, "TreePath unmarshal err");
         uint idx;
         while(RLPDecoder.hasNext(it)) {
             RLPLib.RLPItem memory r = RLPDecoder.next(it);
@@ -498,6 +512,8 @@ library ModelLib {
 
     function unmarshalUpdateData(RLPLib.RLPItem memory rlp) internal pure returns (UpdateData memory ud) {
         RLPLib.Iterator memory it = RLPDecoder.iterator(rlp);
+        uint len = RLPDecoder.items(rlp);
+        require(len == 5, "UpdateData unmarshal err");
         uint idx;
         while (RLPDecoder.hasNext(it)) {
             RLPLib.RLPItem memory r = RLPDecoder.next(it);
@@ -536,6 +552,8 @@ library ModelLib {
 
     function unmarshalUpdate(RLPLib.RLPItem memory rlp) internal pure returns (Update memory update) {
         RLPLib.Iterator memory it = RLPDecoder.iterator(rlp);
+        uint len = RLPDecoder.items(rlp);
+        require(len == 3, "Update unmarshal err");
         uint idx;
         while (RLPDecoder.hasNext(it)) {
             RLPLib.RLPItem memory r = RLPDecoder.next(it);
@@ -565,6 +583,8 @@ library ModelLib {
 
     function unmarshalWithdrawalInfo(RLPLib.RLPItem memory rlp) internal pure returns (WithdrawalInfo memory init) {
         RLPLib.Iterator memory it = RLPDecoder.iterator(rlp);
+        uint len = RLPDecoder.items(rlp);
+        require(len == 2, "WithdrawalInfo unmarshal err");
         uint idx;
         while(RLPDecoder.hasNext(it)) {
             RLPLib.RLPItem memory r = RLPDecoder.next(it);
@@ -591,6 +611,8 @@ library ModelLib {
 
     function unmarshalCancelWithdrawal(RLPLib.RLPItem memory rlp) internal pure returns (CancelWithdrawal memory cancel) {
         RLPLib.Iterator memory it = RLPDecoder.iterator(rlp);
+        uint len = RLPDecoder.items(rlp);
+        require(len == 3, "CancelWithdrawal unmarshal err");
         uint idx;
         while(RLPDecoder.hasNext(it)) {
             RLPLib.RLPItem memory r = RLPDecoder.next(it);
@@ -620,6 +642,8 @@ library ModelLib {
 
     function unmarshalBalanceUpdateProof(RLPLib.RLPItem memory rlp) internal pure returns (BalanceUpdateProof memory bup) {
         RLPLib.Iterator memory it = RLPDecoder.iterator(rlp);
+        uint len = RLPDecoder.items(rlp);
+        require(len == 4, "BalanceUpdateProof unmarshal err");
         uint idx;
         while(RLPDecoder.hasNext(it)) {
             RLPLib.RLPItem memory r = RLPDecoder.next(it);
@@ -681,6 +705,8 @@ library ModelLib {
 
     function unmarshalContractConstructArgs(RLPLib.RLPItem memory rlp) internal pure returns (ContractConstructArgs memory args) {
         RLPLib.Iterator memory it = RLPDecoder.iterator(rlp);
+        uint len = RLPDecoder.items(rlp);
+        require(len == 2, "ContractConstructArgs unmarshal err");
         uint idx;
         while(RLPDecoder.hasNext(it)) {
             RLPLib.RLPItem memory r = RLPDecoder.next(it);
@@ -702,6 +728,8 @@ library ModelLib {
 
     function unmarshalOffchainTransactionData(RLPLib.RLPItem memory rlp) internal pure returns (OffchainTransactionData memory offData) {
         RLPLib.Iterator memory it = RLPDecoder.iterator(rlp);
+        uint len = RLPDecoder.items(rlp);
+        require(len == 5, "OffchainTransactionData unmarshal err");
         uint idx;
         while(RLPDecoder.hasNext(it)) {
             RLPLib.RLPItem memory r = RLPDecoder.next(it);
@@ -735,6 +763,8 @@ library ModelLib {
     function unmarshalSignature(RLPLib.RLPItem memory rlp) internal pure returns (Signature memory sign) {
         rlp = RLPDecoder.toRLPItem(RLPLib.toData(rlp), true);
         RLPLib.Iterator memory it = RLPDecoder.iterator(rlp);
+        uint len = RLPDecoder.items(rlp);
+        require(len == 3, "Signature unmarshal err");
         uint idx;
         while(RLPDecoder.hasNext(it)) {
             RLPLib.RLPItem memory r = RLPDecoder.next(it);
@@ -768,6 +798,8 @@ library ModelLib {
 
     function unmarshalOffchainTransaction(RLPLib.RLPItem memory rlp) internal pure returns (OffchainTransaction memory off) {
         RLPLib.Iterator memory it = RLPDecoder.iterator(rlp);
+        uint len = RLPDecoder.items(rlp);
+        require(len == 2, "OffchainTransaction unmarshal err");
         uint idx;
         while(RLPDecoder.hasNext(it)) {
             RLPLib.RLPItem memory r = RLPDecoder.next(it);
@@ -799,6 +831,8 @@ library ModelLib {
 
     function unmarshalTransferDeliveryChallenge(RLPLib.RLPItem memory rlp) internal pure returns (TransferDeliveryChallenge memory open) {
         RLPLib.Iterator memory it = RLPDecoder.iterator(rlp);
+        uint len = RLPDecoder.items(rlp);
+        require(len == 3, "TransferDeliveryChallenge unmarshal err");
         uint idx;
         while(RLPDecoder.hasNext(it)) {
             RLPLib.RLPItem memory r = RLPDecoder.next(it);
@@ -828,6 +862,8 @@ library ModelLib {
 
     function unmarshalCloseTransferDeliveryChallenge(RLPLib.RLPItem memory rlp) internal pure returns (CloseTransferDeliveryChallenge memory close) {
         RLPLib.Iterator memory it = RLPDecoder.iterator(rlp);
+        uint len = RLPDecoder.items(rlp);
+        require(len == 4, "CloseTransferDeliveryChallenge unmarshal err");
         uint idx;
         while(RLPDecoder.hasNext(it)) {
             RLPLib.RLPItem memory r = RLPDecoder.next(it);
