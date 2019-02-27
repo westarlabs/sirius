@@ -126,7 +126,7 @@ class LocalAccount<T : ChainTransaction, A : ChainAccount>(
                         state = LocalEonState(state, eon, update)
                         LOG.info("$address to new eon: $eon")
                     } else {
-                        LOG.warning("Unexpected eon status")
+                        LOG.warning("Unexpected eon status, localEon: ${state?.eon}, hubRootEon: ${hubRoot.eon}")
                     }
                     state!!.hubRoot = hubRoot
                     state!!.proof = hubService.getProof(address)

@@ -226,8 +226,7 @@ abstract class HubServerIntegrationTestBase<T : ChainTransaction, A : ChainAccou
         }
         this.produceBlock(blockCount)
         try {
-            val hubRoot = future.get(2000, TimeUnit.MILLISECONDS)
-            this.eon.set(hubRoot.eon)
+            val hubRoot = future.get(4000, TimeUnit.MILLISECONDS)
             if (expectSuccess) {
                 Assert.assertEquals(expectEon.toLong(), this.eon.get().toLong())
             }
@@ -496,11 +495,11 @@ abstract class HubServerIntegrationTestBase<T : ChainTransaction, A : ChainAccou
             chain.newTransaction(a.chainAccount, contract.contractAddress, amount)
         )
 
-        val receipt = txDeferred.awaitTimoutOrNull()
-        Assert.assertNotNull(receipt)
+        val receipt = txDeferred.awaitTimout()
+        Assert.assertTrue(receipt.status)
 
         try {
-            val hubEvent = hubEventFuture.get(2, TimeUnit.SECONDS)
+            val hubEvent = hubEventFuture.get(4, TimeUnit.SECONDS)
             if (expectSuccess) {
                 Assert.assertEquals(amount, hubEvent.getPayload<Deposit>().amount)
             } else {
