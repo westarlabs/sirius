@@ -1,12 +1,14 @@
 package org.starcoin.sirius.core
 
+import org.starcoin.sirius.protocol.TransactionResult
 import java.util.stream.Collectors
 
 abstract class Block<T : ChainTransaction> : CachedHashable() {
 
+    // FIXME: Use BigInbteger
     abstract val height: Long
 
-    abstract val transactions: MutableList<T>
+    abstract val transactions: List<TransactionResult<T>>
 
     override fun doHash(): Hash {
         return this.blockHash()
@@ -14,15 +16,10 @@ abstract class Block<T : ChainTransaction> : CachedHashable() {
 
     abstract fun blockHash(): Hash
 
-    fun addTransaction(tx: T) {
-        this.transactions.add(tx)
-    }
-
-
-    fun filterTxByTo(to: Address): List<T> {
+    fun filterTxByTo(to: Address): List<TransactionResult<T>> {
         return this.transactions
             .stream()
-            .filter { it.to == to }
+            .filter { it.tx.to == to }
             .collect(Collectors.toList())
     }
 

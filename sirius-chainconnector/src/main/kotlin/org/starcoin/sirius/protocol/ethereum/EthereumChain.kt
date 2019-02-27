@@ -30,6 +30,7 @@ import org.web3j.protocol.ipc.UnixIpcService
 import java.io.IOException
 import java.math.BigInteger
 
+
 const val DEFAULT_URL = "http://127.0.0.1:8545"
 const val GAS_LIMIT_BOUND_DIVISOR = 1024
 const val blockGasIncreasePercent = 0
@@ -122,23 +123,7 @@ class EthereumChain constructor(httpUrl: String = DEFAULT_URL, socketPath: Strin
                 val recepitResp = web3.ethGetTransactionReceipt(it.transactionHash).sendAsync().get()
                 if (recepitResp.hasError()) throw GetRecepitException(recepitResp.error)
                 val r = recepitResp.transactionReceipt.get()
-                val receipt = Receipt(
-                    r.transactionHash,
-                    r.transactionIndex,
-                    r.blockHash,
-                    r.blockNumber,
-                    r.contractAddress,
-                    r.from,
-                    r.to,
-                    r.gasUsed,
-                    r.logsBloom,
-                    r.cumulativeGasUsed,
-                    r.root,
-                    r.isStatusOK,
-                    r.logs.map {
-                        it.toString()
-
-                    })
+                val receipt = EthereumReceipt(r)
                 val txResp = web3.ethGetTransactionByHash(r.transactionHash).sendAsync().get()
                 if (txResp.hasError()) throw GetTransactionException(txResp.error)
                 val tx = txResp.transaction.get().chainTransaction()
@@ -153,9 +138,9 @@ class EthereumChain constructor(httpUrl: String = DEFAULT_URL, socketPath: Strin
         val ch = Channel<EthereumBlock>(10)
         GlobalScope.launch {
             web3.blockFlowable(true).subscribe {
-                it.block.blockInfo()
-                if (filter(it.block.blockInfo()))
-                    ch.sendBlocking(EthereumBlock(it.block.number.longValueExact(), it.block.hash.toHash()))
+                val block = it.block.blockInfo()
+                if (filter(block))
+                    ch.sendBlocking(block)
             }
         }
         return ch
@@ -185,30 +170,28 @@ class EthereumChain constructor(httpUrl: String = DEFAULT_URL, socketPath: Strin
             true
         ).sendAsync().get()
         if (blockReq.hasError()) throw IOException(blockReq.error.message)
+        return blockReq.block.blockInfo()
+    }
 
-        // FIXME: Use BigInbteger in blockinfo
-        val blockInfo = EthereumBlock(blockReq.block)
-        blockReq.block.transactions.map { it ->
-            val tx = it as Transaction
-            blockInfo.addTransaction(tx.chainTransaction())
+    private fun doGetTransactionReceipts(block: EthBlock.Block): List<Receipt> {
+        return this.doGetTransactionReceipts(block.transactions.map { val tx = it as Transaction; tx.hash })
+            .map { it!! }
+    }
+
+    private fun doGetTransactionReceipts(txHashs: List<String>): List<Receipt?> {
+        return txHashs.map {
+            //send Async batch, then get result.
+            web3.ethGetTransactionReceipt(it).sendAsync()
+        }.map {
+            val recepitResp = it.get()
+            //TODO not find resp .
+            if (recepitResp.hasError()) throw GetRecepitException(recepitResp.error)
+            recepitResp.transactionReceipt.orElse(null)?.let { EthereumReceipt(it) }
         }
-        return blockInfo
     }
 
     override fun getTransactionReceipts(txHashs: List<Hash>): List<Receipt?> {
-        return txHashs.map {
-            val recepitResp = web3.ethGetTransactionReceipt(it.toString()).sendAsync().get()
-            if (recepitResp.hasError()) throw GetRecepitException(recepitResp.error)
-            recepitResp.transactionReceipt.orElse(null)?.let { r ->
-                Receipt(
-                    r.transactionHash, r.transactionIndex,
-                    r.blockHash, r.blockNumber, r.contractAddress,
-                    r.from, r.to, r.gasUsed, r.logsBloom,
-                    r.cumulativeGasUsed, r.root, r.isStatusOK,
-                    r.logs.map { it.toString() }
-                )
-            }
-        }
+        return this.doGetTransactionReceipts(txHashs.map { it.toString() })
     }
 
 
@@ -227,7 +210,7 @@ class EthereumChain constructor(httpUrl: String = DEFAULT_URL, socketPath: Strin
     private fun Transaction.chainTransaction() = EthereumTransaction(this)
 
     private fun EthBlock.Block.blockInfo(): EthereumBlock {
-        return EthereumBlock(this)
+        return EthereumBlock(this, doGetTransactionReceipts(this))
     }
 
     fun caculateGasLimit(): BigInteger {

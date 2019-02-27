@@ -1,31 +1,48 @@
 package org.starcoin.sirius.protocol.ethereum
 
+import com.google.common.base.Preconditions
+import org.ethereum.core.TransactionReceipt
 import org.starcoin.sirius.core.Block
 import org.starcoin.sirius.core.Hash
+import org.starcoin.sirius.core.Receipt
 import org.starcoin.sirius.core.toHash
 import org.starcoin.sirius.protocol.EthereumTransaction
+import org.starcoin.sirius.protocol.TransactionResult
+import org.starcoin.sirius.util.WithLogging
 import org.web3j.protocol.core.methods.response.EthBlock
-import java.util.stream.Collectors
 
-class EthereumBlock(override val height: Long, val hash: Hash) : Block<EthereumTransaction>() {
+class EthereumBlock private constructor(override val height: Long, private val hash: Hash) :
+    Block<EthereumTransaction>() {
 
-    override lateinit var transactions: MutableList<EthereumTransaction>
+    override lateinit var transactions: List<TransactionResult<EthereumTransaction>>
 
-    constructor(ethBlock: EthBlock.Block) : this(ethBlock.number.longValueExact(), ethBlock.hash.toHash()) {
+    constructor(ethBlock: EthBlock.Block, receipts: List<Receipt>) : this(
+        ethBlock.number.longValueExact(),
+        ethBlock.hash.toHash()
+    ) {
+        Preconditions.checkArgument(ethBlock.transactions.size == receipts.size)
         transactions =
-            ethBlock.transactions.map { EthereumTransaction(it.get() as org.web3j.protocol.core.methods.response.Transaction) }
-                .stream()
-                .collect(
-                    Collectors.toList()
+            ethBlock.transactions.mapIndexed { index, it ->
+                TransactionResult(
+                    EthereumTransaction(it.get() as org.web3j.protocol.core.methods.response.Transaction),
+                    receipts[index]
                 )
+            }
     }
 
-    constructor(ethBlock: org.ethereum.core.Block) : this(ethBlock.number, ethBlock.hash.toHash()) {
-        transactions = ethBlock.transactionsList.map { EthereumTransaction(it) }.stream().collect(Collectors.toList())
+    constructor(block: org.ethereum.core.Block, receipts: List<TransactionReceipt>) : this(
+        block.number,
+        block.hash.toHash()
+    ) {
+        LOG.info("org.ethereum.core.BlockSummary to EthereumBlock hash:${block.hash.toHash()}, height:${block.number}")
+        this.transactions = block.transactionsList.mapIndexed { index, it ->
+            TransactionResult(EthereumTransaction(it), EthereumReceipt(receipts[index]))
+        }
     }
 
     override fun blockHash(): Hash {
         return hash
     }
 
+    companion object : WithLogging()
 }

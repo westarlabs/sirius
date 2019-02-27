@@ -2,7 +2,9 @@ package org.starcoin.sirius.protocol.ethereum
 
 import kotlinx.coroutines.*
 import kotlinx.coroutines.channels.*
+import org.ethereum.core.Block
 import org.ethereum.core.CallTransaction.createRawTransaction
+import org.ethereum.core.TransactionReceipt
 import org.ethereum.util.blockchain.StandaloneBlockchain
 import org.starcoin.sirius.core.Address
 import org.starcoin.sirius.core.Hash
@@ -62,9 +64,10 @@ class InMemoryChain(val autoGenblock: Boolean = true) : EthereumBaseChain() {
 
     private fun doCreateBlock(): EthereumBlock? {
         return try {
-            val block = EthereumBlock(sb.createBlock())
-            LOG.info("InMemoryChain create NewBlock: ${block.hash}, txs: ${block.transactions.size}")
-            block
+            val block = sb.createBlock()
+            val ethereumBlock = EthereumBlock(sb.createBlock(), this.doGetTransactionReceipts(block))
+            LOG.info("InMemoryChain create NewBlock: ${ethereumBlock.hash()}, txs: ${ethereumBlock.transactions.size}")
+            ethereumBlock
         } catch (ex: Exception) {
             ex.printStackTrace()
             LOG.severe(ex.message)
@@ -77,7 +80,8 @@ class InMemoryChain(val autoGenblock: Boolean = true) : EthereumBaseChain() {
         events: Collection<ChainEvent>,
         filter: (TransactionResult<EthereumTransaction>) -> Boolean
     ): Channel<TransactionResult<EthereumTransaction>> {
-        TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
+        //TODO
+        return Channel()
     }
 
 
@@ -85,15 +89,29 @@ class InMemoryChain(val autoGenblock: Boolean = true) : EthereumBaseChain() {
         return eventBus.subscribeTx(filter)
     }
 
-    override fun getTransactionReceipts(txHashs: List<Hash>): List<Receipt> {
-        TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
+    override fun getTransactionReceipts(txHashs: List<Hash>): List<Receipt?> {
+        return this.doGetTransactionReceipts(txHashs.map { it.toBytes() }).map { it?.let { EthereumReceipt(it) } }
     }
 
     override fun getBlock(height: BigInteger): EthereumBlock? {
         val blockStore = sb.blockchain.blockStore
         val hash = blockStore.getBlockHashByNumber(height.longValueExact())
         val block = hash?.let { blockStore.getBlockByHash(hash) }
-        return block?.let { EthereumBlock(block) }
+        return block?.let {
+            EthereumBlock(
+                block,
+                doGetTransactionReceipts(block)
+            )
+        }
+    }
+
+    private fun doGetTransactionReceipts(txHashs: List<ByteArray>): List<TransactionReceipt?> {
+        val txStore = sb.blockchain.transactionStore
+        return txHashs.map { txStore.get(it)?.firstOrNull()?.receipt }
+    }
+
+    private fun doGetTransactionReceipts(block: Block): List<TransactionReceipt> {
+        return doGetTransactionReceipts(block.transactionsList.map { it.hash }).map { it!! }
     }
 
     override fun watchBlock(filter: (EthereumBlock) -> Boolean): ReceiveChannel<EthereumBlock> {
@@ -128,7 +146,7 @@ class InMemoryChain(val autoGenblock: Boolean = true) : EthereumBaseChain() {
         //TODO async, not wait block create.
         runBlocking {
             val block = response.receive()
-            block?.let { LOG.fine("submitTransaction receive block ${block.hash}") }
+            block?.let { LOG.fine("submitTransaction receive block ${block.hash()}") }
                 ?: LOG.fine("submitTransaction receive block null.")
         }
         return transaction.hash()
