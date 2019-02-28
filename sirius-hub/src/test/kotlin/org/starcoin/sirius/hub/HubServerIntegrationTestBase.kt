@@ -1,10 +1,10 @@
 package org.starcoin.sirius.hub
 
 
-import com.google.common.eventbus.EventBus
 import com.google.common.eventbus.Subscribe
 import io.grpc.inprocess.InProcessChannelBuilder
 import kotlinx.coroutines.*
+import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.channels.consumeEach
 import org.ethereum.db.IndexedBlockStore
 import org.junit.After
@@ -12,6 +12,7 @@ import org.junit.Assert
 import org.junit.Before
 import org.junit.Test
 import org.starcoin.proto.HubServiceGrpc
+import org.starcoin.sirius.channel.receiveTimeout
 import org.starcoin.sirius.core.*
 import org.starcoin.sirius.eth.core.EtherUnit
 import org.starcoin.sirius.eth.core.ether
@@ -55,7 +56,8 @@ abstract class HubServerIntegrationTestBase<T : ChainTransaction, A : ChainAccou
 
     private var hubService: HubService by Delegates.notNull()
     private var contract: HubContract<A> by Delegates.notNull()
-    private var eventBus: EventBus by Delegates.notNull()
+
+    private var hubRootChannel: Channel<HubRoot> by Delegates.notNull()
 
     private var txMap: ConcurrentHashMap<Hash, CompletableFuture<TransactionResult<T>>> by Delegates.notNull()
 
@@ -91,7 +93,7 @@ abstract class HubServerIntegrationTestBase<T : ChainTransaction, A : ChainAccou
 
         this.txMap = ConcurrentHashMap()
 
-        this.eventBus = EventBus()
+        this.hubRootChannel = Channel(100)
         this.configuration = Configuration.configurationForUNIT()
         this.chain = createChain(this.configuration)
 
@@ -118,7 +120,7 @@ abstract class HubServerIntegrationTestBase<T : ChainTransaction, A : ChainAccou
 
         val eventch = this.chain.watchEvents(contract.contractAddress, listOf(ChainEvent.ReturnEvent))
         GlobalScope.launch {
-            eventch.consumeEach { LOG.info(it.receipt.logs.toString())}
+            eventch.consumeEach { LOG.info(it.receipt.logs.toString()) }
         }
         //this.produceBlock(1)
     }
@@ -158,7 +160,7 @@ abstract class HubServerIntegrationTestBase<T : ChainTransaction, A : ChainAccou
         for (hubRoot in channel) {
             LOG.info("new hubRoot: $hubRoot")
             eon.set(hubRoot.eon)
-            eventBus.post(hubRoot)
+            hubRootChannel.send(hubRoot)
         }
     }
 
@@ -187,7 +189,6 @@ abstract class HubServerIntegrationTestBase<T : ChainTransaction, A : ChainAccou
         for (block in blockChannel) {
             LOG.info("Current blockNumber ${block.height}")
             blockHeight.set(block.height)
-            eventBus.post(block)
             //TODO tx filter
             block.transactions.forEach {
                 onTransaction(it)
@@ -209,11 +210,9 @@ abstract class HubServerIntegrationTestBase<T : ChainTransaction, A : ChainAccou
         this.waitToNextEon(true)
     }
 
-    private fun waitToNextEon(expectSuccess: Boolean) {
-        val expectEon = this.eon.get() + 1
+    private fun waitToNextEon(expectSuccess: Boolean) = runBlocking {
+        val expectEon = eon.get() + 1
         LOG.info("waitToNextEon:$expectEon")
-        val future = HubRootFuture(expectEon)
-        this.eventBus.register(future)
         val blockCount = Eon.waitToEon(
             contractHubInfo.startBlockNumber.longValueExact(),
             blockHeight.toLong(),
@@ -222,41 +221,27 @@ abstract class HubServerIntegrationTestBase<T : ChainTransaction, A : ChainAccou
         )
         //TODO FIXME
         if (blockCount <= 0) {
-            return
+            return@runBlocking
         }
-        this.produceBlock(blockCount)
+        produceBlock(blockCount)
         try {
-            val hubRoot = future.get(4000, TimeUnit.MILLISECONDS)
-            if (expectSuccess) {
-                Assert.assertEquals(expectEon.toLong(), this.eon.get().toLong())
+            var hubRoot = hubRootChannel.receiveTimeout()
+            while (hubRoot.eon < expectEon) {
+                hubRoot = hubRootChannel.receiveTimeout()
             }
-            this.verifyHubRoot(hubRoot)
-//            if (this.a0.isRegister) {
-//                this.a0.onEon(hubRoot)
-//            }
-//            if (this.a1.isRegister) {
-//                this.a1.onEon(hubRoot)
-//            }
+            if (hubRoot.eon == expectEon) {
+                verifyHubRoot(hubRoot)
+            } else {
+                LOG.warning("Expect eon:$expectEon, but get: ${hubRoot.eon}")
+            }
             if (!expectSuccess) {
-                Assert.fail("expect waitToNextEon fail, but success.")
+                Assert.fail("Expect fail,but success.")
             }
-        } catch (e: InterruptedException) {
+        } catch (e: TimeoutCancellationException) {
             if (expectSuccess) {
-                e.printStackTrace()
-                Assert.fail(e.message)
-            }
-        } catch (e: ExecutionException) {
-            if (expectSuccess) {
-                e.printStackTrace()
-                Assert.fail(e.message)
-            }
-        } catch (e: TimeoutException) {
-            if (expectSuccess) {
-                e.printStackTrace()
-                Assert.fail(e.message)
+                Assert.fail("Expect success, but wait eon $expectEon hubRoot timeout")
             }
         }
-
     }
 
 
@@ -467,16 +452,6 @@ abstract class HubServerIntegrationTestBase<T : ChainTransaction, A : ChainAccou
         }
         Assert.assertEquals(hubRoot, contractRoot)
     }
-
-//    private fun register(eon: Int, a: LocalAccount<T, A>) {
-//        val initUpdate = a.initUpdate(eon)
-//
-//        // register
-//        val updateV0 =
-//            hubService.registerParticipant(a.participant, initUpdate)
-//
-//        a.register(updateV0, this.hubService.getHubAccount(a.address)!!)
-//    }
 
     private fun deposit(a: LocalAccount<T, A>, amount: BigInteger) {
         this.deposit(a, amount, true)
