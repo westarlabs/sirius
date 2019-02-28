@@ -43,9 +43,9 @@ abstract class EthereumBaseChain :
         return deferred
     }
 
-    protected fun complateDeferred(receipt: Receipt): TxDeferred? {
+    protected fun completeDeferred(receipt: Receipt): TxDeferred? {
         val deferred = this.txDeferreds[receipt.transactionHash]
-        deferred?.complete(receipt)
+        deferred?.complete(receipt)?.run { txDeferreds.remove(receipt.transactionHash) }
         return deferred
     }
 

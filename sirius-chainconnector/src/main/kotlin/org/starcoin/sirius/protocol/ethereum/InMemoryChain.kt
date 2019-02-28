@@ -45,7 +45,7 @@ class InMemoryChain(val autoGenblock: Boolean = true) : EthereumBaseChain() {
         sb.addEthereumListener(eventBus)
         val channel = eventBus.subscribeTx()
         GlobalScope.launch {
-            channel.consumeEach { complateDeferred(it.receipt) }
+            channel.consumeEach { completeDeferred(it.receipt) }
         }
     }
 

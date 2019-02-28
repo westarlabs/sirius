@@ -48,7 +48,7 @@ class EthereumChain constructor(httpUrl: String? = null, socketPath: String? = n
                 if (hashList.isNotEmpty()) {
                     val receipts = getTransactionReceipts(hashList)
                     receipts.forEach { receipt ->
-                        receipt?.let { complateDeferred(it) }
+                        receipt?.let { completeDeferred(it) }
                     }
                 }
                 delay(2000)
