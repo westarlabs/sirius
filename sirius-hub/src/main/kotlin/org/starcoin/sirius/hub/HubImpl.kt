@@ -410,10 +410,10 @@ class HubImpl<A : ChainAccount>(
         }
     }
 
-    private suspend fun processBlock(blockInfo: Block<*>) {
-        LOG.info("Hub processBlock:$blockInfo")
-        this.currentBlockNumber = blockInfo.height
-        val eon = Eon.calculateEon(this.startBlockNumber, blockInfo.height, this.blocksPerEon)
+    private suspend fun processBlock(block: Block<*>) {
+        LOG.info("Hub processBlock:$block")
+        this.currentBlockNumber = block.height
+        val eon = Eon.calculateEon(this.startBlockNumber, block.height, this.blocksPerEon)
         var newEon = false
         this.eonState.setEpoch(eon.epoch)
         if (eon.id != this.eonState.eon) {
@@ -422,8 +422,8 @@ class HubImpl<A : ChainAccount>(
             newEon = true
         }
 
-        blockInfo.transactions.filter { it.tx.to == contract.contractAddress }.forEach {
-            processTransaction(it)
+        block.transactions.filter { it.tx.to == contract.contractAddress }.forEach {
+            processTransaction(block, it)
         }
 
         if (newEon) {
@@ -431,8 +431,8 @@ class HubImpl<A : ChainAccount>(
         }
     }
 
-    private suspend fun processTransaction(txResult: TransactionResult<*>) {
-        LOG.info("Hub process tx: ${txResult.tx.hash()}, result: ${txResult.receipt}")
+    private suspend fun processTransaction(block: Block<*>, txResult: TransactionResult<*>) {
+        LOG.info("Hub process tx: ${txResult.tx.hash()}, ${block.height} result: ${txResult.receipt}")
         if (!txResult.receipt.status) {
             LOG.warning("tx ${txResult.tx.hash()} status is fail.")
         }

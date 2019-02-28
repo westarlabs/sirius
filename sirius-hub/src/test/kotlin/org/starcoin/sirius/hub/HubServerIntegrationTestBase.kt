@@ -63,6 +63,8 @@ abstract class HubServerIntegrationTestBase<T : ChainTransaction, A : ChainAccou
     private var watchBlockJob: Job by Delegates.notNull()
     private val localAccounts: MutableList<LocalAccount<T, A>> = mutableListOf()
 
+    protected open val waitTimeOutMillis: Long = 2000
+
     abstract fun createChainAccount(amount: Long): A
     abstract fun createChain(configuration: Configuration): C
 
@@ -112,36 +114,20 @@ abstract class HubServerIntegrationTestBase<T : ChainTransaction, A : ChainAccou
         GlobalScope.launch {
             eventch.consumeEach { LOG.info(it.receipt.logs.toString()) }
         }
-        //this.produceBlock(1)
+        this.doBefore()
+    }
+
+    protected open fun doBefore() {
+
     }
 
     abstract fun createBlock()
 
-    fun produceBlock(n: Int, expectEon: Int) {
-        LOG.info("produceBlock $n")
-        for (i in 0..n) {
-            if (eon.get() < expectEon) {
-                createBlock()
-            }
-        }
-    }
-
     private fun waitServerStart() {
-//        while (chainService
-//                .getBlocks(
-//                    GetBlocksRequest.newBuilder().setHeight(0).setCount(1).setOrder(Order.DESC).build()
-//                )
-//                .getBlocksCount() === 0
-//        ) {
-//            sleep(100)
-//            LOG.info("wait chain service")
-//        }
-
         var hubInfo = hubService.hubInfo
         while (!hubInfo.isReady) {
             sleep(100)
             LOG.info("wait hub service:" + hubInfo.toString())
-            //this.produceBlock(1)
             this.eon.set(hubInfo.eon)
             hubInfo = hubService.hubInfo
         }
@@ -188,38 +174,23 @@ abstract class HubServerIntegrationTestBase<T : ChainTransaction, A : ChainAccou
         }
     }
 
-    private inner class HubRootFuture(private val expectEon: Int) : CompletableFuture<HubRoot>() {
-
-        @Subscribe
-        fun onHubRoot(root: HubRoot) {
-            if (expectEon <= root.eon) {
-                this.complete(root)
-            }
-        }
-    }
-
     private fun waitToNextEon() {
         this.waitToNextEon(true)
     }
 
     private fun waitToNextEon(expectSuccess: Boolean) = runBlocking {
         val expectEon = eon.get() + 1
-        LOG.info("waitToNextEon:$expectEon")
-        val blockCount = Eon.waitToEon(
+        val expectBlockNumber = Eon.waitBlockNumber(
             contractHubInfo.startBlockNumber.longValueExact(),
-            blockHeight.toLong(),
             contractHubInfo.blocksPerEon,
             expectEon
         )
-        //TODO FIXME
-        if (blockCount <= 0) {
-            return@runBlocking
-        }
-        produceBlock(blockCount, expectEon)
+        LOG.info("waitToNextEon:$expectEon, blockNumber:$expectBlockNumber")
+        waitToBlockNumber(expectBlockNumber)
         try {
-            var hubRoot = hubRootChannel.receiveTimeout()
+            var hubRoot = hubRootChannel.receiveTimeout(waitTimeOutMillis)
             while (hubRoot.eon < expectEon) {
-                hubRoot = hubRootChannel.receiveTimeout()
+                hubRoot = hubRootChannel.receiveTimeout(waitTimeOutMillis)
             }
             if (hubRoot.eon == expectEon) {
                 verifyHubRoot(hubRoot)
@@ -236,6 +207,18 @@ abstract class HubServerIntegrationTestBase<T : ChainTransaction, A : ChainAccou
         }
     }
 
+    private fun waitToBlockNumber(blockNumber: Long) = runBlocking {
+        while (true) {
+            if (blockHeight.get() >= blockNumber) {
+                return@runBlocking
+            }
+            if (chain.getBlockNumber() >= blockNumber) {
+                delay(1000)
+            } else {
+                createBlock()
+            }
+        }
+    }
 
     @Test
     fun testHubService() {

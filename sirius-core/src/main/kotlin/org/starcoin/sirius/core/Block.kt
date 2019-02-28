@@ -24,7 +24,7 @@ abstract class Block<T : ChainTransaction> : CachedHashable() {
     }
 
     override fun toString(): String {
-        return "Block:{height:$height, hash:$id}"
+        return "Block:{height:$height, hash:$id, txs: ${transactions.size}}"
     }
 
     override fun equals(other: Any?): Boolean {

@@ -44,5 +44,13 @@ class Eon(val id: Int, val epoch: Epoch) {
         ): Int {
             return blocksPerEon * expectEon - (currentBlockNumber - startBlockNumber).toInt()
         }
+
+        fun waitBlockNumber(
+            startBlockNumber: Long,
+            blocksPerEon: Int,
+            expectEon: Int
+        ): Long {
+            return startBlockNumber + blocksPerEon * expectEon
+        }
     }
 }
