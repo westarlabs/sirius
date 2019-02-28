@@ -13,14 +13,16 @@ import java.security.PublicKey
 @Serializable
 data class HubInfo(
     @SerialId(1)
-    val isReady: Boolean = false,
+    val ready: Boolean = false,
     @SerialId(2)
-    val eon: Int = 0,
+    val recoveryMode: Boolean = false,
     @SerialId(3)
-    val blocksPerEon: Int = 4,
+    val eon: Int = 0,
     @SerialId(4)
-    val root: AMTreePathNode = AMTreePathNode.DUMMY_NODE,
+    val blocksPerEon: Int = 4,
     @SerialId(5)
+    val root: AMTreePathNode = AMTreePathNode.DUMMY_NODE,
+    @SerialId(6)
     @Serializable(with = PublicKeySerializer::class)
     val publicKey: PublicKey = CryptoService.dummyCryptoKey.keyPair.public
 ) : SiriusObject() {
@@ -28,6 +30,7 @@ data class HubInfo(
     companion object : SiriusObjectCompanion<HubInfo, Starcoin.HubInfo>(HubInfo::class) {
         override fun mock(): HubInfo {
             return HubInfo(
+                MockUtils.nextBoolean(),
                 MockUtils.nextBoolean(),
                 MockUtils.nextInt(10, 100) * 4,
                 MockUtils.nextInt(),

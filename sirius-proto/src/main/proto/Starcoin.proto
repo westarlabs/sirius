@@ -163,10 +163,11 @@ message ContractConstructArgs {
 
 message HubInfo {
     required bool ready = 1;
-    required uint32 eon = 2;
-    required uint32 blocksPerEon = 3;
-    required AMTreePathNode root = 4;
-    required bytes publicKey = 5;
+    required bool recoveryMode = 2;
+    required uint32 eon = 3;
+    required uint32 blocksPerEon = 4;
+    required AMTreePathNode root = 5;
+    required bytes publicKey = 6;
 }
 
 message ContractHubInfo {
