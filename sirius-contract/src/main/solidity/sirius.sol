@@ -243,8 +243,7 @@ contract SiriusService is Sirius {
         bool returnFlag = false;
         if(!recoveryMode) {
             ModelLib.CloseBalanceUpdateChallenge memory close = ModelLib.unmarshalCloseBalanceUpdateChallenge(RLPDecoder.toRLPItem(data, true));
-            require(balances[0].hasRoot, "balances[0].hasRoot false");
-            ModelLib.HubRoot memory root = balances[0].root;
+            ModelLib.HubRoot memory root = latestRoot();
             bytes memory hr = ModelLib.marshalHubRoot(root);
             uint depositAmount = dataStore.depositData[balances[1].eon][close.addr];
 
@@ -273,7 +272,7 @@ contract SiriusService is Sirius {
     function closeTransferDeliveryChallenge(bytes calldata data) external onlyOwner returns (bool) {
         bool returnFlag = false;
         if(!recoveryMode) {
-            ModelLib.HubRoot memory latestRoot = balances[0].root;
+            ModelLib.HubRoot memory latestRoot = latestRoot();
             bytes memory latestHr = ModelLib.marshalHubRoot(latestRoot);
             returnFlag = challengeContract.closeTransferDeliveryChallenge(data, latestHr);
         }
