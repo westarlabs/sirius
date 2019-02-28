@@ -6,7 +6,6 @@ import io.grpc.inprocess.InProcessChannelBuilder
 import kotlinx.coroutines.*
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.channels.consumeEach
-import org.ethereum.db.IndexedBlockStore
 import org.junit.After
 import org.junit.Assert
 import org.junit.Before
@@ -36,15 +35,6 @@ class HubEventFuture(private val predicate: (HubEvent) -> Boolean) : Completable
         }
     }
 }
-
-class BlockFuture : CompletableFuture<IndexedBlockStore.BlockInfo>() {
-
-    @Subscribe
-    fun onBlock(block: IndexedBlockStore.BlockInfo) {
-        this.complete(block)
-    }
-}
-
 
 abstract class HubServerIntegrationTestBase<T : ChainTransaction, A : ChainAccount, C : Chain<T, out Block<T>, A>> {
 
@@ -127,10 +117,12 @@ abstract class HubServerIntegrationTestBase<T : ChainTransaction, A : ChainAccou
 
     abstract fun createBlock()
 
-    fun produceBlock(n: Int) {
+    fun produceBlock(n: Int, expectEon: Int) {
         LOG.info("produceBlock $n")
         for (i in 0..n) {
-            createBlock()
+            if (eon.get() < expectEon) {
+                createBlock()
+            }
         }
     }
 
@@ -149,7 +141,7 @@ abstract class HubServerIntegrationTestBase<T : ChainTransaction, A : ChainAccou
         while (!hubInfo.isReady) {
             sleep(100)
             LOG.info("wait hub service:" + hubInfo.toString())
-            this.produceBlock(1)
+            //this.produceBlock(1)
             this.eon.set(hubInfo.eon)
             hubInfo = hubService.hubInfo
         }
@@ -223,7 +215,7 @@ abstract class HubServerIntegrationTestBase<T : ChainTransaction, A : ChainAccou
         if (blockCount <= 0) {
             return@runBlocking
         }
-        produceBlock(blockCount)
+        produceBlock(blockCount, expectEon)
         try {
             var hubRoot = hubRootChannel.receiveTimeout()
             while (hubRoot.eon < expectEon) {
@@ -606,8 +598,8 @@ abstract class HubServerIntegrationTestBase<T : ChainTransaction, A : ChainAccou
             Assert.assertTrue(challenge.update.verifyHubSig(owner.key.keyPair.public))
         }
         val txDeferred = contract.openBalanceUpdateChallenge(account.chainAccount, challenge)
-        val receipt = txDeferred.awaitTimoutOrNull()
-        Assert.assertTrue(receipt!!.status)
+        val receipt = txDeferred.awaitTimout()
+        Assert.assertTrue(receipt.status)
     }
 
     private fun transferDeliveryChallenge(account: LocalAccount<T, A>, offchainTx: OffchainTransaction) = runBlocking {
