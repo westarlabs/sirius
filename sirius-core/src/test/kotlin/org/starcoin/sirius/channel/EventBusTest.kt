@@ -78,4 +78,25 @@ class EventBusTest {
         Assert.assertTrue(events.all { it.isPublicEvent || it.address == address })
         Assert.assertTrue(events.any { it.type == HubEventType.NEW_HUB_ROOT })
     }
+
+    @Test
+    fun testEventBusSubscribeAfterSend() = runBlocking {
+        val eventBus = EventBus<Int>()
+        eventBus.send(1)
+        eventBus.send(2)
+        val channel = eventBus.subscribe()
+        val value = channel.receiveOrNull()
+        Assert.assertEquals(2, value)
+    }
+
+    @Test
+    fun testEventBusSubscribeReceiveLater() = runBlocking {
+        val eventBus = EventBus<Int>()
+        val channel = eventBus.subscribe()
+        for (i in 1..1000) {
+            eventBus.send(i)
+        }
+        val value = channel.receiveOrNull()
+        Assert.assertEquals(1, value)
+    }
 }

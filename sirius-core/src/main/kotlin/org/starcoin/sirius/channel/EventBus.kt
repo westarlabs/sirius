@@ -16,7 +16,7 @@ class EventBus<T> {
         channel.sendBlocking(event)
     }
 
-    fun subscribe(predicate: (T) -> Boolean): ReceiveChannel<T> {
+    fun subscribe(predicate: (T) -> Boolean = { true }): ReceiveChannel<T> {
         return channel.openSubscription().filter { predicate(it) }
     }
 
