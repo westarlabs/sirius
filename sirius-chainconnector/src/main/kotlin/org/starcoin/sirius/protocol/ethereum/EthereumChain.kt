@@ -13,6 +13,7 @@ import org.starcoin.sirius.core.toHash
 import org.starcoin.sirius.crypto.CryptoKey
 import org.starcoin.sirius.crypto.eth.EthCryptoKey
 import org.starcoin.sirius.lang.hexToByteArray
+import org.starcoin.sirius.lang.toBigInteger
 import org.starcoin.sirius.lang.toHEXString
 import org.starcoin.sirius.protocol.ChainEvent
 import org.starcoin.sirius.protocol.EthereumTransaction
@@ -79,7 +80,7 @@ class EthereumChain constructor(httpUrl: String? = null, socketPath: String? = n
             when {
                 socketPath != null -> UnixIpcService(socketPath)
                 httpUrl != null -> HttpService(httpUrl)
-                else -> WebSocketService(webSocket,false).also { it.connect() } //TODO: close connection
+                else -> WebSocketService(webSocket, false).also { it.connect() } //TODO: close connection
             }
         )
 
@@ -151,13 +152,42 @@ class EthereumChain constructor(httpUrl: String? = null, socketPath: String? = n
         return ch
     }
 
-    override fun watchBlock(filter: (EthereumBlock) -> Boolean): ReceiveChannel<EthereumBlock> {
-        val ch = Channel<EthereumBlock>(10)
+    override fun watchBlock(
+        startBlockNum: BigInteger,
+        filter: (EthereumBlock) -> Boolean
+        ): Channel<EthereumBlock> {
+        val ch = Channel<EthereumBlock>()
         GlobalScope.launch {
-            web3.blockFlowable(true).subscribe {
-                val block = it.block.blockInfo()
-                if (filter(block))
+            val headNotify = web3.newHeadsNotifications()
+            var syncBlockNum = BigInteger.valueOf(-1)
+            if (startBlockNum != BigInteger.valueOf(-1)) {
+                syncBlockNum = getBlockNumber().toBigInteger()
+            }
+            var height = startBlockNum
+            while (height <= syncBlockNum) {
+                val block = getBlock(height)!!
+                if (filter(block)) ch.sendBlocking(block)
+                height = height.inc()
+            }
+            val notifych = Channel<BigInteger>()
+            GlobalScope.launch {
+                headNotify.subscribe(
+                    {
+                        val blockNum = it.params.result.number.hexToByteArray().toBigInteger()
+                        if (blockNum > syncBlockNum) {
+                            notifych.sendBlocking(blockNum)
+                        }
+                    },
+                    {},
+                    {
+                        notifych.close()
+                    })
+            }
+            GlobalScope.launch {
+                while (!notifych.isClosedForSend) {
+                    val block = getBlock(notifych.receive())!!
                     ch.sendBlocking(block)
+                }
             }
         }
         return ch

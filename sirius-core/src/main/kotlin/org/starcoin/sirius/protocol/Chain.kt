@@ -20,7 +20,7 @@ interface Chain<T : ChainTransaction, B : Block<T>, A : ChainAccount> {
 
     fun getBlock(height: BigInteger = BigInteger.valueOf(-1)): B?
 
-    fun watchBlock(filter: (B) -> Boolean = { true }): ReceiveChannel<B>
+    fun watchBlock(startBlockNum: BigInteger = BigInteger.valueOf(-1), filter: (B) -> Boolean = { true }): ReceiveChannel<B>
 
     fun getTransactionReceipts(txHashs: List<Hash>): List<Receipt?>
 

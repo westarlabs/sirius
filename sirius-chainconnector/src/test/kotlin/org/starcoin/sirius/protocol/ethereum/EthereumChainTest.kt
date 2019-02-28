@@ -9,6 +9,7 @@ import org.junit.BeforeClass
 import org.junit.Test
 import org.starcoin.sirius.crypto.CryptoService
 import org.starcoin.sirius.crypto.eth.EthCryptoKey
+import org.starcoin.sirius.lang.toBigInteger
 import org.starcoin.sirius.util.WithLogging
 
 
@@ -72,7 +73,7 @@ class EthereumChainTest {
         val deferred = chain.submitTransaction(etherbase, tx1)
         val receipt = deferred.await()
         val txFind = chain.findTransaction(deferred.txHash)
-        receipt!!.logs?.forEach {
+        receipt.logs?.forEach {
             LOG.info(it.toString())
         }
         Assert.assertNotNull(txFind?.from)
@@ -82,19 +83,6 @@ class EthereumChainTest {
     fun testGetBlock() {
         val block = chain.getBlock()
         Assert.assertNotNull(block)
-    }
-
-    @Test
-    fun testWatchBlock() {
-        val ch = chain.watchBlock()
-        runBlocking {
-            for (c in 5 downTo 0) {
-                val block = ch.receive()
-                LOG.info("block info: height:${block.height},hash: ${block.blockHash()}")
-                Assert.assertNotNull(block.height)
-                Assert.assertNotNull(block.blockHash())
-            }
-        }
     }
 
     @Test
@@ -126,10 +114,47 @@ class EthereumChainTest {
     }
 
     @Test
-    fun testHeadsNotify() {
-        val headsNotification = chain.web3.newHeadsNotifications()
-        headsNotification.subscribe{
-            LOG.info("new block hash ${it.params.result.hash}")
+    fun testWatchBlock() {
+        var startNum = 5.toBigInteger()
+        chain.waitBlocks(10)
+        val blockch = chain.watchBlock(startNum)
+        repeat(10) {
+            runBlocking {
+                val block = blockch.receive()
+                LOG.info("block height:${block.height.toBigInteger()}")
+                Assert.assertEquals(startNum, block.height.toBigInteger())
+                startNum = startNum.inc()
+            }
+        }
+    }
+
+    @Test
+    fun testWatchBlock1() {
+        var startNum = 11.toBigInteger()
+        chain.waitBlocks(10)
+        val blockch = chain.watchBlock(startNum)
+        repeat(10) {
+            runBlocking {
+                val block = blockch.receive()
+                LOG.info("block height:${block.height.toBigInteger()}")
+                Assert.assertEquals(startNum, block.height.toBigInteger())
+                startNum = startNum.inc()
+            }
+        }
+    }
+
+    @Test
+    fun testwatchBlock2(){
+        var startNum = 11.toBigInteger()
+        chain.waitBlocks(startNum.toInt())
+        val blockch = chain.watchBlock()
+        repeat(10) {
+            runBlocking {
+                val block = blockch.receive()
+                LOG.info("block height:${block.height.toBigInteger()}")
+                Assert.assertEquals(startNum, block.height.toBigInteger())
+                startNum = startNum.inc()
+            }
         }
     }
 }

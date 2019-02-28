@@ -126,7 +126,10 @@ class InMemoryChain(val autoGenblock: Boolean = true) : EthereumBaseChain() {
         return doGetTransactionReceipts(block.transactionsList.map { it.hash }).map { it!! }
     }
 
-    override fun watchBlock(filter: (EthereumBlock) -> Boolean): ReceiveChannel<EthereumBlock> {
+    override fun watchBlock(
+        startBlockNum: BigInteger,
+        filter: (EthereumBlock) -> Boolean
+    ): ReceiveChannel<EthereumBlock> {
         return eventBus.subscribeBlock(filter)
     }
 
