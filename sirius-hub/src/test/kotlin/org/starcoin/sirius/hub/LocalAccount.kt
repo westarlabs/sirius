@@ -1,14 +1,15 @@
 package org.starcoin.sirius.hub
 
-import com.google.common.eventbus.EventBus
 import io.grpc.inprocess.InProcessChannelBuilder
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.Job
+import kotlinx.coroutines.channels.ReceiveChannel
 import kotlinx.coroutines.channels.actor
 import kotlinx.coroutines.channels.consumeEach
 import kotlinx.coroutines.launch
 import org.starcoin.proto.HubServiceGrpc
+import org.starcoin.sirius.channel.EventBus
 import org.starcoin.sirius.core.*
 import org.starcoin.sirius.crypto.CryptoKey
 import org.starcoin.sirius.protocol.Chain
@@ -65,7 +66,7 @@ class LocalAccount<T : ChainTransaction, A : ChainAccount>(
     val address = chainAccount.address
     val participant: Participant = Participant(chainAccount.key.keyPair.public)
     internal var state: LocalEonState? = null
-    private val eventBus = EventBus()
+    private val eventBus = EventBus<HubEvent>()
 
     var hubAccount: HubAccount?
         get() = if (this.state == null) null else this.state!!.hubAccount
@@ -186,7 +187,7 @@ class LocalAccount<T : ChainTransaction, A : ChainAccount>(
                     HubEventType.NEW_HUB_ROOT -> localActor.send(LocalAccountAction.NewHubRoot(event.getPayload()))
                     else -> LOG.info("un handle event:$event")
                 }
-                eventBus.post(event)
+                eventBus.send(event)
             }
         }
     }
@@ -195,29 +196,29 @@ class LocalAccount<T : ChainTransaction, A : ChainAccount>(
 
     }
 
-    fun watch(future: HubEventFuture) {
-        this.eventBus.register(future)
+    fun watch(filter: (HubEvent) -> Boolean = { true }): ReceiveChannel<HubEvent> {
+        return this.eventBus.subscribe(filter)
     }
 
 
-    fun deposit(amount: BigInteger) {
-        val previousAccount = hubService.getHubAccount(address)
-        // deposit
-
-        val hubEventFuture =
-            HubEventFuture { event -> event.type === HubEventType.NEW_DEPOSIT && event.address == address }
-        watch(hubEventFuture)
-
-        val txHash = chain.submitTransaction(
-            chainAccount,
-            chain.newTransaction(chainAccount, contract.contractAddress, amount)
-        )
-
-        //val future = this.registerTxHook(txHash)
-        //future.get(4, TimeUnit.SECONDS)
-
+//    suspend fun deposit(amount: BigInteger) {
+//        val previousAccount = hubService.getHubAccount(a.address)!!
+//        // deposit
+//
+//        val hubEventFuture =
+//            HubEventFuture { event -> event.type === HubEventType.NEW_DEPOSIT && event.address == a.address }
+//        a.watch(hubEventFuture)
+//
+//        val txDeferred = chain.submitTransaction(
+//            a.chainAccount,
+//            chain.newTransaction(a.chainAccount, contract.contractAddress, amount)
+//        )
+//
+//        val receipt = txDeferred.awaitTimout()
+//        Assert.assertTrue(receipt.status)
+//
 //        try {
-//            val hubEvent = hubEventFuture.get(2, TimeUnit.SECONDS)
+//            val hubEvent = hubEventFuture.get(4, TimeUnit.SECONDS)
 //            if (expectSuccess) {
 //                Assert.assertEquals(amount, hubEvent.getPayload<Deposit>().amount)
 //            } else {
@@ -230,13 +231,13 @@ class LocalAccount<T : ChainTransaction, A : ChainAccount>(
 //        }
 //        //TODO ensure
 //        HubServerIntegrationTestBase.sleep(1000)
-//        val hubAccount = HubAccount.parseFromProtoMessage(hubService.getHubAccount(a.address.toProto()))
+//        val hubAccount = hubService.getHubAccount(a.address)!!
 //        Assert.assertEquals(
 //            if (expectSuccess) previousAccount.deposit + amount else previousAccount.deposit,
 //            hubAccount.deposit
 //        )
 //        a.hubAccount = hubAccount
-    }
+//    }
 
     fun destroy() {
         this.hubEventJob?.cancel()

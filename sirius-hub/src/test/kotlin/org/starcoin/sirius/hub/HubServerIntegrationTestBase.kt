@@ -1,7 +1,6 @@
 package org.starcoin.sirius.hub
 
 
-import com.google.common.eventbus.Subscribe
 import io.grpc.inprocess.InProcessChannelBuilder
 import kotlinx.coroutines.*
 import kotlinx.coroutines.channels.Channel
@@ -20,21 +19,13 @@ import org.starcoin.sirius.protocol.*
 import org.starcoin.sirius.util.WithLogging
 import java.math.BigInteger
 import java.util.*
-import java.util.concurrent.*
+import java.util.concurrent.CompletableFuture
+import java.util.concurrent.ConcurrentHashMap
+import java.util.concurrent.Executors
 import java.util.concurrent.atomic.AtomicInteger
 import java.util.concurrent.atomic.AtomicLong
 import kotlin.coroutines.CoroutineContext
 import kotlin.properties.Delegates
-
-class HubEventFuture(private val predicate: (HubEvent) -> Boolean) : CompletableFuture<HubEvent>() {
-
-    @Subscribe
-    fun onEvent(event: HubEvent) {
-        if (this.predicate(event)) {
-            this.complete(event)
-        }
-    }
-}
 
 abstract class HubServerIntegrationTestBase<T : ChainTransaction, A : ChainAccount, C : Chain<T, out Block<T>, A>> {
 
@@ -436,9 +427,7 @@ abstract class HubServerIntegrationTestBase<T : ChainTransaction, A : ChainAccou
         val previousAccount = hubService.getHubAccount(a.address)!!
         // deposit
 
-        val hubEventFuture =
-            HubEventFuture { event -> event.type === HubEventType.NEW_DEPOSIT && event.address == a.address }
-        a.watch(hubEventFuture)
+        val channel = a.watch { event -> event.type === HubEventType.NEW_DEPOSIT && event.address == a.address }
 
         val txDeferred = chain.submitTransaction(
             a.chainAccount,
@@ -449,13 +438,13 @@ abstract class HubServerIntegrationTestBase<T : ChainTransaction, A : ChainAccou
         Assert.assertTrue(receipt.status)
 
         try {
-            val hubEvent = hubEventFuture.get(4, TimeUnit.SECONDS)
+            val hubEvent = channel.receiveTimeout(waitTimeOutMillis)
             if (expectSuccess) {
                 Assert.assertEquals(amount, hubEvent.getPayload<Deposit>().amount)
             } else {
                 Assert.fail("expect get Deposit event timeout")
             }
-        } catch (e: Exception) {
+        } catch (e: TimeoutCancellationException) {
             if (expectSuccess) {
                 Assert.fail(e.message)
             }
@@ -480,12 +469,9 @@ abstract class HubServerIntegrationTestBase<T : ChainTransaction, A : ChainAccou
 
     private fun offchainTransfer(
         from: LocalAccount<T, A>, to: LocalAccount<T, A>, amount: BigInteger, expectToReceive: Boolean
-    ): OffchainTransaction {
-        val fromFuture = HubEventFuture({ event -> event.type === HubEventType.NEW_UPDATE })
-        val toFuture = HubEventFuture({ event -> event.type === HubEventType.NEW_UPDATE })
-
-        from.watch(fromFuture)
-        to.watch(toFuture)
+    ): OffchainTransaction = runBlocking {
+        val fromChannel = from.watch { event -> event.type === HubEventType.NEW_UPDATE }
+        val toChannel = to.watch { event -> event.type === HubEventType.NEW_UPDATE }
 
         val tx = from.newTx(to.address, amount)
         tx.sign(from.key)
@@ -494,39 +480,28 @@ abstract class HubServerIntegrationTestBase<T : ChainTransaction, A : ChainAccou
         hubService.sendNewTransfer(fromIOU)
 
         try {
-            fromFuture.get(1000, TimeUnit.MILLISECONDS)
-        } catch (e: InterruptedException) {
-            Assert.fail(e.message)
-        } catch (e: ExecutionException) {
-            Assert.fail(e.message)
-        } catch (e: TimeoutException) {
+            fromChannel.receiveTimeout(waitTimeOutMillis)
+        } catch (e: TimeoutCancellationException) {
             Assert.fail(e.message)
         }
 
         try {
-            toFuture.get(1000, TimeUnit.MILLISECONDS)
+            toChannel.receiveTimeout(waitTimeOutMillis)
             if (!expectToReceive) {
                 Assert.fail("unexpected toUser receive event.")
             }
-        } catch (e: InterruptedException) {
-            if (expectToReceive) {
-                Assert.fail(e.message)
-            }
-        } catch (e: ExecutionException) {
-            if (expectToReceive) {
-                Assert.fail(e.message)
-            }
-        } catch (e: TimeoutException) {
-            if (expectToReceive) {
+        } catch (e: TimeoutCancellationException) {
+            if (!expectToReceive) {
                 Assert.fail(e.message)
             }
         }
+
         sleep(1000)
         Assert.assertTrue(from.update.isSignedByHub)
         if (expectToReceive) {
             Assert.assertTrue(to.update.isSignedByHub)
         }
-        return tx
+        tx
     }
 
     private fun withdrawal(account: LocalAccount<T, A>, amount: BigInteger, expectSuccess: Boolean) {
