@@ -28,7 +28,7 @@ class EventBusEthereumListener() : AbstractEthereumListener() {
             val tx = it.tx
             val txReceipt = it.receipt as EthereumReceipt
             if (!it.receipt.status) {
-                LOG.warning("tx ${tx.hash()} isTxStatusOK: ${txReceipt.txStatus} returnEvent: ${txReceipt.returnEvent}")
+                LOG.warning("tx ${tx.hash()} isTxStatusOK: ${txReceipt.txStatus} returnEvent: ${txReceipt.returnEvent} recoveryMode: ${txReceipt.recoveryMode}")
                 val trace = traceMap[tx.hash()]
                 if (trace != null) {
                     val file = File.createTempFile("trace", ".txt")

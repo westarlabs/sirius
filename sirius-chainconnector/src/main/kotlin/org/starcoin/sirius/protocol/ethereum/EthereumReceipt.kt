@@ -24,17 +24,11 @@ data class EthereumReceipt(
         //TODO parse log return Event
         get() = txStatus && (returnEvent?.let { it } ?: true)
 
-    var returnEvent: Boolean? = null
+    override val recoveryMode: Boolean
+        get() = logs?.any { recoveryModeEventSignature.contentEquals(it.topics[0].data) } ?: false
 
-    init {
-        logs?.forEach { log ->
-            LOG.fine("tx $transactionHash log $log")
-            if (returnEventSignature.contentEquals(log.getTopics().get(0).getData())) {
-                returnEvent = boolType.decode(log.data) as Boolean
-                LOG.fine("tx $transactionHash returnEvent: $returnEvent")
-            }
-        }
-    }
+    val returnEvent: Boolean?
+        get() = logs?.find { returnEventSignature.contentEquals(it.topics[0].data) }?.let { boolType.decode(it.data) as Boolean }
 
     constructor(receipt: TransactionReceipt) : this(
         receipt.transaction.hash.toHash(),
@@ -64,6 +58,9 @@ data class EthereumReceipt(
         private val returnEventFunction = CallTransaction.Function.fromSignature("ReturnEvent", "bool")
         private val returnEventSignature = returnEventFunction.encodeSignatureLong()
         private val boolType = SolidityType.BoolType()
+
+        private val recoveryModeEventFunction = CallTransaction.Function.fromSignature("RecoveryModeEvent")
+        private val recoveryModeEventSignature = recoveryModeEventFunction.encodeSignatureLong()
     }
 
 }
