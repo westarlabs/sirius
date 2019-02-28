@@ -1,16 +1,16 @@
 package org.starcoin.sirius.wallet
 
 import com.google.common.base.Preconditions
+import io.grpc.netty.NettyChannelBuilder
 import jline.console.ConsoleReader
 import jline.console.completer.ArgumentCompleter
-import org.starcoin.sirius.core.Address
-import org.starcoin.sirius.core.InetAddressPort
+import org.starcoin.sirius.core.*
 import org.starcoin.sirius.crypto.CryptoService
 import org.starcoin.sirius.protocol.ethereum.EthereumAccount
 import org.starcoin.sirius.protocol.ethereum.EthereumChain
 import org.starcoin.sirius.wallet.command.CliCommands
 import org.starcoin.sirius.wallet.command.WalletCommand
-import org.starcoin.sirius.wallet.core.ChannelManager
+import org.starcoin.sirius.wallet.core.ResourceManager
 import org.starcoin.sirius.wallet.core.Wallet
 import org.web3j.crypto.WalletUtils
 import picocli.CommandLine
@@ -22,6 +22,7 @@ import java.nio.file.Files
 import java.nio.file.Paths
 import java.util.*
 import java.util.concurrent.atomic.AtomicLong
+
 
 fun main(args: Array<String>) {
 
@@ -44,12 +45,13 @@ fun main(args: Array<String>) {
         reader.prompt = String.format("%s>", name)
 
         val cmd = CommandLine(CliCommands(reader))
-        val channelManager = ChannelManager(InetAddressPort.valueOf(hubAddr))
+        ResourceManager.hubChannel = NettyChannelBuilder.forAddress(InetAddressPort.valueOf(hubAddr).toInetSocketAddress()).usePlaintext().build();
+        ResourceManager.isTest=false
 
         val chain = EthereumChain(chainAddr)
         var account = loadAccount(keyStoreFilePath, password, chain)
 
-        var wallet = Wallet(Address.wrap(contractAddr), channelManager, chain, account,getWalletDir(name).path)
+        var wallet = Wallet(Address.wrap(contractAddr), chain, account)
 
         cmd.addSubcommand("wallet", WalletCommand(wallet))
 
@@ -128,4 +130,3 @@ fun loadAccount(path: String, password: String, chain: EthereumChain): EthereumA
     val cryptoKey = CryptoService.loadCryptoKey(credentials.ecKeyPair.privateKey.toByteArray())
     return EthereumAccount(cryptoKey, AtomicLong(chain.getNonce(cryptoKey.address).longValueExact()))
 }
-

@@ -3,12 +3,16 @@ package org.starcoin.sirius.wallet.core
 import org.starcoin.proto.Starcoin
 import org.starcoin.sirius.core.*
 import org.starcoin.sirius.lang.toBigInteger
+import org.starcoin.sirius.lang.toHEXString
+import org.starcoin.sirius.protocol.ChainAccount
 import org.starcoin.sirius.util.WithLogging
 import java.math.BigInteger
 
 class HubStatus {
 
     companion object : WithLogging()
+
+    lateinit private var account :ChainAccount
 
     var allotment: BigInteger = BigInteger.ZERO
         private set
@@ -30,9 +34,16 @@ class HubStatus {
     var height: Int = 0
 
     internal var update:Update?=null
+    set(value){
+        value?.apply {
+            ResourceManager.instance(account.address.toBytes().toHEXString()).updateDao.put(value.hash(),value)
+            field = value
+        }
+    }
 
-    internal constructor(eon: Eon) {
+    internal constructor(eon: Eon,account: ChainAccount) {
         val eonStatus = EonStatus(eon, BigInteger.ZERO)
+        this.account= account
 
         this.eonStatuses[currentEonStatusIndex] = eonStatus
     }
@@ -71,6 +82,7 @@ class HubStatus {
         this.eonStatuses[currentEonStatusIndex].transactionMap.put(
             transaction.hash(), transaction
         )
+        ResourceManager.instance(account.address.toBytes().toHEXString()).offchainTransactionDao.put(transaction.hash(),transaction)
     }
 
     internal fun transactionPath(hash: Hash): MerklePath? {

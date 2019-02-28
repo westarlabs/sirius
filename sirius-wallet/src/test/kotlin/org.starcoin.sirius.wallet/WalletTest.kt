@@ -20,11 +20,12 @@ import org.starcoin.sirius.core.HubAccount
 import org.starcoin.sirius.crypto.CryptoService
 import org.starcoin.sirius.hub.Configuration
 import org.starcoin.sirius.hub.HubServer
+import org.starcoin.sirius.lang.toHEXString
 import org.starcoin.sirius.protocol.EthereumTransaction
 import org.starcoin.sirius.protocol.HubContract
 import org.starcoin.sirius.protocol.ethereum.EthereumAccount
 import org.starcoin.sirius.protocol.ethereum.InMemoryChain
-import org.starcoin.sirius.wallet.core.ChannelManager
+import org.starcoin.sirius.wallet.core.ResourceManager
 import org.starcoin.sirius.wallet.core.Wallet
 import java.math.BigInteger
 import java.util.logging.Logger
@@ -54,45 +55,45 @@ class WalletTest {
 
     private var hubInfo:ContractHubInfo by Delegates.notNull()
 
-    private var channelManager:ChannelManager by Delegates.notNull()
-
     @Before
     @Throws(InterruptedException::class)
     fun before() {
         chain = InMemoryChain(true)
 
-
+        owner = EthereumAccount(CryptoService.generateCryptoKey())
         alice = EthereumAccount(CryptoService.generateCryptoKey())
         bob = EthereumAccount(CryptoService.generateCryptoKey())
 
         val amount = EtherUtil.convert(10000000, EtherUtil.Unit.ETHER)
-        this.sendEther(alice.address, amount)
-        this.sendEther(bob.address, amount)
 
         hubChannel = InProcessChannelBuilder.forName(configuration.rpcBind.toString()).build()
         stub = HubServiceGrpc.newBlockingStub(hubChannel)
+        ResourceManager.hubChannel=hubChannel
 
-        channelManager = ChannelManager(hubChannel)
-
-        hubServer = HubServer(configuration, chain)
-        val owner = hubServer.owner
+        hubServer = HubServer(configuration, chain,owner)
         chain.tryMiningCoin(owner, EtherUtil.convert(Int.MAX_VALUE.toLong(), EtherUtil.Unit.ETHER))
         hubServer.start()
         contract = hubServer.contract
 
-        walletAlice= Wallet(this.contract.contractAddress,channelManager,chain,alice,null)
+        walletAlice= Wallet(this.contract.contractAddress,chain,alice)
         walletAlice.initMessageChannel()
 
-        walletBob= Wallet(this.contract.contractAddress,channelManager,chain,bob,null)
+        walletBob= Wallet(this.contract.contractAddress,chain,bob)
         walletBob.initMessageChannel()
 
         hubInfo= contract.queryHubInfo(alice)
+
+        this.sendEther(alice, amount)
+        this.sendEther(bob, amount)
     }
 
-    fun sendEther(address: Address, amount: BigInteger) {
-        chain.sb.sendEther(address.toBytes(), amount)
-        chain.sb.createBlock()
-        Assert.assertEquals(amount, chain.getBalance(address))
+    fun sendEther(address: EthereumAccount, amount: BigInteger) {
+        //chain.sb.sendEther(address.toBytes(), amount)
+        //chain.newTransaction(owner,address,amount)
+        chain.tryMiningCoin(address,amount)
+        createBlocks(1)
+
+        Assert.assertEquals(amount, chain.getBalance(address.address))
     }
 
     fun waitHubReady(stub: HubServiceGrpc.HubServiceBlockingStub) {
@@ -133,7 +134,12 @@ class WalletTest {
         walletAlice.deposit(amount)
         walletBob.deposit(amount)
 
-        chain.sb.createBlock()
+        createBlocks(1)
+
+        runBlocking {
+            walletBob.getMessageChannel()?.receive()
+            walletAlice.getMessageChannel()?.receive()
+        }
 
         if(flag) {
             Assert.assertEquals(amount.multiply(2.toBigInteger()), chain.getBalance(contract.contractAddress))
@@ -391,7 +397,7 @@ class WalletTest {
     fun testSync() {
         testDeposit()
 
-        val aliceWalletClone = Wallet(this.contract.contractAddress,channelManager,chain,alice,null)
+        val aliceWalletClone = Wallet(this.contract.contractAddress,chain,alice)
         aliceWalletClone.sync()
         Assert.assertEquals(walletAlice.balance(), aliceWalletClone.balance())
     }
@@ -399,7 +405,7 @@ class WalletTest {
     @Test
     fun testSyncBytransfer() {
         testTransfer()
-        val aliceWalletClone = Wallet(this.contract.contractAddress,channelManager,chain,alice,null)
+        val aliceWalletClone = Wallet(this.contract.contractAddress,chain,alice)
         aliceWalletClone.sync()
         Assert.assertEquals(walletAlice.balance(), aliceWalletClone.balance())
     }
@@ -412,14 +418,14 @@ class WalletTest {
             walletAlice.getMessageChannel()?.receive()
         }
 
-        val aliceWalletClone = Wallet(this.contract.contractAddress,channelManager,chain,alice,null)
+        val aliceWalletClone = Wallet(this.contract.contractAddress,chain,alice)
         aliceWalletClone.sync()
         Assert.assertEquals(walletAlice.balance(), aliceWalletClone.balance())
     }
 
     @Test(expected = TimeoutCancellationException::class)
     fun testNoReg() {
-        val aliceWalletClone = Wallet(this.contract.contractAddress,channelManager,chain,alice,null)
+        val aliceWalletClone = Wallet(this.contract.contractAddress,chain,alice)
 
         waitToNextEon()
 

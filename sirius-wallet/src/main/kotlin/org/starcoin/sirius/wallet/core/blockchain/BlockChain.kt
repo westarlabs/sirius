@@ -37,6 +37,7 @@ class BlockChain <T : ChainTransaction, A : ChainAccount> (chain: Chain<T, out B
                             val deposit = Deposit(tx.from!!, tx.amount)
                             LOG.info("Deposit:" + deposit.toJSON())
                             hub.confirmDeposit(tx)
+                            GlobalScope.launch { hub.eonChannel?.send(ClientEventType.DEPOSIT) }
                         }
                     }
                     is InitiateWithdrawalFunction -> {

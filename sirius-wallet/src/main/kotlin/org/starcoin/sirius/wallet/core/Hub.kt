@@ -9,11 +9,12 @@ import kotlinx.coroutines.launch
 import org.starcoin.proto.HubServiceGrpc
 import org.starcoin.proto.Starcoin
 import org.starcoin.sirius.core.*
+import org.starcoin.sirius.lang.toHEXString
 import org.starcoin.sirius.protocol.Chain
 import org.starcoin.sirius.protocol.ChainAccount
 import org.starcoin.sirius.protocol.HubContract
 import org.starcoin.sirius.util.WithLogging
-import org.starcoin.sirius.wallet.core.dao.SiriusObjectDao
+import java.lang.RuntimeException
 import java.math.BigInteger
 import kotlin.properties.Delegates
 
@@ -28,8 +29,6 @@ class Hub <T : ChainTransaction, A : ChainAccount> {
     internal var currentEon: Eon  by Delegates.notNull()
     private set
 
-    private var channelManager: ChannelManager by Delegates.notNull()
-
     private var serverEventHandler: ServerEventHandler?
 
     private var hubAddr: String by Delegates.notNull()
@@ -43,10 +42,6 @@ class Hub <T : ChainTransaction, A : ChainAccount> {
 
     internal var eonChannel :Channel<ClientEventType>? = null
 
-    lateinit internal var updateDao:SiriusObjectDao<Update>
-    lateinit internal var offchainTransactionDao:SiriusObjectDao<OffchainTransaction>
-    lateinit internal var aMTreeProofDao:SiriusObjectDao<AMTreeProof>
-
     // for test lost connect
     var disconnect = true
 
@@ -55,13 +50,11 @@ class Hub <T : ChainTransaction, A : ChainAccount> {
     constructor(
         contract: HubContract<A>,
         account: A,
-        channelManager: ChannelManager,
         serverEventHandler: ServerEventHandler?,
         chain :Chain<T, out Block<T>, A>
     ) {
         this.contract = contract
         this.account = account
-        this.channelManager = channelManager
         this.serverEventHandler = serverEventHandler
         this.chain = chain
 
@@ -70,7 +63,7 @@ class Hub <T : ChainTransaction, A : ChainAccount> {
 
         this.currentEon=Eon.calculateEon(startBlockNumber = hubInfo.startBlockNumber.toLong(),blocksPerEon = hubInfo.blocksPerEon,currentBlockNumber = chain.getBlockNumber().toLong())
 
-        this.hubStatus = HubStatus(this.currentEon)
+        this.hubStatus = HubStatus(this.currentEon,account)
         hubStatus.blocksPerEon= hubInfo.blocksPerEon
 
     }
@@ -105,10 +98,6 @@ class Hub <T : ChainTransaction, A : ChainAccount> {
         }
     }
 
-    internal fun onDeposit(deposit: Deposit) {
-        serverEventHandler?.onDeposit(deposit)
-    }
-
     internal fun cancelWithdrawal(cancelWithdrawal: CancelWithdrawal){
         this.hubStatus.cancelWithDrawal()
         GlobalScope.launch {
@@ -134,7 +123,7 @@ class Hub <T : ChainTransaction, A : ChainAccount> {
     }
 
     private fun onNewTransaction(offchainTransaction: OffchainTransaction) {
-        val hubServiceBlockingStub = HubServiceGrpc.newBlockingStub(channelManager.hubChannel)
+        val hubServiceBlockingStub = HubServiceGrpc.newBlockingStub(ResourceManager.hubChannel)
 
         this.hubStatus.addOffchainTransaction(offchainTransaction)
 
@@ -150,7 +139,7 @@ class Hub <T : ChainTransaction, A : ChainAccount> {
         LOG.info("IOU is $iou")
         val succResponse = hubServiceBlockingStub.receiveNewTransfer(iou.toProto())
         if(succResponse.succ){
-           this.hubStatus.update=recieveUpdate
+            this.hubStatus.update=recieveUpdate
         }
         LOG.info("recieve new transfer from " + offchainTransaction.from + succResponse)
 
@@ -182,7 +171,7 @@ class Hub <T : ChainTransaction, A : ChainAccount> {
         this.currentEon = this.getChainEon()
 
         this.checkChallengeStatus()
-        val hubServiceBlockingStub = HubServiceGrpc.newBlockingStub(this.channelManager.hubChannel)
+        val hubServiceBlockingStub = HubServiceGrpc.newBlockingStub(ResourceManager.hubChannel)
 
         val protoAugmentedMerkleProof = hubServiceBlockingStub.getProof(account.address.toProto())
         val proof = AMTreeProof.parseFromProtoMessage(protoAugmentedMerkleProof)
@@ -237,11 +226,11 @@ class Hub <T : ChainTransaction, A : ChainAccount> {
 
     @Synchronized
     fun sync() {
-        val hubServiceBlockingStub = HubServiceGrpc.newBlockingStub(channelManager.hubChannel)
+        val hubServiceBlockingStub = HubServiceGrpc.newBlockingStub(ResourceManager.hubChannel)
 
         this.currentEon = this.getChainEon()
 
-        this.hubStatus = HubStatus(this.currentEon)
+        this.hubStatus = HubStatus(this.currentEon,account)
 
         for (i in 0..2) {
             val eonId = this.currentEon.id - i
@@ -281,7 +270,6 @@ class Hub <T : ChainTransaction, A : ChainAccount> {
             }
 
             this.accountInfo()
-            //this.dataStore.save(this.hubStatusData)
             watchHubEnvent()
             this.disconnect = false
         }
@@ -289,26 +277,27 @@ class Hub <T : ChainTransaction, A : ChainAccount> {
     }
 
     fun newTransfer(addr:Address, value:BigInteger) :OffchainTransaction{
-        val hubServiceBlockingStub = HubServiceGrpc.newBlockingStub(channelManager.hubChannel)
+        val hubServiceBlockingStub = HubServiceGrpc.newBlockingStub(ResourceManager.hubChannel)
 
         val tx = OffchainTransaction(this.currentEon.id, account.address, addr, value)
         tx.sign(account.key)
-        this.hubStatus.addOffchainTransaction(tx)
 
         val update = Update.newUpdate(
             this.currentEon.id,
             this.hubStatus.currentUpdate(currentEon).version + 1,
             this.account.address,
-            this.hubStatus.currentTransactions()
+            mutableListOf<OffchainTransaction>().apply {
+                addAll(hubStatus.currentTransactions())
+                add(tx)}
         )
         update.sign(account.key)
 
         val iou = IOU(tx, update)
 
         val succResponse = hubServiceBlockingStub.sendNewTransfer(iou.toProto())
-        //dataStore.save(this.hubStatusData)
         if (succResponse.getSucc() == true) {
             this.hubStatus.update = update
+            this.hubStatus.addOffchainTransaction(tx)
             return tx
         } else {
             throw RuntimeException("offlien transfer failed")
@@ -322,7 +311,7 @@ class Hub <T : ChainTransaction, A : ChainAccount> {
     }
 
     fun register() : Update? {
-        val hubServiceBlockingStub = HubServiceGrpc.newBlockingStub(channelManager.hubChannel)
+        val hubServiceBlockingStub = HubServiceGrpc.newBlockingStub(ResourceManager.hubChannel)
 
         val builder = Starcoin.RegisterParticipantRequest.newBuilder()
         val participant = Participant(account.key.keyPair.public)
@@ -347,7 +336,7 @@ class Hub <T : ChainTransaction, A : ChainAccount> {
     }
 
     fun  accountInfo():HubAccount ?{
-        val stub = HubServiceGrpc.newBlockingStub(channelManager.hubChannel)
+        val stub = HubServiceGrpc.newBlockingStub(ResourceManager.hubChannel)
         try{
             hubAccount=HubAccount.parseFromProtoMessage(stub.getHubAccount(account.address.toProto()))
             return hubAccount
@@ -390,15 +379,12 @@ class Hub <T : ChainTransaction, A : ChainAccount> {
     }
 
     internal fun cheat(flag:Int){
-        val liquidityHubServiceBlockingStub = HubServiceGrpc.newBlockingStub(channelManager.hubChannel)
+        val liquidityHubServiceBlockingStub = HubServiceGrpc.newBlockingStub(ResourceManager.hubChannel)
 
         val hubMaliciousFlag = Starcoin.HubMaliciousFlag.forNumber(flag)
         val builder = Starcoin.HubMaliciousFlags.newBuilder()
         builder.addFlags(hubMaliciousFlag)
         liquidityHubServiceBlockingStub.setMaliciousFlags(builder.build())
-    }
-
-    internal fun restore() {
     }
 
     private fun syncBlocks() {
@@ -418,7 +404,7 @@ class Hub <T : ChainTransaction, A : ChainAccount> {
             return
         }
 
-        val hubServiceStub = HubServiceGrpc.newStub(this.channelManager.hubChannel)
+        val hubServiceStub = HubServiceGrpc.newStub(ResourceManager.hubChannel)
 
         val hubObserver = HubObserver()
         hubObserver.addConsumer(this::hubRootConsumer)
