@@ -15,6 +15,7 @@ import org.starcoin.sirius.core.*
 import org.starcoin.sirius.eth.core.EtherUnit
 import org.starcoin.sirius.eth.core.ether
 import org.starcoin.sirius.eth.core.wei
+import org.starcoin.sirius.lang.retryWithTimeout
 import org.starcoin.sirius.protocol.*
 import org.starcoin.sirius.util.WithLogging
 import java.math.BigInteger
@@ -54,7 +55,7 @@ abstract class HubServerIntegrationTestBase<T : ChainTransaction, A : ChainAccou
     private var watchBlockJob: Job by Delegates.notNull()
     private val localAccounts: MutableList<LocalAccount<T, A>> = mutableListOf()
 
-    protected open val waitTimeOutMillis: Long = 2000
+    protected open val waitTimeOutMillis: Long = 3000
 
     abstract fun createChainAccount(amount: Long): A
     abstract fun createChain(configuration: Configuration): C
@@ -116,11 +117,14 @@ abstract class HubServerIntegrationTestBase<T : ChainTransaction, A : ChainAccou
 
     private fun waitServerStart() {
         var hubInfo = hubService.hubInfo
-        while (!hubInfo.isReady) {
+        while (!hubInfo.ready) {
             sleep(100)
-            LOG.info("wait hub service:" + hubInfo.toString())
+            LOG.info("Wait hub service:$hubInfo")
             this.eon.set(hubInfo.eon)
             hubInfo = hubService.hubInfo
+            if (hubInfo.recoveryMode) {
+                throw RuntimeException("Hub server in recoveryMode")
+            }
         }
     }
 
@@ -176,24 +180,29 @@ abstract class HubServerIntegrationTestBase<T : ChainTransaction, A : ChainAccou
             contractHubInfo.blocksPerEon,
             expectEon
         )
-        LOG.info("waitToNextEon:$expectEon, blockNumber:$expectBlockNumber")
+        LOG.info("waitToNextEon:$expectEon, blockNumber:$expectBlockNumber, expectSuccess: $expectSuccess")
         waitToBlockNumber(expectBlockNumber)
-        try {
-            var hubRoot = hubRootChannel.receiveTimeout(waitTimeOutMillis)
-            while (hubRoot.eon < expectEon) {
-                hubRoot = hubRootChannel.receiveTimeout(waitTimeOutMillis)
+        if (expectSuccess) {
+            try {
+                var hubRoot = hubRootChannel.receiveTimeout(waitTimeOutMillis)
+                while (hubRoot.eon < expectEon) {
+                    hubRoot = hubRootChannel.receiveTimeout(waitTimeOutMillis)
+                }
+                if (hubRoot.eon == expectEon) {
+                    verifyHubRoot(hubRoot)
+                } else {
+                    LOG.warning("Expect eon:$expectEon, but get: ${hubRoot.eon}")
+                }
+            } catch (e: TimeoutCancellationException) {
+                Assert.fail("Wait eon $expectEon timeout.")
             }
-            if (hubRoot.eon == expectEon) {
-                verifyHubRoot(hubRoot)
-            } else {
-                LOG.warning("Expect eon:$expectEon, but get: ${hubRoot.eon}")
-            }
-            if (!expectSuccess) {
-                Assert.fail("Expect fail,but success.")
-            }
-        } catch (e: TimeoutCancellationException) {
-            if (expectSuccess) {
-                Assert.fail("Expect success, but wait eon $expectEon hubRoot timeout")
+        } else {
+            try {
+                retryWithTimeout(
+                    timeoutMillis = waitTimeOutMillis,
+                    condition = { it!!.recoveryMode }) { hubService.hubInfo }
+            } catch (e: TimeoutCancellationException) {
+                Assert.fail("Wait eon $expectEon, expect hub recoveryMode timeout")
             }
         }
     }
@@ -491,7 +500,7 @@ abstract class HubServerIntegrationTestBase<T : ChainTransaction, A : ChainAccou
                 Assert.fail("unexpected toUser receive event.")
             }
         } catch (e: TimeoutCancellationException) {
-            if (!expectToReceive) {
+            if (expectToReceive) {
                 Assert.fail(e.message)
             }
         }

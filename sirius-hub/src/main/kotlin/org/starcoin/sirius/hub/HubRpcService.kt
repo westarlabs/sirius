@@ -13,10 +13,9 @@ import org.starcoin.sirius.core.Address
 import org.starcoin.sirius.core.IOU
 import org.starcoin.sirius.core.Participant
 import org.starcoin.sirius.core.Update
-import org.starcoin.sirius.protocol.ChainAccount
 import org.starcoin.sirius.util.WithLogging
 
-class HubRpcService<A : ChainAccount>(val hubService: HubServiceImpl<A>) :
+class HubRpcService(val hubService: HubService) :
     HubServiceGrpc.HubServiceImplBase() {
 
     companion object : WithLogging()

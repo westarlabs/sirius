@@ -20,13 +20,15 @@ class HubServer<A : ChainAccount>(
     var contract: HubContract<A> by Delegates.notNull()
         private set
 
+    var hubService: HubService by Delegates.notNull()
+
     fun start() {
         contract = configuration.contractAddress?.let { chain.loadContract(it) } ?: chain.deployContract(
             owner,
             ContractConstructArgs.DEFAULT_ARG
         )
         LOG.info("HubContract Address: ${contract.contractAddress}")
-        val hubService = HubServiceImpl(owner, chain, contract)
+        hubService = HubServiceImpl(owner, chain, contract)
         val hubRpcService = HubRpcService(hubService)
         grpcServer.registerService(hubRpcService)
         hubService.start()
@@ -35,6 +37,7 @@ class HubServer<A : ChainAccount>(
 
     fun stop() {
         grpcServer.stop()
+        hubService.stop()
     }
 
     fun awaitTermination() {

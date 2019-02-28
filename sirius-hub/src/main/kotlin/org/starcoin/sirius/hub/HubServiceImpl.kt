@@ -83,4 +83,8 @@ class HubServiceImpl<A : ChainAccount>(
     override fun resetHubMaliciousFlag(): EnumSet<HubMaliciousFlag> {
         return this.hub.resetHubMaliciousFlag()
     }
+
+    override fun stop() {
+        this.hub.stop()
+    }
 }

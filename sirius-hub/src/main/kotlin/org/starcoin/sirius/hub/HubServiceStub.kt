@@ -28,6 +28,9 @@ class HubServiceStub(val stub: HubServiceGrpc.HubServiceBlockingStub) : HubServi
     override fun start() {
     }
 
+    override fun stop() {
+    }
+
     override fun registerParticipant(participant: Participant, initUpdate: Update): Update {
         return stub.registerParticipant(
             Starcoin.RegisterParticipantRequest.newBuilder().setParticipant(participant.toProto<Starcoin.Participant>()).setUpdate(

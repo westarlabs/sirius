@@ -20,6 +20,8 @@ interface Hub {
 
     fun start()
 
+    fun stop()
+
     fun registerParticipant(participant: Participant, initUpdate: Update): Update
 
     fun deposit(participant: Address, amount: Long)

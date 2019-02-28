@@ -20,4 +20,5 @@ interface HubService {
     fun watchHubRoot(): ReceiveChannel<HubRoot>
     fun getHubAccount(address: Address): HubAccount?
     fun resetHubMaliciousFlag(): EnumSet<Hub.HubMaliciousFlag>
+    fun stop()
 }

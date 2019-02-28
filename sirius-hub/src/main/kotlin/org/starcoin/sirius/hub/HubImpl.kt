@@ -3,12 +3,10 @@ package org.starcoin.sirius.hub
 import com.google.common.base.Preconditions
 import io.grpc.Status
 import io.grpc.StatusRuntimeException
-import kotlinx.coroutines.GlobalScope
+import kotlinx.coroutines.*
 import kotlinx.coroutines.channels.ReceiveChannel
 import kotlinx.coroutines.channels.actor
 import kotlinx.coroutines.channels.consumeEach
-import kotlinx.coroutines.delay
-import kotlinx.coroutines.launch
 import org.starcoin.sirius.channel.EventBus
 import org.starcoin.sirius.core.*
 import org.starcoin.sirius.protocol.*
@@ -32,6 +30,12 @@ sealed class HubAction {
     //data class ChainTransactionAction<T : ChainTransaction>(val txResult: TransactionResult<T>) : HubAction()
 }
 
+enum class HubStatus {
+    Prepare,
+    Ready,
+    Recovery
+}
+
 class HubImpl<A : ChainAccount>(
     private val owner: A,
     private val chain: Chain<out ChainTransaction, out Block<out ChainTransaction>, A>,
@@ -47,8 +51,11 @@ class HubImpl<A : ChainAccount>(
 
     private val eventBus = EventBus<HubEvent>()
 
-    var ready: Boolean = false
-        private set
+    val ready: Boolean
+        get() = hubStatus == HubStatus.Ready
+
+    val recoveryMode: Boolean
+        get() = hubStatus == HubStatus.Recovery
 
     private val txReceipts = ConcurrentHashMap<Hash, CompletableFuture<Receipt>>()
 
@@ -62,6 +69,10 @@ class HubImpl<A : ChainAccount>(
     var currentBlockNumber: Long by Delegates.notNull()
 
     private val withdrawals = ConcurrentHashMap<Address, Withdrawal>()
+
+    private var hubStatus = HubStatus.Prepare
+
+    private var processBlockJob: Job by Delegates.notNull()
 
     val hubActor = GlobalScope.actor<HubAction> {
         consumeEach {
@@ -86,9 +97,6 @@ class HubImpl<A : ChainAccount>(
                 is HubAction.BlockAction<*> -> {
                     processBlock(it.block)
                 }
-//                is HubAction.ChainTransactionAction<*> -> {
-//                    processTransaction(it.txResult)
-//                }
             }
         }
     }
@@ -96,10 +104,11 @@ class HubImpl<A : ChainAccount>(
     override val hubInfo: HubInfo
         get() {
             if (!this.ready) {
-                return HubInfo(this.ready, this.blocksPerEon)
+                return HubInfo(this.ready, this.recoveryMode, this.blocksPerEon)
             }
             return HubInfo(
                 ready,
+                this.recoveryMode,
                 blocksPerEon,
                 eonState.eon,
                 stateRoot.toAMTreePathNode() as AMTreePathNode,
@@ -139,22 +148,24 @@ class HubImpl<A : ChainAccount>(
         //TODO load previous status from storage.
         eonState = EonState(currentEon.id)
 
-        this.processBlocks()
-        //first commit create by contract construct.
-        // if miss latest commit, should commit root first.
-        if (contractHubInfo.latestEon < currentEon.id) {
-            this.doCommit()
-        } else {
-            this.ready = true
-        }
-    }
-
-    private fun processBlocks() {
-        GlobalScope.launch {
+        this.processBlockJob = GlobalScope.launch(start = CoroutineStart.LAZY) {
             val blockChannel = chain.watchBlock()
             for (block in blockChannel) {
                 hubActor.send(HubAction.BlockAction(block))
             }
+        }
+        val recoveryMode = contract.isRecoveryMode(owner)
+        if (recoveryMode) {
+            this.hubStatus = HubStatus.Recovery
+        } else {
+            //first commit create by contract construct.
+            //if miss latest commit, should commit root first.
+            if (contractHubInfo.latestEon < currentEon.id) {
+                this.doCommit()
+            } else {
+                this.hubStatus = HubStatus.Ready
+            }
+            this.processBlockJob.start()
         }
     }
 
@@ -227,13 +238,8 @@ class HubImpl<A : ChainAccount>(
     }
 
     private suspend fun fireEvent(event: HubEvent) {
-        try {
-            LOG.info("fireEvent:$event")
-            this.eventBus.send(event)
-        } catch (e: Exception) {
-            e.printStackTrace()
-        }
-
+        LOG.info("fireEvent:$event")
+        this.eventBus.send(event)
     }
 
     private fun checkBalance(account: HubAccount, amount: BigInteger) {
@@ -431,10 +437,21 @@ class HubImpl<A : ChainAccount>(
         }
     }
 
+    private fun doRecovery() {
+        LOG.warning("Hub entry RecoveryMode, stop process block.")
+        this.hubStatus = HubStatus.Recovery
+        this.processBlockJob.cancel()
+    }
+
     private suspend fun processTransaction(block: Block<*>, txResult: TransactionResult<*>) {
         LOG.info("Hub process tx: ${txResult.tx.hash()}, ${block.height} result: ${txResult.receipt}")
         if (!txResult.receipt.status) {
             LOG.warning("tx ${txResult.tx.hash()} status is fail.")
+        }
+        if (txResult.receipt.recoveryMode) {
+            LOG.info("tx:${txResult.tx.hash()} trigger recoveryMode.")
+            this.doRecovery()
+            return
         }
         val tx = txResult.tx
         val hash = tx.hash()
@@ -465,7 +482,7 @@ class HubImpl<A : ChainAccount>(
             is CommitFunction -> {
                 val hubRoot = contractFunction.decode(tx.data)!!
                 if (txResult.receipt.status) {
-                    this.ready = true
+                    this.hubStatus = HubStatus.Ready
                     this.fireEvent(
                         HubEvent(
                             HubEventType.NEW_HUB_ROOT,
@@ -473,8 +490,9 @@ class HubImpl<A : ChainAccount>(
                         )
                     )
                 } else {
-                    this.ready = false
-                    LOG.warning("Commit hub root $hubRoot fail, hub will reject all new request.")
+                    //TODO retry commit ?
+                    LOG.warning("Commit hub root $hubRoot fail, hub entry recoveryMode.")
+                    doRecovery()
                 }
             }
             is InitiateWithdrawalFunction -> {
@@ -610,5 +628,9 @@ class HubImpl<A : ChainAccount>(
                 normalAction()
             }
         }
+    }
+
+    override fun stop() {
+        this.processBlockJob.cancel()
     }
 }
