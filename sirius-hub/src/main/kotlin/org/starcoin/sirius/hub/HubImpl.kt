@@ -74,7 +74,9 @@ class HubImpl<A : ChainAccount>(
 
     private var processBlockJob: Job by Delegates.notNull()
 
-    val hubActor = GlobalScope.actor<HubAction> {
+    val hubActor = GlobalScope.actor<HubAction>(capacity = 100, onCompletion = {
+        LOG.info("HubActor completion, exception:$it")
+    }) {
         consumeEach {
             when (it) {
                 is HubAction.IOUAction -> {
@@ -151,6 +153,7 @@ class HubImpl<A : ChainAccount>(
         this.processBlockJob = GlobalScope.launch(start = CoroutineStart.LAZY) {
             val blockChannel = chain.watchBlock()
             for (block in blockChannel) {
+                LOG.info("block in channel: $block")
                 hubActor.send(HubAction.BlockAction(block))
             }
         }
@@ -158,6 +161,7 @@ class HubImpl<A : ChainAccount>(
         if (recoveryMode) {
             this.hubStatus = HubStatus.Recovery
         } else {
+            this.processBlockJob.start()
             //first commit create by contract construct.
             //if miss latest commit, should commit root first.
             if (contractHubInfo.latestEon < currentEon.id) {
@@ -165,7 +169,6 @@ class HubImpl<A : ChainAccount>(
             } else {
                 this.hubStatus = HubStatus.Ready
             }
-            this.processBlockJob.start()
         }
     }
 

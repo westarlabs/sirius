@@ -1,5 +1,6 @@
 package org.starcoin.sirius.protocol.ethereum
 
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.channels.ReceiveChannel
@@ -43,7 +44,7 @@ class EthereumChain constructor(httpUrl: String? = null, socketPath: String? = n
 
     init {
         //TODO destroy job
-        GlobalScope.launch {
+        GlobalScope.launch(Dispatchers.IO) {
             while (true) {
                 val hashList = txDeferreds.keys.toList()
                 if (hashList.isNotEmpty()) {
@@ -103,7 +104,7 @@ class EthereumChain constructor(httpUrl: String? = null, socketPath: String? = n
 
     override fun watchTransactions(filter: (TransactionResult<EthereumTransaction>) -> Boolean): ReceiveChannel<TransactionResult<EthereumTransaction>> {
         val ch = Channel<TransactionResult<EthereumTransaction>>()
-        GlobalScope.launch {
+        GlobalScope.launch(Dispatchers.IO) {
             web3.transactionFlowable().subscribe {
                 val receipts = getTransactionReceipts(listOf(Hash.wrap(it.hash)))
                 val txr = TransactionResult(
@@ -130,7 +131,7 @@ class EthereumChain constructor(httpUrl: String? = null, socketPath: String? = n
         events.forEach { ethFilter.addSingleTopic(org.web3j.crypto.Hash.sha3String(it.eventSignature)) }
         val newFilterResp = web3.ethNewFilter(ethFilter).sendAsync().get()
         if (newFilterResp.hasError()) throw NewFilterException(newFilterResp.error)
-        GlobalScope.launch {
+        GlobalScope.launch(Dispatchers.IO) {
             var filterChangeResp = web3.ethGetFilterChanges(newFilterResp.filterId).sendAsync().get()
             while (filterChangeResp.logs.size == 0) {
                 filterChangeResp = web3.ethGetFilterChanges(newFilterResp.filterId).sendAsync().get()
@@ -170,7 +171,7 @@ class EthereumChain constructor(httpUrl: String? = null, socketPath: String? = n
                 height = height.inc()
             }
             val notifych = Channel<BigInteger>()
-            GlobalScope.launch {
+            GlobalScope.launch(Dispatchers.IO) {
                 headNotify.subscribe(
                     {
                         val blockNum = it.params.result.number.hexToByteArray().toBigInteger()
@@ -183,7 +184,7 @@ class EthereumChain constructor(httpUrl: String? = null, socketPath: String? = n
                         notifych.close()
                     })
             }
-            GlobalScope.launch {
+            GlobalScope.launch(Dispatchers.IO) {
                 while (!notifych.isClosedForSend) {
                     val block = getBlock(notifych.receive())!!
                     ch.sendBlocking(block)

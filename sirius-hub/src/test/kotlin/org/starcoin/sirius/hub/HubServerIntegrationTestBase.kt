@@ -208,14 +208,19 @@ abstract class HubServerIntegrationTestBase<T : ChainTransaction, A : ChainAccou
     }
 
     private fun waitToBlockNumber(blockNumber: Long) = runBlocking {
+        var totalTimeout = waitTimeOutMillis * 2
         while (true) {
             if (blockHeight.get() >= blockNumber) {
                 return@runBlocking
             }
             if (chain.getBlockNumber() >= blockNumber) {
-                delay(1000)
+                delay(500)
+                totalTimeout -= 500
             } else {
                 createBlock()
+            }
+            if (totalTimeout <= 0) {
+                Assert.fail("waitToBlockNumber timeout $blockNumber")
             }
         }
     }
