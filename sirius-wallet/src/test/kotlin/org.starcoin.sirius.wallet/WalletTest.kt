@@ -20,6 +20,8 @@ import org.starcoin.sirius.core.HubAccount
 import org.starcoin.sirius.crypto.CryptoService
 import org.starcoin.sirius.hub.Configuration
 import org.starcoin.sirius.hub.HubServer
+import org.starcoin.sirius.lang.hexToByteArray
+import org.starcoin.sirius.lang.toBigInteger
 import org.starcoin.sirius.lang.toHEXString
 import org.starcoin.sirius.protocol.EthereumTransaction
 import org.starcoin.sirius.protocol.HubContract
