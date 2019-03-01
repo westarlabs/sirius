@@ -153,7 +153,6 @@ class HubImpl<A : ChainAccount>(
         this.processBlockJob = GlobalScope.launch(start = CoroutineStart.LAZY) {
             val blockChannel = chain.watchBlock()
             for (block in blockChannel) {
-                LOG.info("block in channel: $block")
                 hubActor.send(HubAction.BlockAction(block))
             }
         }

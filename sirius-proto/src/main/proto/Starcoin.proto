@@ -208,13 +208,17 @@ message TransferDeliveryChallengeStatus {
     required ChallengeStatus status = 2;
 }
 
+message AccountEonState {
+    required Update update = 1;
+    required bytes allotment = 2;
+    required bytes deposit = 3;
+    required bytes withdraw = 4;
+    repeated OffchainTransaction transactions = 5;
+}
+
 message HubAccount {
     required bytes publicKey = 1;
-    required Update update = 2;
-    required bytes allotment = 3;
-    required bytes deposit = 4;
-    required bytes withdraw = 5;
-    repeated OffchainTransaction transactions = 6;
+    required AccountEonState eonState = 2;
 }
 
 message IOU {
