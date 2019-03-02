@@ -81,6 +81,13 @@ class MapStore : DataStore<ByteArray, ByteArray> {
         }
     }
 
+    override fun iterator(): CloseableIterator<Pair<ByteArray, ByteArray>> {
+        return CloseableIterator(this.keyList.iterator().asSequence().map { key ->
+            val value = doGet(key)!!
+            Pair(key.bytes, value)
+        }.iterator())
+    }
+
     override fun destroy() {
         this.map.clear()
         this.keyList.clear()

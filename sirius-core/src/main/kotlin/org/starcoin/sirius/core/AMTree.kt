@@ -82,7 +82,7 @@ class AMTree(
 
     constructor() : this(0, AMTreeNode.DUMMY_NODE)
 
-    constructor(eon: Int, accounts: List<HubAccount>) : this(
+    constructor(eon: Int, accounts: Iterable<HubAccount>) : this(
         eon,
         buildRoot(buildTreeNodes(accounts))
     )
@@ -160,11 +160,10 @@ class AMTree(
     companion object {
 
         private fun buildTreeNodes(
-            accounts: List<HubAccount>
+            accounts: Iterable<HubAccount>
         ): List<AMTreeNode> {
             val prev = arrayOfNulls<AMTreeNode>(1)
             return accounts
-                .stream()
                 .map { account ->
                     val node = AMTreeNode(
                         prev[0],
@@ -174,7 +173,6 @@ class AMTree(
                     prev[0] = node
                     node
                 }
-                .collect(Collectors.toList())
         }
 
         private fun buildRoot(leaves: List<AMTreeNode>): AMTreeNode {

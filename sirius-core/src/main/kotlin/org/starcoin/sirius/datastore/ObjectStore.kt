@@ -32,10 +32,8 @@ open class ObjectStore<K, V>(
         return this.dataStore.keys().map { keyCodec.decode(it) }
     }
 
-    override fun forEach(consumer: (K, V) -> Unit) {
-        return this.dataStore.forEach { k, v ->
-            consumer(keyCodec.decode(k), valueCodec.decode(v))
-        }
+    override fun iterator(): CloseableIterator<Pair<K, V>> {
+        return this.dataStore.iterator().map { Pair(keyCodec.decode(it.first), valueCodec.decode(it.second)) }
     }
 
     override fun destroy() {

@@ -66,13 +66,19 @@ class H2DBStore(private val sql2o: Sql2o, private val tableName: String) : DataS
     }
 
     override fun forEach(consumer: (ByteArray, ByteArray) -> Unit) {
+
+    }
+
+    override fun iterator(): CloseableIterator<Pair<ByteArray, ByteArray>> {
         //TODO optimize
-        sql2o.open().use { con ->
-            val query = "SELECT key FROM $tableName"
-            con.createQuery(query).executeAndFetchLazy(ByteArray::class.java).forEach { key ->
-                val value = getByConn(key, con)!!
-                consumer(key, value)
-            }
+        val conn = sql2o.open()
+        val query = "SELECT key FROM $tableName"
+        val iterable = conn.createQuery(query).executeAndFetchLazy(ByteArray::class.java)
+        return CloseableIterator(iterable.iterator().asSequence().map { key ->
+            val value = getByConn(key, conn)!!
+            Pair(key, value)
+        }.iterator()) {
+            iterable.close()
         }
     }
 
