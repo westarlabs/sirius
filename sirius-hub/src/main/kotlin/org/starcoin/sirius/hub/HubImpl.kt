@@ -203,6 +203,7 @@ class HubImpl<A : ChainAccount>(
     override fun deposit(participant: Address, amount: Long) {
         val account = this.eonState.getAccount(participant) ?: assertAccountNotNull(participant)
         account.addDeposit(amount)
+        this.eonState.saveAccount(account)
     }
 
     override fun getHubAccount(address: Address): HubAccount? {
@@ -235,6 +236,10 @@ class HubImpl<A : ChainAccount>(
 
         fromUpdate.signHub(this.owner.key)
         toUpdate.signHub(this.owner.key)
+
+        eonState.saveAccount(from)
+        eonState.saveAccount(to)
+
         this.fireEvent(HubEvent(HubEventType.NEW_UPDATE, fromUpdate, from.address))
         this.fireEvent(HubEvent(HubEventType.NEW_UPDATE, toUpdate, to.address))
     }
@@ -395,6 +400,7 @@ class HubImpl<A : ChainAccount>(
                 val cancelWithdrawal = CancelWithdrawal(from, hubAccount.update, path ?: AMTreeProof.DUMMY_PROOF)
                 contract.cancelWithdrawal(owner, cancelWithdrawal)
             } else {
+                eonState.saveAccount(hubAccount)
                 val withdrawalStatus = WithdrawalStatus(WithdrawalStatusType.INIT, withdrawal)
                 withdrawalStatus.pass()
                 this.fireEvent(HubEvent(HubEventType.WITHDRAWAL, withdrawalStatus, from))
@@ -408,6 +414,7 @@ class HubImpl<A : ChainAccount>(
         {
             val hubAccount = this.eonState.getAccount(deposit.address) ?: assertAccountNotNull(deposit.address)
             hubAccount.addDeposit(deposit.amount)
+            this.eonState.saveAccount(hubAccount)
             this.fireEvent(
                 HubEvent(
                     HubEventType.NEW_DEPOSIT,
@@ -578,6 +585,7 @@ class HubImpl<A : ChainAccount>(
                                 + " steal withdrawal from "
                                 + hubAccount.address.toString())
                     )
+                    eonState.saveAccount(hubAccount)
                 } else {
                     normalAction()
                 }
@@ -624,6 +632,9 @@ class HubImpl<A : ChainAccount>(
 
                 fromUpdate.signHub(owner.key)
                 toUpdate.signHub(owner.key)
+
+                eonState.saveAccount(from)
+                eonState.saveAccount(to)
                 // only notice from.
                 fireEvent(HubEvent(HubEventType.NEW_UPDATE, fromUpdate, from.address))
             } else {

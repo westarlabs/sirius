@@ -2,46 +2,54 @@ package org.starcoin.sirius.hub
 
 import org.starcoin.sirius.core.*
 import org.starcoin.sirius.core.Eon.Epoch
+import org.starcoin.sirius.datastore.DataStoreFactory
+import org.starcoin.sirius.datastore.MapDataStoreFactory
 import java.util.*
 import java.util.concurrent.ConcurrentHashMap
 
 class EonState(val eon: Int, val previous: EonState? = null) {
-    private val accounts: MutableList<HubAccount>
     var state: AMTree
         private set
     var currentEpoch: Epoch = Eon.Epoch.FIRST
         private set
     private val senderIOUs: MutableMap<Address, IOU>
     private val receiverIOUs: MutableMap<Address, IOU>
+    private val factory: DataStoreFactory
+
+    private val hubAccountStore: HubAccountStore
 
     init {
-        this.accounts = ArrayList()
         if (this.previous != null) {
-            this.previous.getAccounts().forEach { account -> addAccount(account.toNextEon(this.eon)) }
-            val accounts = this.previous
-                .getAccounts()
-            this.state = AMTree(this.eon, accounts)
+            this.state = AMTree(this.eon, this.previous.hubAccountStore.asHubAccountIterable())
+            this.factory = previous.factory
         } else {
             this.state = AMTree(this.eon, ArrayList())
+            //TODO
+            this.factory = MapDataStoreFactory()
         }
+        this.hubAccountStore = HubAccountStore(eon, factory)
         this.senderIOUs = ConcurrentHashMap()
         this.receiverIOUs = ConcurrentHashMap()
+        if (this.previous != null) {
+            this.previous.forEach { account -> addAccount(account.toNextEon(this.eon)) }
+        }
     }
 
     fun getAccount(address: Address): HubAccount? {
-        return this.getAccount { hubAccount -> hubAccount.address == address }
+        return this.hubAccountStore.get(address)
     }
 
     fun getAccount(predicate: (HubAccount) -> Boolean): HubAccount? {
-        return accounts.firstOrNull(predicate)
+        return this.hubAccountStore.asHubAccountIterable().firstOrNull(predicate)
     }
 
     fun addAccount(account: HubAccount) {
-        this.accounts.add(account)
+        this.hubAccountStore.put(account)
     }
 
-    fun getAccounts(): List<HubAccount> {
-        return Collections.unmodifiableList(this.accounts)
+
+    fun forEach(consumer: (HubAccount) -> Unit) {
+        this.hubAccountStore.asHubAccountIterable().forEach(consumer)
     }
 
     fun setEpoch(epoch: Epoch) {
@@ -66,5 +74,9 @@ class EonState(val eon: Int, val previous: EonState? = null) {
     fun removeIOU(iou: IOU) {
         this.senderIOUs.remove(iou.transaction.from)
         this.receiverIOUs.remove(iou.transaction.to)
+    }
+
+    fun saveAccount(account: HubAccount) {
+        this.hubAccountStore.put(account)
     }
 }
