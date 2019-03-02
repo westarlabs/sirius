@@ -568,6 +568,7 @@ class HubImpl<A : ChainAccount>(
                 val hubAccount =
                     eonState.getAccount(gang.participant.address) ?: assertAccountNotNull(gang.participant.address)
                 hubAccount.addDeposit(deposit.amount)
+                eonState.saveAccount(hubAccount)
             } else {
                 normalAction()
             }
