@@ -102,3 +102,11 @@ interface CryptoService {
         override val emptyListHash get() = instance.emptyListHash
     }
 }
+
+fun PublicKey.encode(): ByteArray {
+    return CryptoService.encodePublicKey(this)
+}
+
+fun PrivateKey.encode(): ByteArray {
+    return CryptoService.encodePrivateKey(this)
+}

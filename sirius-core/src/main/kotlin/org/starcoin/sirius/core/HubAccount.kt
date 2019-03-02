@@ -36,6 +36,8 @@ data class AccountEonState(
     internal val transactions: MutableList<OffchainTransaction> = mutableListOf()
 ) : SiriusObject() {
 
+    constructor(eon: Int) : this(Update(UpdateData(eon)))
+
     init {
         assert(checkBalance())
     }
@@ -47,6 +49,10 @@ data class AccountEonState(
                 + update.data.receiveAmount)
                 - this.withdraw
                 - update.data.sendAmount)
+
+    fun isEmpty(): Boolean {
+        return this.transactions.isEmpty() && update.isEmpty() && allotment == BigInteger.ZERO && deposit == BigInteger.ZERO && withdraw == BigInteger.ZERO
+    }
 
     internal fun checkBalance(): Boolean {
         return this.balance >= BigInteger.ZERO
@@ -76,7 +82,6 @@ data class AccountEonState(
     }
 }
 
-
 @Serializable
 @ProtobufSchema(Starcoin.HubAccount::class)
 data class HubAccount(
@@ -84,7 +89,7 @@ data class HubAccount(
     @SerialId(1)
     val publicKey: PublicKey,
     @SerialId(2)
-    var eonState: AccountEonState
+    val eonState: AccountEonState
 ) : SiriusObject() {
 
     constructor(
