@@ -10,17 +10,18 @@ import org.starcoin.sirius.lang.hexToByteArray
 import org.starcoin.sirius.lang.toHEXString
 import org.starcoin.sirius.serialization.BinaryDecoder
 import org.starcoin.sirius.serialization.BinaryEncoder
+import org.starcoin.sirius.serialization.Codec
 import org.starcoin.sirius.util.MockUtils
 import java.security.PublicKey
 
 @Serializable
-class Address private constructor(private val bytes: ByteArray) : CachedHashable() {
+class Address private constructor(internal val bytes: ByteArray) : CachedHashable(), ToByteArray {
 
     init {
         Preconditions.checkArgument(bytes.size == LENGTH, "expect address length:$LENGTH")
     }
 
-    fun toBytes() = bytes.copyOf()
+    override fun toBytes() = bytes.copyOf()
 
     fun toByteString(): ByteString {
         return ByteString.copyFrom(this.bytes)
@@ -52,7 +53,7 @@ class Address private constructor(private val bytes: ByteArray) : CachedHashable
     }
 
     @Serializer(forClass = Address::class)
-    companion object : KSerializer<Address> {
+    companion object : KSerializer<Address>, Codec<Address> {
 
         val LENGTH = 20
 
@@ -95,6 +96,14 @@ class Address private constructor(private val bytes: ByteArray) : CachedHashable
 
         fun getAddress(publicKey: PublicKey): Address {
             return CryptoService.generateAddress(publicKey)
+        }
+
+        override fun decode(bytes: ByteArray): Address {
+            return Address.wrap(bytes)
+        }
+
+        override fun encode(value: Address): ByteArray {
+            return value.bytes
         }
     }
 }

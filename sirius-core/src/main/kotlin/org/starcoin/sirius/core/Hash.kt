@@ -11,6 +11,7 @@ import org.starcoin.sirius.lang.hexToByteArray
 import org.starcoin.sirius.lang.toHEXString
 import org.starcoin.sirius.serialization.BinaryDecoder
 import org.starcoin.sirius.serialization.BinaryEncoder
+import org.starcoin.sirius.serialization.Codec
 import org.starcoin.sirius.util.HashUtil
 import org.starcoin.sirius.util.MockUtils
 import java.io.File
@@ -28,7 +29,7 @@ import kotlin.experimental.and
  * safety. It is a final unmodifiable object.
  */
 @Serializable
-class Hash private constructor(internal val bytes: ByteArray) : Comparable<Hash>, Hashable {
+class Hash private constructor(internal val bytes: ByteArray) : Comparable<Hash>, Hashable, ToByteArray {
 
     val size: Int
         get() = bytes.size
@@ -60,7 +61,7 @@ class Hash private constructor(internal val bytes: ByteArray) : Comparable<Hash>
         return BigInteger(1, bytes)
     }
 
-    fun toBytes() = bytes.copyOf()
+    override fun toBytes() = bytes.copyOf()
 
     fun toByteString() = ByteString.copyFrom(this.bytes)
 
@@ -92,7 +93,7 @@ class Hash private constructor(internal val bytes: ByteArray) : Comparable<Hash>
     }
 
     @Serializer(forClass = Hash::class)
-    companion object : KSerializer<Hash> {
+    companion object : KSerializer<Hash>, Codec<Hash> {
 
         val LENGTH = 32 // bytes
         val CHECKSUM_LENGTH = 4 // bytes
@@ -228,6 +229,14 @@ class Hash private constructor(internal val bytes: ByteArray) : Comparable<Hash>
 
         fun random(): Hash {
             return Hash.of(MockUtils.nextBytes(LENGTH))
+        }
+
+        override fun encode(value: Hash): ByteArray {
+            return value.bytes
+        }
+
+        override fun decode(bytes: ByteArray): Hash {
+            return Hash.wrap(bytes)
         }
     }
 }

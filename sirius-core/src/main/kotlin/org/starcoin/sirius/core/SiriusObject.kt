@@ -8,6 +8,7 @@ import kotlinx.serialization.json.JSON
 import kotlinx.serialization.load
 import kotlinx.serialization.parse
 import org.starcoin.sirius.lang.resetableLazy
+import org.starcoin.sirius.serialization.Codec
 import org.starcoin.sirius.serialization.ProtobufSchema
 import org.starcoin.sirius.serialization.protobuf.ProtoBuf
 import org.starcoin.sirius.serialization.rlp.RLP
@@ -69,6 +70,11 @@ abstract class SiriusObject : Hashable {
         }
 
         @UseExperimental(ImplicitReflectionSerializer::class)
+        fun <T : SiriusObject> parseFromRLP(clazz: KClass<T>, bytes: ByteArray): T {
+            return RLP.load(RLP.plain.context.getOrDefault(clazz), bytes)
+        }
+
+        @UseExperimental(ImplicitReflectionSerializer::class)
         inline fun <reified T : SiriusObject> parseFromJSON(json: String): T {
             return JSON.parse(json)
         }
@@ -76,6 +82,11 @@ abstract class SiriusObject : Hashable {
         @UseExperimental(ImplicitReflectionSerializer::class)
         inline fun <reified T : SiriusObject> parseFromProtobuf(bytes: ByteArray): T {
             return ProtoBuf.load(bytes)
+        }
+
+        @UseExperimental(ImplicitReflectionSerializer::class)
+        fun <T : SiriusObject> parseFromProtobuf(clazz: KClass<T>, bytes: ByteArray): T {
+            return ProtoBuf.load(ProtoBuf.plain.context.getOrDefault(clazz), bytes)
         }
     }
 }
@@ -128,11 +139,37 @@ abstract class SiriusObjectCompanion<T : SiriusObject, P : GeneratedMessageV3>(v
 
     @UseExperimental(ImplicitReflectionSerializer::class)
     open fun parseFromProtobuf(bytes: ByteArray): T {
-        return ProtoBuf.load(RLP.plain.context.getOrDefault(objClass), bytes)
+        return ProtoBuf.load(ProtoBuf.plain.context.getOrDefault(objClass), bytes)
     }
 }
 
 inline fun <reified P : GeneratedMessageV3, reified T : SiriusObject> P.toSiriusObject(): T {
     val companion = T::class.companionObjectInstance as SiriusObjectCompanion<T, P>
     return companion.parseFromProtoMessage(this)
+}
+
+open abstract class SiriusObjectCodec<T : SiriusObject>(protected val clazz: KClass<T>) : Codec<T>
+
+class SiriusObjectProfoBufCodec<T : SiriusObject>(clazz: KClass<T>) : SiriusObjectCodec<T>(clazz) {
+
+    override fun encode(value: T): ByteArray {
+        return value.toProtobuf()
+    }
+
+    override fun decode(bytes: ByteArray): T {
+        return SiriusObject.parseFromProtobuf(clazz, bytes)
+    }
+
+}
+
+class SiriusObjectRLPCodec<T : SiriusObject>(clazz: KClass<T>) : SiriusObjectCodec<T>(clazz) {
+
+    override fun encode(value: T): ByteArray {
+        return value.toRLP()
+    }
+
+    override fun decode(bytes: ByteArray): T {
+        return SiriusObject.parseFromRLP(clazz, bytes)
+    }
+
 }

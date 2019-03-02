@@ -5,6 +5,7 @@ import kotlinx.serialization.Encoder
 import kotlinx.serialization.KSerializer
 import kotlinx.serialization.Serializer
 import org.starcoin.sirius.crypto.CryptoService
+import org.starcoin.sirius.crypto.encode
 import org.starcoin.sirius.lang.hexToByteArray
 import org.starcoin.sirius.lang.toHEXString
 import java.security.PublicKey
@@ -37,4 +38,15 @@ class PublicKeySerializer : KSerializer<PublicKey> {
             )
         }
     }
+}
+
+object PublicKeyCodec : Codec<PublicKey> {
+    override fun encode(value: PublicKey): ByteArray {
+        return value.encode()
+    }
+
+    override fun decode(bytes: ByteArray): PublicKey {
+        return CryptoService.loadPublicKey(bytes)
+    }
+
 }
