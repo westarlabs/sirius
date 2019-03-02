@@ -142,8 +142,8 @@ class HubStatus {
     }
 
     internal fun syncAllotment(accountInfo: Starcoin.HubAccount) {
-        this.allotment += accountInfo.deposit.toByteArray().toBigInteger()
-        this.allotment += accountInfo.allotment.toByteArray().toBigInteger()
+        this.allotment += accountInfo.eonState.deposit.toByteArray().toBigInteger()
+        this.allotment += accountInfo.eonState.allotment.toByteArray().toBigInteger()
     }
 
     @Synchronized

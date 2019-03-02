@@ -9,12 +9,10 @@ import kotlinx.coroutines.launch
 import org.starcoin.proto.HubServiceGrpc
 import org.starcoin.proto.Starcoin
 import org.starcoin.sirius.core.*
-import org.starcoin.sirius.lang.toHEXString
 import org.starcoin.sirius.protocol.Chain
 import org.starcoin.sirius.protocol.ChainAccount
 import org.starcoin.sirius.protocol.HubContract
 import org.starcoin.sirius.util.WithLogging
-import java.lang.RuntimeException
 import java.math.BigInteger
 import kotlin.properties.Delegates
 
@@ -244,9 +242,9 @@ class Hub <T : ChainTransaction, A : ChainAccount> {
             }
 
             val accountInfo = hubServiceBlockingStub.getHubAccount(account.address.toProto())
-            this.hubStatus.eonStatuses[index].updateHistory.add(accountInfo.update.toSiriusObject())
+            this.hubStatus.eonStatuses[index].updateHistory.add(accountInfo.eonState.update.toSiriusObject())
             this.hubStatus.eonStatuses[index].transactionHistory.addAll(
-               accountInfo.transactionsList.map {  it.toSiriusObject<Starcoin.OffchainTransaction,OffchainTransaction>() }
+                accountInfo.eonState.transactionsList.map { it.toSiriusObject<Starcoin.OffchainTransaction, OffchainTransaction>() }
             )
 
             if (i > 0) { // 当前伦次不需要proof
