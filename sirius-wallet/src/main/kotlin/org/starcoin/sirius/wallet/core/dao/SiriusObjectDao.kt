@@ -2,9 +2,10 @@ package org.starcoin.sirius.wallet.core.dao
 
 import org.starcoin.sirius.core.Hash
 import org.starcoin.sirius.core.SiriusObject
-import org.starcoin.sirius.datasource.DataSource
+import org.starcoin.sirius.datastore.DataStore
 
-class SiriusObjectDao<V :SiriusObject>(dataSource: DataSource<ByteArray,ByteArray>,parse:(ByteArray)->V) : DataSource<Hash,V>{
+class SiriusObjectDao<V : SiriusObject>(dataSource: DataStore<ByteArray, ByteArray>, parse: (ByteArray) -> V) :
+    DataStore<Hash, V> {
 
     private val dataSource = dataSource
 
@@ -27,15 +28,15 @@ class SiriusObjectDao<V :SiriusObject>(dataSource: DataSource<ByteArray,ByteArra
         TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
     }
 
-    override fun prefixLookup(key: ByteArray, prefixBytes: Int): V {
+    override fun keys(): List<Hash> {
+        return dataSource.keys().map { Hash.wrap(it) }
+    }
+
+    override fun forEach(consumer: (Hash, V) -> Unit) {
         TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
     }
 
-    override fun keys(): Set<Hash> {
-        return dataSource.keys().map { Hash.wrap(it) }.toSet()
-    }
-
-    override fun close() {
+    override fun destroy() {
         TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
     }
 

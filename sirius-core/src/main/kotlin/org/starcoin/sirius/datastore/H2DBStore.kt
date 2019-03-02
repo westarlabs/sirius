@@ -77,13 +77,18 @@ class H2DBStore(private val sql2o: Sql2o, private val tableName: String) : DataS
     }
 
     override fun destroy() {
+        sql2o.beginTransaction().use { conn ->
+            conn.createQuery("drop table IF EXISTS $tableName")
+                .executeUpdate()
+            conn.commit()
+        }
     }
 
     override fun init() {
-        sql2o.beginTransaction().use { con ->
-            con.createQuery("create table IF NOT EXISTS $tableName (key BINARY(100),value BINARY(1000))")
+        sql2o.beginTransaction().use { conn ->
+            conn.createQuery("create table IF NOT EXISTS $tableName (key BINARY(100),value BINARY(1000))")
                 .executeUpdate()
-            con.commit()
+            conn.commit()
         }
     }
 
