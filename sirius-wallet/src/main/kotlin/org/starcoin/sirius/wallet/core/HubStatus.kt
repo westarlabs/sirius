@@ -67,9 +67,10 @@ class HubStatus {
     }
 
     internal fun confirmDeposit(transaction: ChainTransaction) {
-        this.allotment+=transaction.amount
+        //this.allotment+=transaction.amount
         this.eonStatuses[currentEonStatusIndex].addDeposit(transaction)
         this.depositingTransactions.remove(transaction.hash())
+        ResourceManager.instance(account.address.toBytes().toHEXString()).dataStore.put("deposit-${eon.id}".toByteArray(),this.eonStatuses[currentEonStatusIndex].deposit.toByteArray())
     }
 
     internal fun addDepositTransaction(hash:Hash,transaction: ChainTransaction){
@@ -131,6 +132,7 @@ class HubStatus {
 
     internal fun nextEon(eon: Eon, path: AMTreeProof) {
         val currentUpdate = this.currentUpdate(eon)
+        this.allotment += this.eonStatuses[currentEonStatusIndex].deposit
         this.allotment += currentUpdate.receiveAmount
         this.allotment -= currentUpdate.sendAmount
         if (this.withdrawalStatus?.eon == eon.id - 2) {
@@ -192,6 +194,7 @@ class HubStatus {
 
     internal fun getAvailableCoin(eon: Eon): BigInteger {
         var allotment = this.allotment
+        allotment+=this.eonStatuses[currentEonStatusIndex].deposit
         if (this.withdrawalStatus != null) {
             allotment -= this.withdrawalStatus?.withdrawalAmount?:BigInteger.ZERO
         }
@@ -230,6 +233,11 @@ class HubStatus {
                     eonStatuses[i].transactionHistory.add(transaction!!)
                     eonStatuses[i].transactionMap.put(transaction.hash(),transaction!!)
                 }
+            }
+
+            val depositBytes=ResourceManager.instance(account.address.toBytes().toHEXString()).dataStore.get("deposit-${eon-i}".toByteArray())
+            if(depositBytes!=null){
+                eonStatuses[i].deposit=depositBytes.toBigInteger()
             }
         }
         this.currentEonStatusIndex =0
