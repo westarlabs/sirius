@@ -32,7 +32,7 @@ class Wallet<T : ChainTransaction, A : ChainAccount> {
         blockChain = BlockChain(chain,hub,contract,account)
 
         blockChain.startWatch=true
-        blockChain.watchTransaction()
+        blockChain.watachBlock()
 
     }
 

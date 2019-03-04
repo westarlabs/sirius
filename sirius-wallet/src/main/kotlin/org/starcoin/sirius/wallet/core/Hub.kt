@@ -107,6 +107,7 @@ class Hub <T : ChainTransaction, A : ChainAccount> {
         GlobalScope.launch {
             eonChannel?.send(ClientEventType.CANCEL_WITHDRAWAL)
         }
+
         LOG.info("cancel withdrawal")
     }
 

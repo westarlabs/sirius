@@ -30,9 +30,19 @@ class HubStatus {
 
     private val lastIndex = -1
 
+    private val withdrawalKey="withdrawal".toByteArray()
+
     private var depositingTransactions: MutableMap<Hash, ChainTransaction> = mutableMapOf()
 
     internal var withdrawalStatus: WithdrawalStatus? = null
+    set(value){
+        if(value!=null){
+            ResourceManager.instance(account.address.toBytes().toHEXString()).dataStore.put(withdrawalKey,value.toProtobuf())
+        }else{
+            ResourceManager.instance(account.address.toBytes().toHEXString()).dataStore.delete(withdrawalKey)
+        }
+        field = value
+    }
 
     internal var update:Update?=null
     set(value){
@@ -224,6 +234,12 @@ class HubStatus {
         }
         this.currentEonStatusIndex =0
         val allotBytes=ResourceManager.instance(account.address.toBytes().toHEXString()).dataStore.get("allot-${this.eon.id}".toByteArray())
+
+        val withdrawalBytes=ResourceManager.instance(account.address.toBytes().toHEXString()).dataStore.get(withdrawalKey)
+        if(withdrawalBytes!=null){
+            this.withdrawalStatus=WithdrawalStatus.parseFromProtobuf(withdrawalBytes)
+        }
+
         this.allotment=allotBytes?.toBigInteger()?: BigInteger.ZERO
     }
 }
