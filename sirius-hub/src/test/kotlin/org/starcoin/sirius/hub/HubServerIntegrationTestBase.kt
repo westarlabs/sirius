@@ -93,7 +93,7 @@ abstract class HubServerIntegrationTestBase<T : ChainTransaction, A : ChainAccou
         this.eon.set(contractHubInfo.latestEon)
 
         hubService = HubServiceStub(
-            HubServiceGrpc.newBlockingStub(
+            HubServiceGrpc.newStub(
                 InProcessChannelBuilder.forName(configuration.rpcBind.toString()).build()
             )
         )
@@ -373,46 +373,46 @@ abstract class HubServerIntegrationTestBase<T : ChainTransaction, A : ChainAccou
     }
 
     @Test
-    fun testStealTx() {
-        val a0 = this.createAndInitLocalAccount()
-        val a1 = this.createAndInitLocalAccount()
-        this.hubService.hubMaliciousFlag = EnumSet.of(HubService.HubMaliciousFlag.STEAL_TRANSACTION)
+    fun testStealTx() = runBlocking<Unit> {
+        val a0 = createAndInitLocalAccount()
+        val a1 = createAndInitLocalAccount()
+        hubService.hubMaliciousFlag = EnumSet.of(HubService.HubMaliciousFlag.STEAL_TRANSACTION)
 
         val depositAmount = 100.toBigInteger()
-        this.deposit(a0, depositAmount, true)
-        this.waitToNextEon()
+        deposit(a0, depositAmount, true)
+        waitToNextEon()
         // a1 transfer to a0, but hub not really update global state tree.
-        val tx = this.offchainTransfer(a0, a1, depositAmount)
+        val tx = offchainTransfer(a0, a1, depositAmount)
         waitToNextEon()
         Assert.assertEquals(
             depositAmount,
-            this.hubService.getHubAccount(a0.address)?.allotment
+            hubService.getHubAccount(a0.address)?.allotment
         )
         Assert.assertEquals(
             0.toBigInteger(),
-            this.hubService.getHubAccount(a1.address)?.allotment
+            hubService.getHubAccount(a1.address)?.allotment
         )
 
-        this.transferDeliveryChallenge(a0, tx)
+        transferDeliveryChallenge(a0, tx)
         waitToNextEon(false)
     }
 
     @Test
-    fun testStealTxIOU() {
-        val a0 = this.createAndInitLocalAccount()
-        val a1 = this.createAndInitLocalAccount()
-        this.hubService.hubMaliciousFlag = EnumSet.of(HubService.HubMaliciousFlag.STEAL_TRANSACTION_IOU)
+    fun testStealTxIOU() = runBlocking<Unit> {
+        val a0 = createAndInitLocalAccount()
+        val a1 = createAndInitLocalAccount()
+        hubService.hubMaliciousFlag = EnumSet.of(HubService.HubMaliciousFlag.STEAL_TRANSACTION_IOU)
 
         val depositAmount = 100.toBigInteger()
-        this.deposit(a0, depositAmount, true)
-        this.waitToNextEon()
-        // a1 transfer to a0, but hub change to other user.
-        val tx = this.offchainTransfer(a0, a1, depositAmount, false)
+        deposit(a0, depositAmount, true)
         waitToNextEon()
-        Assert.assertEquals(0.toBigInteger(), this.hubService.getHubAccount(a0.address)?.allotment)
-        Assert.assertEquals(0.toBigInteger(), this.hubService.getHubAccount(a1.address)?.allotment)
+        // a1 transfer to a0, but hub change to other user.
+        val tx = offchainTransfer(a0, a1, depositAmount, false)
+        waitToNextEon()
+        Assert.assertEquals(0.toBigInteger(), hubService.getHubAccount(a0.address)?.allotment)
+        Assert.assertEquals(0.toBigInteger(), hubService.getHubAccount(a1.address)?.allotment)
 
-        this.transferDeliveryChallenge(a0, tx)
+        transferDeliveryChallenge(a0, tx)
         waitToNextEon(false)
     }
 
@@ -591,7 +591,9 @@ abstract class HubServerIntegrationTestBase<T : ChainTransaction, A : ChainAccou
         }
         this.localAccounts.clear()
         this.watchHubJob.cancel()
-        this.hubService.resetHubMaliciousFlag()
+        runBlocking {
+            hubService.resetHubMaliciousFlag()
+        }
         this.hubServer.stop()
         this.watchBlockJob.cancel()
         this.chain.stop()

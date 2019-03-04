@@ -20,17 +20,18 @@ class HubRpcService(val hubService: HubService) :
 
     companion object : WithLogging()
 
-    private fun <V> doResponse(responseObserver: StreamObserver<V>, action: () -> V?) {
-        try {
-            val result = action()
-            result?.let {
-                responseObserver.onNext(result)
-                responseObserver.onCompleted()
-            } ?: responseObserver.onError(StatusRuntimeException(Status.NOT_FOUND))
-        } catch (e: Exception) {
-            this.doResponseError(responseObserver, e)
+    private fun <V> doResponse(responseObserver: StreamObserver<V>, action: suspend () -> V?) {
+        GlobalScope.launch(Dispatchers.IO) {
+            try {
+                val result = action()
+                result?.let {
+                    responseObserver.onNext(result)
+                    responseObserver.onCompleted()
+                } ?: responseObserver.onError(StatusRuntimeException(Status.NOT_FOUND))
+            } catch (e: Exception) {
+                doResponseError(responseObserver, e)
+            }
         }
-
     }
 
     private fun doResponseError(responseObserver: StreamObserver<*>, e: Exception) {

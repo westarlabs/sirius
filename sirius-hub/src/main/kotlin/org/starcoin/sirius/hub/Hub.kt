@@ -13,36 +13,36 @@ interface Hub {
     val hubInfo: HubInfo
 
     //return previous Flags
-    fun resetHubMaliciousFlag(): EnumSet<HubService.HubMaliciousFlag>
+    suspend fun resetHubMaliciousFlag(): EnumSet<HubService.HubMaliciousFlag>
 
     fun start()
 
     fun stop()
 
-    fun registerParticipant(participant: Participant, initUpdate: Update): Update
+    suspend fun registerParticipant(participant: Participant, initUpdate: Update): Update
 
-    fun deposit(participant: Address, amount: Long)
+    suspend fun deposit(participant: Address, amount: Long)
 
-    fun getHubAccount(address: Address): HubAccount?
+    suspend fun getHubAccount(address: Address): HubAccount?
 
-    fun getHubAccount(eon: Int, address: Address): HubAccount?
+    suspend fun getHubAccount(eon: Int, address: Address): HubAccount?
 
-    fun sendNewTransfer(iou: IOU)
+    suspend fun sendNewTransfer(iou: IOU)
 
-    fun receiveNewTransfer(receiverIOU: IOU)
+    suspend fun receiveNewTransfer(receiverIOU: IOU)
 
-    fun queryNewTransfer(address: Address): List<OffchainTransaction>
+    suspend fun queryNewTransfer(address: Address): List<OffchainTransaction>
 
-    fun getProof(address: Address): AMTreeProof?
+    suspend fun getProof(address: Address): AMTreeProof?
 
-    fun getProof(eon: Int, address: Address): AMTreeProof?
+    suspend fun getProof(eon: Int, address: Address): AMTreeProof?
 
     fun currentEon(): Eon?
 
-    fun watch(address: Address): ReceiveChannel<HubEvent> {
+    suspend fun watch(address: Address): ReceiveChannel<HubEvent> {
         return this.watch { event -> event.isPublicEvent || event.address == address }
     }
 
-    fun watch(predicate: (HubEvent) -> Boolean): ReceiveChannel<HubEvent>
+    suspend fun watch(predicate: (HubEvent) -> Boolean): ReceiveChannel<HubEvent>
 
 }

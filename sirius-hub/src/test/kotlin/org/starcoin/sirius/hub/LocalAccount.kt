@@ -1,13 +1,10 @@
 package org.starcoin.sirius.hub
 
 import io.grpc.inprocess.InProcessChannelBuilder
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.GlobalScope
-import kotlinx.coroutines.Job
+import kotlinx.coroutines.*
 import kotlinx.coroutines.channels.ReceiveChannel
 import kotlinx.coroutines.channels.actor
 import kotlinx.coroutines.channels.consumeEach
-import kotlinx.coroutines.launch
 import org.starcoin.proto.HubServiceGrpc
 import org.starcoin.sirius.channel.EventBus
 import org.starcoin.sirius.core.*
@@ -56,7 +53,7 @@ class LocalAccount<T : ChainTransaction, A : ChainAccount>(
         configuration: Configuration
     ) : this(
         chainAccount, chain, contract, owner, HubServiceStub(
-            HubServiceGrpc.newBlockingStub(
+            HubServiceGrpc.newStub(
                 InProcessChannelBuilder.forName(configuration.rpcBind.toString()).build()
             )
         )
@@ -164,20 +161,20 @@ class LocalAccount<T : ChainTransaction, A : ChainAccount>(
         return tx
     }
 
-    fun init() {
+    fun init() = runBlocking {
         val currentBlockNumber = chain.getBlockNumber()
-        val contractHubInfo = this.contract.queryHubInfo(this.chainAccount)
+        val contractHubInfo = contract.queryHubInfo(chainAccount)
         val blocksPerEon = contractHubInfo.blocksPerEon
         val startBlockNumber = contractHubInfo.startBlockNumber.longValueExact()
         val currentEon = Eon.calculateEon(startBlockNumber, currentBlockNumber, blocksPerEon)
-        val update = Update(currentEon.id, 0, 0, 0)
-        update.sign(key)
-        this.state = LocalEonState(this.state, currentEon.id, update)
+        val newUpdate = Update(currentEon.id, 0, 0, 0)
+        newUpdate.sign(key)
+        state = LocalEonState(state, currentEon.id, newUpdate)
         val updateReturn =
-            hubService.registerParticipant(participant, update)
-        this.update = updateReturn
-        this.hubAccount = hubService.getHubAccount(this.address)
-        this.hubEventJob = GlobalScope.launch(Dispatchers.IO) {
+            hubService.registerParticipant(participant, newUpdate)
+        update = updateReturn
+        hubAccount = hubService.getHubAccount(address)
+        hubEventJob = GlobalScope.launch(Dispatchers.IO) {
             val channel = hubService.watch(address)
             for (event in channel) {
                 LOG.info("$address onEvent: $event")
@@ -192,52 +189,9 @@ class LocalAccount<T : ChainTransaction, A : ChainAccount>(
         }
     }
 
-    private fun processHubEvents() {
-
-    }
-
     fun watch(filter: (HubEvent) -> Boolean = { true }): ReceiveChannel<HubEvent> {
         return this.eventBus.subscribe(filter)
     }
-
-
-//    suspend fun deposit(amount: BigInteger) {
-//        val previousAccount = hubService.getHubAccount(a.address)!!
-//        // deposit
-//
-//        val hubEventFuture =
-//            HubEventFuture { event -> event.type === HubEventType.NEW_DEPOSIT && event.address == a.address }
-//        a.watch(hubEventFuture)
-//
-//        val txDeferred = chain.submitTransaction(
-//            a.chainAccount,
-//            chain.newTransaction(a.chainAccount, contract.contractAddress, amount)
-//        )
-//
-//        val receipt = txDeferred.awaitTimout()
-//        Assert.assertTrue(receipt.status)
-//
-//        try {
-//            val hubEvent = hubEventFuture.get(4, TimeUnit.SECONDS)
-//            if (expectSuccess) {
-//                Assert.assertEquals(amount, hubEvent.getPayload<Deposit>().amount)
-//            } else {
-//                Assert.fail("expect get Deposit event timeout")
-//            }
-//        } catch (e: Exception) {
-//            if (expectSuccess) {
-//                Assert.fail(e.message)
-//            }
-//        }
-//        //TODO ensure
-//        HubServerIntegrationTestBase.sleep(1000)
-//        val hubAccount = hubService.getHubAccount(a.address)!!
-//        Assert.assertEquals(
-//            if (expectSuccess) previousAccount.deposit + amount else previousAccount.deposit,
-//            hubAccount.deposit
-//        )
-//        a.hubAccount = hubAccount
-//    }
 
     fun destroy() {
         this.hubEventJob?.cancel()

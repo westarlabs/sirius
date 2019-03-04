@@ -12,7 +12,6 @@ import org.starcoin.sirius.channel.EventBus
 import org.starcoin.sirius.core.*
 import org.starcoin.sirius.protocol.*
 import org.starcoin.sirius.util.WithLogging
-import java.math.BigInteger
 import java.util.*
 import java.util.concurrent.CompletableFuture
 import java.util.concurrent.ConcurrentHashMap
@@ -24,7 +23,7 @@ sealed class HubAction {
         val tx: OffchainTransaction,
         val fromUpdate: Update,
         val toUpdate: Update,
-        val extAction: () -> Unit = {}
+        val response: Channel<Exception?>
     ) : HubAction()
 
     data class BlockAction<T : ChainTransaction>(val block: Block<T>) : HubAction()
@@ -97,10 +96,14 @@ class HubImpl<A : ChainAccount>(
                     }
                 }
                 is HubAction.OffchainTransactionAction -> {
-                    processOffchainTransaction(
-                        it.tx, it.fromUpdate, it.toUpdate
-                    )
-                    it.extAction()
+                    try {
+                        confirmOffchainTransaction(
+                            it.tx, it.fromUpdate, it.toUpdate
+                        )
+                        it.response.send(null)
+                    } catch (e: Exception) {
+                        it.response.send(e)
+                    }
                 }
                 is HubAction.BlockAction<*> -> {
                     processBlock(it.block)
@@ -135,11 +138,14 @@ class HubImpl<A : ChainAccount>(
 
     private var maliciousFlags: EnumSet<HubService.HubMaliciousFlag> =
         EnumSet.noneOf(HubService.HubMaliciousFlag::class.java)
+
     private val gang: ParticipantGang by lazy {
         val gang = ParticipantGang.random()
         val update = Update(UpdateData(currentEon().id))
         update.sign(gang.privateKey)
-        registerParticipant(gang.participant, update)
+        runBlocking {
+            registerParticipant(gang.participant, update)
+        }
         gang
     }
 
@@ -178,7 +184,7 @@ class HubImpl<A : ChainAccount>(
         }
     }
 
-    fun getEonState(eon: Int): EonState? {
+    private fun getEonState(eon: Int): EonState? {
         var eonState = this.eonState
         if (eonState.eon < eon) {
             return null
@@ -195,7 +201,7 @@ class HubImpl<A : ChainAccount>(
         return null
     }
 
-    override fun registerParticipant(participant: Participant, initUpdate: Update): Update {
+    override suspend fun registerParticipant(participant: Participant, initUpdate: Update): Update {
         this.checkReady()
         Preconditions.checkArgument(initUpdate.verifySig(participant.publicKey))
         if (this.getHubAccount(participant.address) != null) {
@@ -207,17 +213,17 @@ class HubImpl<A : ChainAccount>(
         return initUpdate
     }
 
-    override fun deposit(participant: Address, amount: Long) {
+    override suspend fun deposit(participant: Address, amount: Long) {
         val account = this.eonState.getAccount(participant) ?: assertAccountNotNull(participant)
         account.addDeposit(amount)
         this.eonState.saveAccount(account)
     }
 
-    override fun getHubAccount(address: Address): HubAccount? {
+    override suspend fun getHubAccount(address: Address): HubAccount? {
         return this.getHubAccount(this.eonState.eon, address)
     }
 
-    override fun getHubAccount(eon: Int, address: Address): HubAccount? {
+    override suspend fun getHubAccount(eon: Int, address: Address): HubAccount? {
         this.checkReady()
         return this.getEonState(eon)?.getAccount(address)
     }
@@ -227,18 +233,16 @@ class HubImpl<A : ChainAccount>(
         return this.eonState.getAccount(predicate)
     }
 
-    private suspend fun processOffchainTransaction(
-        transaction: OffchainTransaction, fromUpdate: Update, toUpdate: Update
+    private suspend fun confirmOffchainTransaction(
+        tx: OffchainTransaction, fromUpdate: Update, toUpdate: Update
     ) {
-        LOG.info(
-            "processOffchainTransaction from:" + transaction.from + ", to:" + transaction.to
-        )
-        val from = this.getHubAccount(transaction.from) ?: assertAccountNotNull(transaction.from)
-        val to = this.getHubAccount(transaction.to) ?: assertAccountNotNull(transaction.from)
-        strategy.processOffchainTransaction(transaction)
+        LOG.info("confirmOffchainTransaction from:${tx.from} , to: ${tx.to}, tx:${tx.hash()}")
+        val from = this.getHubAccount(tx.from) ?: assertAccountNotNull(tx.from)
+        val to = this.getHubAccount(tx.to) ?: assertAccountNotNull(tx.from)
+        strategy.processOffchainTransaction(tx)
         {
-            from.confirmTransaction(transaction, fromUpdate)
-            to.confirmTransaction(transaction, toUpdate)
+            from.confirmTransaction(tx, fromUpdate)
+            to.confirmTransaction(tx, toUpdate)
         }
 
         fromUpdate.signHub(this.owner.key)
@@ -256,91 +260,44 @@ class HubImpl<A : ChainAccount>(
         this.eventBus.send(event)
     }
 
-    private fun checkBalance(account: HubAccount, amount: BigInteger) {
-        Preconditions.checkState(account.balance >= amount)
-    }
-
-    fun checkIOU(iou: IOU, isSender: Boolean) {
-        this.checkReady()
-        val transaction = iou.transaction
-        Preconditions.checkArgument(transaction.amount > BigInteger.ZERO, "transaction amount should > 0")
-        val sender = this.getHubAccount(transaction.from) ?: assertAccountNotNull(transaction.from)
-        val to = this.getHubAccount(transaction.to) ?: assertAccountNotNull(transaction.from)
-        Preconditions.checkArgument(
-            transaction.verify(sender.publicKey), "transaction verify fail."
-        )
-        this.checkBalance(sender, transaction.amount)
-        if (isSender) {
-            checkUpdate(sender, iou)
-        } else {
-            checkUpdate(to, iou)
-        }
-    }
-
-    override fun sendNewTransfer(iou: IOU) {
-        //if (this.eonState.getIOUByFrom(iou.transaction.from) != null) throw StatusRuntimeException(Status.ALREADY_EXISTS)
-        val deferred = GlobalScope.async {
-            val response = Channel<Exception?>()
-            hubActor.send(HubAction.IOUAction(iou, response))
-            response.receiveOrNull()
-        }
-        //TODO async
-        val exception = runBlocking {
-            deferred.await()
-        }
+    override suspend fun sendNewTransfer(iou: IOU) {
+        val response = Channel<Exception?>()
+        hubActor.send(HubAction.IOUAction(iou, response))
+        val exception = response.receive()
         if (exception != null) {
             throw exception
         }
     }
 
-    override fun receiveNewTransfer(receiverIOU: IOU) {
-        val iou = this.eonState.getPendingSendTx(receiverIOU.transaction.from) ?: throw StatusRuntimeException(
+    override suspend fun receiveNewTransfer(receiverIOU: IOU) {
+        val senderIOU = this.eonState.getPendingSendTx(receiverIOU.transaction.from) ?: throw StatusRuntimeException(
             Status.NOT_FOUND
         )
-        this.checkIOU(receiverIOU, false)
-        GlobalScope.launch {
-            hubActor.send(
-                HubAction.OffchainTransactionAction(
-                    receiverIOU.transaction,
-                    iou.update,
-                    receiverIOU.update
-                )
+        Preconditions.checkArgument(receiverIOU.transaction == senderIOU.transaction, "Transaction has bean modified")
+        val response = Channel<Exception?>()
+        hubActor.send(
+            HubAction.OffchainTransactionAction(
+                receiverIOU.transaction,
+                senderIOU.update,
+                receiverIOU.update,
+                response
             )
+        )
+        val exception = response.receive()
+        if (exception != null) {
+            throw exception
         }
-
     }
 
-    override fun queryNewTransfer(address: Address): List<OffchainTransaction> {
+    override suspend fun queryNewTransfer(address: Address): List<OffchainTransaction> {
         return eonState.getPendingReceiveTxs(address)
     }
 
-    private fun checkUpdate(account: HubAccount, iou: IOU) {
-        Preconditions.checkState(
-            iou.update.verifySig(account.publicKey), "Update signature miss match."
-        )
-        LOG.info(
-            String.format(
-                "iou version %d,server version %d ",
-                iou.update.version, account.update.version
-            )
-        )
-        Preconditions.checkState(
-            iou.update.version > account.update.version,
-            "Update version should > previous version"
-        )
-        val txs = ArrayList(account.getTransactions())
-        txs.add(iou.transaction)
-        val merkleTree = MerkleTree(txs)
-        Preconditions.checkState(
-            iou.update.root.equals(merkleTree.hash()), "Merkle root miss match."
-        )
-    }
-
-    override fun getProof(address: Address): AMTreeProof? {
+    override suspend fun getProof(address: Address): AMTreeProof? {
         return this.getProof(this.eonState.eon, address)
     }
 
-    override fun getProof(eon: Int, address: Address): AMTreeProof? {
+    override suspend fun getProof(eon: Int, address: Address): AMTreeProof? {
         this.checkReady()
         val eonState = this.getEonState(eon) ?: return null
         return eonState.state.getMembershipProof(address)
@@ -354,11 +311,11 @@ class HubImpl<A : ChainAccount>(
         Preconditions.checkState(this.ready, "Hub is not ready for service, please wait.")
     }
 
-    override fun watch(address: Address): ReceiveChannel<HubEvent> {
+    override suspend fun watch(address: Address): ReceiveChannel<HubEvent> {
         return this.watch { it.isPublicEvent || it.address == address }
     }
 
-    override fun watch(predicate: (HubEvent) -> Boolean): ReceiveChannel<HubEvent> {
+    override suspend fun watch(predicate: (HubEvent) -> Boolean): ReceiveChannel<HubEvent> {
         return this.eventBus.subscribe(predicate)
     }
 
@@ -564,7 +521,7 @@ class HubImpl<A : ChainAccount>(
         }
     }
 
-    override fun resetHubMaliciousFlag(): EnumSet<HubService.HubMaliciousFlag> {
+    override suspend fun resetHubMaliciousFlag(): EnumSet<HubService.HubMaliciousFlag> {
         val result = this.hubMaliciousFlag
         this.maliciousFlags = EnumSet.noneOf(HubService.HubMaliciousFlag::class.java)
         return result
@@ -624,15 +581,14 @@ class HubImpl<A : ChainAccount>(
         suspend fun processSendNewTransaction(sendIOU: IOU, normalAction: suspend () -> Unit) {
             if (maliciousFlags.contains(HubService.HubMaliciousFlag.STEAL_TRANSACTION_IOU)) {
                 LOG.info("steal transaction iou from:" + sendIOU.transaction.from)
-                checkIOU(sendIOU, true)
+                val from = getHubAccount(sendIOU.transaction.from) ?: assertAccountNotNull(sendIOU.transaction.from)
+                from.checkIOU(sendIOU)
                 val tx = OffchainTransaction(
                     sendIOU.transaction.eon,
                     sendIOU.transaction.from,
                     gang.participant.address,
                     sendIOU.transaction.amount
                 )
-
-                val from = getHubAccount(sendIOU.transaction.from) ?: assertAccountNotNull(sendIOU.transaction.from)
 
                 val to = getHubAccount(gang.participant.address) ?: assertAccountNotNull(gang.participant.address)
                 val sendTxs = ArrayList(to.getTransactions())
@@ -644,8 +600,8 @@ class HubImpl<A : ChainAccount>(
 
                 val fromUpdate = sendIOU.update
 
-                from.confirmTransaction(sendIOU.transaction, fromUpdate)
-                to.confirmTransaction(tx, toUpdate)
+                from.confirmTransaction(sendIOU.transaction, fromUpdate, true)
+                to.confirmTransaction(tx, toUpdate, true)
 
                 fromUpdate.signHub(owner.key)
                 toUpdate.signHub(owner.key)

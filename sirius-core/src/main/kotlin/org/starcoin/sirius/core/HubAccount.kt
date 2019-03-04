@@ -58,7 +58,7 @@ data class AccountEonState(
 
 
     fun isEmpty(): Boolean {
-        return this.txs.isEmpty() && update.isEmpty() && allotment == BigInteger.ZERO && deposit == BigInteger.ZERO && withdraw == BigInteger.ZERO
+        return this.txs.isEmpty() && this.pendingReceiveTxs.isEmpty() && this.pendingSendTxs.isEmpty() && update.isEmpty() && allotment == BigInteger.ZERO && deposit == BigInteger.ZERO && withdraw == BigInteger.ZERO
     }
 
     internal fun checkBalance(amount: BigInteger = BigInteger.ZERO): Boolean {
@@ -82,6 +82,16 @@ data class AccountEonState(
             if (MockUtils.nextBoolean()) {
                 for (i in 1..MockUtils.nextInt(2, 10)) {
                     state.txs.add(OffchainTransaction.mock())
+                }
+            }
+            if (MockUtils.nextBoolean()) {
+                for (i in 1..MockUtils.nextInt(2, 10)) {
+                    state.pendingReceiveTxs.add(OffchainTransaction.mock())
+                }
+            }
+            if (MockUtils.nextBoolean()) {
+                for (i in 1..MockUtils.nextInt(2, 10)) {
+                    state.pendingSendTxs.add(IOU.mock())
                 }
             }
             return state
@@ -156,16 +166,35 @@ data class HubAccount(
         return this.eonState.pendingReceiveTxs.removeIf { it.hash() == txHash }
     }
 
-    fun confirmTransaction(tx: OffchainTransaction, update: Update) {
-        //TODO check pending tx exist.
-        this.checkUpdate(tx, update)
+    fun confirmTransaction(tx: OffchainTransaction, update: Update, skipCheck: Boolean = false) {
+        var isSender = false
+        if (!skipCheck) {
+            when {
+                tx.from == this.address -> {
+                    isSender = true;Preconditions.checkState(
+                        this.getPendingSendTx()?.transaction == tx,
+                        "Can not find pending tx:${tx.hash()}"
+                    )
+                }
+                tx.to == this.address -> Preconditions.checkState(this.getPendingReceiveTxs().find { it.hash() == tx.hash() } != null,
+                    "Can not find tx:${tx.hash()}")
+                else -> throw IllegalArgumentException("Unexpected tx: ${tx.hash()}")
+            }
+            this.checkUpdate(tx, update)
+        }
         this.eonState.txs.add(tx)
         //TODO set update to val.
         this.update = update
-        if (tx.from == this.address) {
-            this.removePendingSendTx(tx.hash())
+        if (isSender) {
+            val remove = this.removePendingSendTx(tx.hash())
+            if (!skipCheck) {
+                Preconditions.checkState(remove)
+            }
         } else {
-            this.removePendingReceiveTx(tx.hash())
+            val remove = this.removePendingReceiveTx(tx.hash())
+            if (!skipCheck) {
+                Preconditions.checkState(remove)
+            }
         }
     }
 
@@ -225,7 +254,7 @@ data class HubAccount(
         return this.eonState.checkBalance(amount)
     }
 
-    private fun checkIOU(iou: IOU) {
+    fun checkIOU(iou: IOU) {
         val transaction = iou.transaction
         Preconditions.checkArgument(transaction.amount > BigInteger.ZERO, "transaction amount should > 0")
         Preconditions.checkArgument(transaction.from != transaction.to, "can not transfer to self.")
