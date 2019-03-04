@@ -3,7 +3,7 @@ package org.starcoin.sirius.hub
 import kotlinx.coroutines.channels.ReceiveChannel
 import kotlinx.coroutines.channels.map
 import org.starcoin.sirius.core.*
-import org.starcoin.sirius.hub.Hub.HubMaliciousFlag
+import org.starcoin.sirius.hub.HubService.HubMaliciousFlag
 import org.starcoin.sirius.protocol.Chain
 import org.starcoin.sirius.protocol.ChainAccount
 import org.starcoin.sirius.protocol.HubContract

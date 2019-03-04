@@ -169,17 +169,17 @@ class HubRpcService(val hubService: HubService) :
     ) {
 
         doResponse(responseObserver) {
-            val enumSet = Hub.HubMaliciousFlag.of(request)
+            val enumSet = HubService.HubMaliciousFlag.of(request)
             this.hubService.hubMaliciousFlag = enumSet
-            Hub.HubMaliciousFlag.toProto(this.hubService.hubMaliciousFlag)
+            HubService.HubMaliciousFlag.toProto(this.hubService.hubMaliciousFlag)
         }
     }
 
     override fun getMaliciousFlags(request: Empty?, responseObserver: StreamObserver<Starcoin.HubMaliciousFlags>) {
-        doResponse(responseObserver) { Hub.HubMaliciousFlag.toProto(this.hubService.hubMaliciousFlag) }
+        doResponse(responseObserver) { HubService.HubMaliciousFlag.toProto(this.hubService.hubMaliciousFlag) }
     }
 
     override fun resetMaliciousFlags(request: Empty?, responseObserver: StreamObserver<Starcoin.HubMaliciousFlags>) {
-        doResponse(responseObserver) { Hub.HubMaliciousFlag.toProto(this.hubService.resetHubMaliciousFlag()) }
+        doResponse(responseObserver) { HubService.HubMaliciousFlag.toProto(this.hubService.resetHubMaliciousFlag()) }
     }
 }

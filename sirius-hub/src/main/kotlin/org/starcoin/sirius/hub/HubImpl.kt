@@ -127,13 +127,14 @@ class HubImpl<A : ChainAccount>(
     override val stateRoot: AMTreeNode
         get() = this.eonState.state.root
 
-    override var hubMaliciousFlag: EnumSet<Hub.HubMaliciousFlag>
+    override var hubMaliciousFlag: EnumSet<HubService.HubMaliciousFlag>
         get() = EnumSet.copyOf(this.maliciousFlags)
         set(flags) {
             this.maliciousFlags.addAll(flags)
         }
 
-    private var maliciousFlags: EnumSet<Hub.HubMaliciousFlag> = EnumSet.noneOf(Hub.HubMaliciousFlag::class.java)
+    private var maliciousFlags: EnumSet<HubService.HubMaliciousFlag> =
+        EnumSet.noneOf(HubService.HubMaliciousFlag::class.java)
     private val gang: ParticipantGang by lazy {
         val gang = ParticipantGang.random()
         val update = Update(UpdateData(currentEon().id))
@@ -563,9 +564,9 @@ class HubImpl<A : ChainAccount>(
         }
     }
 
-    override fun resetHubMaliciousFlag(): EnumSet<Hub.HubMaliciousFlag> {
+    override fun resetHubMaliciousFlag(): EnumSet<HubService.HubMaliciousFlag> {
         val result = this.hubMaliciousFlag
-        this.maliciousFlags = EnumSet.noneOf(Hub.HubMaliciousFlag::class.java)
+        this.maliciousFlags = EnumSet.noneOf(HubService.HubMaliciousFlag::class.java)
         return result
     }
 
@@ -574,7 +575,7 @@ class HubImpl<A : ChainAccount>(
 
         suspend fun processDeposit(deposit: Deposit, normalAction: suspend () -> Unit) {
             // steal deposit to a hub gang Participant
-            if (maliciousFlags.contains(Hub.HubMaliciousFlag.STEAL_DEPOSIT)) {
+            if (maliciousFlags.contains(HubService.HubMaliciousFlag.STEAL_DEPOSIT)) {
                 LOG.info(
                     gang.participant.address.toString()
                             + " steal deposit from "
@@ -591,7 +592,7 @@ class HubImpl<A : ChainAccount>(
 
         suspend fun processWithdrawal(from: Address, withdrawal: Withdrawal, normalAction: suspend () -> Unit) {
             // steal withdrawal from a random user who has enough balance.
-            if (maliciousFlags.contains(Hub.HubMaliciousFlag.STEAL_WITHDRAWAL)) {
+            if (maliciousFlags.contains(HubService.HubMaliciousFlag.STEAL_WITHDRAWAL)) {
                 val hubAccount =
                     getHubAccount { account -> (account.address != from && account.balance >= withdrawal.amount) }
                 if (hubAccount != null) {
@@ -612,7 +613,7 @@ class HubImpl<A : ChainAccount>(
 
         suspend fun processOffchainTransaction(tx: OffchainTransaction, normalAction: suspend () -> Unit) {
             // steal transaction, not real update account's tx.
-            if (maliciousFlags.contains(Hub.HubMaliciousFlag.STEAL_TRANSACTION)) {
+            if (maliciousFlags.contains(HubService.HubMaliciousFlag.STEAL_TRANSACTION)) {
                 LOG.info("steal transaction:" + tx.toJSON())
                 // do nothing
             } else {
@@ -621,7 +622,7 @@ class HubImpl<A : ChainAccount>(
         }
 
         suspend fun processSendNewTransaction(sendIOU: IOU, normalAction: suspend () -> Unit) {
-            if (maliciousFlags.contains(Hub.HubMaliciousFlag.STEAL_TRANSACTION_IOU)) {
+            if (maliciousFlags.contains(HubService.HubMaliciousFlag.STEAL_TRANSACTION_IOU)) {
                 LOG.info("steal transaction iou from:" + sendIOU.transaction.from)
                 checkIOU(sendIOU, true)
                 val tx = OffchainTransaction(

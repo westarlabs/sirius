@@ -342,7 +342,7 @@ abstract class HubServerIntegrationTestBase<T : ChainTransaction, A : ChainAccou
     fun testStealDeposit() {
         val a0 = this.createAndInitLocalAccount()
         this.waitToNextEon()
-        this.hubService.hubMaliciousFlag = EnumSet.of(Hub.HubMaliciousFlag.STEAL_DEPOSIT)
+        this.hubService.hubMaliciousFlag = EnumSet.of(HubService.HubMaliciousFlag.STEAL_DEPOSIT)
 
         val depositAmount = 100.toBigInteger()
         this.deposit(a0, depositAmount, false)
@@ -357,7 +357,7 @@ abstract class HubServerIntegrationTestBase<T : ChainTransaction, A : ChainAccou
     fun testStealWithdrawal() {
         val a0 = this.createAndInitLocalAccount()
         val a1 = this.createAndInitLocalAccount()
-        this.hubService.hubMaliciousFlag = EnumSet.of(Hub.HubMaliciousFlag.STEAL_WITHDRAWAL)
+        this.hubService.hubMaliciousFlag = EnumSet.of(HubService.HubMaliciousFlag.STEAL_WITHDRAWAL)
 
         val depositAmount: BigInteger = 100.toBigInteger()
         this.deposit(a0, depositAmount, true)
@@ -376,7 +376,7 @@ abstract class HubServerIntegrationTestBase<T : ChainTransaction, A : ChainAccou
     fun testStealTx() {
         val a0 = this.createAndInitLocalAccount()
         val a1 = this.createAndInitLocalAccount()
-        this.hubService.hubMaliciousFlag = EnumSet.of(Hub.HubMaliciousFlag.STEAL_TRANSACTION)
+        this.hubService.hubMaliciousFlag = EnumSet.of(HubService.HubMaliciousFlag.STEAL_TRANSACTION)
 
         val depositAmount = 100.toBigInteger()
         this.deposit(a0, depositAmount, true)
@@ -401,7 +401,7 @@ abstract class HubServerIntegrationTestBase<T : ChainTransaction, A : ChainAccou
     fun testStealTxIOU() {
         val a0 = this.createAndInitLocalAccount()
         val a1 = this.createAndInitLocalAccount()
-        this.hubService.hubMaliciousFlag = EnumSet.of(Hub.HubMaliciousFlag.STEAL_TRANSACTION_IOU)
+        this.hubService.hubMaliciousFlag = EnumSet.of(HubService.HubMaliciousFlag.STEAL_TRANSACTION_IOU)
 
         val depositAmount = 100.toBigInteger()
         this.deposit(a0, depositAmount, true)

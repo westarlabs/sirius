@@ -140,29 +140,29 @@ abstract class HubTestBase<T : ChainTransaction, A : ChainAccount> {
 
     @Test
     fun testSetMaliciousFlags() {
-        hub.hubMaliciousFlag = EnumSet.of(Hub.HubMaliciousFlag.STEAL_DEPOSIT)
+        hub.hubMaliciousFlag = EnumSet.of(HubService.HubMaliciousFlag.STEAL_DEPOSIT)
 
-        Assert.assertTrue(hub.hubMaliciousFlag.contains(Hub.HubMaliciousFlag.STEAL_DEPOSIT))
+        Assert.assertTrue(hub.hubMaliciousFlag.contains(HubService.HubMaliciousFlag.STEAL_DEPOSIT))
 
-        hub.hubMaliciousFlag = EnumSet.of(Hub.HubMaliciousFlag.STEAL_WITHDRAWAL)
-        hub.hubMaliciousFlag = EnumSet.of(Hub.HubMaliciousFlag.STEAL_TRANSACTION)
+        hub.hubMaliciousFlag = EnumSet.of(HubService.HubMaliciousFlag.STEAL_WITHDRAWAL)
+        hub.hubMaliciousFlag = EnumSet.of(HubService.HubMaliciousFlag.STEAL_TRANSACTION)
 
-        Assert.assertTrue(hub.hubMaliciousFlag.contains(Hub.HubMaliciousFlag.STEAL_DEPOSIT))
-        Assert.assertTrue(hub.hubMaliciousFlag.contains(Hub.HubMaliciousFlag.STEAL_WITHDRAWAL))
-        Assert.assertTrue(hub.hubMaliciousFlag.contains(Hub.HubMaliciousFlag.STEAL_TRANSACTION))
+        Assert.assertTrue(hub.hubMaliciousFlag.contains(HubService.HubMaliciousFlag.STEAL_DEPOSIT))
+        Assert.assertTrue(hub.hubMaliciousFlag.contains(HubService.HubMaliciousFlag.STEAL_WITHDRAWAL))
+        Assert.assertTrue(hub.hubMaliciousFlag.contains(HubService.HubMaliciousFlag.STEAL_TRANSACTION))
 
         hub.resetHubMaliciousFlag()
 
-        Assert.assertFalse(hub.hubMaliciousFlag.contains(Hub.HubMaliciousFlag.STEAL_DEPOSIT))
-        Assert.assertFalse(hub.hubMaliciousFlag.contains(Hub.HubMaliciousFlag.STEAL_WITHDRAWAL))
-        Assert.assertFalse(hub.hubMaliciousFlag.contains(Hub.HubMaliciousFlag.STEAL_TRANSACTION))
+        Assert.assertFalse(hub.hubMaliciousFlag.contains(HubService.HubMaliciousFlag.STEAL_DEPOSIT))
+        Assert.assertFalse(hub.hubMaliciousFlag.contains(HubService.HubMaliciousFlag.STEAL_WITHDRAWAL))
+        Assert.assertFalse(hub.hubMaliciousFlag.contains(HubService.HubMaliciousFlag.STEAL_TRANSACTION))
     }
 
     @Test
     fun testMaliciousStealDeposit() {
         this.register(a0)
-        hub.hubMaliciousFlag = EnumSet.of(Hub.HubMaliciousFlag.STEAL_DEPOSIT)
-        Assert.assertTrue(hub.hubMaliciousFlag.contains(Hub.HubMaliciousFlag.STEAL_DEPOSIT))
+        hub.hubMaliciousFlag = EnumSet.of(HubService.HubMaliciousFlag.STEAL_DEPOSIT)
+        Assert.assertTrue(hub.hubMaliciousFlag.contains(HubService.HubMaliciousFlag.STEAL_DEPOSIT))
         // deposit
         val amount = RandomUtils.nextLong(10, 100000).toBigInteger()
         this.deposit(a0, amount, false)
@@ -174,8 +174,8 @@ abstract class HubTestBase<T : ChainTransaction, A : ChainAccount> {
     fun testMaliciousStealTx() {
         this.register(a0)
         this.register(a1)
-        hub.hubMaliciousFlag = EnumSet.of(Hub.HubMaliciousFlag.STEAL_TRANSACTION)
-        Assert.assertTrue(hub.hubMaliciousFlag.contains(Hub.HubMaliciousFlag.STEAL_TRANSACTION))
+        hub.hubMaliciousFlag = EnumSet.of(HubService.HubMaliciousFlag.STEAL_TRANSACTION)
+        Assert.assertTrue(hub.hubMaliciousFlag.contains(HubService.HubMaliciousFlag.STEAL_TRANSACTION))
         // deposit
         val amount = RandomUtils.nextLong(10, 100000).toBigInteger()
         this.deposit(a0, amount, true)

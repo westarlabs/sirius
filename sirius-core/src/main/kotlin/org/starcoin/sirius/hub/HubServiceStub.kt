@@ -22,10 +22,10 @@ class HubServiceStub(private val originStub: HubServiceGrpc.HubServiceBlockingSt
     val stub: HubServiceGrpc.HubServiceBlockingStub
         get() = originStub.withDeadline(Deadline.after(timeoutMillis, TimeUnit.MILLISECONDS))
 
-    override var hubMaliciousFlag: EnumSet<Hub.HubMaliciousFlag>
-        get() = Hub.HubMaliciousFlag.of(stub.getMaliciousFlags(Empty.getDefaultInstance()))
+    override var hubMaliciousFlag: EnumSet<HubService.HubMaliciousFlag>
+        get() = HubService.HubMaliciousFlag.of(stub.getMaliciousFlags(Empty.getDefaultInstance()))
         set(value) {
-            stub.setMaliciousFlags(Hub.HubMaliciousFlag.toProto(value))
+            stub.setMaliciousFlags(HubService.HubMaliciousFlag.toProto(value))
         }
 
     override val hubInfo: HubInfo
@@ -115,8 +115,8 @@ class HubServiceStub(private val originStub: HubServiceGrpc.HubServiceBlockingSt
         stub.getHubAccount(address.toProto()).toSiriusObject()
     }
 
-    override fun resetHubMaliciousFlag(): EnumSet<Hub.HubMaliciousFlag> {
-        return Hub.HubMaliciousFlag.of(stub.resetMaliciousFlags(Empty.getDefaultInstance()))
+    override fun resetHubMaliciousFlag(): EnumSet<HubService.HubMaliciousFlag> {
+        return HubService.HubMaliciousFlag.of(stub.resetMaliciousFlags(Empty.getDefaultInstance()))
     }
 
     inline fun <reified T> catchEx(block: () -> T): T? {
