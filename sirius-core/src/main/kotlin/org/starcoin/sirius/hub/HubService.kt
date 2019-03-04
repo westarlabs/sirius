@@ -10,18 +10,18 @@ interface HubService {
     var hubMaliciousFlag: EnumSet<HubMaliciousFlag>
     val hubInfo: HubInfo
     fun start()
-    fun registerParticipant(participant: Participant, initUpdate: Update): Update
-    fun sendNewTransfer(iou: IOU)
-    fun receiveNewTransfer(receiverIOU: IOU)
-    fun queryNewTransfer(address: Address): List<OffchainTransaction>
-    fun querySignedUpdate(address: Address): Update?
-    fun querySignedUpdate(eon: Int, blockAddress: Address): Update?
-    fun getProof(address: Address): AMTreeProof?
-    fun getProof(eon: Int, blockAddress: Address): AMTreeProof?
-    fun watch(address: Address): ReceiveChannel<HubEvent>
-    fun watchHubRoot(): ReceiveChannel<HubRoot>
-    fun getHubAccount(address: Address): HubAccount?
-    fun resetHubMaliciousFlag(): EnumSet<HubMaliciousFlag>
+    suspend fun registerParticipant(participant: Participant, initUpdate: Update): Update
+    suspend fun sendNewTransfer(iou: IOU)
+    suspend fun receiveNewTransfer(receiverIOU: IOU)
+    suspend fun queryNewTransfer(address: Address): List<OffchainTransaction>
+    suspend fun querySignedUpdate(address: Address): Update?
+    suspend fun querySignedUpdate(eon: Int, blockAddress: Address): Update?
+    suspend fun getProof(address: Address): AMTreeProof?
+    suspend fun getProof(eon: Int, blockAddress: Address): AMTreeProof?
+    suspend fun watch(address: Address): ReceiveChannel<HubEvent>
+    suspend fun watchHubRoot(): ReceiveChannel<HubRoot>
+    suspend fun getHubAccount(address: Address): HubAccount?
+    suspend fun resetHubMaliciousFlag(): EnumSet<HubMaliciousFlag>
     fun stop()
 
     enum class HubMaliciousFlag constructor(private val protoFlag: Starcoin.HubMaliciousFlag) :

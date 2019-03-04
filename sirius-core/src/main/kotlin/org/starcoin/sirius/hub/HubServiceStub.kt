@@ -4,11 +4,11 @@ import com.google.protobuf.Empty
 import io.grpc.Deadline
 import io.grpc.Status
 import io.grpc.StatusRuntimeException
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.GlobalScope
+import io.grpc.stub.StreamObserver
+import kotlinx.coroutines.*
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.channels.ReceiveChannel
-import kotlinx.coroutines.launch
+import kotlinx.coroutines.channels.map
 import org.starcoin.proto.HubServiceGrpc
 import org.starcoin.proto.Starcoin
 import org.starcoin.sirius.core.*
@@ -16,20 +16,61 @@ import org.starcoin.sirius.util.WithLogging
 import java.util.*
 import java.util.concurrent.TimeUnit
 
-class HubServiceStub(private val originStub: HubServiceGrpc.HubServiceBlockingStub, val timeoutMillis: Long = 2000) :
+class DeferredStreamObserver<V>(val deferred: CompletableDeferred<V> = CompletableDeferred()) : StreamObserver<V>,
+    Deferred<V> by deferred {
+    override fun onNext(value: V) {
+        deferred.complete(value)
+    }
+
+    override fun onError(t: Throwable) {
+        deferred.completeExceptionally(t)
+    }
+
+    override fun onCompleted() {
+    }
+}
+
+class StreamObserverChannel<V>(val channel: Channel<V> = Channel()) : StreamObserver<V>, Channel<V> by channel {
+    var error: Throwable? = null
+
+    override fun onNext(value: V) {
+        GlobalScope.launch(Dispatchers.IO) {
+            channel.send(value)
+        }
+    }
+
+    override fun onError(t: Throwable?) {
+        this.error = t
+    }
+
+    override fun onCompleted() {
+        channel.close(error)
+    }
+}
+
+class HubServiceStub(private val originStub: HubServiceGrpc.HubServiceStub, private val timeoutMillis: Long = 2000) :
     HubService {
 
-    val stub: HubServiceGrpc.HubServiceBlockingStub
+    val stub: HubServiceGrpc.HubServiceStub
         get() = originStub.withDeadline(Deadline.after(timeoutMillis, TimeUnit.MILLISECONDS))
 
     override var hubMaliciousFlag: EnumSet<HubService.HubMaliciousFlag>
-        get() = HubService.HubMaliciousFlag.of(stub.getMaliciousFlags(Empty.getDefaultInstance()))
-        set(value) {
-            stub.setMaliciousFlags(HubService.HubMaliciousFlag.toProto(value))
+        get() = runBlocking {
+            HubService.HubMaliciousFlag.of(call(Empty.getDefaultInstance(), stub::getMaliciousFlags))
+        }
+        set(value) = runBlocking<Unit> {
+            call(HubService.HubMaliciousFlag.toProto(value), stub::setMaliciousFlags)
         }
 
     override val hubInfo: HubInfo
-        get() = stub.getHubInfo(Empty.getDefaultInstance()).toSiriusObject()
+        get() = runBlocking {
+            HubInfo.parseFromProtoMessage(DeferredStreamObserver<Starcoin.HubInfo>().also {
+                stub.getHubInfo(
+                    Empty.getDefaultInstance(),
+                    it
+                )
+            }.await())
+        }
 
     override fun start() {
     }
@@ -37,87 +78,79 @@ class HubServiceStub(private val originStub: HubServiceGrpc.HubServiceBlockingSt
     override fun stop() {
     }
 
-    override fun registerParticipant(participant: Participant, initUpdate: Update): Update {
-        return stub.registerParticipant(
+    private suspend inline fun <I, O> call(input: I, method: (I, StreamObserver<O>) -> Unit): O {
+        return DeferredStreamObserver<O>().also { method(input, it) }.await()
+    }
+
+    override suspend fun registerParticipant(participant: Participant, initUpdate: Update): Update {
+        return call(
             Starcoin.RegisterParticipantRequest.newBuilder().setParticipant(participant.toProto<Starcoin.Participant>()).setUpdate(
                 initUpdate.toProto<Starcoin.Update>()
-            ).build()
+            ).build(), stub::registerParticipant
         ).toSiriusObject()
     }
 
-    override fun sendNewTransfer(iou: IOU) {
-        val resp = stub.sendNewTransfer(iou.toProto())
-        assert(resp.succ)
+    override suspend fun sendNewTransfer(iou: IOU) {
+        call(iou.toProto(), stub::sendNewTransfer).apply { assert(this.succ) }
     }
 
-    override fun receiveNewTransfer(receiverIOU: IOU) {
-        val resp = stub.receiveNewTransfer(receiverIOU.toProto())
-        assert(resp.succ)
+    override suspend fun receiveNewTransfer(receiverIOU: IOU) {
+        call(receiverIOU.toProto(), stub::receiveNewTransfer).apply { assert(this.succ) }
     }
 
-    override fun queryNewTransfer(address: Address): List<OffchainTransaction> = catchEx<List<OffchainTransaction>> {
-        stub.queryNewTransfer(address.toProto())
-            .txsList.map { it.toSiriusObject<Starcoin.OffchainTransaction, OffchainTransaction>() }
-    }!!
+    override suspend fun queryNewTransfer(address: Address): List<OffchainTransaction> =
+        catchEx<List<OffchainTransaction>> {
+            call(
+                address.toProto(),
+                stub::queryNewTransfer
+            ).txsList.map { it.toSiriusObject<Starcoin.OffchainTransaction, OffchainTransaction>() }
+        }!!
 
-    override fun querySignedUpdate(address: Address) = catchEx<Update> {
-        stub.queryUpdate(address.toProto()).toSiriusObject()
+    override suspend fun querySignedUpdate(address: Address) = catchEx<Update> {
+        call(address.toProto(), stub::queryUpdate).toSiriusObject()
     }
 
-    override fun querySignedUpdate(eon: Int, blockAddress: Address) = catchEx<Update> {
-        stub.queryUpdateWithEon(Starcoin.BlockAddressAndEon.newBuilder().setEon(eon).setAddress(blockAddress.toByteString()).build())
-            .toSiriusObject()
+    override suspend fun querySignedUpdate(eon: Int, blockAddress: Address) = catchEx<Update> {
+        call(
+            Starcoin.BlockAddressAndEon.newBuilder().setEon(eon).setAddress(blockAddress.toByteString()).build(),
+            stub::queryUpdateWithEon
+        ).toSiriusObject()
     }
 
-    override fun getProof(address: Address): AMTreeProof? = catchEx<AMTreeProof> {
-        stub.getProof(address.toProto()).toSiriusObject()
+    override suspend fun getProof(address: Address): AMTreeProof? = catchEx<AMTreeProof> {
+        call(address.toProto(), stub::getProof).toSiriusObject()
     }
 
-    override fun getProof(eon: Int, blockAddress: Address) = catchEx<AMTreeProof> {
-        stub.getProofWithEon(Starcoin.BlockAddressAndEon.newBuilder().setEon(eon).setAddress(blockAddress.toByteString()).build())
-            .toSiriusObject()
+    override suspend fun getProof(eon: Int, blockAddress: Address): AMTreeProof? = catchEx<AMTreeProof> {
+        return call(
+            Starcoin.BlockAddressAndEon.newBuilder().setEon(eon).setAddress(blockAddress.toByteString()).build(),
+            stub::getProofWithEon
+        ).toSiriusObject()
     }
 
 
-    override fun watch(address: Address): ReceiveChannel<HubEvent> {
-        val channel = Channel<HubEvent>()
-        GlobalScope.launch(Dispatchers.IO) {
-            try {
-                originStub
-                    .watch(address.toProto())
-                    .forEachRemaining { protoHubEvent ->
-                        launch { channel.send(protoHubEvent.toSiriusObject()) }
-                    }
-            } catch (e: Exception) {
-                e.printStackTrace()
-            }
-        }
-        return channel
+    override suspend fun watch(address: Address): ReceiveChannel<HubEvent> {
+        val channel = StreamObserverChannel<Starcoin.HubEvent>()
+        originStub
+            .watch(address.toProto(), channel)
+        return channel.map { it.toSiriusObject<Starcoin.HubEvent, HubEvent>() }
     }
 
-    override fun watchHubRoot(): ReceiveChannel<HubRoot> {
-        val channel = Channel<HubRoot>()
-        GlobalScope.launch(Dispatchers.IO) {
-            try {
-                originStub
-                    .watchHubRoot(Empty.getDefaultInstance())
-                    .forEachRemaining { protoHubRoot ->
-                        launch { channel.send(protoHubRoot.toSiriusObject()) }
-                    }
-            } catch (e: Exception) {
-                e.printStackTrace()
-            }
-        }
-        return channel
+    override suspend fun watchHubRoot(): ReceiveChannel<HubRoot> {
+        val channel = StreamObserverChannel<Starcoin.HubRoot>()
+        originStub
+            .watchHubRoot(Empty.getDefaultInstance(), channel)
+        return channel.map { it.toSiriusObject<Starcoin.HubRoot, HubRoot>() }
     }
 
-    override fun getHubAccount(address: Address) = catchEx<HubAccount> {
-        stub.getHubAccount(address.toProto()).toSiriusObject()
+    override suspend fun getHubAccount(address: Address) = catchEx<HubAccount> {
+        call(address.toProto(), stub::getHubAccount).toSiriusObject()
     }
 
-    override fun resetHubMaliciousFlag(): EnumSet<HubService.HubMaliciousFlag> {
-        return HubService.HubMaliciousFlag.of(stub.resetMaliciousFlags(Empty.getDefaultInstance()))
+    override suspend fun resetHubMaliciousFlag(): EnumSet<HubService.HubMaliciousFlag> {
+        return HubService.HubMaliciousFlag.of(call(Empty.getDefaultInstance(), stub::resetMaliciousFlags))
     }
+
 
     inline fun <reified T> catchEx(block: () -> T): T? {
         return try {
