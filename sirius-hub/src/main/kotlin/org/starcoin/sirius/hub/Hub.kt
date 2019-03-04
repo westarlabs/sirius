@@ -34,7 +34,7 @@ interface Hub {
 
     fun receiveNewTransfer(receiverIOU: IOU)
 
-    fun queryNewTransfer(address: Address): OffchainTransaction?
+    fun queryNewTransfer(address: Address): List<OffchainTransaction>
 
     fun getProof(address: Address): AMTreeProof?
 

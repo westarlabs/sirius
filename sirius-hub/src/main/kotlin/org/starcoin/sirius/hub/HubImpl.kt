@@ -4,6 +4,7 @@ import com.google.common.base.Preconditions
 import io.grpc.Status
 import io.grpc.StatusRuntimeException
 import kotlinx.coroutines.*
+import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.channels.ReceiveChannel
 import kotlinx.coroutines.channels.actor
 import kotlinx.coroutines.channels.consumeEach
@@ -18,7 +19,7 @@ import java.util.concurrent.ConcurrentHashMap
 import kotlin.properties.Delegates
 
 sealed class HubAction {
-    data class IOUAction(val iou: IOU) : HubAction()
+    data class IOUAction(val iou: IOU, val response: Channel<Exception?>) : HubAction()
     data class OffchainTransactionAction(
         val tx: OffchainTransaction,
         val fromUpdate: Update,
@@ -80,14 +81,19 @@ class HubImpl<A : ChainAccount>(
         consumeEach {
             when (it) {
                 is HubAction.IOUAction -> {
-                    strategy.processSendNewTransaction(it.iou)
-                    {
-                        eonState.addIOU(it.iou)
-                        fireEvent(
-                            HubEvent(
-                                HubEventType.NEW_TX, it.iou.transaction, it.iou.transaction.to
+                    try {
+                        strategy.processSendNewTransaction(it.iou)
+                        {
+                            eonState.addIOU(it.iou)
+                            fireEvent(
+                                HubEvent(
+                                    HubEventType.NEW_TX, it.iou.transaction, it.iou.transaction.to
+                                )
                             )
-                        )
+                        }
+                        it.response.send(null)
+                    } catch (e: Exception) {
+                        it.response.send(e)
                     }
                 }
                 is HubAction.OffchainTransactionAction -> {
@@ -230,8 +236,8 @@ class HubImpl<A : ChainAccount>(
         val to = this.getHubAccount(transaction.to) ?: assertAccountNotNull(transaction.from)
         strategy.processOffchainTransaction(transaction)
         {
-            from.appendTransaction(transaction, fromUpdate)
-            to.appendTransaction(transaction, toUpdate)
+            from.confirmTransaction(transaction, fromUpdate)
+            to.confirmTransaction(transaction, toUpdate)
         }
 
         fromUpdate.signHub(this.owner.key)
@@ -271,15 +277,23 @@ class HubImpl<A : ChainAccount>(
     }
 
     override fun sendNewTransfer(iou: IOU) {
-        if (this.eonState.getIOUByFrom(iou.transaction.from) != null) throw StatusRuntimeException(Status.ALREADY_EXISTS)
-        if (this.eonState.getIOUByTo(iou.transaction.to) != null) throw StatusRuntimeException(Status.ALREADY_EXISTS)
-        this.checkIOU(iou, true)
-        GlobalScope.launch { hubActor.send(HubAction.IOUAction(iou)) }
+        //if (this.eonState.getIOUByFrom(iou.transaction.from) != null) throw StatusRuntimeException(Status.ALREADY_EXISTS)
+        val deferred = GlobalScope.async {
+            val response = Channel<Exception?>()
+            hubActor.send(HubAction.IOUAction(iou, response))
+            response.receiveOrNull()
+        }
+        //TODO async
+        val exception = runBlocking {
+            deferred.await()
+        }
+        if (exception != null) {
+            throw exception
+        }
     }
 
     override fun receiveNewTransfer(receiverIOU: IOU) {
-        this.eonState.getIOUByTo(receiverIOU.transaction.to) ?: throw StatusRuntimeException(Status.NOT_FOUND)
-        val iou = this.eonState.getIOUByFrom(receiverIOU.transaction.from) ?: throw StatusRuntimeException(
+        val iou = this.eonState.getPendingSendTx(receiverIOU.transaction.from) ?: throw StatusRuntimeException(
             Status.NOT_FOUND
         )
         this.checkIOU(receiverIOU, false)
@@ -289,13 +303,14 @@ class HubImpl<A : ChainAccount>(
                     receiverIOU.transaction,
                     iou.update,
                     receiverIOU.update
-                ) { eonState.removeIOU(receiverIOU) })
+                )
+            )
         }
 
     }
 
-    override fun queryNewTransfer(address: Address): OffchainTransaction? {
-        return eonState.getIOUByTo(address)?.transaction
+    override fun queryNewTransfer(address: Address): List<OffchainTransaction> {
+        return eonState.getPendingReceiveTxs(address)
     }
 
     private fun checkUpdate(account: HubAccount, iou: IOU) {
@@ -628,8 +643,8 @@ class HubImpl<A : ChainAccount>(
 
                 val fromUpdate = sendIOU.update
 
-                from.appendTransaction(sendIOU.transaction, fromUpdate)
-                to.appendTransaction(tx, toUpdate)
+                from.confirmTransaction(sendIOU.transaction, fromUpdate)
+                to.confirmTransaction(tx, toUpdate)
 
                 fromUpdate.signHub(owner.key)
                 toUpdate.signHub(owner.key)

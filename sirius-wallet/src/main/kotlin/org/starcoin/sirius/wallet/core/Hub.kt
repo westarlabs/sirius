@@ -253,7 +253,7 @@ class Hub <T : ChainTransaction, A : ChainAccount> {
             val accountInfo = hubServiceBlockingStub.getHubAccount(account.address.toProto())
             this.hubStatus.eonStatuses[index].updateHistory.add(accountInfo.eonState.update.toSiriusObject())
             this.hubStatus.eonStatuses[index].transactionHistory.addAll(
-                accountInfo.eonState.transactionsList.map { it.toSiriusObject<Starcoin.OffchainTransaction, OffchainTransaction>() }
+                accountInfo.eonState.txsList.map { it.toSiriusObject<Starcoin.OffchainTransaction, OffchainTransaction>() }
             )
 
             if (i > 0) { // 当前伦次不需要proof

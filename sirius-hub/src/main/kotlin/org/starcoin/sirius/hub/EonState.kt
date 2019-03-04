@@ -5,15 +5,12 @@ import org.starcoin.sirius.core.Eon.Epoch
 import org.starcoin.sirius.datastore.DataStoreFactory
 import org.starcoin.sirius.datastore.MapDataStoreFactory
 import java.util.*
-import java.util.concurrent.ConcurrentHashMap
 
 class EonState(val eon: Int, val previous: EonState? = null) {
     var state: AMTree
         private set
     var currentEpoch: Epoch = Eon.Epoch.FIRST
         private set
-    private val senderIOUs: MutableMap<Address, IOU>
-    private val receiverIOUs: MutableMap<Address, IOU>
     private val factory: DataStoreFactory
 
     private val hubAccountStore: HubAccountStore
@@ -28,8 +25,6 @@ class EonState(val eon: Int, val previous: EonState? = null) {
             this.factory = MapDataStoreFactory()
         }
         this.hubAccountStore = HubAccountStore(eon, factory)
-        this.senderIOUs = ConcurrentHashMap()
-        this.receiverIOUs = ConcurrentHashMap()
         if (this.previous != null) {
             this.previous.forEach { account -> addAccount(account.toNextEon(this.eon)) }
         }
@@ -59,21 +54,20 @@ class EonState(val eon: Int, val previous: EonState? = null) {
     }
 
     fun addIOU(iou: IOU) {
-        this.senderIOUs[iou.transaction.from] = iou
-        this.receiverIOUs[iou.transaction.to] = iou
+        val from = this.getAccount(iou.transaction.from)!!
+        val to = this.getAccount(iou.transaction.to)!!
+        from.appendSendTx(iou)
+        to.appendReceiveTx(iou.transaction)
+        this.saveAccount(from)
+        this.saveAccount(to)
     }
 
-    fun getIOUByFrom(blockAddress: Address): IOU? {
-        return this.senderIOUs[blockAddress]
+    fun getPendingSendTx(address: Address): IOU? {
+        return this.getAccount(address)?.getPendingSendTx()
     }
 
-    fun getIOUByTo(blockAddress: Address): IOU? {
-        return this.receiverIOUs[blockAddress]
-    }
-
-    fun removeIOU(iou: IOU) {
-        this.senderIOUs.remove(iou.transaction.from)
-        this.receiverIOUs.remove(iou.transaction.to)
+    fun getPendingReceiveTxs(address: Address): List<OffchainTransaction> {
+        return this.getAccount(address)?.getPendingReceiveTxs() ?: emptyList()
     }
 
     fun saveAccount(account: HubAccount) {

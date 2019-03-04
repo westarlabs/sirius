@@ -1,6 +1,7 @@
 package org.starcoin.sirius.hub
 
 import com.google.protobuf.Empty
+import io.grpc.Deadline
 import io.grpc.Status
 import io.grpc.StatusRuntimeException
 import kotlinx.coroutines.Dispatchers
@@ -13,8 +14,13 @@ import org.starcoin.proto.Starcoin
 import org.starcoin.sirius.core.*
 import org.starcoin.sirius.util.WithLogging
 import java.util.*
+import java.util.concurrent.TimeUnit
 
-class HubServiceStub(val stub: HubServiceGrpc.HubServiceBlockingStub) : HubService {
+class HubServiceStub(private val originStub: HubServiceGrpc.HubServiceBlockingStub, val timeoutMillis: Long = 2000) :
+    HubService {
+
+    val stub: HubServiceGrpc.HubServiceBlockingStub
+        get() = originStub.withDeadline(Deadline.after(timeoutMillis, TimeUnit.MILLISECONDS))
 
     override var hubMaliciousFlag: EnumSet<Hub.HubMaliciousFlag>
         get() = Hub.HubMaliciousFlag.of(stub.getMaliciousFlags(Empty.getDefaultInstance()))
@@ -49,9 +55,10 @@ class HubServiceStub(val stub: HubServiceGrpc.HubServiceBlockingStub) : HubServi
         assert(resp.succ)
     }
 
-    override fun queryNewTransfer(address: Address) = catchEx<OffchainTransaction> {
-        stub.queryNewTransfer(address.toProto()).toSiriusObject()
-    }
+    override fun queryNewTransfer(address: Address): List<OffchainTransaction> = catchEx<List<OffchainTransaction>> {
+        stub.queryNewTransfer(address.toProto())
+            .txsList.map { it.toSiriusObject<Starcoin.OffchainTransaction, OffchainTransaction>() }
+    }!!
 
     override fun querySignedUpdate(address: Address) = catchEx<Update> {
         stub.queryUpdate(address.toProto()).toSiriusObject()
@@ -76,7 +83,7 @@ class HubServiceStub(val stub: HubServiceGrpc.HubServiceBlockingStub) : HubServi
         val channel = Channel<HubEvent>()
         GlobalScope.launch(Dispatchers.IO) {
             try {
-                stub
+                originStub
                     .watch(address.toProto())
                     .forEachRemaining { protoHubEvent ->
                         launch { channel.send(protoHubEvent.toSiriusObject()) }
@@ -92,7 +99,7 @@ class HubServiceStub(val stub: HubServiceGrpc.HubServiceBlockingStub) : HubServi
         val channel = Channel<HubRoot>()
         GlobalScope.launch(Dispatchers.IO) {
             try {
-                stub
+                originStub
                     .watchHubRoot(Empty.getDefaultInstance())
                     .forEachRemaining { protoHubRoot ->
                         launch { channel.send(protoHubRoot.toSiriusObject()) }

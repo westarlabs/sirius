@@ -11,7 +11,7 @@ interface HubService {
     fun registerParticipant(participant: Participant, initUpdate: Update): Update
     fun sendNewTransfer(iou: IOU)
     fun receiveNewTransfer(receiverIOU: IOU)
-    fun queryNewTransfer(address: Address): OffchainTransaction?
+    fun queryNewTransfer(address: Address): List<OffchainTransaction>
     fun querySignedUpdate(address: Address): Update?
     fun querySignedUpdate(eon: Int, blockAddress: Address): Update?
     fun getProof(address: Address): AMTreeProof?

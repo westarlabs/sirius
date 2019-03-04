@@ -28,12 +28,12 @@ message TestData {
     required bytes bigIntegerValue = 7;
 }
 
-message Deposit{
+message Deposit {
     required bytes address = 1;
     required bytes amount = 2;
 }
 
-message OffchainTransactionData{
+message OffchainTransactionData {
     required uint32 eon = 1;
     required bytes from = 2;
     required bytes to = 3;
@@ -46,13 +46,17 @@ message OffchainTransaction {
     required bytes sign = 2;
 }
 
-message AMTreeInternalNodeInfo{
+message OffchainTransactionList {
+    repeated OffchainTransaction txs = 1;
+}
+
+message AMTreeInternalNodeInfo {
     required bytes left = 1;
     required bytes offset = 2;
     required bytes right = 3;
 }
 
-message AMTreeLeafNodeInfo{
+message AMTreeLeafNodeInfo {
     required bytes addressHash = 1;
     required Update update  = 2;
 }
@@ -213,7 +217,9 @@ message AccountEonState {
     required bytes allotment = 2;
     required bytes deposit = 3;
     required bytes withdraw = 4;
-    repeated OffchainTransaction transactions = 5;
+    repeated OffchainTransaction txs = 5;
+    repeated IOU pendingSendTxs = 6;
+    repeated OffchainTransaction pendingReceiveTxs = 7;
 }
 
 message HubAccount {
@@ -278,7 +284,7 @@ message SuccResponse {
 service HubService {
     rpc registerParticipant (RegisterParticipantRequest) returns (Update);
     rpc sendNewTransfer (IOU) returns (SuccResponse);
-    rpc queryNewTransfer (ProtoBlockAddress) returns (OffchainTransaction);
+    rpc queryNewTransfer (ProtoBlockAddress) returns (OffchainTransactionList);
     rpc receiveNewTransfer (IOU) returns (SuccResponse);
     rpc queryUpdate (ProtoBlockAddress) returns (Update);
     rpc queryUpdateWithEon (BlockAddressAndEon) returns (Update);

@@ -12,6 +12,7 @@ import org.starcoin.sirius.serialization.Codec
 import org.starcoin.sirius.serialization.ProtobufSchema
 import org.starcoin.sirius.serialization.protobuf.ProtoBuf
 import org.starcoin.sirius.serialization.rlp.RLP
+import org.starcoin.sirius.util.WithLogging
 import kotlin.reflect.KClass
 import kotlin.reflect.full.companionObjectInstance
 import kotlin.reflect.full.staticFunctions
@@ -91,7 +92,8 @@ abstract class SiriusObject : Hashable {
     }
 }
 
-abstract class SiriusObjectCompanion<T : SiriusObject, P : GeneratedMessageV3>(val objClass: KClass<T>) {
+abstract class SiriusObjectCompanion<T : SiriusObject, P : GeneratedMessageV3>(val objClass: KClass<T>) :
+    WithLogging() {
 
     //TODO write a auto mock implements.
     abstract fun mock(): T

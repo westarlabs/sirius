@@ -76,11 +76,15 @@ class HubRpcService(val hubService: HubService) :
 
     override fun queryNewTransfer(
         request: Starcoin.ProtoBlockAddress,
-        responseObserver: StreamObserver<Starcoin.OffchainTransaction>
+        responseObserver: StreamObserver<Starcoin.OffchainTransactionList>
     ) {
         this.doResponse(
             responseObserver
-        ) { this.hubService.queryNewTransfer(Address.wrap(request.address))?.toProto() }
+        ) {
+            Starcoin.OffchainTransactionList.newBuilder()
+                .addAllTxs(this.hubService.queryNewTransfer(Address.wrap(request.address)).map { it.toProto<Starcoin.OffchainTransaction>() })
+                .build()
+        }
     }
 
     override fun receiveNewTransfer(request: Starcoin.IOU, responseObserver: StreamObserver<Starcoin.SuccResponse>) {

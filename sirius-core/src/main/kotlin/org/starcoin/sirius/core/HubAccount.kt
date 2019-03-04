@@ -33,7 +33,13 @@ data class AccountEonState(
     var withdraw: BigInteger = BigInteger.ZERO,
     @SerialId(5)
     @Optional
-    internal val transactions: MutableList<OffchainTransaction> = mutableListOf()
+    internal val txs: MutableList<OffchainTransaction> = mutableListOf(),
+    @SerialId(6)
+    @Optional
+    internal val pendingSendTxs: MutableList<IOU> = mutableListOf(),
+    @SerialId(7)
+    @Optional
+    internal val pendingReceiveTxs: MutableList<OffchainTransaction> = mutableListOf()
 ) : SiriusObject() {
 
     constructor(eon: Int) : this(Update(UpdateData(eon)))
@@ -50,12 +56,13 @@ data class AccountEonState(
                 - this.withdraw
                 - update.data.sendAmount)
 
+
     fun isEmpty(): Boolean {
-        return this.transactions.isEmpty() && update.isEmpty() && allotment == BigInteger.ZERO && deposit == BigInteger.ZERO && withdraw == BigInteger.ZERO
+        return this.txs.isEmpty() && update.isEmpty() && allotment == BigInteger.ZERO && deposit == BigInteger.ZERO && withdraw == BigInteger.ZERO
     }
 
-    internal fun checkBalance(): Boolean {
-        return this.balance >= BigInteger.ZERO
+    internal fun checkBalance(amount: BigInteger = BigInteger.ZERO): Boolean {
+        return this.balance >= amount
     }
 
     companion object : SiriusObjectCompanion<AccountEonState, Starcoin.AccountEonState>(AccountEonState::class) {
@@ -74,7 +81,7 @@ data class AccountEonState(
             )
             if (MockUtils.nextBoolean()) {
                 for (i in 1..MockUtils.nextInt(2, 10)) {
-                    state.transactions.add(OffchainTransaction.mock())
+                    state.txs.add(OffchainTransaction.mock())
                 }
             }
             return state
@@ -132,15 +139,47 @@ data class HubAccount(
     val balance: BigInteger
         get() = eonState.balance
 
-    fun appendTransaction(tx: OffchainTransaction, update: Update) {
+    // pending Send tx only support one currently.
+    fun getPendingSendTx(): IOU? {
+        return this.eonState.pendingSendTxs.firstOrNull { it.transaction.from == this.address }
+    }
+
+    fun getPendingReceiveTxs(): List<OffchainTransaction> {
+        return this.eonState.pendingReceiveTxs
+    }
+
+    private fun removePendingSendTx(txHash: Hash): Boolean {
+        return this.eonState.pendingSendTxs.removeIf { it.transaction.hash() == txHash }
+    }
+
+    private fun removePendingReceiveTx(txHash: Hash): Boolean {
+        return this.eonState.pendingReceiveTxs.removeIf { it.hash() == txHash }
+    }
+
+    fun confirmTransaction(tx: OffchainTransaction, update: Update) {
+        //TODO check pending tx exist.
         this.checkUpdate(tx, update)
-        this.eonState.transactions.add(tx)
+        this.eonState.txs.add(tx)
         //TODO set update to val.
         this.update = update
+        if (tx.from == this.address) {
+            this.removePendingSendTx(tx.hash())
+        } else {
+            this.removePendingReceiveTx(tx.hash())
+        }
     }
 
     fun getTransactions(): List<OffchainTransaction> {
-        return Collections.unmodifiableList(this.eonState.transactions)
+        return this.eonState.txs
+    }
+
+    fun appendSendTx(iou: IOU) {
+        this.checkIOU(iou)
+        this.eonState.pendingSendTxs.add(iou)
+    }
+
+    fun appendReceiveTx(tx: OffchainTransaction) {
+        this.eonState.pendingReceiveTxs.add(tx)
     }
 
     fun addDeposit(amount: Long) = this.addDeposit(amount.toBigInteger())
@@ -160,7 +199,7 @@ data class HubAccount(
     }
 
     private fun checkUpdate(newTx: OffchainTransaction, newUpdate: Update) {
-        val sendTxs = ArrayList(this.eonState.transactions)
+        val sendTxs = ArrayList(this.eonState.txs)
         sendTxs.add(newTx)
         val prepareUpdate = UpdateData.newUpdate(newUpdate.data.eon, newUpdate.data.version, this.address!!, sendTxs)
 
@@ -170,22 +209,56 @@ data class HubAccount(
                 .toMD5Hex() + ", but get " + newUpdate.data.root.toMD5Hex()
         )
 
-        //Preconditions.checkArgument(
-        //    newUpdate.data.sendAmount == prepareUpdate.sendAmount, "sendAmount"
-        //)
+        Preconditions.checkArgument(
+            newUpdate.data.sendAmount == prepareUpdate.sendAmount,
+            "expect sendAmount ${newUpdate.data.sendAmount}, but get ${prepareUpdate.sendAmount}"
+        )
         Preconditions.checkArgument(
             newUpdate.data.receiveAmount == prepareUpdate.receiveAmount,
-            String.format(
-                "expect receiveAmount %s, but get %s",
-                prepareUpdate.receiveAmount, newUpdate.data.receiveAmount
-            )
+            "expect receiveAmount ${prepareUpdate.receiveAmount}, but get ${newUpdate.data.receiveAmount}"
         )
         Preconditions.checkArgument(newUpdate.data.version > update.data.version)
         Preconditions.checkArgument(checkBalance(), "has not enough balance.")
     }
 
-    private fun checkBalance(): Boolean {
-        return this.eonState.checkBalance()
+    private fun checkBalance(amount: BigInteger = BigInteger.ZERO): Boolean {
+        return this.eonState.checkBalance(amount)
+    }
+
+    private fun checkIOU(iou: IOU) {
+        val transaction = iou.transaction
+        Preconditions.checkArgument(transaction.amount > BigInteger.ZERO, "transaction amount should > 0")
+        Preconditions.checkArgument(transaction.from != transaction.to, "can not transfer to self.")
+        val isSender = iou.transaction.from == this.address
+        if (isSender) {
+            val preIOU = this.getPendingSendTx()
+            Preconditions.checkState(preIOU == null, "exist a pending transaction.")
+            this.checkBalance(transaction.amount)
+            Preconditions.checkArgument(
+                transaction.verify(this.publicKey), "transaction verify fail."
+            )
+            Preconditions.checkState(this.balance >= transaction.amount, "account balance is not enough.")
+        }
+        checkUpdate(iou)
+    }
+
+    private fun checkUpdate(iou: IOU) {
+        Preconditions.checkState(
+            iou.update.verifySig(this.publicKey), "Update signature miss match."
+        )
+        LOG.fine(
+            "iou version ${iou.update.version},server version ${this.update.version} "
+        )
+        Preconditions.checkState(
+            iou.update.version > this.update.version,
+            "Update version should > previous version"
+        )
+        val txs = mutableListOf<OffchainTransaction>().apply { addAll(eonState.txs) }
+        txs.add(iou.transaction)
+        val merkleTree = MerkleTree(txs)
+        Preconditions.checkState(
+            iou.update.root == merkleTree.hash(), "Merkle root miss match."
+        )
     }
 
     fun calculateNewAllotment(): BigInteger {

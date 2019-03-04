@@ -46,7 +46,7 @@ class HubServiceImpl<A : ChainAccount>(
         this.hub.receiveNewTransfer(receiverIOU)
     }
 
-    override fun queryNewTransfer(address: Address): OffchainTransaction? {
+    override fun queryNewTransfer(address: Address): List<OffchainTransaction> {
         return this.hub.queryNewTransfer(address)
     }
 
