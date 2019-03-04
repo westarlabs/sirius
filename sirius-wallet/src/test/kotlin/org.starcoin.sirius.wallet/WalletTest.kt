@@ -2,6 +2,7 @@ package org.starcoin.sirius.wallet
 
 import com.google.protobuf.Empty
 import io.grpc.Channel
+import io.grpc.ManagedChannel
 import io.grpc.inprocess.InProcessChannelBuilder
 import kotlinx.coroutines.TimeoutCancellationException
 import kotlinx.coroutines.runBlocking
@@ -51,7 +52,7 @@ class WalletTest {
 
     private val configuration = Configuration.configurationForUNIT()
 
-    private var hubChannel : Channel by Delegates.notNull()
+    private var hubChannel : ManagedChannel by Delegates.notNull()
 
     private var stub : HubServiceGrpc.HubServiceBlockingStub by Delegates.notNull()
 
@@ -110,6 +111,7 @@ class WalletTest {
     @After
     fun after() {
         hubServer.stop()
+        hubChannel.shutdownNow()
     }
 
     @Test

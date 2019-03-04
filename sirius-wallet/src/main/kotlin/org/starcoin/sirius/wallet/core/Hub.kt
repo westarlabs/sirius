@@ -190,10 +190,11 @@ class Hub <T : ChainTransaction, A : ChainAccount> {
 
         val selfNode = proof.path.leafNode
 
+        LOG.info("proof hub allot is "+ selfNode.allotment)
+        LOG.info("local allot is " + this.getAvailableCoin())
+
         if (selfNode.allotment < this.getAvailableCoin()) {
             needChallenge = true
-            LOG.info("proof hub allot is " + selfNode.allotment)
-            LOG.info("local allot is " + this.getAvailableCoin())
         }else {
             LOG.info("challenge is not necessary")
         }
