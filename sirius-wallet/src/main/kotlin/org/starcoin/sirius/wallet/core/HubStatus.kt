@@ -1,5 +1,6 @@
 package org.starcoin.sirius.wallet.core
 
+import com.alibaba.fastjson.JSON
 import org.starcoin.proto.Starcoin
 import org.starcoin.sirius.core.*
 import org.starcoin.sirius.lang.toBigInteger
@@ -12,7 +13,9 @@ class HubStatus {
 
     companion object : WithLogging()
 
-    lateinit private var account :ChainAccount
+    private var account :ChainAccount
+
+    private var eon:Eon
 
     var allotment: BigInteger = BigInteger.ZERO
         private set
@@ -36,13 +39,15 @@ class HubStatus {
     internal var update:Update?=null
     set(value){
         value?.apply {
-            ResourceManager.instance(account.address.toBytes().toHEXString()).updateDao.put(value.hash(),value)
+            val key="update-${value.eon}"
+            ResourceManager.instance(account.address.toBytes().toHEXString()).updateDao.put(key,value)
             field = value
         }
     }
 
     internal constructor(eon: Eon,account: ChainAccount) {
         val eonStatus = EonStatus(eon, BigInteger.ZERO)
+        this.eon=eon
         this.account= account
 
         this.eonStatuses[currentEonStatusIndex] = eonStatus
@@ -83,6 +88,14 @@ class HubStatus {
             transaction.hash(), transaction
         )
         ResourceManager.instance(account.address.toBytes().toHEXString()).offchainTransactionDao.put(transaction.hash(),transaction)
+        val key="offline-transaction-${eon.id}".toByteArray()
+        var transactionIdsBytes=ResourceManager.instance(account.address.toBytes().toHEXString()).dataStore.get(key)
+        val ids = mutableListOf<String>()
+        if(transactionIdsBytes!=null){
+            ids.addAll(JSON.parseArray(transactionIdsBytes.toString(),String::class.java))
+        }
+        ids.add(transaction.hash().toMD5Hex())
+        ResourceManager.instance(account.address.toBytes().toHEXString()).dataStore.put(key,JSON.toJSONBytes(ids))
     }
 
     internal fun transactionPath(hash: Hash): MerklePath? {
@@ -130,6 +143,10 @@ class HubStatus {
         this.eonStatuses[currentEonStatusIndex] = EonStatus(eon, this.allotment)
 
         this.eonStatuses[currentEonStatusIndex].treeProof = path
+        val key="update-${this.eon.id}"
+        ResourceManager.instance(account.address.toBytes().toHEXString()).aMTreeProofDao.put(key,path)
+
+        this.eon=eon
     }
 
     internal fun newChallenge(update: Update):BalanceUpdateProof {

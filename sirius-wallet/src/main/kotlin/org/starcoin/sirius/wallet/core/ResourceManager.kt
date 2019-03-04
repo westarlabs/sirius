@@ -3,19 +3,22 @@ package org.starcoin.sirius.wallet.core
 import io.grpc.Channel
 import org.sql2o.Sql2o
 import org.starcoin.sirius.core.*
+import org.starcoin.sirius.datastore.DataStore
 import org.starcoin.sirius.datastore.H2DBStore
 import org.starcoin.sirius.datastore.SiriusObjectStore
 
 class ResourceManager private constructor(){
 
-    lateinit internal var updateDao: SiriusObjectStore<Hash,Update>
+    lateinit internal var updateDao: SiriusObjectStore<String,Update>
         private set
 
     lateinit internal var offchainTransactionDao:SiriusObjectStore<Hash,OffchainTransaction>
         private set
 
-    lateinit internal var aMTreeProofDao:SiriusObjectStore<Hash,AMTreeProof>
+    lateinit internal var aMTreeProofDao:SiriusObjectStore<String,AMTreeProof>
         private set
+
+    lateinit internal var dataStore:DataStore<ByteArray,ByteArray>;
 
     companion object {
         private val h2databaseUrl = "jdbc:h2:~/.starcoin/liq/%s/data:starcoin;FILE_LOCK=FS;PAGE_SIZE=1024;CACHE_SIZE=819"
@@ -42,13 +45,16 @@ class ResourceManager private constructor(){
             val offchainTransactionH2Ds = H2DBStore(sql2o, "offchain_transaction")
             val proofH2Ds = H2DBStore(sql2o, "proof")
 
-            resourceManager.updateDao = SiriusObjectStore.hashStore(Update.objClass,updateH2Ds)
+            resourceManager.dataStore = H2DBStore(sql2o,"data")
+            resourceManager.updateDao = SiriusObjectStore.stringStore(Update.objClass,updateH2Ds)
             resourceManager.offchainTransactionDao = SiriusObjectStore.hashStore(OffchainTransaction.objClass,offchainTransactionH2Ds)
-            resourceManager.aMTreeProofDao = SiriusObjectStore.hashStore(AMTreeProof.objClass,proofH2Ds)
+            resourceManager.aMTreeProofDao = SiriusObjectStore.stringStore(AMTreeProof.objClass,proofH2Ds)
+
 
             resourceManager.updateDao.init()
             resourceManager.offchainTransactionDao.init()
             resourceManager.aMTreeProofDao.init()
+            resourceManager.dataStore.init()
 
             resourceManagerMap.put(name,resourceManager)
             return resourceManager
