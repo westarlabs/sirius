@@ -2,22 +2,19 @@ package org.starcoin.sirius.wallet.core
 
 import io.grpc.Channel
 import org.sql2o.Sql2o
-import org.starcoin.sirius.core.AMTreeProof
-import org.starcoin.sirius.core.InetAddressPort
-import org.starcoin.sirius.core.OffchainTransaction
-import org.starcoin.sirius.core.Update
+import org.starcoin.sirius.core.*
 import org.starcoin.sirius.datastore.H2DBStore
-import org.starcoin.sirius.wallet.core.dao.SiriusObjectDao
+import org.starcoin.sirius.datastore.SiriusObjectStore
 
 class ResourceManager private constructor(){
 
-    lateinit internal var updateDao: SiriusObjectDao<Update>
+    lateinit internal var updateDao: SiriusObjectStore<Hash,Update>
         private set
 
-    lateinit internal var offchainTransactionDao:SiriusObjectDao<OffchainTransaction>
+    lateinit internal var offchainTransactionDao:SiriusObjectStore<Hash,OffchainTransaction>
         private set
 
-    lateinit internal var aMTreeProofDao:SiriusObjectDao<AMTreeProof>
+    lateinit internal var aMTreeProofDao:SiriusObjectStore<Hash,AMTreeProof>
         private set
 
     companion object {
@@ -45,9 +42,9 @@ class ResourceManager private constructor(){
             val offchainTransactionH2Ds = H2DBStore(sql2o, "offchain_transaction")
             val proofH2Ds = H2DBStore(sql2o, "proof")
 
-            resourceManager.updateDao = SiriusObjectDao(updateH2Ds,{ Update.parseFromProtobuf(it)})
-            resourceManager.offchainTransactionDao = SiriusObjectDao(offchainTransactionH2Ds,{ OffchainTransaction.parseFromProtobuf(it)})
-            resourceManager.aMTreeProofDao = SiriusObjectDao(proofH2Ds,{ AMTreeProof.parseFromProtobuf(it)})
+            resourceManager.updateDao = SiriusObjectStore.hashStore(Update.objClass,updateH2Ds)
+            resourceManager.offchainTransactionDao = SiriusObjectStore.hashStore(OffchainTransaction.objClass,offchainTransactionH2Ds)
+            resourceManager.aMTreeProofDao = SiriusObjectStore.hashStore(AMTreeProof.objClass,proofH2Ds)
 
             resourceManager.updateDao.init()
             resourceManager.offchainTransactionDao.init()

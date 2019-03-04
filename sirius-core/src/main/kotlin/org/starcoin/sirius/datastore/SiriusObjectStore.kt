@@ -32,5 +32,23 @@ class SiriusObjectStore<K, V : SiriusObject>(
         ): SiriusObjectStore<Address, V> {
             return SiriusObjectStore(Address, clazz, dataStore)
         }
+
+        fun  <V : SiriusObject> stringStore(
+            clazz: KClass<V>,
+            dataStore: DataStore<ByteArray, ByteArray>
+        ): SiriusObjectStore<String, V> {
+            return SiriusObjectStore(StringCodec(), clazz, dataStore)
+        }
     }
+}
+
+class StringCodec :Codec<String>{
+    override fun encode(value: String): ByteArray {
+        return value.toByteArray()
+    }
+
+    override fun decode(bytes: ByteArray): String {
+        return String(bytes)
+    }
+
 }
