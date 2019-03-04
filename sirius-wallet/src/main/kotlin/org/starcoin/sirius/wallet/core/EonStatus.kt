@@ -6,7 +6,7 @@ import kotlin.properties.Delegates
 
 class EonStatus() {
 
-    internal var eon: Eon by Delegates.notNull()
+    internal var eon: Int by Delegates.notNull()
 
     internal var treeProof: AMTreeProof? = null
 
@@ -20,16 +20,16 @@ class EonStatus() {
 
     internal var deposit: BigInteger = BigInteger.ZERO
 
-    internal var allotment: BigInteger = BigInteger.ZERO
+    //internal var allotment: BigInteger = BigInteger.ZERO
 
-    constructor(eon: Eon, allotment: BigInteger) : this() {
+    constructor(eon: Int) : this() {
         this.eon = eon
-        this.allotment = allotment
+        //this.allotment = allotment
     }
 
     internal fun addDeposit(transaction: ChainTransaction){
         this.deposit = deposit.add(transaction.amount)
-        this.allotment = allotment.add(transaction.amount)
+        //this.allotment = allotment.add(transaction.amount)
 
         confirmedTransactions.add(transaction)
     }

@@ -441,6 +441,32 @@ class WalletTest {
 
     }
 
+    @Test
+    fun testRestore() {
+        testDeposit()
+
+        val amount=EtherUtil.convert(20, EtherUtil.Unit.ETHER)
+
+        val transaction=walletAlice.hubTransfer(bob.address,amount)
+
+        Assert.assertNotNull(transaction)
+
+        runBlocking {
+            walletBob.getMessageChannel()?.receive()
+            walletAlice.getMessageChannel()?.receive()
+            walletBob.getMessageChannel()?.receive()
+        }
+
+        waitToNextEon()
+        runBlocking {
+            walletAlice.getMessageChannel()?.receive()
+        }
+
+        val aliceWalletClone = Wallet(this.contract.contractAddress,chain,alice)
+        aliceWalletClone.restore()
+        Assert.assertEquals(walletAlice.balance(), aliceWalletClone.balance())
+    }
+
     private fun waitToNextEon() {
         var height = chain.getBlockNumber()
         var blockNumber = Eon.waitToEon(hubInfo.startBlockNumber.toLong(),height,hubInfo.blocksPerEon,walletAlice.hub.currentEon.id+1)

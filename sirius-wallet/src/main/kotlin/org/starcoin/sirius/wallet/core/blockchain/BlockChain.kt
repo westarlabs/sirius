@@ -16,6 +16,7 @@ class BlockChain <T : ChainTransaction, A : ChainAccount> (chain: Chain<T, out B
     private val contract = hubContract
     private val account = account
     internal var startWatch = false
+    internal var height : Long =0
 
     companion object : WithLogging()
 
@@ -83,7 +84,6 @@ class BlockChain <T : ChainTransaction, A : ChainAccount> (chain: Chain<T, out B
                             GlobalScope.launch { hub.eonChannel?.send(ClientEventType.HUB_COMMIT_FAIL) }
                     }
                 }
-
             }
         }
     }
@@ -93,6 +93,7 @@ class BlockChain <T : ChainTransaction, A : ChainAccount> (chain: Chain<T, out B
             val channel = chain.watchBlock { true }
             while (startWatch) {
                 var block = channel.receive()
+
             }
         }
     }

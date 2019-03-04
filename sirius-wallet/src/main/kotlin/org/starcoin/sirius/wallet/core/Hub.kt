@@ -1,5 +1,6 @@
 package org.starcoin.sirius.wallet.core
 
+import com.google.protobuf.Empty
 import com.google.protobuf.InvalidProtocolBufferException
 import io.grpc.Status
 import io.grpc.StatusRuntimeException
@@ -9,9 +10,12 @@ import kotlinx.coroutines.launch
 import org.starcoin.proto.HubServiceGrpc
 import org.starcoin.proto.Starcoin
 import org.starcoin.sirius.core.*
+import org.starcoin.sirius.lang.toBigInteger
+import org.starcoin.sirius.lang.toHEXString
 import org.starcoin.sirius.protocol.Chain
 import org.starcoin.sirius.protocol.ChainAccount
 import org.starcoin.sirius.protocol.HubContract
+import org.starcoin.sirius.serialization.rlp.toByteArray
 import org.starcoin.sirius.util.WithLogging
 import java.math.BigInteger
 import kotlin.properties.Delegates
@@ -44,6 +48,8 @@ class Hub <T : ChainTransaction, A : ChainAccount> {
     var disconnect = true
 
     var alreadWatch = false
+
+    private var currentEonKey = "current-eon".toByteArray()
 
     constructor(
         contract: HubContract<A>,
@@ -202,6 +208,8 @@ class Hub <T : ChainTransaction, A : ChainAccount> {
         GlobalScope.launch {
             eonChannel?.send(ClientEventType.FINISH_EON_CHANGE)
         }
+
+        ResourceManager.instance(account.address.toBytes().toHEXString()).dataStore.put(this.currentEonKey,this.currentEon.id.toByteArray())
 
         if (!needChallenge) {
             return
@@ -447,6 +455,20 @@ class Hub <T : ChainTransaction, A : ChainAccount> {
         LOG.info("open balance update challenge succ $proof")
         GlobalScope.launch {
             eonChannel?.send(ClientEventType.OPEN_BALANCE_UPDATE_CHALLENGE_PASS)
+        }
+    }
+
+    internal fun restore(){
+        val lastSavedEon=ResourceManager.instance(account.address.toBytes().toHEXString()).dataStore.get(this.currentEonKey)?.toBigInteger()?.toInt()?:0
+        val currentEon=this.getChainEon()
+        if((currentEon.id-lastSavedEon)>1){
+            throw java.lang.RuntimeException("local data is too old,please use sync command")
+        }
+        this.hubStatus.reloadData(lastSavedEon)
+        if((currentEon.id>lastSavedEon)){
+            val hubServiceBlockingStub = HubServiceGrpc.newBlockingStub(ResourceManager.hubChannel)
+            val hubInfo:HubInfo=hubServiceBlockingStub.getHubInfo(Empty.getDefaultInstance()).toSiriusObject()
+            onHubRootCommit(HubRoot(hubInfo.root,hubInfo.eon))
         }
     }
 }

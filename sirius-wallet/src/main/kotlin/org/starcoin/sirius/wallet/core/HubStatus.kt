@@ -34,8 +34,6 @@ class HubStatus {
 
     internal var withdrawalStatus: WithdrawalStatus? = null
 
-    var height: Int = 0
-
     internal var update:Update?=null
     set(value){
         value?.apply {
@@ -46,7 +44,7 @@ class HubStatus {
     }
 
     internal constructor(eon: Eon,account: ChainAccount) {
-        val eonStatus = EonStatus(eon, BigInteger.ZERO)
+        val eonStatus = EonStatus(eon.id)
         this.eon=eon
         this.account= account
 
@@ -94,7 +92,7 @@ class HubStatus {
         if(transactionIdsBytes!=null){
             ids.addAll(JSON.parseArray(transactionIdsBytes.toString(),String::class.java))
         }
-        ids.add(transaction.hash().toMD5Hex())
+        ids.add(transaction.hash().toBytes().toHEXString())
         ResourceManager.instance(account.address.toBytes().toHEXString()).dataStore.put(key,JSON.toJSONBytes(ids))
     }
 
@@ -140,11 +138,12 @@ class HubStatus {
         } else {
             currentEonStatusIndex = maybe
         }
-        this.eonStatuses[currentEonStatusIndex] = EonStatus(eon, this.allotment)
+        this.eonStatuses[currentEonStatusIndex] = EonStatus(eon.id)
 
         this.eonStatuses[currentEonStatusIndex].treeProof = path
-        val key="update-${this.eon.id}"
+        val key="proof-${this.eon.id}"
         ResourceManager.instance(account.address.toBytes().toHEXString()).aMTreeProofDao.put(key,path)
+        ResourceManager.instance(account.address.toBytes().toHEXString()).dataStore.put("allot-${eon.id}".toByteArray(),this.allotment.toByteArray())
 
         this.eon=eon
     }
@@ -202,4 +201,29 @@ class HubStatus {
 
     }
 
+    internal fun reloadData(eon: Int){
+        for(i in 0..2){
+            val update=ResourceManager.instance(account.address.toBytes().toHEXString()).updateDao.get("update-${eon-i}")
+            val proof=ResourceManager.instance(account.address.toBytes().toHEXString()).aMTreeProofDao.get("proof-${eon-i}")
+            val key="offline-transaction-${eon-i}".toByteArray()
+            val transactionIdsBytes = ResourceManager.instance(account.address.toBytes().toHEXString()).dataStore.get(key)
+            eonStatuses[i]=EonStatus(eon-i).apply {
+                if(update!=null)
+                    this.updateHistory.add(update!!)
+                this.treeProof = proof
+            }
+            if(transactionIdsBytes!=null){
+                val transactionIds=JSON.parseArray(String(transactionIdsBytes),String::class.java)
+                val transactions = transactionIds.map{ResourceManager.instance(account.address.toBytes().toHEXString()).offchainTransactionDao.get(Hash.wrap(it))}
+
+                for (transaction in transactions){
+                    eonStatuses[i].transactionHistory.add(transaction!!)
+                    eonStatuses[i].transactionMap.put(transaction.hash(),transaction!!)
+                }
+            }
+        }
+        this.currentEonStatusIndex =0
+        val allotBytes=ResourceManager.instance(account.address.toBytes().toHEXString()).dataStore.get("allot-${this.eon.id}".toByteArray())
+        this.allotment=allotBytes?.toBigInteger()?: BigInteger.ZERO
+    }
 }
