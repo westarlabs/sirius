@@ -100,6 +100,6 @@ class H2DBStore(private val sql2o: Sql2o, private val tableName: String) : DataS
 
     companion object {
         const val h2dbUrlMemoryFormat =
-            "jdbc:h2:mem:%s;DB_CLOSE_DELAY=-1;TRACE_LEVEL_FIle=4;TRACE_LEVEL_SYSTEM_OUT=3;MODE=Mysql"
+            "jdbc:h2:mem:%s;DB_CLOSE_DELAY=-1;MODE=Mysql"
     }
 }
