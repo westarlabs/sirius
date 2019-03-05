@@ -1,7 +1,6 @@
 package org.starcoin.sirius.wallet.core.blockchain
 
 import kotlinx.coroutines.GlobalScope
-import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.launch
 import org.starcoin.sirius.core.*
 import org.starcoin.sirius.lang.toBigInteger
@@ -22,7 +21,7 @@ class BlockChain <T : ChainTransaction, A : ChainAccount> (chain: Chain<T, out B
     internal var startWatch = false
     private var height : BigInteger =  BigInteger.ZERO
 
-    private val syncedHeigth="synced-block-heigth".toByteArray()
+    private val syncedHeight = "synced-block-height".toByteArray()
     companion object : WithLogging()
 
     fun watchTransaction(){
@@ -98,7 +97,7 @@ class BlockChain <T : ChainTransaction, A : ChainAccount> (chain: Chain<T, out B
     }
 
     fun watachBlock(){
-        val heightBytes=ResourceManager.instance(account.address.toBytes().toHEXString()).dataStore.get(syncedHeigth)
+        val heightBytes = ResourceManager.instance(account.address.toBytes().toHEXString()).dataStore.get(syncedHeight)
         if(heightBytes!=null){
             this.height= heightBytes.toBigInteger()
         }
@@ -110,7 +109,10 @@ class BlockChain <T : ChainTransaction, A : ChainAccount> (chain: Chain<T, out B
                 for(transaction in transactions){
                     handleTransaction(transaction)
                 }
-                ResourceManager.instance(account.address.toBytes().toHEXString()).dataStore.put(syncedHeigth,height.toByteArray())
+                ResourceManager.instance(account.address.toBytes().toHEXString()).dataStore.put(
+                    syncedHeight,
+                    height.toByteArray()
+                )
             }
         }
     }
