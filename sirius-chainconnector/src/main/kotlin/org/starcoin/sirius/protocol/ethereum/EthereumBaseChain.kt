@@ -35,7 +35,7 @@ abstract class EthereumBaseChain :
             get() = 1.toBigInteger()
 
         val defaultGasLimit: BigInteger
-            get() = 7000000.toBigInteger()
+            get() = 6900000.toBigInteger()
     }
 
     protected val txDeferreds = ConcurrentHashMap<Hash, TxDeferred>()
