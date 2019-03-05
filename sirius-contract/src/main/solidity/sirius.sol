@@ -155,7 +155,11 @@ contract SiriusService is Sirius {
             require(init.proof.path.eon > 0);
             require(init.proof.path.leaf.allotment >= init.amount);
             uint preEon = balances[1].eon;
-            ModelLib.verifyProof(preEon, addr, owner, init.proof, true);
+            if(init.proof.leaf.update.upData.sendAmount == 0 && init.proof.leaf.update.upData.receiveAmount == 0) {
+                ModelLib.verifyProof(preEon, addr, owner, init.proof, false);
+            } else {
+                ModelLib.verifyProof(preEon, addr, owner, init.proof, true);
+            }
 
             bool processingFlag = withdrawalProcessing(addr);
             require(!processingFlag);
