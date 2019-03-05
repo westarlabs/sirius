@@ -21,4 +21,6 @@ COPY env.sh init.sh start.sh genesis.json /ethereum/
 
 EXPOSE 8545 8546 30303 30303/udp
 WORKDIR /ethereum
+ENTRYPOINT ["./start.sh"]
 CMD ./start.sh
+CMD []

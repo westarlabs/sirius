@@ -27,7 +27,8 @@ case $"$1" in
 	docker build --no-cache -f $(dirname $0)/docker/go-ethereum/Dockerfile -t fikgol/starcoin-goethereum $(dirname $0)/docker/go-ethereum/ 
 	;;
     run)
-	docker run -d --name go-ethereum -p 127.0.0.1:8545:8545 -p 30303:30303 -p 8546:8546  -v /tmp/geth_data:/tmp/geth_data fikgol/starcoin-goethereum
+	shift 1
+	docker run -d --name go-ethereum -p 127.0.0.1:8545:8545 -p 30303:30303 -p 8546:8546  -v /tmp/geth_data:/tmp/geth_data fikgol/starcoin-goethereum $@
 	while true; do
 	    if [[ -d $datadir ]]; then
 		break
