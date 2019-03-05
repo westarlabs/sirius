@@ -37,6 +37,9 @@ class HubServer<A : ChainAccount>(
             owner,
             ContractConstructArgs(config.blocksPerEon, HubRoot.DUMMY_HUB_ROOT)
         ).apply {
+            //TODO report hub external address.
+            LOG.info("Report hub ip to contract.")
+            contract.setHubIp(owner, config.rpcBind.toString())
             config.contractAddress = this.contractAddress
             config.store()
         }

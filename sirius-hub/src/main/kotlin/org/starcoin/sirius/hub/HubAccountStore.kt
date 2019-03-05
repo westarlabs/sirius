@@ -27,7 +27,7 @@ class HubAccountStore(
     constructor(eon: Int, factory: DataStoreFactory) : this(
         eon,
         factory.getOrCreate("account"),
-        factory.getOrCreate("account-$eon")
+        factory.getOrCreate("account_$eon")
     )
 
     override fun put(key: Address, value: HubAccount) {

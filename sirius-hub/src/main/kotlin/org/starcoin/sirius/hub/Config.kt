@@ -9,6 +9,7 @@ import org.starcoin.sirius.crypto.CryptoKey
 import org.starcoin.sirius.crypto.CryptoService
 import org.starcoin.sirius.lang.delegate
 import org.starcoin.sirius.lang.hexToByteArray
+import org.starcoin.sirius.protocol.ContractConstructArgs
 import org.starcoin.sirius.protocol.ethereum.InMemoryChainProvider
 import org.starcoin.sirius.util.WithLogging
 import java.io.File
@@ -75,7 +76,7 @@ class Config private constructor(val properties: Properties, val dataDir: File, 
 
         val DEFAULT_RPC_PORT = 7985
         val DEFAULT_RPC_BIND = InetAddressPort("0.0.0.0", DEFAULT_RPC_PORT)
-        val DEFAULT_BLOCKS_PER_EON = 8
+        val DEFAULT_BLOCKS_PER_EON = ContractConstructArgs.TEST_BLOCKS_PER_EON
         val DEFAULT_CONNECTOR = URI("${InMemoryChainProvider.scheme}:test")
         val DEFAULT_DATA_DIR = "${System.getProperty("user.home")}/.starcoin/hub/"
 

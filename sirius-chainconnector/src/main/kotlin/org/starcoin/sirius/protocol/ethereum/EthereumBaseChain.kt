@@ -35,7 +35,7 @@ abstract class EthereumBaseChain :
             get() = 1.toBigInteger()
 
         val defaultGasLimit: BigInteger
-            get() = 6000000.toBigInteger()
+            get() = 7000000.toBigInteger()
     }
 
     protected val txDeferreds = ConcurrentHashMap<Hash, TxDeferred>()
@@ -89,7 +89,10 @@ abstract class EthereumBaseChain :
         )
         //TODO use coroutine
         runBlocking {
-            submitTransaction(account, tx).await()
+            val receipt = submitTransaction(account, tx).await()
+            if (!receipt.status) {
+                throw DeployContractException(contractMetaData.abi, receipt)
+            }
         }
         return tx.contractAddress!!
     }
@@ -145,3 +148,6 @@ abstract class EthereumBaseChain :
     override fun start() {}
     override fun stop() {}
 }
+
+class DeployContractException(val contract: String, val receipt: Receipt) :
+    RuntimeException("Deploy contract $contract fail, receipt:$receipt")
