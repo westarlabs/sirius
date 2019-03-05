@@ -23,8 +23,8 @@ suspend fun <T> retryWithTimeout(
     period: Long = 1000,
     condition: (T?) -> Boolean = { it != null },
     block: () -> T?
-): T? = withTimeout(timeoutMillis) {
-    retry(period, condition, block)
+): T = withTimeout(timeoutMillis) {
+    retry(period, condition, block)!!
 }
 
 suspend fun <T> retryWithTimeoutOrNull(
