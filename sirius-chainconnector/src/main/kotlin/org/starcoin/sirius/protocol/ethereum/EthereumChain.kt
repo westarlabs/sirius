@@ -39,7 +39,7 @@ const val DEFAULT_WS = "ws://127.0.0.1:8546"
 const val GAS_LIMIT_BOUND_DIVISOR = 1024
 const val blockGasIncreasePercent = 0
 
-class EthereumChain constructor(httpUrl: String? = null, socketPath: String? = null, webSocket: String = DEFAULT_WS) :
+class EthereumChain constructor(url: String = DEFAULT_WS) :
     EthereumBaseChain() {
 
     init {
@@ -79,9 +79,10 @@ class EthereumChain constructor(httpUrl: String? = null, socketPath: String? = n
     val web3: Web3j =
         Web3j.build(
             when {
-                socketPath != null -> UnixIpcService(socketPath)
-                httpUrl != null -> HttpService(httpUrl)
-                else -> WebSocketService(webSocket, false).also { it.connect() } //TODO: close connection
+                url.startsWith("http://") -> HttpService(url)
+                url.startsWith("ipc://") -> UnixIpcService(url)
+                url.startsWith("ws://") -> WebSocketService(url, false).also { it.connect() } //TODO: close connection
+                else -> throw RuntimeException("Unknown url to init EtherumChain")
             }
         )
 
@@ -156,7 +157,7 @@ class EthereumChain constructor(httpUrl: String? = null, socketPath: String? = n
     override fun watchBlock(
         startBlockNum: BigInteger,
         filter: (EthereumBlock) -> Boolean
-        ): Channel<EthereumBlock> {
+    ): Channel<EthereumBlock> {
         val ch = Channel<EthereumBlock>()
         GlobalScope.launch {
             val headNotify = web3.newHeadsNotifications()

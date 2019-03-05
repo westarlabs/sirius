@@ -24,7 +24,7 @@ class EthereumChainTest {
         @BeforeClass
         @JvmStatic
         fun setup() {
-            scriptExec("scripts/docker.sh run")
+            scriptExec("scripts/docker.sh run --dev.period 1")
             Thread.sleep(4000)
         }
 

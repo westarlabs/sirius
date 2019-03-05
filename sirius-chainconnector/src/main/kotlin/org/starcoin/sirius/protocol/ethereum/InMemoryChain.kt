@@ -37,7 +37,7 @@ class InMemoryChain(val autoGenblock: Boolean = true) : EthereumBaseChain() {
     }
 
     //StandaloneBlockchain autoblock has concurrent problem
-    private val sb = StandaloneBlockchain().withAutoblock(false).withGasLimit(500000000)
+    val sb = StandaloneBlockchain().withAutoblock(false).withGasLimit(500000000)
     val originAccount = sb.sender!!
     val eventBus = EventBusEthereumListener()
 
