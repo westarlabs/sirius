@@ -51,8 +51,6 @@ class HubImpl<A : ChainAccount>(
     private lateinit var eonState: EonState
 
 
-    private val ownerAddress: Address = owner.address
-
     private val eventBus = EventBus<HubEvent>()
 
     val ready: Boolean
@@ -126,7 +124,7 @@ class HubImpl<A : ChainAccount>(
                 this.recoveryMode,
                 blocksPerEon,
                 eonState.eon,
-                stateRoot.toAMTreePathNode() as AMTreePathNode,
+                stateRoot.toAMTreePathNode(),
                 owner.key.keyPair.public
             )
         }
@@ -175,7 +173,16 @@ class HubImpl<A : ChainAccount>(
         val recoveryMode = contract.isRecoveryMode(owner)
         if (recoveryMode) {
             this.hubStatus = HubStatus.Recovery
+            LOG.error("Hub in recovery mode.")
         } else {
+            if (this.eonState.getAccount(owner.address) == null) {
+                runBlocking {
+                    LOG.info("Register Hub owner self account.")
+                    val participant = Participant(owner.key.keyPair.public)
+                    val initUpdate = Update().apply { sign(owner.key) }
+                    doRegisterParticipant(participant, initUpdate)
+                }
+            }
             this.processBlockJob.start()
             //first commit create by contract construct.
             //if miss latest commit, should commit root first.
@@ -206,6 +213,10 @@ class HubImpl<A : ChainAccount>(
 
     override suspend fun registerParticipant(participant: Participant, initUpdate: Update): Update {
         this.checkReady()
+        return this.doRegisterParticipant(participant, initUpdate)
+    }
+
+    private suspend fun doRegisterParticipant(participant: Participant, initUpdate: Update): Update {
         Preconditions.checkArgument(initUpdate.verifySig(participant.publicKey))
         if (this.getHubAccount(participant.address) != null) {
             throw StatusRuntimeException(Status.ALREADY_EXISTS)
@@ -227,7 +238,6 @@ class HubImpl<A : ChainAccount>(
     }
 
     override suspend fun getHubAccount(eon: Int, address: Address): HubAccount? {
-        this.checkReady()
         return this.getEonState(eon)?.getAccount(address)
     }
 
@@ -451,17 +461,14 @@ class HubImpl<A : ChainAccount>(
                 }
                 val deposit = Deposit(tx.from!!, tx.amount)
                 LOG.info("Deposit:" + deposit.toJSON())
-                val blockNumber = currentBlockNumber //txResult.receipt.blockNumber
-                val eon = Eon.calculateEon(startBlockNumber, blockNumber, blocksPerEon)
+                val eon = Eon.calculateEon(startBlockNumber, currentBlockNumber, blocksPerEon)
                 if (eon.id > this.currentEon().id) {
-                    GlobalScope.launch {
-                        while (eon.id > currentEon().id) {
-                            //TODO
-                            LOG.info("Receive next new eon Deposit, so wait.")
-                            delay(1000)
-                        }
-                        processDeposit(deposit)
+                    while (eon.id > currentEon().id) {
+                        //TODO
+                        LOG.info("Receive next new eon Deposit, so wait.")
+                        delay(1000)
                     }
+                    processDeposit(deposit)
                 } else {
                     this.processDeposit(deposit)
                 }
