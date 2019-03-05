@@ -10,6 +10,8 @@ import kotlinx.coroutines.channels.actor
 import kotlinx.coroutines.channels.consumeEach
 import org.starcoin.sirius.channel.EventBus
 import org.starcoin.sirius.core.*
+import org.starcoin.sirius.datastore.DataStoreFactory
+import org.starcoin.sirius.datastore.MapDataStoreFactory
 import org.starcoin.sirius.protocol.*
 import org.starcoin.sirius.util.WithLogging
 import org.starcoin.sirius.util.error
@@ -40,7 +42,8 @@ enum class HubStatus {
 class HubImpl<A : ChainAccount>(
     private val owner: A,
     private val chain: Chain<out ChainTransaction, out Block<out ChainTransaction>, A>,
-    private val contract: HubContract<A>
+    private val contract: HubContract<A>,
+    private val dataStoreFactory: DataStoreFactory = MapDataStoreFactory()
 ) : Hub {
 
     companion object : WithLogging()
@@ -161,8 +164,7 @@ class HubImpl<A : ChainAccount>(
         this.startBlockNumber = contractHubInfo.startBlockNumber.longValueExact()
         val currentEon = Eon.calculateEon(startBlockNumber, currentBlockNumber, blocksPerEon)
 
-        //TODO load previous status from storage.
-        eonState = EonState(currentEon.id)
+        eonState = EonState(currentEon.id, this.dataStoreFactory)
 
         this.processBlockJob = GlobalScope.launch(start = CoroutineStart.LAZY) {
             val blockChannel = chain.watchBlock()

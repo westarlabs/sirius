@@ -21,7 +21,7 @@ class HubServerTest {
     companion object : WithLogging()
 
     var hubServer: HubServer<EthereumAccount> by Delegates.notNull()
-    val configuration = Configuration.configurationForUNIT()
+    val configuration = Config.configurationForUNIT()
 
     @Before
     fun before() {

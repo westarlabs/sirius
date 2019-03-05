@@ -1,10 +1,8 @@
 package org.starcoin.sirius.wallet
 
 import com.google.protobuf.Empty
-import io.grpc.Channel
 import io.grpc.ManagedChannel
 import io.grpc.inprocess.InProcessChannelBuilder
-import kotlinx.coroutines.TimeoutCancellationException
 import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.withTimeout
 import org.ethereum.util.blockchain.EtherUtil
@@ -14,16 +12,13 @@ import org.junit.Before
 import org.junit.Test
 import org.starcoin.proto.HubServiceGrpc
 import org.starcoin.proto.Starcoin
-import org.starcoin.sirius.core.Address
 import org.starcoin.sirius.core.ContractHubInfo
 import org.starcoin.sirius.core.Eon
 import org.starcoin.sirius.core.HubAccount
 import org.starcoin.sirius.crypto.CryptoService
-import org.starcoin.sirius.hub.Configuration
+import org.starcoin.sirius.hub.Config
 import org.starcoin.sirius.hub.HubServer
-import org.starcoin.sirius.lang.hexToByteArray
 import org.starcoin.sirius.lang.toBigInteger
-import org.starcoin.sirius.lang.toHEXString
 import org.starcoin.sirius.protocol.EthereumTransaction
 import org.starcoin.sirius.protocol.HubContract
 import org.starcoin.sirius.protocol.ethereum.EthereumAccount
@@ -31,7 +26,6 @@ import org.starcoin.sirius.protocol.ethereum.InMemoryChain
 import org.starcoin.sirius.wallet.core.ClientEventType
 import org.starcoin.sirius.wallet.core.ResourceManager
 import org.starcoin.sirius.wallet.core.Wallet
-import java.lang.IllegalStateException
 import java.math.BigInteger
 import java.util.logging.Logger
 import kotlin.properties.Delegates
@@ -52,7 +46,7 @@ class WalletTest {
 
     private var hubServer: HubServer<EthereumAccount> by Delegates.notNull()
 
-    private val configuration = Configuration.configurationForUNIT()
+    private val configuration = Config.configurationForUNIT()
 
     private var hubChannel : ManagedChannel by Delegates.notNull()
 

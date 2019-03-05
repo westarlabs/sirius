@@ -50,7 +50,7 @@ class LocalAccount<T : ChainTransaction, A : ChainAccount>(
         chain: Chain<T, out Block<T>, A>,
         contract: HubContract<A>,
         owner: PublicKey,
-        configuration: Configuration
+        configuration: Config
     ) : this(
         chainAccount, chain, contract, owner, HubServiceStub(
             HubServiceGrpc.newStub(

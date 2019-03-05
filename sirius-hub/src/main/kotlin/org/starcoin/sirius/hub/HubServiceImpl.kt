@@ -3,6 +3,8 @@ package org.starcoin.sirius.hub
 import kotlinx.coroutines.channels.ReceiveChannel
 import kotlinx.coroutines.channels.map
 import org.starcoin.sirius.core.*
+import org.starcoin.sirius.datastore.DataStoreFactory
+import org.starcoin.sirius.datastore.MapDataStoreFactory
 import org.starcoin.sirius.hub.HubService.HubMaliciousFlag
 import org.starcoin.sirius.protocol.Chain
 import org.starcoin.sirius.protocol.ChainAccount
@@ -10,16 +12,13 @@ import org.starcoin.sirius.protocol.HubContract
 import java.util.*
 
 class HubServiceImpl<A : ChainAccount>(
-    private val owner: A,
+    owner: A,
     chain: Chain<out ChainTransaction, out Block<out ChainTransaction>, A>,
-    contract: HubContract<A>
+    contract: HubContract<A>,
+    dataStoreFactory: DataStoreFactory = MapDataStoreFactory()
 ) : HubService {
 
-    private val hub: Hub
-
-    init {
-        this.hub = HubImpl(owner, chain, contract)
-    }
+    private val hub: Hub = HubImpl(owner, chain, contract, dataStoreFactory)
 
     override var hubMaliciousFlag: EnumSet<HubMaliciousFlag>
         get() = hub.hubMaliciousFlag

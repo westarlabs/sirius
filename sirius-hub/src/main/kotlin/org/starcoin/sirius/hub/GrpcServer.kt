@@ -10,7 +10,7 @@ import java.io.IOException
 import java.util.*
 import kotlin.properties.Delegates
 
-class GrpcServer(val configuration: Configuration) : RpcServer<BindableService> {
+class GrpcServer(val configuration: Config) : RpcServer<BindableService> {
 
     private var server: Server by Delegates.notNull()
     private val services: MutableMap<String, BindableService> = Collections.synchronizedMap(HashMap())

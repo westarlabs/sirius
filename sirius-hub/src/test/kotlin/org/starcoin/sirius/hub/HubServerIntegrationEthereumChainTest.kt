@@ -9,7 +9,6 @@ import org.starcoin.sirius.protocol.EthereumTransaction
 import org.starcoin.sirius.protocol.ethereum.EthereumAccount
 import org.starcoin.sirius.protocol.ethereum.EthereumChain
 import org.starcoin.sirius.protocol.ethereum.loadEtherBaseKeyStoreFile
-import org.starcoin.sirius.protocol.ethereum.scriptExec
 import org.starcoin.sirius.util.WithLogging
 import java.math.BigInteger
 import kotlin.properties.Delegates
@@ -21,7 +20,7 @@ class HubServerIntegrationEthereumChainTest :
         @AfterClass
         @JvmStatic
         fun tearDown() {
-            scriptExec("../sirius-chainconnector/scripts/docker.sh clean")
+            //scriptExec("../sirius-chainconnector/scripts/docker.sh clean")
         }
     }
 
@@ -54,9 +53,9 @@ class HubServerIntegrationEthereumChainTest :
         //chain.waitBlocks(1)
     }
 
-    override fun createChain(configuration: Configuration): EthereumChain {
-        scriptExec("../sirius-chainconnector/scripts/docker.sh run")
-        Thread.sleep(4000)
+    override fun createChain(configuration: Config): EthereumChain {
+        //scriptExec("../sirius-chainconnector/scripts/docker.sh run")
+        //Thread.sleep(4000)
         chain = EthereumChain()
         return chain
     }

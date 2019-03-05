@@ -20,7 +20,7 @@ class HubServerIntegrationMemoryChainTest :
         chain.createBlock()
     }
 
-    override fun createChain(configuration: Configuration): InMemoryChain {
+    override fun createChain(configuration: Config): InMemoryChain {
         return InMemoryChain()
     }
 }

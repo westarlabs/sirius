@@ -9,11 +9,11 @@ abstract class TestGrpcServerBase {
 
     var grpcServer: GrpcServer by Delegates.notNull()
 
-    var configuration: Configuration by Delegates.notNull()
+    var configuration: Config by Delegates.notNull()
 
     @Before
     fun before() {
-        configuration = Configuration.configurationForUNIT()
+        configuration = Config.configurationForUNIT()
         this.grpcServer = GrpcServer(configuration)
         this.grpcServer.registerService(this.createService())
         this.grpcServer.start()

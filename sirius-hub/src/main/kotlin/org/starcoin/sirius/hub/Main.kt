@@ -1,14 +1,34 @@
 package org.starcoin.sirius.hub
 
+import com.xenomachina.argparser.ArgParser
+import com.xenomachina.argparser.default
 import kotlinx.coroutines.runBlocking
 import org.starcoin.sirius.chain.ChainProvider
+import org.starcoin.sirius.datastore.DataStoreFactory
+import org.starcoin.sirius.datastore.H2DBDataStoreFactory
+import org.starcoin.sirius.datastore.MapDataStoreFactory
+import org.starcoin.sirius.protocol.ethereum.InMemoryChain
+import java.io.File
 
+
+class ArgsConfig(parser: ArgParser) {
+    val dataDir: File by parser.storing(
+        "-d", "--data",
+        help = "data dir"
+    ) { File(this) }.default(File(Config.DEFAULT_DATA_DIR))
+}
 
 fun main(args: Array<String>) = runBlocking {
-    val configuration = Configuration.loadConfiguration()
-    val chain = ChainProvider.createChain(configuration.connector)
-
-    val hubServer = HubServer(configuration, chain)
+    val argConfig = ArgParser(args).parseInto(::ArgsConfig)
+    val config = Config.loadConfig(argConfig.dataDir)
+    val chain = ChainProvider.createChain(config.connector)
+    val dataStoreFactory: DataStoreFactory
+    if (chain is InMemoryChain) {
+        dataStoreFactory = MapDataStoreFactory()
+    } else {
+        dataStoreFactory = H2DBDataStoreFactory(config.dataDir)
+    }
+    val hubServer = HubServer(config, chain, dataStoreFactory = dataStoreFactory)
     hubServer.start()
     hubServer.awaitTermination()
 }

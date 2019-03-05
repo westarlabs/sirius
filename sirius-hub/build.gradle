@@ -15,6 +15,5 @@ dependencies{
     compile "io.grpc:grpc-context:$grpc_version"
     compile 'io.opencensus:opencensus-api:0.18.0'
     runtime 'io.opencensus:opencensus-impl:0.18.0'
-    //compile "io.ktor:ktor-server-core:$ktor_version"
-    //compile "io.ktor:ktor-server-netty:$ktor_version"
+    compile "com.xenomachina:kotlin-argparser:2.0.7"
 }

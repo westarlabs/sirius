@@ -31,7 +31,7 @@ import kotlin.properties.Delegates
 abstract class HubServerIntegrationTestBase<T : ChainTransaction, A : ChainAccount, C : Chain<T, out Block<T>, A>> {
 
 
-    private var configuration: Configuration by Delegates.notNull()
+    private var configuration: Config by Delegates.notNull()
     private var hubServer: HubServer<A> by Delegates.notNull()
 
     protected var chain: C by Delegates.notNull()
@@ -58,7 +58,7 @@ abstract class HubServerIntegrationTestBase<T : ChainTransaction, A : ChainAccou
     protected open val waitTimeOutMillis: Long = 3000
 
     abstract fun createChainAccount(amount: Long): A
-    abstract fun createChain(configuration: Configuration): C
+    abstract fun createChain(configuration: Config): C
 
     private fun createAndInitLocalAccount(): LocalAccount<T, A> {
         val account =
@@ -78,7 +78,7 @@ abstract class HubServerIntegrationTestBase<T : ChainTransaction, A : ChainAccou
         this.txMap = ConcurrentHashMap()
 
         this.hubRootChannel = Channel(100)
-        this.configuration = Configuration.configurationForUNIT()
+        this.configuration = Config.configurationForUNIT()
         this.chain = createChain(this.configuration)
 
         this.owner = this.createChainAccount(10000)
