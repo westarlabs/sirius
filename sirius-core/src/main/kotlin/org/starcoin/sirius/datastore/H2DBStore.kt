@@ -3,6 +3,7 @@ package org.starcoin.sirius.datastore
 import com.google.common.base.Preconditions
 import org.sql2o.Connection
 import org.sql2o.Sql2o
+import org.starcoin.sirius.util.WithLogging
 import java.io.File
 
 class H2DBStore(private val sql2o: Sql2o, private val tableName: String) : DataStore<ByteArray, ByteArray> {
@@ -22,10 +23,10 @@ class H2DBStore(private val sql2o: Sql2o, private val tableName: String) : DataS
         tableName: String,
         dbDir: File
     ) : this(dbDir.let {
-        Preconditions.checkState(!dbDir.exists() || dbDir.isDirectory)
-        Sql2o(
-            h2dbUrlDiskFormat.format(it.absolutePath, tableName)
-        )
+        Preconditions.checkState(!dbDir.exists() && dbDir.mkdirs() || dbDir.isDirectory)
+        val url = h2dbUrlDiskFormat.format(it.absolutePath)
+        LOG.info("Create H2DBStore by url $url, tableName:$tableName")
+        Sql2o(url, "sa", "")
     }, tableName)
 
     override fun put(key: ByteArray, value: ByteArray) {
@@ -69,6 +70,7 @@ class H2DBStore(private val sql2o: Sql2o, private val tableName: String) : DataS
     }
 
     override fun updateBatch(rows: Map<ByteArray, ByteArray>) {
+        //TODO optimize
         sql2o.beginTransaction().use { conn ->
             for ((k, v) in rows) {
                 putByConn(k, v, conn)
@@ -139,9 +141,9 @@ class H2DBStore(private val sql2o: Sql2o, private val tableName: String) : DataS
         return H2DBStore(sql2o, tableName).apply { init() }
     }
 
-    companion object {
+    companion object : WithLogging() {
         const val h2dbUrlMemoryFormat =
             "jdbc:h2:mem:%s;DB_CLOSE_DELAY=-1;MODE=Mysql"
-        const val h2dbUrlDiskFormat = "jdbc:h2:%s/%s/data:starcoin;FILE_LOCK=FS;PAGE_SIZE=1024;CACHE_SIZE=819"
+        const val h2dbUrlDiskFormat = "jdbc:h2:%s/data;FILE_LOCK=FS;PAGE_SIZE=1024;CACHE_SIZE=819;MODE=Mysql"
     }
 }

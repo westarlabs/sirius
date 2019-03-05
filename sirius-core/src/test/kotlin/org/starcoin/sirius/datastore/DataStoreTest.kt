@@ -5,6 +5,7 @@ import org.junit.Assert
 import org.junit.Before
 import org.junit.Test
 import org.starcoin.sirius.lang.toHEXString
+import org.starcoin.sirius.serialization.rlp.toByteArray
 import java.util.concurrent.atomic.AtomicInteger
 import kotlin.properties.Delegates
 import kotlin.random.Random
@@ -32,6 +33,18 @@ abstract class DataStoreTestBase {
     }
 
     @Test
+    fun testRepeatKey() {
+        val key = Random.nextBytes(10)
+        val value = Random.nextBytes(10)
+        store.put(key, value)
+        Assert.assertArrayEquals(value, store.get(key))
+        val value2 = Random.nextBytes(11)
+        store.put(key, value2)
+        Assert.assertArrayEquals(value2, store.get(key))
+        Assert.assertEquals(1, store.keys().size)
+    }
+
+    @Test
     fun testDelete() {
         val keys = 1.rangeTo(100).map { Random.nextBytes(10) }
         keys.forEach { store.put(it, it) }
@@ -49,7 +62,7 @@ abstract class DataStoreTestBase {
 
     @Test
     fun testKeys() {
-        val keys = 1.rangeTo(100).map { Random.nextBytes(10) }
+        val keys = 1.rangeTo(10).map { it.toByteArray() + Random.nextBytes(10) }
         keys.forEach { store.put(it, it) }
         val keys2 = store.keys()
         keys.forEachIndexed { index, key ->
@@ -60,7 +73,7 @@ abstract class DataStoreTestBase {
 
     @Test
     fun testForEach() {
-        val keys = 1.rangeTo(1000).map { Random.nextBytes(10) }
+        val keys = 1.rangeTo(10).map { it.toByteArray() + Random.nextBytes(10) }
         keys.forEach { store.put(it, it) }
         val index = AtomicInteger(0)
         store.forEach { key, value ->
@@ -69,22 +82,16 @@ abstract class DataStoreTestBase {
         }
     }
 
+    @Test
+    fun testBatch() {
+        val rows = 1.rangeTo(100).map { Pair(it.toByteArray(), Random.nextBytes(10)) }.toMap()
+        store.updateBatch(rows)
+        Assert.assertEquals(rows.size, store.keys().size)
+    }
+
     @After
     fun after() {
         store.destroy()
     }
 }
 
-class MapStoreTest : DataStoreTestBase() {
-
-    override fun createStore(): DataStore<ByteArray, ByteArray> {
-        return MapStore()
-    }
-
-}
-
-class H2DBStoreTest : DataStoreTestBase() {
-    override fun createStore(): DataStore<ByteArray, ByteArray> {
-        return H2DBStore("test")
-    }
-}
