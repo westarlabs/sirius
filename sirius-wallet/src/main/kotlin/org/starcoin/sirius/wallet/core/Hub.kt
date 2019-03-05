@@ -45,7 +45,7 @@ class Hub <T : ChainTransaction, A : ChainAccount> {
     internal var eonChannel :Channel<ClientEventType>? = null
 
     // for test lost connect
-    internal var disconnect = true
+    internal var disconnect = false
 
     var alreadWatch = false
 
@@ -383,7 +383,8 @@ class Hub <T : ChainTransaction, A : ChainAccount> {
             return
         }
 
-        val withdrawal = Withdrawal(hubStatus.lastEonProof()!!, value)
+        val withdrawal = Withdrawal(hubStatus.currentEonProof()!!, value)
+        println("withdrawal is $withdrawal")
         this.contract.initiateWithdrawal(account,withdrawal)
     }
 
@@ -394,9 +395,6 @@ class Hub <T : ChainTransaction, A : ChainAccount> {
         val builder = Starcoin.HubMaliciousFlags.newBuilder()
         builder.addFlags(hubMaliciousFlag)
         liquidityHubServiceBlockingStub.setMaliciousFlags(builder.build())
-    }
-
-    private fun syncBlocks() {
     }
 
     private fun checkChallengeStatus() {

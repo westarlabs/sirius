@@ -301,12 +301,23 @@ class WalletTest {
             walletAlice.getMessageChannel()?.receive()
         }
 
-        waitToNextEon()
+        val amount=EtherUtil.convert(20, EtherUtil.Unit.ETHER)
+
+        val transaction=walletAlice.hubTransfer(bob.address,amount)
+
+        Assert.assertNotNull(transaction)
+
         runBlocking {
+            walletBob.getMessageChannel()?.receive()
             walletAlice.getMessageChannel()?.receive()
+            walletBob.getMessageChannel()?.receive()
         }
 
-        val amount = EtherUtil.convert(20, EtherUtil.Unit.ETHER)
+        waitToNextEon()
+        runBlocking {
+            println(walletAlice.getMessageChannel()?.receive())
+        }
+
         walletAlice.withdrawal(amount)
 
         runBlocking {
@@ -318,12 +329,17 @@ class WalletTest {
 
         waitToNextEon()
         runBlocking {
-            walletAlice.getMessageChannel()?.receive()
+            println(walletAlice.getMessageChannel()?.receive())
+        }
+
+        waitToNextEon()
+        runBlocking {
+            println(walletAlice.getMessageChannel()?.receive())
         }
 
         var account=walletAlice.hubAccount()
-        var remaining= EtherUtil.convert(2000, EtherUtil.Unit.ETHER) - amount
-        Assert.assertEquals(account?.allotment,remaining)
+        var remaining= EtherUtil.convert(2000, EtherUtil.Unit.ETHER) - amount-amount
+        Assert.assertEquals((account?.allotment?:BigInteger.ZERO)-(account?.withdraw?:BigInteger.ZERO),remaining)
         Assert.assertEquals(walletAlice.balance(),remaining)
 
         var balanceAfter=chain.getBalance(alice.address)
@@ -507,7 +523,6 @@ class WalletTest {
         }
         walletAlice.hub.disconnect=true
 
-        println("xxxxxxxxxxx")
         waitToNextEon()
         runBlocking {
             withTimeout(10000L){
@@ -515,15 +530,12 @@ class WalletTest {
             }
         }
 
-        println("xxxxxxxxxxx")
         createBlocks(hubInfo.blocksPerEon)
         runBlocking {
             withTimeout(10000L) {
                 walletAlice.getMessageChannel()?.receive()
             }
         }
-
-        println("xxxxxxxxxxx")
 
         val aliceWalletClone = Wallet(this.contract.contractAddress,chain,alice)
         aliceWalletClone.restore()

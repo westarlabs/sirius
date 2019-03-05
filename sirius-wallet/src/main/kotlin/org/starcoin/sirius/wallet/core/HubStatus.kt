@@ -145,6 +145,7 @@ class HubStatus {
         LOG.info("allotment is $allotment")
 
         val maybe = currentEonStatusIndex + 1
+        LOG.info("maybe is $maybe")
         if (maybe > 2) {
             currentEonStatusIndex = 0
         } else {
