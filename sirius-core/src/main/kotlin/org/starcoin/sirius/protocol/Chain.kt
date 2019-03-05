@@ -58,6 +58,8 @@ interface Chain<T : ChainTransaction, B : Block<T>, A : ChainAccount> {
 
     fun createAccount(keystore: File, password: String): A
 
+    fun createAccount(keystoreDir: File, accountIDOrAddress: String, password: String): A
+
     fun createAccount(): A
 
     /**

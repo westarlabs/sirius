@@ -65,6 +65,9 @@ class EthereumHubContract internal constructor(
         return if (clazz.isSubclassOf(SiriusObject::class)) {
             val bytes =
                 bytesType.decode(returnBytes, SolidityType.IntType.decodeInt(returnBytes, 0).toInt()) as ByteArray
+            if (bytes.isEmpty()) {
+                return null
+            }
             val contractReturn = RLP.load(ContractReturn.serializer(), bytes)
             contractReturn.getPayload(clazz as KClass<SiriusObject>) as S?
         } else {

@@ -1,6 +1,7 @@
 package org.starcoin.sirius.protocol.ethereum
 
 import kotlinx.coroutines.runBlocking
+import org.apache.commons.lang3.StringUtils
 import org.ethereum.core.CallTransaction
 import org.ethereum.solidity.compiler.CompilationResult
 import org.starcoin.sirius.core.Address
@@ -17,6 +18,7 @@ import org.starcoin.sirius.protocol.ethereum.contract.EthereumHubContract
 import org.starcoin.sirius.util.WithLogging
 import org.web3j.crypto.WalletUtils
 import java.io.File
+import java.io.FileNotFoundException
 import java.math.BigInteger
 import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.atomic.AtomicLong
@@ -32,7 +34,7 @@ abstract class EthereumBaseChain :
             get() = 1.toBigInteger()
 
         val defaultGasLimit: BigInteger
-            get() = 7500000.toBigInteger()
+            get() = 6000000.toBigInteger()
     }
 
     protected val txDeferreds = ConcurrentHashMap<Hash, TxDeferred>()
@@ -114,6 +116,24 @@ abstract class EthereumBaseChain :
         )
         val cryptoKey = CryptoService.loadCryptoKey(credentials.ecKeyPair.privateKey.toByteArray())
         return EthereumAccount(cryptoKey, AtomicLong(this.getNonce(cryptoKey.address).longValueExact()))
+    }
+
+    override fun createAccount(keystoreDir: File, accountIDOrAddress: String, password: String): EthereumAccount {
+        val files = keystoreDir.listFiles()
+        files.sortBy { it.lastModified() }
+        val keyStoreFile = when {
+            files.isEmpty() -> null
+            StringUtils.isNumeric(accountIDOrAddress) -> {
+                val accountID = accountIDOrAddress.toInt()
+                files.getOrNull(accountID)
+            }
+            else -> {
+                val address = Address.wrap(accountIDOrAddress)
+                files.find { it.name.endsWith(address.toString().removePrefix("0x"), true) }
+            }
+        }
+        return keyStoreFile?.let { createAccount(keyStoreFile, password) }
+            ?: throw FileNotFoundException("Can not find account $accountIDOrAddress in dir $keystoreDir")
     }
 
     override fun tryMiningCoin(account: EthereumAccount, amount: BigInteger): Boolean {
