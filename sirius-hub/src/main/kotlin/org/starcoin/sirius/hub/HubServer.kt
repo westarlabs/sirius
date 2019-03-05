@@ -39,7 +39,7 @@ class HubServer<A : ChainAccount>(
         ).apply {
             //TODO report hub external address.
             LOG.info("Report hub ip to contract.")
-            contract.setHubIp(owner, config.rpcBind.toString())
+            this.setHubIp(owner, config.rpcBind.toString())
             config.contractAddress = this.contractAddress
             config.store()
         }

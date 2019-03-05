@@ -10,7 +10,7 @@ class EthereumChainProvider : ChainProvider {
 
     override fun createChain(connectorURI: URI): EthereumChain {
         val url = connectorURI.schemeSpecificPart
-        return EthereumChain(url)
+        return EthereumChain(webSocket = url)
     }
 
     companion object {
