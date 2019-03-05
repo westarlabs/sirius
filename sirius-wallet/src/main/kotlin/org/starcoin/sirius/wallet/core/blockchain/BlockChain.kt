@@ -1,6 +1,8 @@
 package org.starcoin.sirius.wallet.core.blockchain
 
 import kotlinx.coroutines.GlobalScope
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.cancelAndJoin
 import kotlinx.coroutines.launch
 import org.starcoin.sirius.core.*
 import org.starcoin.sirius.lang.toBigInteger
@@ -20,6 +22,8 @@ class BlockChain <T : ChainTransaction, A : ChainAccount> (chain: Chain<T, out B
     private val account = account
     internal var startWatch = false
     private var height : BigInteger =  BigInteger.ZERO
+
+    lateinit  private var job :Job
 
     private val syncedHeight = "synced-block-height".toByteArray()
     companion object : WithLogging()
@@ -101,7 +105,7 @@ class BlockChain <T : ChainTransaction, A : ChainAccount> (chain: Chain<T, out B
         if(heightBytes!=null){
             this.height= heightBytes.toBigInteger()
         }
-        GlobalScope.launch {
+        job=GlobalScope.launch {
             val channel = chain.watchBlock(this@BlockChain.height)
             while (startWatch) {
                 var block = channel.receive()
@@ -115,5 +119,9 @@ class BlockChain <T : ChainTransaction, A : ChainAccount> (chain: Chain<T, out B
                 )
             }
         }
+    }
+
+    internal suspend fun close(){
+        job.cancel()
     }
 }

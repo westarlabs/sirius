@@ -383,7 +383,7 @@ class Hub <T : ChainTransaction, A : ChainAccount> {
             return
         }
 
-        val withdrawal = Withdrawal(hubStatus.currentEonProof()!!, value)
+        val withdrawal = Withdrawal(hubStatus.lastEonProof()!!, value)
         println("withdrawal is $withdrawal")
         this.contract.initiateWithdrawal(account,withdrawal)
     }

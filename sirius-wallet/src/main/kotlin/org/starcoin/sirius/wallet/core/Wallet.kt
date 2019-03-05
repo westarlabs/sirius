@@ -63,4 +63,9 @@ class Wallet<T : ChainTransaction, A : ChainAccount> {
     fun sync() = hub.sync()
 
     fun restore() = hub.restore()
+
+    suspend fun close() {
+        blockChain.close()
+        hub.eonChannel?.close()
+    }
 }

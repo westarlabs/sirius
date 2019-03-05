@@ -65,12 +65,15 @@ class WalletTest {
 
         val amount = EtherUtil.convert(10000000, EtherUtil.Unit.ETHER)
 
+        this.sendEther(alice, amount)
+        this.sendEther(bob, amount)
+        chain.tryMiningCoin(owner, EtherUtil.convert(Int.MAX_VALUE.toLong(), EtherUtil.Unit.ETHER))
+
         hubChannel = InProcessChannelBuilder.forName(configuration.rpcBind.toString()).build()
         stub = HubServiceGrpc.newBlockingStub(hubChannel)
         ResourceManager.hubChannel=hubChannel
 
         hubServer = HubServer(configuration, chain,owner)
-        chain.tryMiningCoin(owner, EtherUtil.convert(Int.MAX_VALUE.toLong(), EtherUtil.Unit.ETHER))
         hubServer.start()
         contract = hubServer.contract
 
@@ -82,8 +85,7 @@ class WalletTest {
 
         hubInfo= contract.queryHubInfo(alice)
 
-        this.sendEther(alice, amount)
-        this.sendEther(bob, amount)
+        logger.info("block height before test is ${chain.getBlockNumber()}")
     }
 
     fun sendEther(address: EthereumAccount, amount: BigInteger) {
@@ -108,6 +110,10 @@ class WalletTest {
     fun after() {
         hubServer.stop()
         hubChannel.shutdownNow()
+        runBlocking {
+            walletAlice.close()
+            walletBob.close()
+        }
     }
 
     @Test
@@ -256,7 +262,7 @@ class WalletTest {
         runBlocking {
             withTimeout(10000L){
                 walletAlice.getMessageChannel()?.receive()
-            walletAlice.getMessageChannel()?.receive()
+            println(walletAlice.getMessageChannel()?.receive())
             }
         }
 
@@ -275,7 +281,7 @@ class WalletTest {
             }
         }
 
-        createBlocks(2)
+        createBlocks(hubInfo.blocksPerEon)
 
         walletAlice.deposit(amount)
         createBlocks(1)
@@ -639,7 +645,7 @@ class WalletTest {
     private fun waitToNextEon() {
         var height = chain.getBlockNumber()
         var blockNumber = Eon.waitToEon(hubInfo.startBlockNumber.toLong(),height,hubInfo.blocksPerEon,walletAlice.hub.currentEon.id+1)
-        logger.info("need generate $blockNumber blocks")
+        logger.info("current height is $height,need generate $blockNumber blocks")
         for (i in 0..blockNumber) {
             chain.createBlock()
         }
