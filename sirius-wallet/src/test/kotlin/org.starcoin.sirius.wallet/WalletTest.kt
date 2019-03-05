@@ -490,15 +490,19 @@ class WalletTest {
         Assert.assertNotNull(transaction)
 
         runBlocking {
+            withTimeout(10000L){
+                walletBob.getMessageChannel()?.receive()
+                walletAlice.getMessageChannel()?.receive()
             walletBob.getMessageChannel()?.receive()
-            walletAlice.getMessageChannel()?.receive()
-            walletBob.getMessageChannel()?.receive()
+            }
         }
         walletAlice.hub.disconnect=true
 
         waitToNextEon()
         runBlocking {
-            walletAlice.getMessageChannel()?.receive()
+            withTimeout(10000L){
+                walletAlice.getMessageChannel()?.receive()
+            }
         }
 
         val aliceWalletClone = Wallet(this.contract.contractAddress,chain,alice)
@@ -539,6 +543,54 @@ class WalletTest {
 
         val aliceWalletClone = Wallet(this.contract.contractAddress,chain,alice)
         aliceWalletClone.restore()
+    }
+
+    @Test
+    fun testWithdrawalRestore() {
+        testDeposit()
+
+        waitToNextEon()
+
+        runBlocking {
+            walletAlice.getMessageChannel()?.receive()
+        }
+
+        val amount = EtherUtil.convert(20, EtherUtil.Unit.ETHER)
+
+        val transaction = walletAlice.hubTransfer(bob.address, amount)
+
+        Assert.assertNotNull(transaction)
+
+        runBlocking {
+            walletBob.getMessageChannel()?.receive()
+            walletAlice.getMessageChannel()?.receive()
+            walletBob.getMessageChannel()?.receive()
+        }
+
+        waitToNextEon()
+        runBlocking {
+            println(walletAlice.getMessageChannel()?.receive())
+        }
+
+        walletAlice.withdrawal(amount)
+
+        runBlocking {
+            walletAlice.getMessageChannel()?.receive()
+        }
+        Assert.assertTrue(!walletAlice.hub.hubStatus.couldWithDrawal())
+
+        walletAlice.hub.disconnect=true
+
+        waitToNextEon()
+        runBlocking {
+            withTimeout(10000L){
+                walletAlice.getMessageChannel()?.receive()
+            }
+        }
+
+        val aliceWalletClone = Wallet(this.contract.contractAddress,chain,alice)
+        aliceWalletClone.restore()
+        Assert.assertEquals(walletAlice.balance(), aliceWalletClone.balance())
     }
 
     private fun waitToNextEon() {

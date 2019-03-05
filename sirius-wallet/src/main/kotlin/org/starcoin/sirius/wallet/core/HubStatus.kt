@@ -242,7 +242,7 @@ class HubStatus {
             }
         }
         this.currentEonStatusIndex =0
-        val allotBytes=ResourceManager.instance(account.address.toBytes().toHEXString()).dataStore.get("allot-${this.eon.id}".toByteArray())
+        val allotBytes=ResourceManager.instance(account.address.toBytes().toHEXString()).dataStore.get("allot-${eon}".toByteArray())
 
         val withdrawalBytes=ResourceManager.instance(account.address.toBytes().toHEXString()).dataStore.get(withdrawalKey)
         if(withdrawalBytes!=null){

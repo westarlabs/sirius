@@ -35,7 +35,7 @@ class H2DBStore(private val sql2o: Sql2o, private val tableName: String) : DataS
     }
 
     private fun putByConn(key: ByteArray, value: ByteArray, conn: Connection) {
-        conn.createQuery("insert into $tableName values(:key,:value)")
+        conn.createQuery("insert into $tableName values(:key,:value) on duplicate key update value=:value")
             .addParameter("key", key)
             .addParameter("value", value)
             .executeUpdate()
@@ -106,7 +106,7 @@ class H2DBStore(private val sql2o: Sql2o, private val tableName: String) : DataS
 
     override fun init() {
         sql2o.beginTransaction().use { conn ->
-            conn.createQuery("create table IF NOT EXISTS $tableName (key BINARY(100),value BINARY(1000))")
+            conn.createQuery("create table IF NOT EXISTS $tableName (key BINARY(100) primary key,value BINARY(1000))")
                 .executeUpdate()
             conn.commit()
         }
