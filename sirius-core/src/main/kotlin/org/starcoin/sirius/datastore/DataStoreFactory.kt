@@ -1,8 +1,8 @@
 package org.starcoin.sirius.datastore
 
-interface DataStoreFactory {
+import java.io.File
 
-    fun create(name: String): DataStore<ByteArray, ByteArray>
+interface DataStoreFactory {
 
     fun get(name: String): DataStore<ByteArray, ByteArray>?
 
@@ -13,20 +13,9 @@ interface DataStoreFactory {
     fun delete(name: String)
 }
 
-class DataStoreExistException(name: String) : RuntimeException("DataStore with name $name exist")
-
 class MapDataStoreFactory : DataStoreFactory {
 
     val stores = mutableMapOf<String, MapStore>()
-
-    override fun create(name: String): MapStore {
-        if (stores.containsKey(name)) {
-            throw DataStoreExistException(name)
-        }
-        val store = MapStore()
-        stores[name] = store
-        return store
-    }
 
     override fun get(name: String): MapStore? {
         return stores[name]
@@ -48,4 +37,24 @@ class MapDataStoreFactory : DataStoreFactory {
         stores.remove(name)
     }
 
+}
+
+class H2DBDataStoreFactory(val dbDir: File) : DataStoreFactory {
+    val defaultDB = H2DBStore("default", dbDir)
+
+    override fun get(name: String): H2DBStore? {
+        return defaultDB.getTable(name)
+    }
+
+    override fun getOrCreate(name: String): H2DBStore {
+        return defaultDB.getOrCreateTable(name)
+    }
+
+    override fun exist(name: String): Boolean {
+        return defaultDB.existTable(name)
+    }
+
+    override fun delete(name: String) {
+        this.get(name)?.apply { destroy() }
+    }
 }

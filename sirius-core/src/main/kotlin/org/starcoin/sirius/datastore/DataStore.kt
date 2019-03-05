@@ -1,8 +1,6 @@
 package org.starcoin.sirius.datastore
 
-import java.util.function.Consumer
-
-interface DataStore<K, V> :Iterable<Pair<K,V>>{
+interface DataStore<K, V> : Iterable<Pair<K, V>> {
 
     fun put(key: K, value: V)
 

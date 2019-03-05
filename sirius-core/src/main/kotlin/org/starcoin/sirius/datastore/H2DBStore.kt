@@ -1,14 +1,32 @@
 package org.starcoin.sirius.datastore
 
+import com.google.common.base.Preconditions
 import org.sql2o.Connection
 import org.sql2o.Sql2o
+import java.io.File
 
 class H2DBStore(private val sql2o: Sql2o, private val tableName: String) : DataStore<ByteArray, ByteArray> {
 
     /**
      * default use memory db.
      */
-    constructor(tableName: String) : this(Sql2o(h2dbUrlMemoryFormat.format(tableName), "sa", ""), tableName)
+    constructor(tableName: String, dbName: String = "default") : this(
+        Sql2o(
+            h2dbUrlMemoryFormat.format(tableName),
+            "sa",
+            ""
+        ), dbName
+    )
+
+    constructor(
+        tableName: String,
+        dbDir: File
+    ) : this(dbDir.let {
+        Preconditions.checkState(!dbDir.exists() || dbDir.isDirectory)
+        Sql2o(
+            h2dbUrlDiskFormat.format(it.absolutePath, tableName)
+        )
+    }, tableName)
 
     override fun put(key: ByteArray, value: ByteArray) {
         sql2o.beginTransaction().use { conn ->
@@ -65,10 +83,6 @@ class H2DBStore(private val sql2o: Sql2o, private val tableName: String) : DataS
         }
     }
 
-    override fun forEach(consumer: (ByteArray, ByteArray) -> Unit) {
-
-    }
-
     override fun iterator(): CloseableIterator<Pair<ByteArray, ByteArray>> {
         //TODO optimize
         val conn = sql2o.open()
@@ -98,8 +112,36 @@ class H2DBStore(private val sql2o: Sql2o, private val tableName: String) : DataS
         }
     }
 
+    fun existTable(tableName: String): Boolean {
+        return queryTableName(tableName) != null
+    }
+
+    private fun queryTableName(tableName: String): String? {
+        return sql2o.beginTransaction().use { conn ->
+            conn.createQuery(
+                """
+                    select table_name
+                    from information_schema.tables
+                    where table_schema = 'PUBLIC'
+                      and table_type = 'TABLE'
+                      and table_name = '$tableName'
+                    """
+            ).executeAndFetch(String::class.java).firstOrNull()
+        }
+    }
+
+    fun getTable(tableName: String): H2DBStore? {
+        val table = queryTableName(tableName)
+        return table?.let { H2DBStore(sql2o, table) }
+    }
+
+    fun getOrCreateTable(tableName: String): H2DBStore {
+        return H2DBStore(sql2o, tableName).apply { init() }
+    }
+
     companion object {
         const val h2dbUrlMemoryFormat =
             "jdbc:h2:mem:%s;DB_CLOSE_DELAY=-1;MODE=Mysql"
+        const val h2dbUrlDiskFormat = "jdbc:h2:%s/%s/data:starcoin;FILE_LOCK=FS;PAGE_SIZE=1024;CACHE_SIZE=819"
     }
 }
