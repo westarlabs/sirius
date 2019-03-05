@@ -1,5 +1,7 @@
 package org.starcoin.sirius.util
 
+import kotlinx.io.PrintWriter
+import kotlinx.io.StringWriter
 import java.util.logging.Level
 import java.util.logging.LogManager
 import java.util.logging.Logger
@@ -47,6 +49,39 @@ fun <R : Any> R.injectLogger(): Lazy<Logger> {
 interface Loggable {}
 
 fun Loggable.logger(): Logger = logger(this.javaClass)
+
+fun Logger.log(level: Level, e: Throwable) {
+    this.log(level, "${e.javaClass.name} : ${e.message}")
+    this.log(level) {
+        val out = StringWriter()
+        e.printStackTrace(PrintWriter(out))
+        out.toString()
+    }
+}
+
+fun Logger.error(msg: String) {
+    this.severe(msg)
+}
+
+fun Logger.error(msgSuply: () -> String) {
+    this.severe(msgSuply)
+}
+
+fun Logger.error(e: Throwable) {
+    this.log(Level.SEVERE, e)
+}
+
+fun Logger.warning(e: Throwable) {
+    this.log(Level.WARNING, e)
+}
+
+fun Logger.info(e: Throwable) {
+    this.log(Level.INFO, e)
+}
+
+fun Logger.fine(e: Throwable) {
+    this.log(Level.FINE, e)
+}
 
 // abstract base class to provide logging, intended for companion objects more than classes but works for either
 abstract class WithLogging : Loggable {
