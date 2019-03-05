@@ -78,7 +78,7 @@ class Config private constructor(val properties: Properties, val dataDir: File, 
         val DEFAULT_RPC_BIND = InetAddressPort("0.0.0.0", DEFAULT_RPC_PORT)
         val DEFAULT_BLOCKS_PER_EON = ContractConstructArgs.TEST_BLOCKS_PER_EON
         val DEFAULT_CONNECTOR = URI("${InMemoryChainProvider.scheme}:test")
-        val DEFAULT_DATA_DIR = "${System.getProperty("user.home")}/.starcoin/hub/"
+        val DEFAULT_DATA_DIR = "${System.getProperty("user.home")}/.sirius/hub/"
 
         fun loadConfig(dataDir: File): Config {
             val properties = Properties()
