@@ -14,6 +14,7 @@ import org.starcoin.sirius.core.IOU
 import org.starcoin.sirius.core.Participant
 import org.starcoin.sirius.core.Update
 import org.starcoin.sirius.util.WithLogging
+import org.starcoin.sirius.util.error
 
 class HubRpcService(val hubService: HubService) :
     HubServiceGrpc.HubServiceImplBase() {
@@ -35,19 +36,12 @@ class HubRpcService(val hubService: HubService) :
     }
 
     private fun doResponseError(responseObserver: StreamObserver<*>, e: Exception) {
-        LOG.severe(e.message)
-        val exception: StatusRuntimeException
-        if (e is StatusRuntimeException) {
-            exception = e
-        } else if (e is IllegalArgumentException) {
-            exception = StatusRuntimeException(Status.INVALID_ARGUMENT.withCause(e))
-            e.printStackTrace()
-        } else if (e is IllegalStateException) {
-            exception = StatusRuntimeException(Status.INTERNAL.withCause(e))
-            e.printStackTrace()
-        } else {
-            exception = StatusRuntimeException(Status.UNKNOWN.withCause(e))
-            e.printStackTrace()
+        LOG.error(e)
+        val exception = when (e) {
+            is StatusRuntimeException -> e
+            is IllegalArgumentException -> StatusRuntimeException(Status.INVALID_ARGUMENT.withCause(e))
+            is IllegalStateException -> StatusRuntimeException(Status.INTERNAL.withCause(e))
+            else -> StatusRuntimeException(Status.UNKNOWN.withCause(e))
         }
         responseObserver.onError(exception)
     }

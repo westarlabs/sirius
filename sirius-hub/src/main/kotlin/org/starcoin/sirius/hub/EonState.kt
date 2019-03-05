@@ -6,45 +6,44 @@ import org.starcoin.sirius.datastore.DataStoreFactory
 import org.starcoin.sirius.datastore.MapDataStoreFactory
 import java.util.*
 
-class EonState(val eon: Int, val previous: EonState? = null) {
-    var state: AMTree
-        private set
+class EonState(val eon: Int, val state: AMTree, private val factory: DataStoreFactory, val previous: EonState?) {
+
     var currentEpoch: Epoch = Eon.Epoch.FIRST
         private set
-    private val factory: DataStoreFactory
+    private val accountStore: HubAccountStore = HubAccountStore(eon, factory)
 
-    private val hubAccountStore: HubAccountStore
 
-    init {
-        if (this.previous != null) {
-            this.state = AMTree(this.eon, this.previous.hubAccountStore.asHubAccountIterable())
-            this.factory = previous.factory
-        } else {
-            this.state = AMTree(this.eon, ArrayList())
-            //TODO
-            this.factory = MapDataStoreFactory()
-        }
-        this.hubAccountStore = HubAccountStore(eon, factory)
-        if (this.previous != null) {
-            this.previous.forEach { account -> addAccount(account.toNextEon(this.eon)) }
-        }
+    constructor(eon: Int, factory: DataStoreFactory = MapDataStoreFactory()) : this(
+        eon,
+        AMTree(eon, ArrayList()),
+        factory,
+        null
+    )
+
+    constructor(eon: Int, previous: EonState) : this(
+        eon,
+        AMTree(eon, previous.accountStore.asHubAccountIterable()),
+        previous.factory,
+        previous
+    ) {
+        this.accountStore.updateBatch(previous.accountStore.asHubAccountIterable().map { it.toNextEon(eon) })
     }
 
     fun getAccount(address: Address): HubAccount? {
-        return this.hubAccountStore.get(address)
+        return this.accountStore.get(address)
     }
 
     fun getAccount(predicate: (HubAccount) -> Boolean): HubAccount? {
-        return this.hubAccountStore.asHubAccountIterable().firstOrNull(predicate)
+        return this.accountStore.asHubAccountIterable().firstOrNull(predicate)
     }
 
     fun addAccount(account: HubAccount) {
-        this.hubAccountStore.put(account)
+        this.accountStore.put(account)
     }
 
 
     fun forEach(consumer: (HubAccount) -> Unit) {
-        this.hubAccountStore.asHubAccountIterable().forEach(consumer)
+        this.accountStore.asHubAccountIterable().forEach(consumer)
     }
 
     fun setEpoch(epoch: Epoch) {
@@ -71,6 +70,6 @@ class EonState(val eon: Int, val previous: EonState? = null) {
     }
 
     fun saveAccount(account: HubAccount) {
-        this.hubAccountStore.put(account)
+        this.accountStore.put(account)
     }
 }

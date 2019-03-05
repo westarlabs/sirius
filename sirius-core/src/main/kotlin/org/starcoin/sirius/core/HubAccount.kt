@@ -61,6 +61,8 @@ data class AccountEonState(
         return this.txs.isEmpty() && this.pendingReceiveTxs.isEmpty() && this.pendingSendTxs.isEmpty() && update.isEmpty() && allotment == BigInteger.ZERO && deposit == BigInteger.ZERO && withdraw == BigInteger.ZERO
     }
 
+    fun isNotEmpty() = !isEmpty()
+
     internal fun checkBalance(amount: BigInteger = BigInteger.ZERO): Boolean {
         return this.balance >= amount
     }

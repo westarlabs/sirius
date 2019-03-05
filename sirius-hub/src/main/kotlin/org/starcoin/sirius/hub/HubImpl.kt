@@ -12,6 +12,7 @@ import org.starcoin.sirius.channel.EventBus
 import org.starcoin.sirius.core.*
 import org.starcoin.sirius.protocol.*
 import org.starcoin.sirius.util.WithLogging
+import org.starcoin.sirius.util.error
 import java.util.*
 import java.util.concurrent.CompletableFuture
 import java.util.concurrent.ConcurrentHashMap
@@ -346,16 +347,18 @@ class HubImpl<A : ChainAccount>(
         if (txProof != null) {
             val closeChallenge =
                 CloseTransferDeliveryChallenge(accountProof, txProof, currentAccount.address, tx.hash())
-            //assert(AMTree.verifyMembershipProof(this.contract.getLatestRoot(owner)!!.root, closeChallenge.proof))
             this.contract.closeTransferDeliveryChallenge(owner, closeChallenge)
         } else {
-            LOG.warning("Can not find tx Proof with challenge:" + challenge.toString())
+            LOG.warning("Can not find tx Proof with challenge:$challenge")
         }
     }
 
     private fun processBalanceUpdateChallenge(address: Address, challenge: BalanceUpdateProof) {
-        //TODO is nullable
-        val proofPath = this.eonState.state.getMembershipProof(address) ?: assertAccountNotNull(address)
+        val proofPath = this.eonState.state.getMembershipProof(address)
+        if (proofPath == null) {
+            LOG.error("Can not find proof by address $address to close challenge: $challenge")
+            return
+        }
         this.contract.closeBalanceUpdateChallenge(owner, CloseBalanceUpdateChallenge(address, proofPath))
     }
 

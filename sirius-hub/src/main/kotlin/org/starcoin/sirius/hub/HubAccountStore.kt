@@ -68,7 +68,17 @@ class HubAccountStore(
     }
 
     override fun updateBatch(rows: Map<Address, HubAccount>) {
-        TODO("not implemented")
+        this.updateBatch(rows.values)
+    }
+
+    fun updateBatch(accounts: Iterable<HubAccount>) {
+        this.keyStore.updateBatch(accounts.map { Pair(it.address, it.publicKey) }.toMap())
+        this.eonStateStore.updateBatch(accounts.filter { it.eonState.isNotEmpty() }.map {
+            Pair(
+                it.address,
+                it.eonState
+            )
+        }.toMap())
     }
 
     override fun keys(): List<Address> {
