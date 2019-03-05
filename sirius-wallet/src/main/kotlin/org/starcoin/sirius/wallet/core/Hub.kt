@@ -45,7 +45,7 @@ class Hub <T : ChainTransaction, A : ChainAccount> {
     internal var eonChannel :Channel<ClientEventType>? = null
 
     // for test lost connect
-    var disconnect = true
+    internal var disconnect = true
 
     var alreadWatch = false
 
@@ -85,7 +85,8 @@ class Hub <T : ChainTransaction, A : ChainAccount> {
             val eon = this.getChainEon()
             LOG.info("finish get eon")
 
-            if (this.accountInfo() == null) {
+            if (this.accountInfo() == null||this.disconnect==true) {
+                GlobalScope.launch { eonChannel?.send(ClientEventType.FINISH_EON_CHANGE) }
                 return
             }
             LOG.info("current eon is "+eon.id+" hubroot eon is " +hubRoot.eon)
@@ -463,7 +464,7 @@ class Hub <T : ChainTransaction, A : ChainAccount> {
         val lastSavedEon=ResourceManager.instance(account.address.toBytes().toHEXString()).dataStore.get(this.currentEonKey)?.toBigInteger()?.toInt()?:0
         val currentEon=this.getChainEon()
         if((currentEon.id-lastSavedEon)>1){
-            throw java.lang.RuntimeException("local data is too old,please use sync command")
+            throw java.lang.IllegalStateException("local data is too old,please use sync command")
         }
         this.hubStatus.reloadData(lastSavedEon)
         if((currentEon.id>lastSavedEon)){

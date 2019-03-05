@@ -30,6 +30,7 @@ import org.starcoin.sirius.protocol.ethereum.EthereumAccount
 import org.starcoin.sirius.protocol.ethereum.InMemoryChain
 import org.starcoin.sirius.wallet.core.ResourceManager
 import org.starcoin.sirius.wallet.core.Wallet
+import java.lang.IllegalStateException
 import java.math.BigInteger
 import java.util.logging.Logger
 import kotlin.properties.Delegates
@@ -477,6 +478,7 @@ class WalletTest {
             walletAlice.getMessageChannel()?.receive()
             walletBob.getMessageChannel()?.receive()
         }
+        walletAlice.hub.disconnect=true
 
         waitToNextEon()
         runBlocking {
@@ -486,6 +488,45 @@ class WalletTest {
         val aliceWalletClone = Wallet(this.contract.contractAddress,chain,alice)
         aliceWalletClone.restore()
         Assert.assertEquals(walletAlice.balance(), aliceWalletClone.balance())
+    }
+
+    @Test(expected = IllegalStateException::class)
+    fun testRestoreFail() {
+        testDeposit()
+
+        val amount=EtherUtil.convert(20, EtherUtil.Unit.ETHER)
+
+        val transaction=walletAlice.hubTransfer(bob.address,amount)
+
+        Assert.assertNotNull(transaction)
+
+        runBlocking {
+            walletBob.getMessageChannel()?.receive()
+            walletAlice.getMessageChannel()?.receive()
+            walletBob.getMessageChannel()?.receive()
+        }
+        walletAlice.hub.disconnect=true
+
+        println("xxxxxxxxxxx")
+        waitToNextEon()
+        runBlocking {
+            withTimeout(10000L){
+                walletAlice.getMessageChannel()?.receive()
+            }
+        }
+
+        println("xxxxxxxxxxx")
+        createBlocks(hubInfo.blocksPerEon)
+        runBlocking {
+            withTimeout(10000L) {
+                walletAlice.getMessageChannel()?.receive()
+            }
+        }
+
+        println("xxxxxxxxxxx")
+
+        val aliceWalletClone = Wallet(this.contract.contractAddress,chain,alice)
+        aliceWalletClone.restore()
     }
 
     private fun waitToNextEon() {
