@@ -2,6 +2,7 @@ package org.starcoin.sirius.datastore
 
 import org.starcoin.sirius.core.*
 import org.starcoin.sirius.serialization.Codec
+import org.starcoin.sirius.serialization.StringCodec
 import kotlin.reflect.KClass
 
 class SiriusObjectStore<K, V : SiriusObject>(
@@ -37,18 +38,8 @@ class SiriusObjectStore<K, V : SiriusObject>(
             clazz: KClass<V>,
             dataStore: DataStore<ByteArray, ByteArray>
         ): SiriusObjectStore<String, V> {
-            return SiriusObjectStore(StringCodec(), clazz, dataStore)
+            return SiriusObjectStore(StringCodec, clazz, dataStore)
         }
     }
 }
 
-class StringCodec :Codec<String>{
-    override fun encode(value: String): ByteArray {
-        return value.toByteArray()
-    }
-
-    override fun decode(bytes: ByteArray): String {
-        return String(bytes)
-    }
-
-}

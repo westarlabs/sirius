@@ -6,25 +6,28 @@ import org.starcoin.sirius.datastore.DataStoreFactory
 import org.starcoin.sirius.datastore.MapDataStoreFactory
 import java.util.*
 
-class EonState(val eon: Int, val state: AMTree, private val factory: DataStoreFactory, val previous: EonState?) {
+class EonState(val eon: Int, val state: AMTree, private val factory: DataStoreFactory) {
 
     var currentEpoch: Epoch = Eon.Epoch.FIRST
         private set
     private val accountStore: HubAccountStore = HubAccountStore(eon, factory)
 
+    val previous: EonState?
+        get() = when (eon) {
+            0 -> null
+            else -> EonState(eon - 1, factory)
+        }
 
     constructor(eon: Int, factory: DataStoreFactory = MapDataStoreFactory()) : this(
         eon,
         AMTree(eon, ArrayList()),
-        factory,
-        null
+        factory
     )
 
     constructor(eon: Int, previous: EonState) : this(
         eon,
         AMTree(eon, previous.accountStore.asHubAccountIterable()),
-        previous.factory,
-        previous
+        previous.factory
     ) {
         this.accountStore.updateBatch(previous.accountStore.asHubAccountIterable().map { it.toNextEon(eon) })
     }

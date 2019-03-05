@@ -12,6 +12,7 @@ import org.starcoin.sirius.channel.EventBus
 import org.starcoin.sirius.core.*
 import org.starcoin.sirius.datastore.DataStoreFactory
 import org.starcoin.sirius.datastore.MapDataStoreFactory
+import org.starcoin.sirius.datastore.delegate
 import org.starcoin.sirius.protocol.*
 import org.starcoin.sirius.util.WithLogging
 import org.starcoin.sirius.util.error
@@ -50,25 +51,25 @@ class HubImpl<A : ChainAccount>(
 
     private lateinit var eonState: EonState
 
+    private val syncStore = dataStoreFactory.getOrCreate("sync")
 
     private val eventBus = EventBus<HubEvent>()
 
-    val ready: Boolean
+    private val ready: Boolean
         get() = hubStatus == HubStatus.Ready
 
-    val recoveryMode: Boolean
+    private val recoveryMode: Boolean
         get() = hubStatus == HubStatus.Recovery
 
     private val txReceipts = ConcurrentHashMap<Hash, CompletableFuture<Receipt>>()
 
     private val strategy: MaliciousStrategy = MaliciousStrategy()
 
-    var blocksPerEon = 0
-        private set
+    private var blocksPerEon = 0
 
-    var startBlockNumber: Long by Delegates.notNull()
-        private set
-    var currentBlockNumber: Long by Delegates.notNull()
+    private var startBlockNumber: Long by Delegates.notNull()
+
+    private var processedBlockNumber: Long by syncStore.delegate(-1L)
 
     private val withdrawals = ConcurrentHashMap<Address, Withdrawal>()
 
@@ -152,20 +153,25 @@ class HubImpl<A : ChainAccount>(
     }
 
     override fun start() {
-        this.currentBlockNumber = chain.getBlockNumber()
+        LOG.info("ProcessedBlockNumber: $processedBlockNumber")
+        val currentBlockNumber = chain.getBlockNumber()
         LOG.info("CurrentBlockNumber: $currentBlockNumber")
-        //contract.setHubIp(owner, "127.0.0.1:8484")
         val contractHubInfo = contract.queryHubInfo(owner)
         LOG.info("ContractHubInfo: $contractHubInfo")
 
         this.blocksPerEon = contractHubInfo.blocksPerEon
         this.startBlockNumber = contractHubInfo.startBlockNumber.longValueExact()
-        val currentEon = Eon.calculateEon(startBlockNumber, currentBlockNumber, blocksPerEon)
+
+        if (processedBlockNumber < 0) {
+            processedBlockNumber = startBlockNumber
+        }
+
+        val currentEon = Eon.calculateEon(startBlockNumber, processedBlockNumber, blocksPerEon)
 
         eonState = EonState(currentEon.id, this.dataStoreFactory)
 
         this.processBlockJob = GlobalScope.launch(start = CoroutineStart.LAZY) {
-            val blockChannel = chain.watchBlock()
+            val blockChannel = chain.watchBlock(startBlockNum = (currentBlockNumber + 1).toBigInteger())
             for (block in blockChannel) {
                 hubActor.send(HubAction.BlockAction(block))
             }
@@ -335,7 +341,7 @@ class HubImpl<A : ChainAccount>(
     private fun doCommit() {
         val hubRoot =
             HubRoot(this.eonState.state.root.toAMTreePathNode(), this.eonState.eon)
-        LOG.info("doCommit currentBlockNumber:$currentBlockNumber, root:$hubRoot")
+        LOG.info("doCommit ProcessedBlockNumber:$processedBlockNumber, root:$hubRoot")
         this.contract.commit(owner, hubRoot)
     }
 
@@ -415,7 +421,8 @@ class HubImpl<A : ChainAccount>(
 
     private suspend fun processBlock(block: Block<*>) {
         LOG.info("Hub processBlock:$block")
-        this.currentBlockNumber = block.height
+        //TODO handle blockchain fork and unexpected exit.
+        this.processedBlockNumber = block.height
         val eon = Eon.calculateEon(this.startBlockNumber, block.height, this.blocksPerEon)
         var newEon = false
         this.eonState.setEpoch(eon.epoch)
@@ -461,7 +468,7 @@ class HubImpl<A : ChainAccount>(
                 }
                 val deposit = Deposit(tx.from!!, tx.amount)
                 LOG.info("Deposit:" + deposit.toJSON())
-                val eon = Eon.calculateEon(startBlockNumber, currentBlockNumber, blocksPerEon)
+                val eon = Eon.calculateEon(startBlockNumber, processedBlockNumber, blocksPerEon)
                 if (eon.id > this.currentEon().id) {
                     while (eon.id > currentEon().id) {
                         //TODO
