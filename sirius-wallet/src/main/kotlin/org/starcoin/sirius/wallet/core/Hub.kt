@@ -85,7 +85,7 @@ class Hub <T : ChainTransaction, A : ChainAccount> {
             val eon = this.getChainEon()
             LOG.info("finish get eon")
 
-            if (this.accountInfo() == null||this.disconnect==true) {
+            if (this.accountInfo() == null||this.disconnect) {
                 GlobalScope.launch { eonChannel?.send(ClientEventType.FINISH_EON_CHANGE) }
                 return
             }

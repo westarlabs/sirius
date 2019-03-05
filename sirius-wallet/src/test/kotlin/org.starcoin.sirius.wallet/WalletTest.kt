@@ -28,6 +28,7 @@ import org.starcoin.sirius.protocol.EthereumTransaction
 import org.starcoin.sirius.protocol.HubContract
 import org.starcoin.sirius.protocol.ethereum.EthereumAccount
 import org.starcoin.sirius.protocol.ethereum.InMemoryChain
+import org.starcoin.sirius.wallet.core.ClientEventType
 import org.starcoin.sirius.wallet.core.ResourceManager
 import org.starcoin.sirius.wallet.core.Wallet
 import java.lang.IllegalStateException
@@ -142,8 +143,10 @@ class WalletTest {
         createBlocks(1)
 
         runBlocking {
-            walletBob.getMessageChannel()?.receive()
+            withTimeout(10000L){
+                walletBob.getMessageChannel()?.receive()
             walletAlice.getMessageChannel()?.receive()
+            }
         }
 
         if(flag) {
@@ -166,9 +169,11 @@ class WalletTest {
         Assert.assertNotNull(transaction)
 
         runBlocking {
+            withTimeout(10000L){
+                walletBob.getMessageChannel()?.receive()
+                walletAlice.getMessageChannel()?.receive()
             walletBob.getMessageChannel()?.receive()
-            walletAlice.getMessageChannel()?.receive()
-            walletBob.getMessageChannel()?.receive()
+            }
         }
 
         var account=walletBob.hubAccount()
@@ -240,7 +245,9 @@ class WalletTest {
 
         waitToNextEon()
         runBlocking {
-            walletAlice.getMessageChannel()?.receive()
+            withTimeout(10000L){
+                walletAlice.getMessageChannel()?.receive()
+            }
         }
 
         walletAlice.cheat(Starcoin.HubMaliciousFlag.STEAL_TRANSACTION_IOU_VALUE)
@@ -253,19 +260,25 @@ class WalletTest {
 
         waitToNextEon()
         runBlocking {
+            withTimeout(10000L){
+                walletAlice.getMessageChannel()?.receive()
             walletAlice.getMessageChannel()?.receive()
-            walletAlice.getMessageChannel()?.receive()
+            }
         }
 
         this.walletAlice.openTransferChallenge(transaction.hash())
         runBlocking {
-            println(walletAlice.getMessageChannel()?.receive())
-            println(walletAlice.getMessageChannel()?.receive())
+            withTimeout(10000L){
+                println(walletAlice.getMessageChannel()?.receive())
+                println(walletAlice.getMessageChannel()?.receive())
+            }
         }
 
         waitToNextEon()
         runBlocking {
-            walletAlice.getMessageChannel()?.receive()
+            withTimeout(10000L){
+                walletAlice.getMessageChannel()?.receive()
+            }
         }
 
         createBlocks(2)
@@ -298,7 +311,9 @@ class WalletTest {
         waitToNextEon()
 
         runBlocking {
-            walletAlice.getMessageChannel()?.receive()
+            withTimeout(10000L){
+                walletAlice.getMessageChannel()?.receive()
+            }
         }
 
         val amount=EtherUtil.convert(20, EtherUtil.Unit.ETHER)
@@ -308,20 +323,26 @@ class WalletTest {
         Assert.assertNotNull(transaction)
 
         runBlocking {
+            withTimeout(10000L){
+                walletBob.getMessageChannel()?.receive()
+                walletAlice.getMessageChannel()?.receive()
             walletBob.getMessageChannel()?.receive()
-            walletAlice.getMessageChannel()?.receive()
-            walletBob.getMessageChannel()?.receive()
+            }
         }
 
         waitToNextEon()
         runBlocking {
-            println(walletAlice.getMessageChannel()?.receive())
+            withTimeout(10000L){
+                println(walletAlice.getMessageChannel()?.receive())
+            }
         }
 
         walletAlice.withdrawal(amount)
 
         runBlocking {
-            walletAlice.getMessageChannel()?.receive()
+            withTimeout(10000L){
+                walletAlice.getMessageChannel()?.receive()
+            }
         }
         Assert.assertTrue(!walletAlice.hub.hubStatus.couldWithDrawal())
 
@@ -329,12 +350,16 @@ class WalletTest {
 
         waitToNextEon()
         runBlocking {
-            println(walletAlice.getMessageChannel()?.receive())
+            withTimeout(10000L){
+                println(walletAlice.getMessageChannel()?.receive())
+            }
         }
 
         waitToNextEon()
         runBlocking {
-            println(walletAlice.getMessageChannel()?.receive())
+            withTimeout(10000L){
+                println(walletAlice.getMessageChannel()?.receive())
+            }
         }
 
         var account=walletAlice.hubAccount()
@@ -362,15 +387,19 @@ class WalletTest {
         Assert.assertNotNull(transaction)
 
         runBlocking {
+            withTimeout(10000L){
+                walletAlice.getMessageChannel()?.receive()
+                walletBob.getMessageChannel()?.receive()
             walletAlice.getMessageChannel()?.receive()
-            walletBob.getMessageChannel()?.receive()
-            walletAlice.getMessageChannel()?.receive()
+            }
         }
 
         waitToNextEon()
 
         runBlocking {
-            walletAlice.getMessageChannel()?.receive()
+            withTimeout(10000L){
+                walletAlice.getMessageChannel()?.receive()
+            }
         }
 
         Assert.assertEquals(walletAlice.hubAccount()?.balance,amount+depositAmount)
@@ -378,16 +407,20 @@ class WalletTest {
 
         waitToNextEon()
         runBlocking {
-            walletAlice.getMessageChannel()?.receive()
+            withTimeout(10000L){
+                walletAlice.getMessageChannel()?.receive()
+            }
         }
 
         transaction=walletAlice.hubTransfer(bob.address,amount)
         Assert.assertNotNull(transaction)
 
         runBlocking {
+            withTimeout(10000L){
+                walletBob.getMessageChannel()?.receive()
+                walletAlice.getMessageChannel()?.receive()
             walletBob.getMessageChannel()?.receive()
-            walletAlice.getMessageChannel()?.receive()
-            walletBob.getMessageChannel()?.receive()
+            }
         }
 
         Assert.assertEquals(walletAlice.hubAccount()?.balance,depositAmount)
@@ -397,13 +430,17 @@ class WalletTest {
         walletAlice.withdrawal(amount)
 
         runBlocking {
-            walletAlice.getMessageChannel()?.receive()
+            withTimeout(10000L){
+                walletAlice.getMessageChannel()?.receive()
+            }
         }
 
         createBlocks(1)
 
         runBlocking {
-            walletAlice.getMessageChannel()?.receive()
+            withTimeout(10000L){
+                walletAlice.getMessageChannel()?.receive()
+            }
         }
         Assert.assertTrue(walletAlice.hub.hubStatus.couldWithDrawal())
         Assert.assertEquals(walletAlice.hubAccount()?.balance,depositAmount)
@@ -436,7 +473,9 @@ class WalletTest {
         testDeposit()
         waitToNextEon()
         runBlocking {
-            walletAlice.getMessageChannel()?.receive()
+            withTimeout(10000L){
+                walletAlice.getMessageChannel()?.receive()
+            }
         }
 
         val aliceWalletClone = Wallet(this.contract.contractAddress,chain,alice)
@@ -444,15 +483,13 @@ class WalletTest {
         Assert.assertEquals(walletAlice.balance(), aliceWalletClone.balance())
     }
 
-    @Test(expected = TimeoutCancellationException::class)
+    @Test
     fun testNoReg() {
-        val aliceWalletClone = Wallet(this.contract.contractAddress,chain,alice)
-
         waitToNextEon()
 
         runBlocking {
             withTimeout(10000L){
-                walletAlice.getMessageChannel()?.receive()
+                Assert.assertEquals(walletAlice.getMessageChannel()?.receive(), ClientEventType.FINISH_EON_CHANGE)
             }
         }
 
@@ -469,9 +506,11 @@ class WalletTest {
         Assert.assertNotNull(transaction)
 
         runBlocking {
+            withTimeout(10000L){
+                walletBob.getMessageChannel()?.receive()
+                walletAlice.getMessageChannel()?.receive()
             walletBob.getMessageChannel()?.receive()
-            walletAlice.getMessageChannel()?.receive()
-            walletBob.getMessageChannel()?.receive()
+            }
         }
 
         val aliceWalletClone = Wallet(this.contract.contractAddress,chain,alice)
@@ -521,9 +560,11 @@ class WalletTest {
         Assert.assertNotNull(transaction)
 
         runBlocking {
+            withTimeout(10000L) {
+                walletBob.getMessageChannel()?.receive()
+                walletAlice.getMessageChannel()?.receive()
             walletBob.getMessageChannel()?.receive()
-            walletAlice.getMessageChannel()?.receive()
-            walletBob.getMessageChannel()?.receive()
+            }
         }
         walletAlice.hub.disconnect=true
 
@@ -552,7 +593,9 @@ class WalletTest {
         waitToNextEon()
 
         runBlocking {
-            walletAlice.getMessageChannel()?.receive()
+            withTimeout(10000L){
+                walletAlice.getMessageChannel()?.receive()
+            }
         }
 
         val amount = EtherUtil.convert(20, EtherUtil.Unit.ETHER)
@@ -562,20 +605,26 @@ class WalletTest {
         Assert.assertNotNull(transaction)
 
         runBlocking {
+            withTimeout(10000L){
+                walletBob.getMessageChannel()?.receive()
+                walletAlice.getMessageChannel()?.receive()
             walletBob.getMessageChannel()?.receive()
-            walletAlice.getMessageChannel()?.receive()
-            walletBob.getMessageChannel()?.receive()
+            }
         }
 
         waitToNextEon()
         runBlocking {
-            println(walletAlice.getMessageChannel()?.receive())
+            withTimeout(10000L){
+                println(walletAlice.getMessageChannel()?.receive())
+            }
         }
 
         walletAlice.withdrawal(amount)
 
         runBlocking {
-            walletAlice.getMessageChannel()?.receive()
+            withTimeout(10000L){
+                walletAlice.getMessageChannel()?.receive()
+            }
         }
         Assert.assertTrue(!walletAlice.hub.hubStatus.couldWithDrawal())
 
