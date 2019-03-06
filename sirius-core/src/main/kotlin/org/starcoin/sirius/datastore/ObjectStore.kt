@@ -24,8 +24,8 @@ open class ObjectStore<K, V>(
         return this.dataStore.flush()
     }
 
-    override fun updateBatch(rows: Map<K, V>) {
-        this.dataStore.updateBatch(rows.map { Pair(keyCodec.encode(it.key), valueCodec.encode(it.value)) }.toMap())
+    override fun updateBatch(rows: List<Pair<K, V>>) {
+        this.dataStore.updateBatch(rows.map { Pair(keyCodec.encode(it.first), valueCodec.encode(it.second)) })
     }
 
     override fun keys(): List<K> {

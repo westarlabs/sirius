@@ -10,7 +10,7 @@ interface DataStore<K, V> : Iterable<Pair<K, V>> {
 
     fun flush(): Boolean
 
-    fun updateBatch(rows: Map<K, V>)
+    fun updateBatch(rows: List<Pair<K, V>>)
 
     /**
      * should keep insert order.

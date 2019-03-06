@@ -29,17 +29,7 @@ class H2DBStore(private val sql2o: Sql2o, private val tableName: String) : DataS
     }, tableName)
 
     override fun put(key: ByteArray, value: ByteArray) {
-        sql2o.beginTransaction().use { conn ->
-            return putByConn(key, value, conn)
-        }
-    }
-
-    private fun putByConn(key: ByteArray, value: ByteArray, conn: Connection) {
-        conn.createQuery("insert into $tableName values(:key,:value) on duplicate key update value=:value")
-            .addParameter("key", key)
-            .addParameter("value", value)
-            .executeUpdate()
-        conn.commit()
+        this.updateBatch(listOf(Pair(key, value)))
     }
 
     override fun get(key: ByteArray): ByteArray? {
@@ -68,12 +58,17 @@ class H2DBStore(private val sql2o: Sql2o, private val tableName: String) : DataS
         return true
     }
 
-    override fun updateBatch(rows: Map<ByteArray, ByteArray>) {
-        //TODO optimize
+    override fun updateBatch(rows: List<Pair<ByteArray, ByteArray>>) {
         sql2o.beginTransaction().use { conn ->
-            for ((k, v) in rows) {
-                putByConn(k, v, conn)
+            val query =
+                conn.createQuery("insert into $tableName values(:key,:value) on duplicate key update value=:value")
+            for ((key, value) in rows) {
+                query.addParameter("key", key)
+                    .addParameter("value", value)
+                    .addToBatch()
             }
+            query.executeBatch()
+            conn.commit()
         }
     }
 
@@ -85,7 +80,6 @@ class H2DBStore(private val sql2o: Sql2o, private val tableName: String) : DataS
     }
 
     override fun iterator(): CloseableIterator<Pair<ByteArray, ByteArray>> {
-        //TODO optimize
         val conn = sql2o.open()
         val query = "SELECT key FROM $tableName"
         val iterable = conn.createQuery(query).executeAndFetchLazy(ByteArray::class.java)
@@ -94,6 +88,7 @@ class H2DBStore(private val sql2o: Sql2o, private val tableName: String) : DataS
             Pair(key, value)
         }.iterator()) {
             iterable.close()
+            conn.close()
         }
     }
 

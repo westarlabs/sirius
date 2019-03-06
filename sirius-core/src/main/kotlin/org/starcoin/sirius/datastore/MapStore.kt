@@ -62,7 +62,7 @@ class MapStore : DataStore<ByteArray, ByteArray> {
     }
 
     @Synchronized
-    override fun updateBatch(rows: Map<ByteArray, ByteArray>) {
+    override fun updateBatch(rows: List<Pair<ByteArray, ByteArray>>) {
         for ((k, v) in rows) {
             this.put(k, v)
         }

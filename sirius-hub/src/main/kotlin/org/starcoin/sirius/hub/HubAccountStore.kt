@@ -67,18 +67,18 @@ class HubAccountStore(
         return this.keyStore.flush() && this.eonStateStore.flush()
     }
 
-    override fun updateBatch(rows: Map<Address, HubAccount>) {
-        this.updateBatch(rows.values)
+    override fun updateBatch(rows: List<Pair<Address, HubAccount>>) {
+        this.updateBatch(rows)
     }
 
     fun updateBatch(accounts: Iterable<HubAccount>) {
-        this.keyStore.updateBatch(accounts.map { Pair(it.address, it.publicKey) }.toMap())
+        this.keyStore.updateBatch(accounts.map { Pair(it.address, it.publicKey) })
         this.eonStateStore.updateBatch(accounts.filter { it.eonState.isNotEmpty() }.map {
             Pair(
                 it.address,
                 it.eonState
             )
-        }.toMap())
+        })
     }
 
     override fun keys(): List<Address> {

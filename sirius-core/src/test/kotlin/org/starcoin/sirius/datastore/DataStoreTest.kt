@@ -84,7 +84,7 @@ abstract class DataStoreTestBase {
 
     @Test
     fun testBatch() {
-        val rows = 1.rangeTo(100).map { Pair(it.toByteArray(), Random.nextBytes(10)) }.toMap()
+        val rows = 1.rangeTo(100).map { Pair(it.toByteArray(), Random.nextBytes(10)) }
         store.updateBatch(rows)
         Assert.assertEquals(rows.size, store.keys().size)
     }
