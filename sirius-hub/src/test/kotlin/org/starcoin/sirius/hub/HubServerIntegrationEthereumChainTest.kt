@@ -2,6 +2,8 @@ package org.starcoin.sirius.hub
 
 import kotlinx.coroutines.runBlocking
 import org.junit.AfterClass
+import org.junit.Before
+import org.junit.BeforeClass
 import org.starcoin.sirius.core.Address
 import org.starcoin.sirius.crypto.CryptoService
 import org.starcoin.sirius.eth.core.ether
@@ -22,6 +24,13 @@ class HubServerIntegrationEthereumChainTest :
         @JvmStatic
         fun tearDown() {
             scriptExec("../sirius-chainconnector/scripts/docker.sh clean")
+        }
+
+        @BeforeClass
+        @JvmStatic
+        fun setUp() {
+            scriptExec("../sirius-chainconnector/scripts/docker.sh run")
+            Thread.sleep(5000)
         }
     }
 
@@ -55,8 +64,8 @@ class HubServerIntegrationEthereumChainTest :
     }
 
     override fun createChain(configuration: Config): EthereumChain {
-        scriptExec("../sirius-chainconnector/scripts/docker.sh run")
-        Thread.sleep(4000)
+        //scriptExec("../sirius-chainconnector/scripts/docker.sh run")
+        //Thread.sleep(6000)
         chain = EthereumChain()
         return chain
     }
