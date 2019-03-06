@@ -13,6 +13,7 @@ import org.starcoin.sirius.crypto.eth.EthCryptoKey
 import org.starcoin.sirius.lang.hexToByteArray
 import org.starcoin.sirius.lang.toBigInteger
 import org.starcoin.sirius.lang.toHEXString
+import org.starcoin.sirius.lang.toUnsignedBigInteger
 import org.starcoin.sirius.protocol.ChainEvent
 import org.starcoin.sirius.protocol.EthereumTransaction
 import org.starcoin.sirius.protocol.TransactionResult
@@ -172,7 +173,8 @@ class EthereumChain constructor(url: String = DEFAULT_WS) :
             GlobalScope.launch(Dispatchers.IO) {
                 headNotify.subscribe(
                     {
-                        val blockNum = it.params.result.number.hexToByteArray().toBigInteger()
+                        val blockNum = it.params.result.number.hexToByteArray().toUnsignedBigInteger()
+                        LOG.info("Recive block num:$blockNum")
                         if (blockNum > syncBlockNum) {
                             notifych.sendBlocking(blockNum)
                         }

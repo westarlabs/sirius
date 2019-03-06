@@ -220,7 +220,7 @@ abstract class HubServerIntegrationTestBase<T : ChainTransaction, A : ChainAccou
                 createBlock()
             }
             if (totalTimeout <= 0) {
-                Assert.fail("waitToBlockNumber timeout $blockNumber")
+                Assert.fail("waitToBlockNumber timeout blockNum:$blockNumber,current:${chain.getBlockNumber()}")
             }
         }
     }
