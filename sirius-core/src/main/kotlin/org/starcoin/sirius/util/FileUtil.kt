@@ -1,9 +1,10 @@
 package org.starcoin.sirius.util
 
-import java.io.*
+import java.io.File
 import java.nio.file.Files
 import java.util.*
 
+@Deprecated("Directly use File extension function")
 object FileUtil {
 
     fun writeFile(filename: String, data: ByteArray) {
@@ -11,14 +12,7 @@ object FileUtil {
     }
 
     fun writeFile(file: File, data: ByteArray) {
-        try {
-            val out = FileOutputStream(file)
-            out.write(data)
-            out.close()
-        } catch (e: Exception) {
-            throw RuntimeException(e)
-        }
-
+        file.writeBytes(data)
     }
 
     fun readFile(filename: String): ByteArray {
@@ -26,29 +20,19 @@ object FileUtil {
     }
 
     fun readFile(file: File): ByteArray {
-        try {
-            val len = file.length().toInt()
-            val data = ByteArray(len)
-            val `in` = DataInputStream(FileInputStream(file))
-            `in`.read(data)
-            `in`.close()
-
-            return data
-        } catch (e: Exception) {
-            throw RuntimeException(e)
-        }
-
+        return file.readBytes()
     }
 
     fun deleteDir(dir: File) {
-        try {
-            Files.walk(dir.toPath())
-                .map { it.toFile() }
-                .sorted(Comparator.reverseOrder())
-                .forEach { it.delete() }
-        } catch (e: IOException) {
-            throw RuntimeException(e)
-        }
-
+        Files.walk(dir.toPath())
+            .map { it.toFile() }
+            .sorted(Comparator.reverseOrder())
+            .forEach { it.delete() }
     }
 }
+
+fun File.readBytes(): ByteArray = this.inputStream().use {
+    it.readBytes()
+}
+
+fun File.writeBytes(bytes: ByteArray) = this.outputStream().use { it.write(bytes) }
