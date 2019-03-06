@@ -51,6 +51,8 @@ class Hub <T : ChainTransaction, A : ChainAccount> {
 
     private var currentEonKey = "current-eon".toByteArray()
 
+    internal var hubInfo:ContractHubInfo
+
     constructor(
         contract: HubContract<A>,
         account: A,
@@ -62,7 +64,7 @@ class Hub <T : ChainTransaction, A : ChainAccount> {
         this.serverEventHandler = serverEventHandler
         this.chain = chain
 
-        var hubInfo=contract.queryHubInfo(account)
+        hubInfo=contract.queryHubInfo(account)
         hubAddr=hubInfo.hubAddress
 
         this.currentEon=Eon.calculateEon(startBlockNumber = hubInfo.startBlockNumber.toLong(),blocksPerEon = hubInfo.blocksPerEon,currentBlockNumber = chain.getBlockNumber().toLong())

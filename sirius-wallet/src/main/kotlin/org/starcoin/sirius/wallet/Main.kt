@@ -34,7 +34,7 @@ fun main(args: Array<String>) {
         name = args[0]
     }
     try {
-        val properties = loadConfig()
+        val properties = loadConfig(name)
         val hubAddr = properties.getProperty("hub_addr")
         val chainAddr = properties.getProperty("chain_addr")
         val contractAddr = properties.getProperty("contract_addr")
@@ -84,12 +84,12 @@ fun main(args: Array<String>) {
 }
 
 @Throws(IOException::class)
-private fun loadConfig(): Properties {
+private fun loadConfig(name: String): Properties {
     val prop = Properties()
     var inputStream: InputStream? = null
     val configFile = File(
         System.getProperty("user.home"),
-        ".starcoin" + File.separator + "liq" + File.separator + "conf.properties"
+        ".starcoin" + File.separator + "liq"  +File.separator+name+ File.separator + "conf.properties"
     )
 
     if (configFile.exists()) {

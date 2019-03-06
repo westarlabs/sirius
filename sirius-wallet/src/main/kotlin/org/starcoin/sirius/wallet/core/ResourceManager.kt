@@ -18,10 +18,10 @@ class ResourceManager private constructor(){
     lateinit internal var aMTreeProofDao:SiriusObjectStore<String,AMTreeProof>
         private set
 
-    lateinit internal var dataStore:DataStore<ByteArray,ByteArray>;
+    lateinit internal var dataStore:DataStore<ByteArray,ByteArray>
 
     companion object {
-        private val h2databaseUrl = "jdbc:h2:~/.starcoin/liq/%s/data:starcoin;FILE_LOCK=FS;PAGE_SIZE=1024;CACHE_SIZE=819"
+        private val h2databaseUrl = "jdbc:h2:~/.starcoin/liq/%s/wallet;FILE_LOCK=FS;PAGE_SIZE=1024;CACHE_SIZE=819;MODE=Mysql"
         private val h2databaseUrlMemory = H2DBStore.h2dbUrlMemoryFormat
 
         private val resourceManagerMap :MutableMap<String, ResourceManager> = mutableMapOf()

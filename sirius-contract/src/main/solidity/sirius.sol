@@ -646,8 +646,8 @@ require(newEon > 0, "newEon > 0");
 
     function openTransferDeliveryChallenge(bytes calldata data) external checkMain returns (bool) {
         ModelLib.TransferDeliveryChallenge memory open = ModelLib.unmarshalTransferDeliveryChallenge(RLPDecoder.toRLPItem(data, true));
-        require(open.update.upData.eon == balances[1].eon);
-        require(open.tran.offData.eon == balances[1].eon);
+        require(open.update.upData.eon == balances[1].eon,"update eon is not right");
+        require(open.tran.offData.eon == balances[1].eon,"transaction eon is not right");
 
         bool signFlag = ModelLib.verifySign4Update(open.update.upData, open.update.sign, tx.origin);
         require(signFlag, "verify update sign fail");

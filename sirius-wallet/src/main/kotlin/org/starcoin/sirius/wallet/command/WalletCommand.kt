@@ -253,3 +253,19 @@ class HubInfo<T : ChainTransaction, A : ChainAccount> : Runnable {
 
     }
 }
+
+@CommandLine.Command(name = "restore", description = ["restore wallet from db"])
+class Restore<T : ChainTransaction, A : ChainAccount> : Runnable {
+
+    @CommandLine.ParentCommand
+    var walletCommand: WalletCommand<T,A>? = null
+
+    override fun run() {
+        try {
+            walletCommand!!.wallet.restore()
+        } catch (e: Exception) {
+            System.out.println(e.message)
+        }
+
+    }
+}

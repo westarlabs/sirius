@@ -28,6 +28,7 @@ import org.starcoin.sirius.wallet.core.ResourceManager
 import org.starcoin.sirius.wallet.core.Wallet
 import java.math.BigInteger
 import java.util.logging.Logger
+import kotlin.math.log
 import kotlin.properties.Delegates
 
 class WalletTest {
@@ -648,7 +649,7 @@ class WalletTest {
         logger.info("current height is $height,need generate $blockNumber blocks")
         for (i in 0..blockNumber) {
             chain.createBlock()
-        }
+       }
     }
 
     private fun createBlocks(number:Int){

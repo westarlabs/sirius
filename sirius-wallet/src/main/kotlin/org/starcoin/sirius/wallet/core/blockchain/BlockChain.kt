@@ -66,7 +66,7 @@ class BlockChain <T : ChainTransaction, A : ChainAccount> (chain: Chain<T, out B
             is CancelWithdrawalFunction -> {
                 val input = contractFunction.decode(tx.data)
                     ?: fail { "$contractFunction decode tx:${txResult.tx} fail." }
-                LOG.info("$contractFunction: $input")
+                LOG.info("$contractFunction: $input ,transaction result is ${txResult.receipt.status}")
                 if(input.address.equals(account.address)){
                     hub.cancelWithdrawal(input)
                 }
@@ -75,7 +75,7 @@ class BlockChain <T : ChainTransaction, A : ChainAccount> (chain: Chain<T, out B
                 if(tx.from?.equals(account.address)?:false){
                     val input = contractFunction.decode(tx.data)
                         ?: fail { "$contractFunction decode tx:${txResult.tx} fail." }
-                    LOG.info("$contractFunction: $input")
+                    LOG.info("$contractFunction: $input ,transaction result is ${txResult.receipt.status}")
                     hub.onTransferDeliveryChallenge(input)
                 }
             }
@@ -103,6 +103,9 @@ class BlockChain <T : ChainTransaction, A : ChainAccount> (chain: Chain<T, out B
         val heightBytes = ResourceManager.instance(account.address.toBytes().toHEXString()).dataStore.get(syncedHeight)
         if(heightBytes!=null){
             this.height= heightBytes.toBigInteger()
+        }
+        if(this.height== BigInteger.ZERO){
+            this.height = hub.hubInfo.startBlockNumber
         }
         job=GlobalScope.launch {
             val channel = chain.watchBlock(this@BlockChain.height)

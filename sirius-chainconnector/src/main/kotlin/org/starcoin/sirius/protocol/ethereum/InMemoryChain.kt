@@ -78,8 +78,8 @@ class InMemoryChain(val autoGenblock: Boolean = true) : EthereumBaseChain() {
     private fun doCreateBlock(): EthereumBlock? {
         return try {
             val block = sb.createBlock()
-            val ethereumBlock = EthereumBlock(sb.createBlock(), this.doGetTransactionReceipts(block))
-            LOG.info("InMemoryChain create NewBlock: ${ethereumBlock.hash()}, txs: ${ethereumBlock.transactions.size}")
+            val ethereumBlock = EthereumBlock(block, this.doGetTransactionReceipts(block))
+            LOG.info("InMemoryChain create NewBlock: ${ethereumBlock.hash()}, txs: ${ethereumBlock.transactions.size}, block height is ${block.number}")
             ethereumBlock
         } catch (ex: Exception) {
             ex.printStackTrace()
