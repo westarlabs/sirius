@@ -9,10 +9,7 @@ import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.launch
 import org.starcoin.proto.HubServiceGrpc
 import org.starcoin.proto.Starcoin
-import org.starcoin.sirius.core.Address
-import org.starcoin.sirius.core.IOU
-import org.starcoin.sirius.core.Participant
-import org.starcoin.sirius.core.Update
+import org.starcoin.sirius.core.*
 import org.starcoin.sirius.util.WithLogging
 import org.starcoin.sirius.util.error
 
@@ -39,6 +36,7 @@ class HubRpcService(val hubService: HubService) :
         LOG.error(e)
         val exception = when (e) {
             is StatusRuntimeException -> e
+            is SiriusException -> e.toGrpcException()
             is IllegalArgumentException -> StatusRuntimeException(Status.INVALID_ARGUMENT.withCause(e))
             is IllegalStateException -> StatusRuntimeException(Status.INTERNAL.withCause(e))
             else -> StatusRuntimeException(Status.UNKNOWN.withCause(e))

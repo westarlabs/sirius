@@ -1,7 +1,6 @@
 package org.starcoin.sirius.core
 
 
-import com.google.common.base.Preconditions
 import com.google.protobuf.ByteString
 import kotlinx.serialization.*
 import org.starcoin.proto.Starcoin
@@ -18,7 +17,7 @@ import java.security.PublicKey
 class Address private constructor(internal val bytes: ByteArray) : CachedHashable(), ToByteArray {
 
     init {
-        Preconditions.checkArgument(bytes.size == LENGTH, "expect address length:$LENGTH")
+        require(bytes.size == LENGTH) { "expect address length:$LENGTH" }
     }
 
     override fun toBytes() = bytes.copyOf()
@@ -48,7 +47,7 @@ class Address private constructor(internal val bytes: ByteArray) : CachedHashabl
         return bytes.contentHashCode()
     }
 
-    fun toProto():Starcoin.ProtoBlockAddress{
+    fun toProto(): Starcoin.ProtoBlockAddress {
         return Starcoin.ProtoBlockAddress.newBuilder().setAddress(ByteString.copyFrom(bytes)).build()
     }
 
@@ -76,7 +75,6 @@ class Address private constructor(internal val bytes: ByteArray) : CachedHashabl
         }
 
         fun wrap(addressHex: String): Address {
-            Preconditions.checkNotNull(addressHex, "addressHex")
             return Address(addressHex.hexToByteArray())
         }
 
@@ -85,8 +83,7 @@ class Address private constructor(internal val bytes: ByteArray) : CachedHashabl
         }
 
         fun wrap(address: ByteString): Address {
-            Preconditions.checkNotNull(address, "address")
-            Preconditions.checkArgument(!address.isEmpty, "address")
+            require(!address.isEmpty)
             return Address(address.toByteArray())
         }
 
@@ -110,4 +107,5 @@ class Address private constructor(internal val bytes: ByteArray) : CachedHashabl
 
 fun ByteArray.toAddress() = Address.wrap(this)
 fun String.toAddress() = Address.wrap(this.let {
-    if (this.startsWith("0x")) this.substring(2) else this })
+    if (this.startsWith("0x")) this.substring(2) else this
+})

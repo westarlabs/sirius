@@ -1,6 +1,5 @@
 package org.starcoin.sirius.protocol.ethereum
 
-import com.google.common.base.Preconditions
 import org.ethereum.core.TransactionReceipt
 import org.starcoin.sirius.core.Block
 import org.starcoin.sirius.core.Hash
@@ -20,7 +19,7 @@ class EthereumBlock private constructor(override val height: Long, private val h
         ethBlock.number.longValueExact(),
         ethBlock.hash.toHash()
     ) {
-        Preconditions.checkArgument(ethBlock.transactions.size == receipts.size)
+        require(ethBlock.transactions.size == receipts.size)
         transactions =
             ethBlock.transactions.mapIndexed { index, it ->
                 TransactionResult(

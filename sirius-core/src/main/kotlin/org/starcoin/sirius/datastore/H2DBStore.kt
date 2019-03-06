@@ -1,6 +1,5 @@
 package org.starcoin.sirius.datastore
 
-import com.google.common.base.Preconditions
 import org.sql2o.Connection
 import org.sql2o.Sql2o
 import org.starcoin.sirius.util.WithLogging
@@ -23,7 +22,7 @@ class H2DBStore(private val sql2o: Sql2o, private val tableName: String) : DataS
         tableName: String,
         dbDir: File
     ) : this(dbDir.let {
-        Preconditions.checkState(!dbDir.exists() && dbDir.mkdirs() || dbDir.isDirectory)
+        check(!dbDir.exists() && dbDir.mkdirs() || dbDir.isDirectory)
         val url = h2dbUrlDiskFormat.format(it.absolutePath)
         LOG.info("Create H2DBStore by url $url, tableName:$tableName")
         Sql2o(url, "sa", "")

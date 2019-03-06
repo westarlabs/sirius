@@ -1,6 +1,5 @@
 package org.starcoin.sirius.core
 
-import com.google.common.base.Preconditions
 import org.starcoin.sirius.util.MockUtils
 import java.net.InetSocketAddress
 import java.util.*
@@ -35,7 +34,7 @@ class InetAddressPort(val host: String, val port: Int) {
 
         fun valueOf(hostAndPort: String): InetAddressPort {
             val parts = hostAndPort.split(":".toRegex()).dropLastWhile { it.isEmpty() }.toTypedArray()
-            Preconditions.checkState(parts.size == 2, "invalid hostAndPort arg:$hostAndPort")
+            require(parts.size == 2) { "invalid hostAndPort arg:$hostAndPort" }
             val port = Integer.parseInt(parts[1])
             return InetAddressPort(parts[0], port)
         }

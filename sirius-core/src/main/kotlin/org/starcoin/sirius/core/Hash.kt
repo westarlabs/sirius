@@ -1,7 +1,5 @@
 package org.starcoin.sirius.core
 
-import com.google.common.base.Preconditions
-import com.google.common.base.Preconditions.checkArgument
 import com.google.common.io.ByteStreams
 import com.google.common.primitives.Ints
 import com.google.protobuf.ByteString
@@ -124,7 +122,7 @@ class Hash private constructor(internal val bytes: ByteArray) : Comparable<Hash>
          * @throws IllegalArgumentException if the given array length is not exactly 32
          */
         fun wrap(rawHashBytes: ByteArray): Hash {
-            checkArgument(rawHashBytes.size == LENGTH, "unexpected hash length:" + rawHashBytes.size)
+            require(rawHashBytes.size == LENGTH) { "unexpected hash length:${rawHashBytes.size}" }
             return Hash(rawHashBytes)
         }
 
@@ -148,7 +146,7 @@ class Hash private constructor(internal val bytes: ByteArray) : Comparable<Hash>
          * combine tow hash to one.
          */
         fun combine(left: Hash?, right: Hash?): Hash {
-            Preconditions.checkArgument(left != null || right != null, "left and right both null.")
+            require(left != null || right != null) { "left and right both null." }
             val leftLength = left?.bytes?.size ?: 0
             val rightLength = right?.bytes?.size ?: 0
             val bb = ByteArray(leftLength + rightLength)

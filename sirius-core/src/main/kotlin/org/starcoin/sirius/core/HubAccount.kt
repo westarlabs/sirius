@@ -1,6 +1,5 @@
 package org.starcoin.sirius.core
 
-import com.google.common.base.Preconditions
 import kotlinx.serialization.Optional
 import kotlinx.serialization.SerialId
 import kotlinx.serialization.Serializable
@@ -173,13 +172,12 @@ data class HubAccount(
         if (!skipCheck) {
             when {
                 tx.from == this.address -> {
-                    isSender = true;Preconditions.checkState(
-                        this.getPendingSendTx()?.transaction == tx,
-                        "Can not find pending tx:${tx.hash()}"
-                    )
+                    isSender = true;check(this.getPendingSendTx()?.transaction == tx)
+                    "Can not find pending tx:${tx.hash()}"
                 }
-                tx.to == this.address -> Preconditions.checkState(this.getPendingReceiveTxs().find { it.hash() == tx.hash() } != null,
-                    "Can not find tx:${tx.hash()}")
+                tx.to == this.address -> check(this.getPendingReceiveTxs().find { it.hash() == tx.hash() } != null) {
+                    "Can not find tx:${tx.hash()}"
+                }
                 else -> throw IllegalArgumentException("Unexpected tx: ${tx.hash()}")
             }
             this.checkUpdate(tx, update)
@@ -190,12 +188,12 @@ data class HubAccount(
         if (isSender) {
             val remove = this.removePendingSendTx(tx.hash())
             if (!skipCheck) {
-                Preconditions.checkState(remove)
+                check(remove)
             }
         } else {
             val remove = this.removePendingReceiveTx(tx.hash())
             if (!skipCheck) {
-                Preconditions.checkState(remove)
+                check(remove)
             }
         }
     }
@@ -232,24 +230,20 @@ data class HubAccount(
     private fun checkUpdate(newTx: OffchainTransaction, newUpdate: Update) {
         val sendTxs = ArrayList(this.eonState.txs)
         sendTxs.add(newTx)
-        val prepareUpdate = UpdateData.newUpdate(newUpdate.data.eon, newUpdate.data.version, this.address!!, sendTxs)
+        val prepareUpdate = UpdateData.newUpdate(newUpdate.data.eon, newUpdate.data.version, this.address, sendTxs)
 
-        Preconditions.checkArgument(
-            newUpdate.data.root == prepareUpdate.root,
-            "check " + this.address + " update root hash fail, expect:" + prepareUpdate.root!!
-                .toMD5Hex() + ", but get " + newUpdate.data.root.toMD5Hex()
-        )
+        require(newUpdate.data.root == prepareUpdate.root) {
+            "check ${this.address} update root hash fail, expect: ${prepareUpdate.root}, but get ${newUpdate.data.root}"
+        }
 
-        Preconditions.checkArgument(
-            newUpdate.data.sendAmount == prepareUpdate.sendAmount,
+        require(newUpdate.data.sendAmount == prepareUpdate.sendAmount) {
             "expect sendAmount ${newUpdate.data.sendAmount}, but get ${prepareUpdate.sendAmount}"
-        )
-        Preconditions.checkArgument(
-            newUpdate.data.receiveAmount == prepareUpdate.receiveAmount,
+        }
+        require(newUpdate.data.receiveAmount == prepareUpdate.receiveAmount) {
             "expect receiveAmount ${prepareUpdate.receiveAmount}, but get ${newUpdate.data.receiveAmount}"
-        )
-        Preconditions.checkArgument(newUpdate.data.version > update.data.version)
-        Preconditions.checkArgument(checkBalance(), "has not enough balance.")
+        }
+        require(newUpdate.data.version > update.data.version)
+        require(checkBalance()) { "has not enough balance." }
     }
 
     private fun checkBalance(amount: BigInteger = BigInteger.ZERO): Boolean {
@@ -258,38 +252,32 @@ data class HubAccount(
 
     fun checkIOU(iou: IOU) {
         val transaction = iou.transaction
-        Preconditions.checkArgument(transaction.amount > BigInteger.ZERO, "transaction amount should > 0")
-        Preconditions.checkArgument(transaction.from != transaction.to, "can not transfer to self.")
+        require(transaction.amount > BigInteger.ZERO) { "transaction amount should > 0" }
+        require(transaction.from != transaction.to) { "can not transfer to self." }
         val isSender = iou.transaction.from == this.address
         if (isSender) {
             val preIOU = this.getPendingSendTx()
-            Preconditions.checkState(preIOU == null, "exist a pending transaction.")
+            check(preIOU == null) { "exist a pending transaction." }
             this.checkBalance(transaction.amount)
-            Preconditions.checkArgument(
-                transaction.verify(this.publicKey), "transaction verify fail."
-            )
-            Preconditions.checkState(this.balance >= transaction.amount, "account balance is not enough.")
+            require(transaction.verify(this.publicKey)) { "transaction verify fail." }
+            check(this.balance >= transaction.amount) { "account balance is not enough." }
         }
         checkUpdate(iou)
     }
 
     private fun checkUpdate(iou: IOU) {
-        Preconditions.checkState(
-            iou.update.verifySig(this.publicKey), "Update signature miss match."
-        )
+        check(iou.update.verifySig(this.publicKey)) { "Update signature miss match." }
         LOG.fine(
             "iou version ${iou.update.version},server version ${this.update.version} "
         )
-        Preconditions.checkState(
-            iou.update.version > this.update.version,
-            "Update version should > previous version"
-        )
+        check(iou.update.version > this.update.version) { "Update version should > previous version" }
+
         val txs = mutableListOf<OffchainTransaction>().apply { addAll(eonState.txs) }
         txs.add(iou.transaction)
         val merkleTree = MerkleTree(txs)
-        Preconditions.checkState(
-            iou.update.root == merkleTree.hash(), "Merkle root miss match."
-        )
+        check(
+            iou.update.root == merkleTree.hash()
+        ) { "Merkle root miss match." }
     }
 
     fun calculateNewAllotment(): BigInteger {

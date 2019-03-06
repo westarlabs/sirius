@@ -1,6 +1,5 @@
 package org.starcoin.sirius.hub
 
-import com.google.common.base.Preconditions
 import io.grpc.Status
 import io.grpc.StatusRuntimeException
 import kotlinx.coroutines.*
@@ -223,7 +222,7 @@ class HubImpl<A : ChainAccount>(
     }
 
     private suspend fun doRegisterParticipant(participant: Participant, initUpdate: Update): Update {
-        Preconditions.checkArgument(initUpdate.verifySig(participant.publicKey))
+        require(initUpdate.verifySig(participant.publicKey))
         if (this.getHubAccount(participant.address) != null) {
             throw StatusRuntimeException(Status.ALREADY_EXISTS)
         }
@@ -292,7 +291,7 @@ class HubImpl<A : ChainAccount>(
         val senderIOU = this.eonState.getPendingSendTx(receiverIOU.transaction.from) ?: throw StatusRuntimeException(
             Status.NOT_FOUND
         )
-        Preconditions.checkArgument(receiverIOU.transaction == senderIOU.transaction, "Transaction has bean modified")
+        require(receiverIOU.transaction == senderIOU.transaction) { "Transaction has bean modified" }
         val response = Channel<Exception?>()
         hubActor.send(
             HubAction.OffchainTransactionAction(
@@ -327,7 +326,7 @@ class HubImpl<A : ChainAccount>(
     }
 
     private fun checkReady() {
-        Preconditions.checkState(this.ready, "Hub is not ready for service, please wait.")
+        check(this.ready) { "Hub is not ready for service, please wait." }
     }
 
     override suspend fun watch(address: Address): ReceiveChannel<HubEvent> {

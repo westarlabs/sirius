@@ -1,6 +1,5 @@
 package org.starcoin.sirius.protocol.ethereum
 
-import com.google.common.base.Preconditions
 import kotlinx.coroutines.runBlocking
 import org.apache.commons.lang3.StringUtils
 import org.ethereum.core.CallTransaction
@@ -124,7 +123,7 @@ abstract class EthereumBaseChain :
     }
 
     override fun createAccount(keystoreDir: File, accountIDOrAddress: String, password: String): EthereumAccount {
-        Preconditions.checkArgument(keystoreDir.exists(), "Keystore dir $keystoreDir is not exist.")
+        require(keystoreDir.exists()) { "Keystore dir $keystoreDir is not exist." }
         val files = keystoreDir.listFiles()
         files.sortBy { it.lastModified() }
         val keyStoreFile = when {

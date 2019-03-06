@@ -1,7 +1,6 @@
 package org.starcoin.sirius.hub
 
 
-import com.google.common.base.Preconditions
 import com.google.common.io.Files
 import org.starcoin.sirius.core.Address
 import org.starcoin.sirius.core.InetAddressPort
@@ -86,11 +85,9 @@ class Config private constructor(val properties: Properties, val dataDir: File, 
                 if (!dataDir.isDirectory) {
                     throw IllegalArgumentException("Data dir $dataDir exists, and is not a directory.")
                 }
-            } else {
-                Preconditions.checkArgument(dataDir.mkdirs(), "Make data dir $dataDir fail.")
             }
             val configFile = File(dataDir, "hub.conf")
-
+            Files.createParentDirs(configFile)
             if (configFile.exists()) {
                 configFile.inputStream().use { properties.load(it) }
             } else {
