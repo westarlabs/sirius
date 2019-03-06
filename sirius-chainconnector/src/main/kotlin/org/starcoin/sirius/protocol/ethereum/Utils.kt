@@ -1,7 +1,7 @@
 package org.starcoin.sirius.protocol.ethereum
 
 import org.ethereum.solidity.compiler.CompilationResult
-import org.junit.Assert
+import org.starcoin.sirius.core.fail
 import org.starcoin.sirius.lang.toClassPathResource
 import java.io.File
 
@@ -24,7 +24,7 @@ fun scriptExec(cmd: String): Int {
     val process = Runtime.getRuntime().exec("$cmd")
     val exit = process.waitFor()
     if (exit != 0)
-        throw RuntimeException(process.errorStream.bufferedReader().use { it.readText() })
+        fail { process.errorStream.bufferedReader().use { it.readText() } }
     return exit
 }
 

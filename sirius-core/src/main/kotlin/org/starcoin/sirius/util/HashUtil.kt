@@ -4,13 +4,11 @@ import com.google.common.hash.Hashing
 import org.bouncycastle.jce.provider.BouncyCastleProvider
 import org.starcoin.sirius.lang.toHEXString
 import java.security.MessageDigest
-import java.security.NoSuchAlgorithmException
 import java.security.Security
 
 object HashUtil {
-    val md5Function = Hashing.md5()
-    val sha256Function = Hashing.sha256()
-
+    private val md5Function = Hashing.md5()!!
+    private val sha256Function = Hashing.sha256()!!
 
     init {
         Security.addProvider(BouncyCastleProvider())
@@ -21,13 +19,8 @@ object HashUtil {
     }
 
     fun hash160(src: ByteArray): ByteArray {
-        val digest: MessageDigest
-        try {
-            digest = MessageDigest.getInstance("RIPEMD160")
-            return digest.digest(src)
-        } catch (e: NoSuchAlgorithmException) {
-            throw RuntimeException(e)
-        }
+        val digest = MessageDigest.getInstance("RIPEMD160")
+        return digest.digest(src)
     }
 
     fun md5Hex(src: ByteArray): String {

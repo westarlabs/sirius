@@ -8,7 +8,6 @@ import org.starcoin.sirius.serialization.ProtobufSchema
 import org.starcoin.sirius.util.MockUtils
 import java.math.BigInteger
 import java.util.*
-import java.util.stream.Collectors
 
 sealed class AMTreeNodeInfo : SiriusObject()
 
@@ -77,8 +76,12 @@ class AMTree(
         get() = this.root.info
 
     // just for test.
-    val randommProof: AMTreeProof?
-        get() = this.getMembershipProof((this.randomLeafNode()?.info as AMTreeLeafNodeInfo?)?.addressHash)
+    val randomProof: AMTreeProof?
+        get() = (this.randomLeafNode()?.info as AMTreeLeafNodeInfo?)?.addressHash?.let {
+            this.getMembershipProofOrNull(
+                it
+            )
+        }
 
     constructor() : this(0, AMTreeNode.DUMMY_NODE)
 
@@ -95,11 +98,11 @@ class AMTree(
         return findTreeNode(this.root) { node -> node.hash() == nodeHash }
     }
 
-    fun findLeafNode(address: Address?): AMTreeNode? {
-        return this.findLeafNode(address?.hash())
+    fun findLeafNode(address: Address): AMTreeNode? {
+        return this.findLeafNode(address.hash())
     }
 
-    fun findLeafNode(addressHash: Hash?): AMTreeNode? {
+    fun findLeafNode(addressHash: Hash): AMTreeNode? {
         return findTreeNode(
             this.root
         ) { it.isLeafNode && (it.info as AMTreeLeafNodeInfo).addressHash == addressHash }
@@ -116,7 +119,7 @@ class AMTree(
         }
     }
 
-    fun getMembershipProof(addressHash: Hash?): AMTreeProof? {
+    fun getMembershipProofOrNull(addressHash: Hash): AMTreeProof? {
         val leaf = this.findLeafNode(addressHash) ?: return null
 
         var siblingNode = leaf.sibling ?: return null
@@ -137,8 +140,13 @@ class AMTree(
         return proof
     }
 
-    fun getMembershipProof(address: Address?): AMTreeProof? {
-        return this.getMembershipProof(address?.hash())
+    fun getMembershipProofOrNull(address: Address): AMTreeProof? {
+        return this.getMembershipProofOrNull(address.hash())
+    }
+
+    fun getMembershipProof(address: Address): AMTreeProof {
+        return this.getMembershipProofOrNull(address.hash())
+            ?: fail(Status.NOT_FOUND) { "Can not find membership proof by address $address" }
     }
 
     fun randomLeafNode(): AMTreeNode? {

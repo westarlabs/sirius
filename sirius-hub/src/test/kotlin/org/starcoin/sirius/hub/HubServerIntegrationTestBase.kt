@@ -123,7 +123,7 @@ abstract class HubServerIntegrationTestBase<T : ChainTransaction, A : ChainAccou
             this.eon.set(hubInfo.eon)
             hubInfo = hubService.hubInfo
             if (hubInfo.recoveryMode) {
-                throw RuntimeException("Hub server in recoveryMode")
+                fail { "Hub server in recoveryMode" }
             }
         }
     }

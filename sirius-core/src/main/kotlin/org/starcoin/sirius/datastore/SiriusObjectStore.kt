@@ -14,7 +14,7 @@ class SiriusObjectStore<K, V : SiriusObject>(
     constructor(keyCodec: Codec<K>, clazz: KClass<V>, dataStore: DataStore<ByteArray, ByteArray>) : this(
         keyCodec,
         //default use protobuf
-        SiriusObjectProfoBufCodec<V>(clazz),
+        SiriusObjectProtoBufCodec<V>(clazz),
         dataStore
     )
 

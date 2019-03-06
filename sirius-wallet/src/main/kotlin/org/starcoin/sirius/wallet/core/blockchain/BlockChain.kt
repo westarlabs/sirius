@@ -2,7 +2,6 @@ package org.starcoin.sirius.wallet.core.blockchain
 
 import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.Job
-import kotlinx.coroutines.cancelAndJoin
 import kotlinx.coroutines.launch
 import org.starcoin.sirius.core.*
 import org.starcoin.sirius.lang.toBigInteger
@@ -58,7 +57,7 @@ class BlockChain <T : ChainTransaction, A : ChainAccount> (chain: Chain<T, out B
             is InitiateWithdrawalFunction -> {
                 if(tx.from?.equals(account.address)?:false){
                     val input = contractFunction.decode(tx.data)
-                        ?: throw RuntimeException("$contractFunction decode tx:${txResult.tx} fail.")
+                        ?: fail { "$contractFunction decode tx:${txResult.tx} fail." }
                     LOG.info("$contractFunction: $input")
                     val withdrawalStatus = WithdrawalStatus( WithdrawalStatusType.INIT,input)
                     hub.onWithdrawal(withdrawalStatus)
@@ -66,7 +65,7 @@ class BlockChain <T : ChainTransaction, A : ChainAccount> (chain: Chain<T, out B
             }
             is CancelWithdrawalFunction -> {
                 val input = contractFunction.decode(tx.data)
-                    ?: throw RuntimeException("$contractFunction decode tx:${txResult.tx} fail.")
+                    ?: fail { "$contractFunction decode tx:${txResult.tx} fail." }
                 LOG.info("$contractFunction: $input")
                 if(input.address.equals(account.address)){
                     hub.cancelWithdrawal(input)
@@ -75,7 +74,7 @@ class BlockChain <T : ChainTransaction, A : ChainAccount> (chain: Chain<T, out B
             is OpenTransferDeliveryChallengeFunction -> {
                 if(tx.from?.equals(account.address)?:false){
                     val input = contractFunction.decode(tx.data)
-                        ?: throw RuntimeException("$contractFunction decode tx:${txResult.tx} fail.")
+                        ?: fail { "$contractFunction decode tx:${txResult.tx} fail." }
                     LOG.info("$contractFunction: $input")
                     hub.onTransferDeliveryChallenge(input)
                 }
@@ -83,14 +82,14 @@ class BlockChain <T : ChainTransaction, A : ChainAccount> (chain: Chain<T, out B
             is OpenBalanceUpdateChallengeFunction -> {
                 if(tx.from?.equals(account.address)?:false) {
                     val input = contractFunction.decode(tx.data)
-                        ?: throw RuntimeException("$contractFunction decode tx:${txResult.tx} fail.")
+                        ?: fail { "$contractFunction decode tx:${txResult.tx} fail." }
                     LOG.info("$contractFunction: $input")
                     hub.onBalanceUpdateChallenge(input)
                 }
             }
             is CommitFunction ->{
                 val input = contractFunction.decode(tx.data)
-                    ?: throw RuntimeException("$contractFunction decode tx:${txResult.tx} fail.")
+                    ?: fail { "$contractFunction decode tx:${txResult.tx} fail." }
                 LOG.info("$contractFunction: $input ,status: ${txResult.receipt.status}")
                 if(txResult.receipt.status)
                     hub.onHubRootCommit(input)

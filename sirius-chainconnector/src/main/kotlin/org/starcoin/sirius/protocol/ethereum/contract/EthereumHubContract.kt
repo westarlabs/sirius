@@ -8,6 +8,7 @@ import org.ethereum.vm.LogInfo
 import org.starcoin.sirius.core.Address
 import org.starcoin.sirius.core.ContractReturn
 import org.starcoin.sirius.core.SiriusObject
+import org.starcoin.sirius.core.fail
 import org.starcoin.sirius.protocol.ContractFunction
 import org.starcoin.sirius.protocol.EthereumTransaction
 import org.starcoin.sirius.protocol.HubContract
@@ -58,7 +59,7 @@ class EthereumHubContract internal constructor(
         vararg args: Any
     ): S? {
         val function = this.contract.getByName(functionName)
-            ?: throw RuntimeException("Can not find function by name:$functionName")
+            ?: fail { "Can not find function by name:$functionName" }
         val data = function.encode(*args)
         val returnBytes = this.chain.callConstFunction(account.key, this.contractAddress, data)
         val result = function.decodeResult(returnBytes)[0]

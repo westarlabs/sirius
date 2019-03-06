@@ -32,12 +32,16 @@ class EonState(val eon: Int, val state: AMTree, private val factory: DataStoreFa
         this.accountStore.updateBatch(previous.accountStore.asHubAccountIterable().map { it.toNextEon(eon) })
     }
 
-    fun getAccount(address: Address): HubAccount? {
+    fun getAccountOrNull(address: Address): HubAccount? {
         return this.accountStore.get(address)
     }
 
-    fun getAccount(predicate: (HubAccount) -> Boolean): HubAccount? {
+    fun getAccountOrNull(predicate: (HubAccount) -> Boolean): HubAccount? {
         return this.accountStore.asHubAccountIterable().firstOrNull(predicate)
+    }
+
+    fun getAccount(address: Address): HubAccount {
+        return this.getAccountOrNull(address) ?: fail(Status.NOT_FOUND) { "Can not find account by address: $address" }
     }
 
     fun addAccount(account: HubAccount) {
@@ -56,8 +60,8 @@ class EonState(val eon: Int, val state: AMTree, private val factory: DataStoreFa
     }
 
     fun addIOU(iou: IOU) {
-        val from = this.getAccount(iou.transaction.from)!!
-        val to = this.getAccount(iou.transaction.to)!!
+        val from = this.getAccountOrNull(iou.transaction.from)!!
+        val to = this.getAccountOrNull(iou.transaction.to)!!
         from.appendSendTx(iou)
         to.appendReceiveTx(iou.transaction)
         this.saveAccount(from)
@@ -65,11 +69,11 @@ class EonState(val eon: Int, val state: AMTree, private val factory: DataStoreFa
     }
 
     fun getPendingSendTx(address: Address): IOU? {
-        return this.getAccount(address)?.getPendingSendTx()
+        return this.getAccountOrNull(address)?.getPendingSendTx()
     }
 
     fun getPendingReceiveTxs(address: Address): List<OffchainTransaction> {
-        return this.getAccount(address)?.getPendingReceiveTxs() ?: emptyList()
+        return this.getAccountOrNull(address)?.getPendingReceiveTxs() ?: emptyList()
     }
 
     fun saveAccount(account: HubAccount) {

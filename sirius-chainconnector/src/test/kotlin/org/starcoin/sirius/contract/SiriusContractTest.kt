@@ -88,7 +88,7 @@ class SiriusContractTest : ContractTestBase("solidity/SiriusService", "SiriusSer
 
         val amount: BigInteger = BigInteger.valueOf(deposit)
 
-        preProof = preTree.getMembershipProof(callUser.address)!!
+        preProof = preTree.getMembershipProofOrNull(callUser.address)!!
         val w = Withdrawal(preProof, amount)
         val data = w.toRLP()
         val callResult = contract.callFunction("initiateWithdrawal", data)
@@ -140,7 +140,7 @@ class SiriusContractTest : ContractTestBase("solidity/SiriusService", "SiriusSer
         val ct = 7
         val count = ct * deposit
         val preTree = commitRealData(eon, update1, total - count, count, true, txs)
-        preProof = preTree.getMembershipProof(callUser.address)!!
+        preProof = preTree.getMembershipProofOrNull(callUser.address)!!
         for (i in 0..blocksPerEon) {
             testDeposit(true)
         }
@@ -167,7 +167,7 @@ class SiriusContractTest : ContractTestBase("solidity/SiriusService", "SiriusSer
     fun testCloseBalanceUpdateChallenge() {
         openBalanceUpdateChallenge(true)
 
-        val amtp = currentTree.getMembershipProof(callUser.address)!!
+        val amtp = currentTree.getMembershipProofOrNull(callUser.address)!!
         val close = CloseBalanceUpdateChallenge(callUser.address, amtp)
         val data = close.toRLP()
         val callResult = contract.callFunction("closeBalanceUpdateChallenge", data)
@@ -214,7 +214,7 @@ class SiriusContractTest : ContractTestBase("solidity/SiriusService", "SiriusSer
     fun testCloseTransferDeliveryChallenge() {
         testOpenTransferDeliveryChallenge()
 
-        val amtp = currentTree.getMembershipProof(callUser.address)!!
+        val amtp = currentTree.getMembershipProofOrNull(callUser.address)!!
         val close =
             CloseTransferDeliveryChallenge(amtp, tree.getMembershipProof(tx.hash())!!, callUser.address, Hash.of(tx.data))
 

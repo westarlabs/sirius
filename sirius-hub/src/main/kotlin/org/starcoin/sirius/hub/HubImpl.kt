@@ -181,7 +181,7 @@ class HubImpl<A : ChainAccount>(
             this.hubStatus = HubStatus.Recovery
             LOG.error("Hub in recovery mode.")
         } else {
-            if (this.eonState.getAccount(owner.address) == null) {
+            if (this.eonState.getAccountOrNull(owner.address) == null) {
                 runBlocking {
                     LOG.info("Register Hub owner self account.")
                     val participant = Participant(owner.key.keyPair.public)
@@ -234,7 +234,7 @@ class HubImpl<A : ChainAccount>(
     }
 
     override suspend fun deposit(participant: Address, amount: Long) {
-        val account = this.eonState.getAccount(participant) ?: assertAccountNotNull(participant)
+        val account = this.eonState.getAccount(participant)
         account.addDeposit(amount)
         this.eonState.saveAccount(account)
     }
@@ -244,20 +244,20 @@ class HubImpl<A : ChainAccount>(
     }
 
     override suspend fun getHubAccount(eon: Int, address: Address): HubAccount? {
-        return this.getEonState(eon)?.getAccount(address)
+        return this.getEonState(eon)?.getAccountOrNull(address)
     }
 
     fun getHubAccount(predicate: (HubAccount) -> Boolean): HubAccount? {
         this.checkReady()
-        return this.eonState.getAccount(predicate)
+        return this.eonState.getAccountOrNull(predicate)
     }
 
     private suspend fun confirmOffchainTransaction(
         tx: OffchainTransaction, fromUpdate: Update, toUpdate: Update
     ) {
         LOG.info("confirmOffchainTransaction from:${tx.from} , to: ${tx.to}, tx:${tx.hash()}")
-        val from = this.getHubAccount(tx.from) ?: assertAccountNotNull(tx.from)
-        val to = this.getHubAccount(tx.to) ?: assertAccountNotNull(tx.from)
+        val from = this.eonState.getAccount(tx.from)
+        val to = this.eonState.getAccount(tx.to)
         strategy.processOffchainTransaction(tx)
         {
             from.confirmTransaction(tx, fromUpdate)
@@ -319,7 +319,7 @@ class HubImpl<A : ChainAccount>(
     override suspend fun getProof(eon: Int, address: Address): AMTreeProof? {
         this.checkReady()
         val eonState = this.getEonState(eon) ?: return null
-        return eonState.state.getMembershipProof(address)
+        return eonState.state.getMembershipProofOrNull(address)
     }
 
     override fun currentEon(): Eon {
@@ -345,16 +345,13 @@ class HubImpl<A : ChainAccount>(
         this.contract.commit(owner, hubRoot)
     }
 
-    fun assertAccountNotNull(to: Address): Nothing =
-        throw RuntimeException("Can not find account by address: $to")
-
     private fun processTransferDeliveryChallenge(challenge: TransferDeliveryChallenge) {
         val tx = challenge.tx
 
         val to = tx.to
-        val currentAccount = this.eonState.getAccount(to) ?: assertAccountNotNull(to)
-        val accountProof = this.eonState.state.getMembershipProof(to) ?: assertAccountNotNull(to)
-        val previousAccount = this.eonState.previous?.getAccount(to)
+        val currentAccount = this.eonState.getAccount(to)
+        val accountProof = this.eonState.state.getMembershipProof(to)
+        val previousAccount = this.eonState.previous?.getAccountOrNull(to)
 
         var txProof: MerklePath? = null
         val txs = previousAccount?.getTransactions() ?: emptyList()
@@ -372,7 +369,7 @@ class HubImpl<A : ChainAccount>(
     }
 
     private fun processBalanceUpdateChallenge(address: Address, challenge: BalanceUpdateProof) {
-        val proofPath = this.eonState.state.getMembershipProof(address)
+        val proofPath = this.eonState.state.getMembershipProofOrNull(address)
         if (proofPath == null) {
             LOG.error("Can not find proof by address $address to close challenge: $challenge")
             return
@@ -385,12 +382,12 @@ class HubImpl<A : ChainAccount>(
         this.strategy.processWithdrawal(from, withdrawal)
         {
             val amount = withdrawal.amount
-            val hubAccount = this.eonState.getAccount(from) ?: assertAccountNotNull(from)
+            val hubAccount = this.eonState.getAccount(from)
             this.withdrawals[from] = withdrawal
             if (!hubAccount.addWithdraw(amount)) {
                 //signed update (e) or update (e − 1), τ (e − 1)
                 //TODO path is nullable?
-                val path = this.eonState.state.getMembershipProof(from)
+                val path = this.eonState.state.getMembershipProofOrNull(from)
                 val cancelWithdrawal = CancelWithdrawal(from, hubAccount.update, path ?: AMTreeProof.DUMMY_PROOF)
                 contract.cancelWithdrawal(owner, cancelWithdrawal)
             } else {
@@ -406,7 +403,7 @@ class HubImpl<A : ChainAccount>(
     private suspend fun processDeposit(deposit: Deposit) {
         this.strategy.processDeposit(deposit)
         {
-            val hubAccount = this.eonState.getAccount(deposit.address) ?: assertAccountNotNull(deposit.address)
+            val hubAccount = this.eonState.getAccount(deposit.address)
             hubAccount.addDeposit(deposit.amount)
             this.eonState.saveAccount(hubAccount)
             this.fireEvent(
@@ -501,7 +498,7 @@ class HubImpl<A : ChainAccount>(
                     return
                 }
                 val input = contractFunction.decode(tx.data)
-                    ?: throw RuntimeException("$contractFunction decode tx:${txResult.tx} fail.")
+                    ?: fail { "$contractFunction decode tx:${txResult.tx} fail." }
                 LOG.info("$contractFunction: $input")
                 this.processWithdrawal(tx.from!!, input)
             }
@@ -510,7 +507,7 @@ class HubImpl<A : ChainAccount>(
                     return
                 }
                 val input = contractFunction.decode(tx.data)
-                    ?: throw RuntimeException("$contractFunction decode tx:${txResult.tx} fail.")
+                    ?: fail { "$contractFunction decode tx:${txResult.tx} fail." }
                 LOG.info("$contractFunction: $input")
                 this.processTransferDeliveryChallenge(input)
             }
@@ -519,7 +516,7 @@ class HubImpl<A : ChainAccount>(
                     return
                 }
                 val input = contractFunction.decode(tx.data)
-                    ?: throw RuntimeException("$contractFunction decode tx:${txResult.tx} fail.")
+                    ?: fail { "$contractFunction decode tx:${txResult.tx} fail." }
                 LOG.info("$contractFunction: $input")
                 this.processBalanceUpdateChallenge(tx.from!!, input)
             }
@@ -528,7 +525,7 @@ class HubImpl<A : ChainAccount>(
                     return
                 }
                 val input = contractFunction.decode(tx.data)
-                    ?: throw RuntimeException("$contractFunction decode tx:${txResult.tx} fail.")
+                    ?: fail { "$contractFunction decode tx:${txResult.tx} fail." }
                 val withdrawal = this.withdrawals[input.address]!!
                 LOG.info("CancelWithdrawal: ${input.address}, amount: ${withdrawal.amount}")
                 val withdrawalStatus = WithdrawalStatus(WithdrawalStatusType.INIT, withdrawal)
@@ -558,7 +555,7 @@ class HubImpl<A : ChainAccount>(
                             + deposit.address.toString()
                 )
                 val hubAccount =
-                    eonState.getAccount(gang.participant.address) ?: assertAccountNotNull(gang.participant.address)
+                    eonState.getAccount(gang.participant.address)
                 hubAccount.addDeposit(deposit.amount)
                 eonState.saveAccount(hubAccount)
             } else {
@@ -600,7 +597,7 @@ class HubImpl<A : ChainAccount>(
         suspend fun processSendNewTransaction(sendIOU: IOU, normalAction: suspend () -> Unit) {
             if (maliciousFlags.contains(HubService.HubMaliciousFlag.STEAL_TRANSACTION_IOU)) {
                 LOG.info("steal transaction iou from:" + sendIOU.transaction.from)
-                val from = getHubAccount(sendIOU.transaction.from) ?: assertAccountNotNull(sendIOU.transaction.from)
+                val from = eonState.getAccount(sendIOU.transaction.from)
                 from.checkIOU(sendIOU)
                 val tx = OffchainTransaction(
                     sendIOU.transaction.eon,
@@ -609,7 +606,7 @@ class HubImpl<A : ChainAccount>(
                     sendIOU.transaction.amount
                 )
 
-                val to = getHubAccount(gang.participant.address) ?: assertAccountNotNull(gang.participant.address)
+                val to = eonState.getAccount(gang.participant.address)
                 val sendTxs = ArrayList(to.getTransactions())
                 sendTxs.add(tx)
                 val toUpdate = Update.newUpdate(

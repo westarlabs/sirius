@@ -100,7 +100,7 @@ class SiriusModelTest : ContractTestBase("solidity/test_all", "test_all") {
     @Test
     fun testVerifyAMTreeProof() {
         val tree = AMTree.random()
-        val obj = tree.randommProof as AMTreeProof
+        val obj = tree.randomProof as AMTreeProof
         val data1 = obj.toRLP()
         val callResult1 = contract.callConstFunction("am_tree_proof_test", data1)[0] as ByteArray
         Assert.assertArrayEquals(
@@ -146,7 +146,7 @@ class SiriusModelTest : ContractTestBase("solidity/test_all", "test_all") {
         val am = AMTree(eon + 1, accounts)
 
         val close = CloseTransferDeliveryChallenge(
-            am.getMembershipProof(callUser.address)!!,
+            am.getMembershipProofOrNull(callUser.address)!!,
             tree.getMembershipProof(tx.hash())!!,
             callUser.address,
             tx.hash()

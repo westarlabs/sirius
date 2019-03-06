@@ -1,11 +1,10 @@
 package org.starcoin.sirius.util
 
 import org.bouncycastle.jce.provider.BouncyCastleProvider
-import java.security.*
-import javax.crypto.BadPaddingException
+import java.security.PrivateKey
+import java.security.PublicKey
+import java.security.Security
 import javax.crypto.Cipher
-import javax.crypto.IllegalBlockSizeException
-import javax.crypto.NoSuchPaddingException
 
 /**
  * Download Java Cryptography Extension (JCE) Unlimited Strength Jurisdiction Policy Files see
@@ -18,50 +17,21 @@ object EncryptUtil {
     }
 
     fun encrypt(publicKey: PublicKey, data: ByteArray): ByteArray {
-        try {
-            // 参阅:
-            // 1. http://www.flexiprovider.de/examples/ExampleECIES.html
-            // 2. https://crypto.stackexchange.com/questions/12823/ecdsa-vs-ecies-vs-ecdh
-            // 3. https://crypto.stackexchange.com/questions/24516/ecdsa-for-encryption
+        // 参阅:
+        // 1. http://www.flexiprovider.de/examples/ExampleECIES.html
+        // 2. https://crypto.stackexchange.com/questions/12823/ecdsa-vs-ecies-vs-ecdh
+        // 3. https://crypto.stackexchange.com/questions/24516/ecdsa-for-encryption
 
-            val cipher = Cipher.getInstance("ECIES", "BC")
-            cipher.init(Cipher.ENCRYPT_MODE, publicKey)
-            return cipher.doFinal(data)
-        } catch (e: NoSuchAlgorithmException) {
-            throw RuntimeException(e)
-        } catch (e: InvalidKeyException) {
-            throw RuntimeException(e)
-        } catch (e: NoSuchPaddingException) {
-            throw RuntimeException(e)
-        } catch (e: BadPaddingException) {
-            throw RuntimeException(e)
-        } catch (e: NoSuchProviderException) {
-            throw RuntimeException(e)
-        } catch (e: IllegalBlockSizeException) {
-            throw RuntimeException(e)
-        }
-
+        val cipher = Cipher.getInstance("ECIES", "BC")
+        cipher.init(Cipher.ENCRYPT_MODE, publicKey)
+        return cipher.doFinal(data)
     }
 
     fun decrypt(privateKey: PrivateKey, encrypted: ByteArray): ByteArray {
-        try {
-            val cipher = Cipher.getInstance("ECIES", "BC")
-            cipher.init(Cipher.DECRYPT_MODE, privateKey)
+        val cipher = Cipher.getInstance("ECIES", "BC")
+        cipher.init(Cipher.DECRYPT_MODE, privateKey)
 
-            return cipher.doFinal(encrypted)
-        } catch (e: NoSuchProviderException) {
-            throw RuntimeException(e)
-        } catch (e: NoSuchAlgorithmException) {
-            throw RuntimeException(e)
-        } catch (e: InvalidKeyException) {
-            throw RuntimeException(e)
-        } catch (e: NoSuchPaddingException) {
-            throw RuntimeException(e)
-        } catch (e: BadPaddingException) {
-            throw RuntimeException(e)
-        } catch (e: IllegalBlockSizeException) {
-            throw RuntimeException(e)
-        }
+        return cipher.doFinal(encrypted)
 
     }
 }

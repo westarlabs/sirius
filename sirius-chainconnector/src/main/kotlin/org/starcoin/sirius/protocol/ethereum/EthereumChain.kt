@@ -7,10 +7,7 @@ import kotlinx.coroutines.channels.ReceiveChannel
 import kotlinx.coroutines.channels.sendBlocking
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
-import org.starcoin.sirius.core.Address
-import org.starcoin.sirius.core.Hash
-import org.starcoin.sirius.core.Receipt
-import org.starcoin.sirius.core.toHash
+import org.starcoin.sirius.core.*
 import org.starcoin.sirius.crypto.CryptoKey
 import org.starcoin.sirius.crypto.eth.EthCryptoKey
 import org.starcoin.sirius.lang.hexToByteArray
@@ -71,7 +68,7 @@ class EthereumChain constructor(url: String = DEFAULT_WS) :
 
     override fun getBlockNumber(): Long {
         val resp = web3.ethBlockNumber().sendAsync().get()
-        if (resp.hasError()) throw RuntimeException(resp.error.message)
+        if (resp.hasError()) fail { resp.error.message }
         return resp.blockNumber.longValueExact()
 
     }
@@ -82,7 +79,7 @@ class EthereumChain constructor(url: String = DEFAULT_WS) :
                 url.startsWith("http://") -> HttpService(url)
                 url.startsWith("ipc://") -> UnixIpcService(url)
                 url.startsWith("ws://") -> WebSocketService(url, false).also { it.connect() } //TODO: close connection
-                else -> throw RuntimeException("Unknown url to init EtherumChain")
+                else -> fail { "Unknown url to init EtherumChain" }
             }
         )
 
@@ -252,7 +249,7 @@ class EthereumChain constructor(url: String = DEFAULT_WS) :
                 data.toHEXString()
             ), DefaultBlockParameterName.LATEST //TODO: Pass the blockNum in receipt better?
         ).sendAsync().get()
-        if (resp.hasError()) throw RuntimeException(resp.error.message)
+        if (resp.hasError()) fail { resp.error.message }
         return resp.value.hexToByteArray()
     }
 

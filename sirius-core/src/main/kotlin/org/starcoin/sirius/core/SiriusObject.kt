@@ -17,7 +17,6 @@ import kotlin.reflect.KClass
 import kotlin.reflect.full.companionObjectInstance
 import kotlin.reflect.full.staticFunctions
 
-//@Serializable
 abstract class SiriusObject : Hashable {
 
     @kotlinx.serialization.Transient
@@ -92,10 +91,11 @@ abstract class SiriusObject : Hashable {
     }
 }
 
+class Sirius
+
 abstract class SiriusObjectCompanion<T : SiriusObject, P : GeneratedMessageV3>(val objClass: KClass<T>) :
     WithLogging() {
 
-    //TODO write a auto mock implements.
     abstract fun mock(): T
 
     open fun parseFromProtoMessage(protoMessage: P): T {
@@ -104,17 +104,16 @@ abstract class SiriusObjectCompanion<T : SiriusObject, P : GeneratedMessageV3>(v
 
     @Suppress("UNCHECKED_CAST")
     open fun toProtoMessage(obj: T): P {
-        //TODO custom exception
-        val protobufSchema =
+        val protoBufSchema =
             obj::class.annotations.find { it.annotationClass == ProtobufSchema::class } as? ProtobufSchema
-                ?: throw RuntimeException("Can not auto Proto type convert, please use ${ProtobufSchema::class.qualifiedName} annotation")
-        val protoClass = protobufSchema.schema
+                ?: fail { "Can not auto Proto type convert, please use ${ProtobufSchema::class.qualifiedName} annotation" }
+        val protoClass = protoBufSchema.schema
         return protoClass.staticFunctions.find {
             it.name == "parseFrom" && it.parameters.size == 1 && it.parameters[0].type.classifier == ByteArray::class
         }?.call(
             obj.toProtobuf()
         ) as? P
-            ?: throw throw RuntimeException("Can not find parseFrom method from ${protoClass.qualifiedName}")
+            ?: fail { "Can not find parseFrom method from ${protoClass.qualifiedName}" }
     }
 
     open fun toRLP(obj: T): ByteArray {
@@ -152,7 +151,7 @@ inline fun <reified P : GeneratedMessageV3, reified T : SiriusObject> P.toSirius
 
 open abstract class SiriusObjectCodec<T : SiriusObject>(protected val clazz: KClass<T>) : Codec<T>
 
-class SiriusObjectProfoBufCodec<T : SiriusObject>(clazz: KClass<T>) : SiriusObjectCodec<T>(clazz) {
+class SiriusObjectProtoBufCodec<T : SiriusObject>(clazz: KClass<T>) : SiriusObjectCodec<T>(clazz) {
 
     override fun encode(value: T): ByteArray {
         return value.toProtobuf()

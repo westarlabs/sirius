@@ -30,12 +30,11 @@ class AMTreeTest {
         Assert.assertEquals(10.toBigInteger() * count.toBigInteger(), tree.allotment)
     }
 
-    //TODO random exception org.starcoin.sirius.core.AMTreePathLeafNode cannot be cast to org.starcoin.sirius.core.AMTreePathInternalNode
     @Test
     fun testMembershipProof() {
-        val tree = AMTree.random(MockUtils.nextInt(10, 100))
+        val tree = AMTree.random(MockUtils.nextInt(10, 50))
         val node = tree.randomLeafNode()!!
-        val proof = tree.getMembershipProof((node.info as AMTreeLeafNodeInfo).addressHash)
+        val proof = tree.getMembershipProofOrNull((node.info as AMTreeLeafNodeInfo).addressHash)
         Assert.assertTrue(AMTree.verifyMembershipProof(tree.root.toAMTreePathNode(), proof))
     }
 
@@ -69,7 +68,7 @@ class AMTreeTest {
         val eon = 0
         val a = HubAccount.mock()
         val tree = AMTree(eon, Lists.newArrayList(a))
-        val proof = tree.getMembershipProof(a.address)!!
+        val proof = tree.getMembershipProofOrNull(a.address)!!
         Assert.assertTrue(AMTree.verifyMembershipProof(tree.root.toAMTreePathNode(), proof))
 
         // test verify after marshal
@@ -87,6 +86,6 @@ class AMTreeTest {
         val tree = AMTree()
         Assert.assertNotNull(tree.root)
         Assert.assertTrue(tree.root.isInternalNode)
-        Assert.assertNull(tree.getMembershipProof(Address.random()))
+        Assert.assertNull(tree.getMembershipProofOrNull(Address.random()))
     }
 }

@@ -299,6 +299,7 @@ data class HubAccount(
     }
 
     fun toNextEon(eon: Int): HubAccount {
+        //TODO process pending tx
         val allotment = this.calculateNewAllotment()
         return HubAccount(publicKey, AccountEonState(Update(UpdateData(eon)), allotment))
     }

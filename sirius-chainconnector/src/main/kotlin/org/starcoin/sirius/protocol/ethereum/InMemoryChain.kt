@@ -9,6 +9,7 @@ import org.ethereum.util.blockchain.StandaloneBlockchain
 import org.starcoin.sirius.core.Address
 import org.starcoin.sirius.core.Hash
 import org.starcoin.sirius.core.Receipt
+import org.starcoin.sirius.core.fail
 import org.starcoin.sirius.crypto.CryptoKey
 import org.starcoin.sirius.crypto.eth.EthCryptoKey
 import org.starcoin.sirius.lang.toNoPrefixHEXString
@@ -180,8 +181,7 @@ class InMemoryChain(val autoGenblock: Boolean = true) : EthereumBaseChain() {
             executor.go()
             executor.finalization()
             if (executor.result.isRevert || executor.result.exception != null) {
-                //TODO define custom error.
-                throw RuntimeException("callConstFunction fail")
+                fail { "callConstFunction fail" }
             }
             return executor.result.hReturn
         } finally {
@@ -203,7 +203,7 @@ class InMemoryChain(val autoGenblock: Boolean = true) : EthereumBaseChain() {
     fun createBlock(): EthereumBlock = runBlocking {
         val response = Channel<EthereumBlock?>(1)
         chainAcctor.send(ChainCtlMessage.NewBlock(response))
-        response.receive() ?: throw RuntimeException("Create Block fail.")
+        response.receive() ?: fail { "Create Block fail." }
     }
 
     override fun tryMiningCoin(account: EthereumAccount, amount: BigInteger): Boolean = runBlocking {

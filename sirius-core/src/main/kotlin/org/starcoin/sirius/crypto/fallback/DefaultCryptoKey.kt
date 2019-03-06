@@ -207,12 +207,7 @@ class DefaultCryptoKey(override val keyPair: KeyPair) : CryptoKey() {
          * @return a new SHA-256 MessageDigest instance
          */
         private fun newDigest(): MessageDigest {
-            try {
-                return MessageDigest.getInstance("SHA-256")
-            } catch (e: NoSuchAlgorithmException) {
-                throw RuntimeException(e) // Can't happen.
-            }
-
+            return MessageDigest.getInstance("SHA-256")
         }
 
         private fun doHash(input: ByteArray): ByteArray {

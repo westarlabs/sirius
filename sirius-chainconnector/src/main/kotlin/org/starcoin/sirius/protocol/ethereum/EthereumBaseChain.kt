@@ -8,6 +8,7 @@ import org.ethereum.solidity.compiler.CompilationResult
 import org.starcoin.sirius.core.Address
 import org.starcoin.sirius.core.Hash
 import org.starcoin.sirius.core.Receipt
+import org.starcoin.sirius.core.fail
 import org.starcoin.sirius.crypto.CryptoKey
 import org.starcoin.sirius.crypto.CryptoService
 import org.starcoin.sirius.lang.hexToByteArray
@@ -78,7 +79,7 @@ abstract class EthereumBaseChain :
         val contract = CallTransaction.Contract(contractMetaData.abi)
         val constructor: CallTransaction.Function? = contract.constructor
         if (constructor == null && constructorArgs.isNotEmpty()) {
-            throw RuntimeException("No constructor with params found")
+            fail { "No constructor with params found" }
         }
         val argsEncoded = if (constructor == null) ByteArray(0) else constructor.encodeArguments(*constructorArgs)
         val tx = EthereumTransaction(

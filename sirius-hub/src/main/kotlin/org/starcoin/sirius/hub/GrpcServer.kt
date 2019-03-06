@@ -6,7 +6,6 @@ import io.grpc.ServerBuilder
 import io.grpc.inprocess.InProcessServerBuilder
 import io.grpc.netty.NettyServerBuilder
 import org.starcoin.sirius.util.WithLogging
-import java.io.IOException
 import java.util.*
 import kotlin.properties.Delegates
 
@@ -21,11 +20,7 @@ class GrpcServer(val configuration: Config) : RpcServer<BindableService> {
             builder.addService(service)
         }
         this.server = builder.build()
-        try {
-            server.start()
-        } catch (e: IOException) {
-            throw RuntimeException(e)
-        }
+        server.start()
 
         LOG.info("Rpc Server started, listening on ${configuration.rpcBind}")
         Runtime.getRuntime()

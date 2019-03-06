@@ -309,7 +309,7 @@ class Hub <T : ChainTransaction, A : ChainAccount> {
             this.hubStatus.addOffchainTransaction(tx)
             return tx
         } else {
-            throw RuntimeException("offlien transfer failed")
+            fail { "offlien transfer failed" }
         }
     }
 

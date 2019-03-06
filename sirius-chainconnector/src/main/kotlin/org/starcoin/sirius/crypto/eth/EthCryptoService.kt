@@ -118,15 +118,9 @@ object EthCryptoService : CryptoService {
         }
 
     fun sha3(input: ByteArray): ByteArray {
-        val digest: MessageDigest
-        try {
-            digest = MessageDigest.getInstance(HASH_256_ALGORITHM_NAME, CRYPTO_PROVIDER)
-            digest.update(input)
-            return digest.digest()
-        } catch (e: NoSuchAlgorithmException) {
-            throw RuntimeException(e)
-        }
-
+        val digest = MessageDigest.getInstance(HASH_256_ALGORITHM_NAME, CRYPTO_PROVIDER)
+        digest.update(input)
+        return digest.digest()
     }
 }
 
