@@ -316,7 +316,11 @@ class Hub <T : ChainTransaction, A : ChainAccount> {
     }
 
     fun deposit(value :BigInteger) {
-        var chainTransaction=chain.newTransaction(account,contract.contractAddress, value)
+        chainTransaction(contract.contractAddress, value)
+    }
+
+    fun chainTransaction(addr: Address,value :BigInteger) {
+        var chainTransaction=chain.newTransaction(account,addr, value)
         var txDeferred = chain.submitTransaction(account, chainTransaction)
         this.hubStatus.addDepositTransaction(txDeferred.txHash, chainTransaction)
     }

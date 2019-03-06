@@ -64,6 +64,8 @@ class Wallet<T : ChainTransaction, A : ChainAccount> {
 
     fun restore() = hub.restore()
 
+    fun chainTransfer(to:Address,value:BigInteger)=hub.chainTransaction(to,value)
+
     suspend fun close() {
         blockChain.close()
         hub.eonChannel?.close()
