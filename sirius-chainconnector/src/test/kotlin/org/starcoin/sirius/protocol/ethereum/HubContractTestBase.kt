@@ -216,7 +216,7 @@ abstract class HubContractTestBase {
             deferred.await()
             val txResult = ownerChannel.receive()
             Assert.assertTrue(txResult.receipt.status)
-            Assert.assertEquals(deferred, txResult.tx.hash())
+            Assert.assertEquals(deferred.txHash, txResult.tx.hash())
             val transaction = txResult.tx
             Assert.assertEquals(contract.contractAddress, transaction.to)
             Assert.assertEquals(owner.address, transaction.from)
@@ -237,49 +237,53 @@ abstract class HubContractTestBase {
 
     @Test
     @ImplicitReflectionSerializer
-    open fun testBalanceUpdateChallenge() = runBlocking {
-        val amount = EtherUtil.convert(100, EtherUtil.Unit.GWEI)
-        deposit(alice, amount)
-        commitHubRoot(1, amount)
-        val update1 = newUpdate(0, 1, BigInteger.ZERO, alice.key)//other
-        val path = newPath(alice.address, update1, BigInteger.ZERO, amount)
-        val update2 = newUpdate(0, 1, BigInteger.ZERO, alice.key)//mine
-        val leaf2 = newLeafNodeInfo(alice.address, update2)
-        val amtp = AMTreeProof(path, leaf2)
-        val bup = BalanceUpdateProof(true, update2, true, amtp.path)
-        var deferred = contract.openBalanceUpdateChallenge(alice, bup)
-        deferred.await()
-        val tx = chain.findTransaction(deferred.txHash)
-        Assert.assertNotNull(tx)
-        val update4 = newUpdate(0, 4, BigInteger.ZERO, alice)//mine
-        val leaf3 = newLeafNodeInfo(alice.address, update4)
-        val amtp2 = AMTreeProof(path, leaf3)
-        deferred = contract.closeBalanceUpdateChallenge(owner, CloseBalanceUpdateChallenge(alice.address, amtp2))
-        deferred.await()
+    fun testBalanceUpdateChallenge() {
+        runBlocking {
+            val amount = EtherUtil.convert(100, EtherUtil.Unit.GWEI)
+            deposit(alice, amount)
+            commitHubRoot(1, amount)
+            val update1 = newUpdate(0, 1, BigInteger.ZERO, alice.key)//other
+            val path = newPath(alice.address, update1, BigInteger.ZERO, amount)
+            val update2 = newUpdate(0, 1, BigInteger.ZERO, alice.key)//mine
+            val leaf2 = newLeafNodeInfo(alice.address, update2)
+            val amtp = AMTreeProof(path, leaf2)
+            val bup = BalanceUpdateProof(true, update2, true, amtp.path)
+            var deferred = contract.openBalanceUpdateChallenge(alice, bup)
+            deferred.await()
+            val tx = chain.findTransaction(deferred.txHash)
+            Assert.assertNotNull(tx)
+            val update4 = newUpdate(0, 4, BigInteger.ZERO, alice)//mine
+            val leaf3 = newLeafNodeInfo(alice.address, update4)
+            val amtp2 = AMTreeProof(path, leaf3)
+            deferred = contract.closeBalanceUpdateChallenge(owner, CloseBalanceUpdateChallenge(alice.address, amtp2))
+            deferred.await()
+        }
     }
 
     @Test
     @ImplicitReflectionSerializer
-    open fun testTransferChallenge() = runBlocking {
-        val amount = EtherUtil.convert(100, EtherUtil.Unit.GWEI)
-        deposit(alice, amount)
-        commitHubRoot(1, amount)
-        val update = newUpdate(0, 1, BigInteger.ZERO, alice)
-        val txData = OffchainTransactionData(0, alice.address, owner.address, 10, 1)
-        val tx = OffchainTransaction(txData)
-        tx.sign(alice.key)
-        val open = TransferDeliveryChallenge(update, tx, MerklePath.mock())
-        var deferred = contract.openTransferDeliveryChallenge(alice, open)
-        deferred.await()
-        val update1 = newUpdate(0, 1, BigInteger.ZERO, alice)//other
-        val path = newPath(alice.address, update1, BigInteger.ZERO, 200.toBigInteger())
-        val update2 = newUpdate(0, 1, BigInteger.ZERO, alice)//mine
-        val leaf2 = newLeafNodeInfo(alice.address, update2)
-        val amtp = AMTreeProof(path, leaf2)
-        val close =
-            CloseTransferDeliveryChallenge(amtp, MerklePath.mock(), alice.address, Hash.of(tx))
-        deferred = contract.closeTransferDeliveryChallenge(owner, close)
-        deferred.await()
+    fun testTransferChallenge() {
+        runBlocking {
+            val amount = EtherUtil.convert(100, EtherUtil.Unit.GWEI)
+            deposit(alice, amount)
+            commitHubRoot(1, amount)
+            val update = newUpdate(0, 1, BigInteger.ZERO, alice)
+            val txData = OffchainTransactionData(0, alice.address, owner.address, 10, 1)
+            val tx = OffchainTransaction(txData)
+            tx.sign(alice.key)
+            val open = TransferDeliveryChallenge(update, tx, MerklePath.mock())
+            var deferred = contract.openTransferDeliveryChallenge(alice, open)
+            deferred.await()
+            val update1 = newUpdate(0, 1, BigInteger.ZERO, alice)//other
+            val path = newPath(alice.address, update1, BigInteger.ZERO, 200.toBigInteger())
+            val update2 = newUpdate(0, 1, BigInteger.ZERO, alice)//mine
+            val leaf2 = newLeafNodeInfo(alice.address, update2)
+            val amtp = AMTreeProof(path, leaf2)
+            val close =
+                CloseTransferDeliveryChallenge(amtp, MerklePath.mock(), alice.address, Hash.of(tx))
+            deferred = contract.closeTransferDeliveryChallenge(owner, close)
+            deferred.await()
+        }
     }
 
     private fun deposit(alice: EthereumAccount, amount: BigInteger) = runBlocking {

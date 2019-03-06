@@ -1,5 +1,6 @@
 package org.starcoin.sirius.protocol.ethereum
 
+import kotlinx.coroutines.runBlocking
 import org.ethereum.util.blockchain.EtherUtil
 import org.junit.Assert
 import org.junit.Before
@@ -25,12 +26,12 @@ class InMemoryChainTest {
 
         chain.tryMiningCoin(account2, oneEther * 1000.toBigInteger())
         Assert.assertEquals(chain.getBalance(account2.address), oneEther * 1000.toBigInteger())
-
-        chain.submitTransaction(
-            account1,
-            chain.newTransaction(account1, account2.address, oneEther * 500.toBigInteger())
-        )
-
+        runBlocking {
+            chain.submitTransaction(
+                account1,
+                chain.newTransaction(account1, account2.address, oneEther * 500.toBigInteger())
+            ).awaitTimoutOrNull()
+        }
         Assert.assertTrue(chain.getBalance(account1.address) > oneEther * 499.toBigInteger())
         Assert.assertEquals(oneEther * 1500.toBigInteger(), chain.getBalance(account2.address))
 
