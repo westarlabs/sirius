@@ -14,6 +14,7 @@ TODO
 ### Prerequisites
 
 1. Java(1.8)
+2. solc (npm install -g solc)
 2. Docker(for run and test)
 
 #### Build
