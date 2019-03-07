@@ -64,6 +64,8 @@ class Config private constructor(val properties: Properties, val dataDir: File, 
      */
     var contractAddress: Address? by properties.delegate { Address.wrap(this) }
 
+    val logPattern: String by properties.delegate().default(DEFAULT_LOG_PATTERN)
+
     fun store() {
         LOG.info("Store config to ${configFile.absolutePath}")
         configFile.outputStream().use {
@@ -73,11 +75,12 @@ class Config private constructor(val properties: Properties, val dataDir: File, 
 
     companion object : WithLogging() {
 
-        val DEFAULT_RPC_PORT = 7985
+        private const val DEFAULT_RPC_PORT = 7985
         val DEFAULT_RPC_BIND = InetAddressPort("0.0.0.0", DEFAULT_RPC_PORT)
-        val DEFAULT_BLOCKS_PER_EON = ContractConstructArgs.TEST_BLOCKS_PER_EON
+        const val DEFAULT_BLOCKS_PER_EON = ContractConstructArgs.TEST_BLOCKS_PER_EON
         val DEFAULT_CONNECTOR = URI("${InMemoryChainProvider.scheme}:test")
         val DEFAULT_DATA_DIR = "${System.getProperty("user.home")}/.sirius/hub/"
+        const val DEFAULT_LOG_PATTERN = "sirius%g.log"
 
         fun loadConfig(dataDir: File): Config {
             val properties = Properties()
@@ -98,6 +101,7 @@ class Config private constructor(val properties: Properties, val dataDir: File, 
         }
 
         fun configurationForUNIT(): Config {
+            WithLogging.enableAllLog()
             val properties = Properties()
             properties[Config::network.name] = Network.UINT.name
             properties[Config::rpcBind.name] = InetAddressPort.random().toString()

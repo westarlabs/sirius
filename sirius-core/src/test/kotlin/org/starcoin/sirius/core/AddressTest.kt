@@ -2,6 +2,7 @@ package org.starcoin.sirius.core
 
 import org.junit.Assert
 import org.junit.Test
+import org.starcoin.sirius.util.WithLogging
 
 class AddressTest {
 
@@ -12,4 +13,6 @@ class AddressTest {
         val address2 = Address.wrap(proto.address)
         Assert.assertEquals(address, address2)
     }
+
+    companion object : WithLogging()
 }

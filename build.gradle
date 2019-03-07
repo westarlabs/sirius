@@ -71,7 +71,7 @@ subprojects {
         compile 'org.jetbrains.kotlinx:kotlinx-coroutines-core:1.1.0'
         compile "org.jetbrains.kotlinx:kotlinx-serialization-runtime:0.10.0"
 
-        testCompile("junit:junit:4.12")
+        testCompile("org.junit.jupiter:junit-jupiter-engine:5.1.0")
         testCompile("org.mockito:mockito-core:2.10.0")
         testCompile("org.reflections:reflections:0.9.11")
     }

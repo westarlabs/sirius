@@ -7,13 +7,14 @@ import org.junit.Test
 import org.starcoin.sirius.core.Hash
 import org.starcoin.sirius.core.Update
 import org.starcoin.sirius.util.MockUtils
+import org.starcoin.sirius.util.WithLogging
 
 abstract class CryptoTestBase {
 
     @Before
     fun setup() {
         val service = CryptoService.instance
-        println("CryptoService: ${service.javaClass.name}")
+        LOG.info("CryptoService: ${service.javaClass.name}")
         assertCryptoServiceType(service)
     }
 
@@ -106,4 +107,5 @@ abstract class CryptoTestBase {
         Assert.assertEquals(address, address1)
     }
 
+    companion object : WithLogging()
 }

@@ -2,6 +2,7 @@ package org.starcoin.sirius.util
 
 import kotlinx.io.PrintWriter
 import kotlinx.io.StringWriter
+import java.util.logging.FileHandler
 import java.util.logging.Level
 import java.util.logging.LogManager
 import java.util.logging.Logger
@@ -87,11 +88,35 @@ fun Logger.fine(e: Throwable) {
 abstract class WithLogging : Loggable {
     val LOG = logger()
 
-    init {
-        val rootLogger = LogManager.getLogManager().getLogger("")
-        rootLogger.level = Level.INFO
-        for (h in rootLogger.handlers) {
-            h.level = Level.INFO
+    companion object {
+
+        init {
+            WithLogging::class.java.classLoader.getResourceAsStream("logging.properties")?.use {
+                LogManager.getLogManager().readConfiguration(it)
+            }
+        }
+
+        fun enableAllLog() {
+            setLogLevel(Level.ALL)
+        }
+
+        fun setLogLevel(level: Level) {
+            val rootLogger = Logger.getLogger("")
+            rootLogger.level = Level.ALL
+            for (h in rootLogger.handlers) {
+                h.level = level
+            }
+        }
+
+        fun setLogLevel(packageName: String, level: Level) {
+            Logger.getLogger(packageName).level = level
+        }
+
+        fun addFileHandler(pattern: String) {
+            val rootLogger = LogManager.getLogManager().getLogger("")
+            val handler = FileHandler(pattern, 10240000, 3, true)
+            handler.formatter = java.util.logging.SimpleFormatter()
+            rootLogger.addHandler(handler)
         }
     }
 }
