@@ -1,31 +1,43 @@
-## setup eth
-### setup eth by docker
-please check docker in your computer , excecute such code in sirius dir.
-#### setup eth
+# Getting started
+
+## Setup ethereum
+
+We run a local ethereum development node for test.
+please ensure docker in your computer , execute such code in sirius dir.
+
+#### run ethereum node
 ```
 cd sirius-chainconnector/scripts
 sh docker.sh run --dev.period 10
 ```
+
 #### create eth account
-find eth docker id,by
+
+Find ethereum node docker id by
+
 ```
 docker ps 
 ```
-find container id of iamge with name fikgol/starcoin-goethereum,then create acount by 
+
+Find container id of image with name fikgol/starcoin-goethereum,then create account by 
+
 ```
 docker exec -it {container_id} geth account new --keystore /tmp/geth_data/keystore
 
 ```
-you need excecute this command twice to create two new account.
 
-#### setup hub
-you need run this command to setup hub
+You need execute this command twice to create two new account.
+
+## Run hub node
+
 ```
 ./gradlew sirius-hub:run
 ```
-then hub will create config dir in ~/.sirius/hub ,you could change find contract addr in hub.conf file.
 
-#### run wallet
+then hub will create config dir in ~/.sirius/hub and auto deploy smart-contract, you can find contract addr in hub.conf file.
+
+## run wallet
+
 	1. Compile wallet
 	   ```
 	   >gradle fatjar
