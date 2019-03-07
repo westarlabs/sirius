@@ -14,8 +14,9 @@ data class ContractReturn(@SerialId(1) val hasVal: Boolean, @SerialId(2) val pay
     SiriusObject() {
 
 
+    @Suppress("UNCHECKED_CAST")
     fun <S : SiriusObject> getPayload(clazz: KClass<S>): S? {
-        return if (hasVal) (clazz.companionObjectInstance as SiriusObjectCompanion<S, *>).parseFromRLP(this.payload.bytes) else null
+        return if (hasVal) (clazz.companionObjectInstance as SiriusObjectCompanion<*, *>).parseFromRLP(this.payload.bytes).let { it as S } else null
     }
 
     companion object : SiriusObjectCompanion<ContractReturn, Starcoin.ProtoContractReturn>(ContractReturn::class) {

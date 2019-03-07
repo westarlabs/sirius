@@ -52,13 +52,13 @@ data class OffchainTransactionData(
             )
         }
 
-        override fun parseFromProtoMessage(proto: Starcoin.OffchainTransactionData): OffchainTransactionData {
+        override fun parseFromProtoMessage(protoMessage: Starcoin.OffchainTransactionData): OffchainTransactionData {
             return OffchainTransactionData(
-                proto.eon,
-                Address.wrap(proto.from),
-                Address.wrap(proto.to),
-                BigInteger(proto.amount.toByteArray()),
-                proto.timestamp
+                protoMessage.eon,
+                Address.wrap(protoMessage.from),
+                Address.wrap(protoMessage.to),
+                BigInteger(protoMessage.amount.toByteArray()),
+                protoMessage.timestamp
             )
         }
 

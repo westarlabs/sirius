@@ -15,10 +15,10 @@ data class IOU(@SerialId(1) val transaction: OffchainTransaction, @SerialId(2) v
             return IOU(OffchainTransaction.mock(), Update.mock())
         }
 
-        override fun parseFromProtoMessage(proto: Starcoin.IOU): IOU {
+        override fun parseFromProtoMessage(protoMessage: Starcoin.IOU): IOU {
             return IOU(
-                OffchainTransaction.parseFromProtoMessage(proto.transaction),
-                Update.parseFromProtoMessage(proto.update)
+                OffchainTransaction.parseFromProtoMessage(protoMessage.transaction),
+                Update.parseFromProtoMessage(protoMessage.update)
             )
         }
 

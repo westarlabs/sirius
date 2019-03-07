@@ -54,9 +54,9 @@ abstract class DataStoreTestBase {
         Assert.assertNull(store.get(key))
         val keys2 = store.keys()
         Assert.assertEquals(keys.size - 1, keys2.size)
-        keys2.forEachIndexed { index, key ->
+        keys2.forEachIndexed { index, k ->
             val key2 = keys2[index]
-            Assert.assertArrayEquals("index $index ${key.toHEXString()} ${key2.toHEXString()}", key, key2)
+            Assert.assertArrayEquals("index $index ${k.toHEXString()} ${key2.toHEXString()}", k, key2)
         }
     }
 
@@ -76,7 +76,7 @@ abstract class DataStoreTestBase {
         val keys = 1.rangeTo(10).map { it.toByteArray() + Random.nextBytes(10) }
         keys.forEach { store.put(it, it) }
         val index = AtomicInteger(0)
-        store.forEach { key, value ->
+        store.forEach { key, _ ->
             val idx = index.getAndIncrement()
             Assert.assertArrayEquals(keys[idx], key)
         }

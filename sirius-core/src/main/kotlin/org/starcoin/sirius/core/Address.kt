@@ -60,17 +60,17 @@ class Address private constructor(internal val bytes: ByteArray) : CachedHashabl
 
         val ZERO_ADDRESS = Address.wrap(ByteArray(LENGTH))
 
-        override fun deserialize(input: Decoder): Address {
-            return when (input) {
-                is BinaryDecoder -> wrap(input.decodeByteArray())
-                else -> wrap(input.decodeString())
+        override fun deserialize(decoder: Decoder): Address {
+            return when (decoder) {
+                is BinaryDecoder -> wrap(decoder.decodeByteArray())
+                else -> wrap(decoder.decodeString())
             }
         }
 
-        override fun serialize(output: Encoder, obj: Address) {
-            when (output) {
-                is BinaryEncoder -> output.encodeByteArray(obj.bytes)
-                else -> output.encodeString(obj.toString())
+        override fun serialize(encoder: Encoder, obj: Address) {
+            when (encoder) {
+                is BinaryEncoder -> encoder.encodeByteArray(obj.bytes)
+                else -> encoder.encodeString(obj.toString())
             }
         }
 

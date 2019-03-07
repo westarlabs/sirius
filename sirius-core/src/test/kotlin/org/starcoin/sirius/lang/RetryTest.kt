@@ -22,12 +22,16 @@ class RetryTest {
         Assert.assertTrue(count.get() > 19)
     }
 
+    private fun returnNUll(): Any? {
+        return null
+    }
+
     @Test
     fun testRetryTimeout() = runBlocking {
         val timeout = 2000L
         val startTime = System.currentTimeMillis()
         try {
-            retryWithTimeout(timeout, 100) { null }
+            retryWithTimeout(timeout, 100) { returnNUll() }
             Assert.fail("expect timeout")
         }catch (e:TimeoutCancellationException){
         }

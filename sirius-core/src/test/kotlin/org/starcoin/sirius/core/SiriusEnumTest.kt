@@ -23,6 +23,7 @@ class SiriusEnumTest {
 
     val siriusEnumClass: MutableList<KClass<SiriusEnum<*>>> = mutableListOf()
 
+    @Suppress("UNCHECKED_CAST")
     @Before
     fun setup() {
         val reflections = Reflections("org.starcoin.sirius.core")

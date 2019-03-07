@@ -1,7 +1,7 @@
 package org.starcoin.sirius.serialization.rlp
 
 import kotlinx.serialization.*
-import kotlinx.serialization.json.JSON
+import kotlinx.serialization.json.Json
 import org.junit.Assert
 import org.junit.Ignore
 import org.junit.Test
@@ -52,9 +52,9 @@ class RLPTest {
     fun testObjectNestJson() {
         val data = TestData.random()
         val namedData = NamedData("test", data)
-        val jsonString = JSON.stringify(namedData)
+        val jsonString = Json.stringify(namedData)
         //println(jsonString)
-        val namedData1 = JSON.parse<NamedData>(jsonString)
+        val namedData1 = Json.parse<NamedData>(jsonString)
         Assert.assertEquals(namedData, namedData1)
     }
 

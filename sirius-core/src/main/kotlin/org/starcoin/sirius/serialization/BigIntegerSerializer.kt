@@ -10,19 +10,19 @@ import java.math.BigInteger
 
 @Serializer(forClass = BigInteger::class)
 class BigIntegerSerializer : KSerializer<BigInteger> {
-    override fun deserialize(input: Decoder): BigInteger {
-        return when (input) {
-            is BinaryDecoder -> input.decodeBigInteger()
+    override fun deserialize(decoder: Decoder): BigInteger {
+        return when (decoder) {
+            is BinaryDecoder -> decoder.decodeBigInteger()
             else -> BigInteger(
-                input.decodeString().hexToByteArray()
+                decoder.decodeString().hexToByteArray()
             )
         }
     }
 
-    override fun serialize(output: Encoder, obj: BigInteger) {
-        when (output) {
-            is BinaryEncoder -> output.encodeBigInteger(obj)
-            else -> output.encodeString(
+    override fun serialize(encoder: Encoder, obj: BigInteger) {
+        when (encoder) {
+            is BinaryEncoder -> encoder.encodeBigInteger(obj)
+            else -> encoder.encodeString(
                 obj.toByteArray().toHEXString()
             )
         }

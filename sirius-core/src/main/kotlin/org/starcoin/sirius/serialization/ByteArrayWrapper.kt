@@ -43,17 +43,17 @@ class ByteArrayWrapper(val bytes: ByteArray) {
             return ByteArrayWrapper(hexString.hexToByteArray())
         }
 
-        override fun deserialize(input: Decoder): ByteArrayWrapper {
-            return when (input) {
-                is BinaryDecoder -> ByteArrayWrapper.wrap(input.decodeByteArray())
-                else -> ByteArrayWrapper.wrap(input.decodeString())
+        override fun deserialize(decoder: Decoder): ByteArrayWrapper {
+            return when (decoder) {
+                is BinaryDecoder -> ByteArrayWrapper.wrap(decoder.decodeByteArray())
+                else -> ByteArrayWrapper.wrap(decoder.decodeString())
             }
         }
 
-        override fun serialize(output: Encoder, obj: ByteArrayWrapper) {
-            when (output) {
-                is BinaryEncoder -> output.encodeByteArray(obj.bytes)
-                else -> output.encodeString(obj.toString())
+        override fun serialize(encoder: Encoder, obj: ByteArrayWrapper) {
+            when (encoder) {
+                is BinaryEncoder -> encoder.encodeByteArray(obj.bytes)
+                else -> encoder.encodeString(obj.toString())
             }
         }
     }

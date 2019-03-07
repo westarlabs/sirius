@@ -15,6 +15,7 @@ open class SiriusObjectSerializationTest {
 
     companion object : WithLogging() {
 
+        @Suppress("UNCHECKED_CAST")
         fun <T : SiriusObject> testClass(clazz: KClass<T>) {
             LOG.info("test ${clazz.jvmName}")
             if (clazz.companionObjectInstance !is SiriusObjectCompanion<*, *>) {

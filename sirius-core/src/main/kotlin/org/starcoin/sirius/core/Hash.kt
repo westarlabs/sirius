@@ -100,17 +100,17 @@ class Hash private constructor(internal val bytes: ByteArray) : Comparable<Hash>
         val EMPTY_LIST_HASH by lazy { CryptoService.emptyListHash }
         val EMPTY_DADA_HASH by lazy { CryptoService.emptyDataHash }
 
-        override fun deserialize(input: Decoder): Hash {
-            return when (input) {
-                is BinaryDecoder -> Hash.wrap(input.decodeByteArray())
-                else -> Hash.wrap(input.decodeString())
+        override fun deserialize(decoder: Decoder): Hash {
+            return when (decoder) {
+                is BinaryDecoder -> Hash.wrap(decoder.decodeByteArray())
+                else -> Hash.wrap(decoder.decodeString())
             }
         }
 
-        override fun serialize(output: Encoder, obj: Hash) {
-            when (output) {
-                is BinaryEncoder -> output.encodeByteArray(obj.bytes)
-                else -> output.encodeString(obj.toString())
+        override fun serialize(encoder: Encoder, obj: Hash) {
+            when (encoder) {
+                is BinaryEncoder -> encoder.encodeByteArray(obj.bytes)
+                else -> encoder.encodeString(obj.toString())
             }
         }
 

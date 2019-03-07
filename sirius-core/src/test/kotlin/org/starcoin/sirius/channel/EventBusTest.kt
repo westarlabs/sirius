@@ -1,14 +1,14 @@
 package org.starcoin.sirius.channel
 
-import kotlinx.coroutines.delay
-import kotlinx.coroutines.launch
-import kotlinx.coroutines.runBlocking
+import kotlinx.coroutines.*
 import kotlinx.coroutines.selects.select
 import org.junit.Assert
 import org.junit.Test
 import org.starcoin.sirius.core.*
 import java.math.BigInteger
 
+@ObsoleteCoroutinesApi
+@ExperimentalCoroutinesApi
 class EventBusTest {
 
     @Test

@@ -2,25 +2,8 @@ package org.starcoin.sirius.core
 
 import org.starcoin.sirius.util.MockUtils
 import java.net.InetSocketAddress
-import java.util.*
 
-class InetAddressPort(val host: String, val port: Int) {
-
-    override fun equals(o: Any?): Boolean {
-        if (this === o) {
-            return true
-        }
-        if (o !is InetAddressPort) {
-            return false
-        }
-        val that = o as InetAddressPort?
-        return port == that!!.port && host == that.host
-    }
-
-    override fun hashCode(): Int {
-
-        return Objects.hash(host, port)
-    }
+data class InetAddressPort(val host: String, val port: Int) {
 
     override fun toString(): String {
         return String.format("%s:%s", host, port)

@@ -7,6 +7,7 @@ import java.security.MessageDigest
 import java.security.Security
 
 object HashUtil {
+    @Suppress("DEPRECATION")
     private val md5Function = Hashing.md5()!!
     private val sha256Function = Hashing.sha256()!!
 

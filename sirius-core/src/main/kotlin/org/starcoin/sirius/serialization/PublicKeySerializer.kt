@@ -13,25 +13,25 @@ import java.security.PublicKey
 @Serializer(forClass = PublicKey::class)
 class PublicKeySerializer : KSerializer<PublicKey> {
 
-    override fun deserialize(input: Decoder): PublicKey {
-        return when (input) {
+    override fun deserialize(decoder: Decoder): PublicKey {
+        return when (decoder) {
             is BinaryDecoder -> CryptoService.loadPublicKey(
-                input.decodeByteArray()
+                decoder.decodeByteArray()
             )
             else -> CryptoService.loadPublicKey(
-                input.decodeString().hexToByteArray()
+                decoder.decodeString().hexToByteArray()
             )
         }
     }
 
-    override fun serialize(output: Encoder, obj: PublicKey) {
-        when (output) {
-            is BinaryEncoder -> output.encodeByteArray(
+    override fun serialize(encoder: Encoder, obj: PublicKey) {
+        when (encoder) {
+            is BinaryEncoder -> encoder.encodeByteArray(
                 CryptoService.encodePublicKey(
                     obj
                 )
             )
-            else -> output.encodeString(
+            else -> encoder.encodeString(
                 CryptoService.encodePublicKey(
                     obj
                 ).toHEXString()

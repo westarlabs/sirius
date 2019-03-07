@@ -1,7 +1,7 @@
 package org.starcoin.sirius.serialization
 
 import kotlinx.serialization.*
-import kotlinx.serialization.json.JSON
+import kotlinx.serialization.json.Json
 import org.junit.Assert
 import org.junit.Ignore
 import org.junit.Test
@@ -17,9 +17,9 @@ class SerializationTest {
     fun testDataClass() {
         val data = TestData.random()
 
-        val json = JSON.stringify(data)
+        val json = Json.stringify(data)
         println(json)
-        val data1 = JSON.parse<TestData>(json)
+        val data1 = Json.parse<TestData>(json)
         Assert.assertEquals(data, data1)
 
         val bytes = ProtoBuf.dump(data)
@@ -37,9 +37,9 @@ class SerializationTest {
     fun testDataSpecialValue() {
         val data = TestData.random()
         data.bigIntegerValue = 1000000000000.toBigInteger()
-        val json = JSON.stringify(data)
+        val json = Json.stringify(data)
         println(json)
-        val data1 = JSON.parse<TestData>(json)
+        val data1 = Json.parse<TestData>(json)
         Assert.assertEquals(data, data1)
 
         val bytes = ProtoBuf.dump(data)
@@ -57,9 +57,9 @@ class SerializationTest {
         val data = TestData.random()
         println(data.toJSON())
         val namedData = NamedData("test", data)
-        val json = JSON.stringify(NamedData.serializer(), namedData)
+        val json = Json.stringify(NamedData.serializer(), namedData)
         println(json)
-        val namedData1 = JSON.parse(NamedData.serializer(), json)
+        val namedData1 = Json.parse(NamedData.serializer(), json)
         Assert.assertEquals(namedData, namedData1)
     }
 
@@ -91,9 +91,9 @@ class SerializationTest {
     fun testOptionalObject() {
         val namedData = NamedData("test", null)
 
-        val json = JSON.stringify(namedData)
+        val json = Json.stringify(namedData)
         println(json)
-        val namedData1 = JSON.parse<NamedData>(json)
+        val namedData1 = Json.parse<NamedData>(json)
         Assert.assertEquals(namedData, namedData1)
 
         val pb = ProtoBuf.dump(namedData)

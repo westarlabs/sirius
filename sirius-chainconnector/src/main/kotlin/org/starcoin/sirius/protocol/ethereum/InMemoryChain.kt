@@ -26,6 +26,7 @@ sealed class ChainCtlMessage {
         ChainCtlMessage()
 }
 
+@UseExperimental(ObsoleteCoroutinesApi::class)
 class InMemoryChain(val autoGenblock: Boolean = true) : EthereumBaseChain() {
 
     override fun waitTransactionProcessed(hash: Hash): TxDeferred {

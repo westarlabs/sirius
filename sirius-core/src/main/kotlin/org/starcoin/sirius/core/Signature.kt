@@ -54,17 +54,17 @@ class Signature private constructor(private val bytes: ByteArray) {
     @Serializer(forClass = Signature::class)
     companion object : KSerializer<Signature> {
 
-        override fun deserialize(input: Decoder): Signature {
-            return when (input) {
-                is BinaryDecoder -> wrap(input.decodeByteArray())
-                else -> this.wrap(input.decodeString())
+        override fun deserialize(decoder: Decoder): Signature {
+            return when (decoder) {
+                is BinaryDecoder -> wrap(decoder.decodeByteArray())
+                else -> this.wrap(decoder.decodeString())
             }
         }
 
-        override fun serialize(output: Encoder, obj: Signature) {
-            when (output) {
-                is BinaryEncoder -> output.encodeByteArray(obj.bytes)
-                else -> output.encodeString(obj.toString())
+        override fun serialize(encoder: Encoder, obj: Signature) {
+            when (encoder) {
+                is BinaryEncoder -> encoder.encodeByteArray(obj.bytes)
+                else -> encoder.encodeString(obj.toString())
             }
         }
 
@@ -88,6 +88,7 @@ class Signature private constructor(private val bytes: ByteArray) {
 
         fun of(data: Hash, key: CryptoKey) = key.sign(data)
 
+        @JvmStatic
         fun ofDummyKey(data: ByteArray): Signature {
             return CryptoService.dummyCryptoKey.sign(data)
         }

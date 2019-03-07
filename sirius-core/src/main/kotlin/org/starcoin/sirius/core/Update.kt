@@ -201,13 +201,13 @@ data class UpdateData(
             return UpdateData(eon, version, sendAmount, receiveAmount, root)
         }
 
-        override fun parseFromProtoMessage(proto: Starcoin.UpdateData): UpdateData {
+        override fun parseFromProtoMessage(protoMessage: Starcoin.UpdateData): UpdateData {
             return UpdateData(
-                proto.eon,
-                proto.version,
-                BigInteger(proto.sendAmount.toByteArray()),
-                BigInteger(proto.receiveAmount.toByteArray()),
-                Hash.wrap(proto.root)
+                protoMessage.eon,
+                protoMessage.version,
+                BigInteger(protoMessage.sendAmount.toByteArray()),
+                BigInteger(protoMessage.receiveAmount.toByteArray()),
+                Hash.wrap(protoMessage.root)
             )
         }
 

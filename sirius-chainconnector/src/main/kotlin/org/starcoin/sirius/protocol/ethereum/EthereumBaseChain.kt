@@ -30,7 +30,7 @@ abstract class EthereumBaseChain :
 
     companion object : WithLogging() {
 
-        //TODO
+        //TODO dynamic set gas and gas limit.
         val defaultGasPrice: BigInteger
             get() = 1.toBigInteger()
 
@@ -56,8 +56,8 @@ abstract class EthereumBaseChain :
 
     override fun loadContract(contractAddress: Address) = this.loadContract(contractAddress, loadContractMetadata().abi)
 
-    override fun loadContract(address: Address, jsonInterface: String): EthereumHubContract {
-        return EthereumHubContract(address, jsonInterface, this)
+    override fun loadContract(contractAddress: Address, jsonInterface: String): EthereumHubContract {
+        return EthereumHubContract(contractAddress, jsonInterface, this)
     }
 
     override fun deployContract(account: EthereumAccount, args: ContractConstructArgs): EthereumHubContract {

@@ -51,6 +51,7 @@ class EthereumHubContract internal constructor(
 
     val bytesType: SolidityType.BytesType = SolidityType.BytesType()
 
+    @Suppress("UNCHECKED_CAST")
     @UseExperimental(ImplicitReflectionSerializer::class)
     override fun <S : Any> queryContractFunction(
         account: EthereumAccount,

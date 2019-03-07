@@ -4,7 +4,7 @@ import com.google.protobuf.GeneratedMessageV3
 import kotlinx.serialization.ImplicitReflectionSerializer
 import kotlinx.serialization.KSerializer
 import kotlinx.serialization.context.getOrDefault
-import kotlinx.serialization.json.JSON
+import kotlinx.serialization.json.Json
 import kotlinx.serialization.load
 import kotlinx.serialization.parse
 import org.starcoin.sirius.lang.resetableLazy
@@ -38,11 +38,13 @@ abstract class SiriusObject : Hashable {
         hashDelegate.reset()
     }
 
+    @Suppress("UNCHECKED_CAST")
     @UseExperimental(ImplicitReflectionSerializer::class)
     fun toRLP(): ByteArray {
         return RLP.dump(RLP.plain.context.getOrDefault(this::class) as KSerializer<SiriusObject>, this)
     }
 
+    @Suppress("UNCHECKED_CAST")
     @UseExperimental(ImplicitReflectionSerializer::class)
     fun toProtobuf(): ByteArray {
         return ProtoBuf.dump(ProtoBuf.plain.context.getOrDefault(this::class) as KSerializer<SiriusObject>, this)
@@ -51,13 +53,14 @@ abstract class SiriusObject : Hashable {
     @Suppress("UNCHECKED_CAST")
     @UseExperimental(ImplicitReflectionSerializer::class)
     fun toJSON(): String {
-        return JSON.stringify(JSON.plain.context.getOrDefault(this::class) as KSerializer<SiriusObject>, this)
+        return Json.stringify(Json.plain.context.getOrDefault(this::class) as KSerializer<SiriusObject>, this)
     }
 
     override fun toString(): String {
         return toJSON()
     }
 
+    @Suppress("UNCHECKED_CAST")
     fun <P : GeneratedMessageV3> toProto(): P {
         val companion = this::class.companionObjectInstance as SiriusObjectCompanion<SiriusObject, P>
         return companion.toProtoMessage(this)
@@ -76,7 +79,7 @@ abstract class SiriusObject : Hashable {
 
         @UseExperimental(ImplicitReflectionSerializer::class)
         inline fun <reified T : SiriusObject> parseFromJSON(json: String): T {
-            return JSON.parse(json)
+            return Json.parse(json)
         }
 
         @UseExperimental(ImplicitReflectionSerializer::class)
@@ -90,8 +93,6 @@ abstract class SiriusObject : Hashable {
         }
     }
 }
-
-class Sirius
 
 abstract class SiriusObjectCompanion<T : SiriusObject, P : GeneratedMessageV3>(val objClass: KClass<T>) :
     WithLogging() {
@@ -135,7 +136,7 @@ abstract class SiriusObjectCompanion<T : SiriusObject, P : GeneratedMessageV3>(v
 
     @UseExperimental(ImplicitReflectionSerializer::class)
     open fun parseFromJSON(json: String): T {
-        return JSON.parse(RLP.plain.context.getOrDefault(objClass), json)
+        return Json.parse(RLP.plain.context.getOrDefault(objClass), json)
     }
 
     @UseExperimental(ImplicitReflectionSerializer::class)
@@ -144,12 +145,13 @@ abstract class SiriusObjectCompanion<T : SiriusObject, P : GeneratedMessageV3>(v
     }
 }
 
+@Suppress("UNCHECKED_CAST")
 inline fun <reified P : GeneratedMessageV3, reified T : SiriusObject> P.toSiriusObject(): T {
     val companion = T::class.companionObjectInstance as SiriusObjectCompanion<T, P>
     return companion.parseFromProtoMessage(this)
 }
 
-open abstract class SiriusObjectCodec<T : SiriusObject>(protected val clazz: KClass<T>) : Codec<T>
+abstract class SiriusObjectCodec<T : SiriusObject>(protected val clazz: KClass<T>) : Codec<T>
 
 class SiriusObjectProtoBufCodec<T : SiriusObject>(clazz: KClass<T>) : SiriusObjectCodec<T>(clazz) {
 

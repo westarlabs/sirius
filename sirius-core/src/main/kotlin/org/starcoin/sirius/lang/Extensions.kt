@@ -45,7 +45,7 @@ fun String.toClassPathResource() = ClassPathResource(this)
 
 fun InputStream.readText() = this.readBytes().toString(Charset.defaultCharset())
 
-inline fun Number.toBigInteger(): BigInteger = when (this) {
+fun Number.toBigInteger(): BigInteger = when (this) {
     is BigInteger -> this
     is BigDecimal -> this.toBigInteger()
     else -> BigInteger.valueOf(this.toLong())

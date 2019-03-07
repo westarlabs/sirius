@@ -22,6 +22,7 @@ class RLPDataTest {
             JSONParser().parse(this.javaClass.getResourceAsStream("rlptest.json").readBytes().toString(Charsets.UTF_8)) as JSONObject
     }
 
+    @Suppress("UNCHECKED_CAST")
     @Test
     fun test() {
         for (kv in testJson) {
