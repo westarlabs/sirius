@@ -6,6 +6,7 @@ Welcome to the Sirius source code repository!
 
 Sirius is a blockchain layer 2 protocol implementation, currently supported Ethereum. Project is under heavy development, not production ready.
 
+Inspiration of the name "Sirius" comes from the brightest star in the night sky.
 ## Features 
 
 TODO 
