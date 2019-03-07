@@ -21,14 +21,14 @@ case $"$1" in
 	fi
         ;;
     build)
-	docker build  -f $(dirname $0)/docker/go-ethereum/Dockerfile -t fikgol/starcoin-goethereum $(dirname $0)/docker/go-ethereum/
+	docker build  -f $(dirname $0)/docker/go-ethereum/Dockerfile -t starcoin/sirius:ethereum $(dirname $0)/docker/go-ethereum/
 	;;
     rebuild)
-	docker build --no-cache -f $(dirname $0)/docker/go-ethereum/Dockerfile -t fikgol/starcoin-goethereum $(dirname $0)/docker/go-ethereum/ 
+	docker build --no-cache -f $(dirname $0)/docker/go-ethereum/Dockerfile -t starcoin/sirius:ethereum $(dirname $0)/docker/go-ethereum/
 	;;
     run)
 	shift 1
-	docker run -d --name go-ethereum -p 127.0.0.1:8545:8545 -p 30303:30303 -p 8546:8546  -v /tmp/geth_data:/tmp/geth_data fikgol/starcoin-goethereum $@
+	docker run -d --name go-ethereum -p 127.0.0.1:8545:8545 -p 30303:30303 -p 8546:8546  -v /tmp/geth_data:/tmp/geth_data starcoin/sirius:ethereum $@
 	while true; do
 	    if [[ -d $datadir ]]; then
 		break
