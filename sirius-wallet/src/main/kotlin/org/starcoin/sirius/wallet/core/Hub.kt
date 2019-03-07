@@ -72,6 +72,7 @@ class Hub <T : ChainTransaction, A : ChainAccount> {
         this.hubStatus = HubStatus(this.currentEon,account)
         hubStatus.blocksPerEon= hubInfo.blocksPerEon
 
+
     }
 
     private fun getChainEon():Eon{
@@ -316,13 +317,14 @@ class Hub <T : ChainTransaction, A : ChainAccount> {
     }
 
     fun deposit(value :BigInteger) {
-        chainTransaction(contract.contractAddress, value)
-    }
-
-    fun chainTransaction(addr: Address,value :BigInteger) {
-        var chainTransaction=chain.newTransaction(account,addr, value)
+        val chainTransaction=chainTransaction(contract.contractAddress, value)
         var txDeferred = chain.submitTransaction(account, chainTransaction)
         this.hubStatus.addDepositTransaction(txDeferred.txHash, chainTransaction)
+    }
+
+    fun chainTransaction(addr: Address,value :BigInteger):T {
+        var chainTransaction=chain.newTransaction(account,addr, value)
+        return chainTransaction
     }
 
     fun register() : Update? {

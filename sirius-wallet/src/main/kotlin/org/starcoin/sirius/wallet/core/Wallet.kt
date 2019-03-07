@@ -13,7 +13,7 @@ class Wallet<T : ChainTransaction, A : ChainAccount> {
     internal var hub: Hub<T,A> by Delegates.notNull()
         private set
 
-    private var blockChain: BlockChain<T,A> by Delegates.notNull()
+    internal var blockChain: BlockChain<T,A> by Delegates.notNull()
 
     private var account: A by Delegates.notNull()
 
@@ -70,4 +70,5 @@ class Wallet<T : ChainTransaction, A : ChainAccount> {
         blockChain.close()
         hub.eonChannel?.close()
     }
+
 }

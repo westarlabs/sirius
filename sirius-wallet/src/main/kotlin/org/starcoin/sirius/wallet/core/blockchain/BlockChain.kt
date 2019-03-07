@@ -117,7 +117,7 @@ class BlockChain <T : ChainTransaction, A : ChainAccount> (chain: Chain<T, out B
                 }
                 ResourceManager.instance(account.address.toBytes().toHEXString()).dataStore.put(
                     syncedHeight,
-                    height.toByteArray()
+                    block.height.toBigInteger().toByteArray()
                 )
             }
         }
@@ -125,5 +125,9 @@ class BlockChain <T : ChainTransaction, A : ChainAccount> (chain: Chain<T, out B
 
     internal suspend fun close(){
         job.cancel()
+    }
+
+    fun chainBalance():BigInteger{
+        return chain.getBalance(account.address)
     }
 }

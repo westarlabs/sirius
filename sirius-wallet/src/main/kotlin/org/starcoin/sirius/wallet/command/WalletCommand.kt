@@ -28,7 +28,8 @@ import java.math.BigInteger
         CheatMode::class,
         RecieveTransaction::class,
         RecieveHubSign::class,
-        HubInfo::class
+        HubInfo::class,
+        ChainTransfer::class
     ))
 class WalletCommand<T : ChainTransaction, A : ChainAccount>(internal var wallet: Wallet<T, A>) : Runnable {
 
@@ -166,7 +167,7 @@ class LocalBalance<T : ChainTransaction, A : ChainAccount> : Runnable {
         try {
             System.out.println("hub balance is " + walletCommand!!.wallet.hub.getAvailableCoin())
             System.out.println("withdrawal coin is " + walletCommand!!.wallet.hub.getWithdrawalCoin())
-            //System.out.println("chain balance is " + wallet!!.hub.checkChainBalance())
+            System.out.println("chain balance is " + walletCommand!!.wallet.blockChain.chainBalance())
         } catch (e: Exception) {
             System.out.println(e.message)
         }
@@ -265,6 +266,33 @@ class Restore<T : ChainTransaction, A : ChainAccount> : Runnable {
             walletCommand!!.wallet.restore()
         } catch (e: Exception) {
             System.out.println(e.message)
+        }
+
+    }
+}
+
+@CommandLine.Command(name = "chain_transfer", description = ["transfer on chain"])
+class ChainTransfer<T : ChainTransaction, A : ChainAccount> : Runnable {
+
+    @CommandLine.ParentCommand
+    var walletCommand: WalletCommand<T,A>? = null
+
+    @CommandLine.Option(names = ["addr"], description = ["destination address"], required = true)
+    var addr: Address? = null
+
+    @CommandLine.Option(names = ["value"], description = ["coin amount"], required = true)
+    var value: Long = 0
+
+    override fun run() {
+        try {
+            val tx = walletCommand!!.wallet.chainTransfer(addr!!, BigInteger.valueOf(value))
+            if (tx != null) {
+                System.out.println("transaction hash is :" + tx.hash())
+            } else {
+                println("transfer failed.")
+            }
+        } catch (e: Exception) {
+            System.out.println(e.getLocalizedMessage())
         }
 
     }
