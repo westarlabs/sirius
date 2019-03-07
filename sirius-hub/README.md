@@ -1,19 +1,23 @@
 # Sirius Hub
 
-## run hub
+Sirius hub 
 
-1. Start eth local node
-
-```bash
-./sirius-chainconnector/scripts/docker.sh run --dev.period 2
-```
-        
-2. Start hub node
+## build
 
 ```bash
-./gradlew sirius-hub:run
+../gradlew sirius-hub:build
 ```
-       
+
+## build dist tar
+
+```bash
+../gradlew sirius-hub:distTar
+```
+
+<a name="gettingstarted"></a>
+## Getting Started
+Instructions detailing the process of running and using the software can be found in [Getting Started](../docs/gettingstarted.md).
+    
        
 ## Note
 
