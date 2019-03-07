@@ -24,6 +24,20 @@ Go to project dir:
 ./gradlew build -x test
 ```
 
+#### Test
+
+Run unit tests
+
+```bash
+./gradlew unitTest
+```
+
+Run integration tests(need Docker environment)
+
+```bash
+./gradlew integrationTest
+```
+
 <a name="gettingstarted"></a>
 ## Getting Started
 Instructions detailing the process of running and using the software can be found in [Getting Started](./docs/gettingstarted.md).

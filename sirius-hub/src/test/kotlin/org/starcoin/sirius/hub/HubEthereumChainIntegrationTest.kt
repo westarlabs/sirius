@@ -15,8 +15,8 @@ import org.starcoin.sirius.util.WithLogging
 import java.math.BigInteger
 import kotlin.properties.Delegates
 
-class HubIntegrationEthereumChainTest :
-    HubIntegrationTestBase<EthereumTransaction, EthereumAccount, EthereumChain>() {
+class HubEthereumChainIntegrationTest :
+    HubTestBase<EthereumTransaction, EthereumAccount, EthereumChain>() {
 
     companion object : WithLogging() {
         @AfterClass
