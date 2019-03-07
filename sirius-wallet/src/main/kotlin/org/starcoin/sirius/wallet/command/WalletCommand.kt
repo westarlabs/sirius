@@ -24,7 +24,6 @@ import java.math.BigInteger
         GetHubAccount::class,
         Register::class,
         LocalBalance::class,
-        SyncHub::class,
         CheatMode::class,
         RecieveTransaction::class,
         RecieveHubSign::class,
@@ -49,7 +48,7 @@ class Deposit<T : ChainTransaction, A : ChainAccount>: Runnable {
     override fun run() {
         try {
             val succResponse = walletCommand!!.wallet.hub.deposit(BigInteger.valueOf(value))
-        } catch (e: Exception) {
+        } catch (e: Throwable) {
             System.out.println(e.getLocalizedMessage())
         }
     }

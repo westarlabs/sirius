@@ -288,13 +288,18 @@ class Hub <T : ChainTransaction, A : ChainAccount> {
                 this.hubStatus.syncAllotment(accountInfo)
             }
 
-            var withdrawalStatus=contract.queryWithdrawalStatus(account)
-            if (withdrawalStatus?.status == WithdrawalStatusType.INIT.number) {
-                this.hubStatus.withdrawalStatus = withdrawalStatus
+            try{
+                var withdrawalStatus=contract.queryWithdrawalStatus(account)
+                if (withdrawalStatus?.status == WithdrawalStatusType.INIT.number) {
+                    this.hubStatus.withdrawalStatus = withdrawalStatus
+                }
+            }catch (e:Exception){
+                LOG.warning(e.message)
             }
 
             this.accountInfo()
             watchHubEnvent()
+
             this.disconnect = false
         }
 

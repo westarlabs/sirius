@@ -24,12 +24,10 @@ class ResourceManager private constructor(){
         updateDao.destroy()
         offchainTransactionDao.destroy()
         aMTreeProofDao.destroy()
-        dataStore.destroy()
 
         updateDao.init()
         offchainTransactionDao.init()
         aMTreeProofDao.init()
-        dataStore.init()
     }
 
     companion object {
@@ -61,7 +59,6 @@ class ResourceManager private constructor(){
             resourceManager.updateDao = SiriusObjectStore.stringStore(Update.objClass,updateH2Ds)
             resourceManager.offchainTransactionDao = SiriusObjectStore.hashStore(OffchainTransaction.objClass,offchainTransactionH2Ds)
             resourceManager.aMTreeProofDao = SiriusObjectStore.stringStore(AMTreeProof.objClass,proofH2Ds)
-
 
             resourceManager.updateDao.init()
             resourceManager.offchainTransactionDao.init()

@@ -20,7 +20,6 @@ class BlockChain <T : ChainTransaction, A : ChainAccount> (chain: Chain<T, out B
     private val contract = hubContract
     private val account = account
     internal var startWatch = false
-    private var height : BigInteger =  BigInteger.ZERO
 
     lateinit  private var job :Job
 
@@ -99,16 +98,9 @@ class BlockChain <T : ChainTransaction, A : ChainAccount> (chain: Chain<T, out B
         }
     }
 
-    fun watachBlock(){
-        val heightBytes = ResourceManager.instance(account.address.toBytes().toHEXString()).dataStore.get(syncedHeight)
-        if(heightBytes!=null){
-            this.height= heightBytes.toBigInteger()
-        }
-        if(this.height== BigInteger.ZERO){
-            this.height = hub.hubInfo.startBlockNumber
-        }
+    fun watachBlock(height:BigInteger){
         job=GlobalScope.launch {
-            val channel = chain.watchBlock(this@BlockChain.height)
+            val channel = chain.watchBlock(height)
             while (startWatch) {
                 var block = channel.receive()
                 val transactions=block.transactions
@@ -121,6 +113,11 @@ class BlockChain <T : ChainTransaction, A : ChainAccount> (chain: Chain<T, out B
                 )
             }
         }
+    }
+
+    fun getLocalHeight():BigInteger{
+        val heightBytes = ResourceManager.instance(account.address.toBytes().toHEXString()).dataStore.get(syncedHeight)
+        return heightBytes?.toBigInteger()?:BigInteger.ZERO
     }
 
     internal suspend fun close(){

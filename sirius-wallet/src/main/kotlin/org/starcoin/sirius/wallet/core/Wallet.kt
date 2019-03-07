@@ -27,13 +27,22 @@ class Wallet<T : ChainTransaction, A : ChainAccount> {
 
         val contract=chain.loadContract(contractAddress)
 
-        hub = Hub(contract,account,null,chain)
+        val hub = Hub(contract,account,null,chain)
+        this.hub = hub
 
         blockChain = BlockChain(chain,hub,contract,account)
 
-        blockChain.startWatch=true
-        blockChain.watachBlock()
+        val currentChainHeight=chain.getBlockNumber()
+        val localHeight = blockChain.getLocalHeight()
 
+        var startBlockHeight = hub.hubInfo.startBlockNumber
+        val eonNumber=(currentChainHeight-localHeight.toLong())/hub.hubInfo.blocksPerEon
+        if(eonNumber>1){
+            sync()
+            startBlockHeight+=BigInteger.valueOf(hub.hubInfo.latestEon*hub.hubInfo.blocksPerEon.toLong()+1)
+        }
+        blockChain.startWatch=true
+        blockChain.watachBlock(startBlockHeight)
     }
 
     fun deposit(value:BigInteger) = hub.deposit(value)
