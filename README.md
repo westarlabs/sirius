@@ -10,6 +10,11 @@ Sirius is a blockchain layer 2 protocol implementation, currently supported Ethe
 
 TODO 
 
+### Prerequisites
+
+1. Java(1.8)
+2. Docker(for run and test)
+
 #### Build
 
 Go to project dir:
