@@ -4,13 +4,15 @@
 
 1. Start eth local node
 
-        ./sirius-chainconnector/scripts/docker.sh run --dev.period 2
-        
+```bash
+./sirius-chainconnector/scripts/docker.sh run --dev.period 2
+```
         
 2. Start hub node
 
-        ./gradlew sirius-hub:run
-       
+```bash
+./gradlew sirius-hub:run
+```
        
        
 ## Note
