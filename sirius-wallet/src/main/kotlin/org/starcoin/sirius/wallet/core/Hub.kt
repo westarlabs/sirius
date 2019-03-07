@@ -17,6 +17,7 @@ import org.starcoin.sirius.protocol.ChainAccount
 import org.starcoin.sirius.protocol.HubContract
 import org.starcoin.sirius.serialization.rlp.toByteArray
 import org.starcoin.sirius.util.WithLogging
+import java.lang.IllegalStateException
 import java.math.BigInteger
 import kotlin.properties.Delegates
 
@@ -72,12 +73,18 @@ class Hub <T : ChainTransaction, A : ChainAccount> {
         this.hubStatus = HubStatus(this.currentEon,account)
         hubStatus.blocksPerEon= hubInfo.blocksPerEon
 
-
+        LOG.info(getHubInfo().toJSON())
     }
 
     private fun getChainEon():Eon{
         var hubInfo=contract.queryHubInfo(account)
         return Eon.calculateEon(startBlockNumber = hubInfo.startBlockNumber.toLong(),blocksPerEon = hubInfo.blocksPerEon,currentBlockNumber = chain.getBlockNumber().toLong())
+    }
+
+    private fun getHubInfo():HubInfo{// this hubinfo from hub ,not hubinfo of contract
+        val hubServiceBlockingStub = HubServiceGrpc.newBlockingStub(ResourceManager.hubChannel)
+        val hubInfo:HubInfo=hubServiceBlockingStub.getHubInfo(Empty.getDefaultInstance()).toSiriusObject()
+        return hubInfo
     }
 
     @Synchronized
@@ -238,6 +245,7 @@ class Hub <T : ChainTransaction, A : ChainAccount> {
 
     @Synchronized
     fun sync() {
+        ResourceManager.instance(account.address.toBytes().toHEXString()).cleanData()
         val hubServiceBlockingStub = HubServiceGrpc.newBlockingStub(ResourceManager.hubChannel)
 
         this.currentEon = this.getChainEon()
@@ -265,12 +273,16 @@ class Hub <T : ChainTransaction, A : ChainAccount> {
 
                 if (eonId > 0) {
                     val blockAddressAndEonBuilder = Starcoin.BlockAddressAndEon.newBuilder()
-                    blockAddressAndEonBuilder.address = account.address.toProto().toByteString()
+                    blockAddressAndEonBuilder.address = account.address.toByteString()
                     blockAddressAndEonBuilder.eon = eonId
 
-                    val proof = hubServiceBlockingStub.getProofWithEon(blockAddressAndEonBuilder.build())
+                    try {
+                        val proof = hubServiceBlockingStub.getProofWithEon(blockAddressAndEonBuilder.build())
+                        this.hubStatus.eonStatuses[index].treeProof = proof.toSiriusObject()
+                    }catch (e:StatusRuntimeException){
+                        LOG.info("proof of eon $eonId not exists")
+                    }
 
-                    this.hubStatus.eonStatuses[index].treeProof = proof.toSiriusObject()
                 }
             } else { // 当前轮次同步余额
                 this.hubStatus.syncAllotment(accountInfo)
@@ -384,15 +396,14 @@ class Hub <T : ChainTransaction, A : ChainAccount> {
         // 这里需要增加value是否大于本地余额的校验
         if (!hubStatus.couldWithDrawal()) {
             LOG.info("already have withdrawal in progress.")
-            return
+            throw IllegalStateException("already have withdrawal in progress.")
         }
         if (hubStatus.currentEonProof() == null) {
             LOG.info("last eon path doesn't exists.")
-            return
+            throw IllegalStateException("last eon path doesn't exists.")
         }
 
         val withdrawal = Withdrawal(hubStatus.lastEonProof()!!, value)
-        println("withdrawal is $withdrawal")
         this.contract.initiateWithdrawal(account,withdrawal)
     }
 
@@ -450,7 +461,7 @@ class Hub <T : ChainTransaction, A : ChainAccount> {
             GlobalScope.launch {
                 if(clientEvent!=ClientEventType.NOTHING){
                     eonChannel?.send(clientEvent)
-                    LOG.info("send event $clientEvent to ${account.address}")
+                    LOG.warning("send event $clientEvent to ${account.address}")
                 }
             }
             //dataStore.save(this.hubStatusData)

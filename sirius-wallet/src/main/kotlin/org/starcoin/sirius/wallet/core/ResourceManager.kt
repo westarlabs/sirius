@@ -20,6 +20,18 @@ class ResourceManager private constructor(){
 
     lateinit internal var dataStore:DataStore<ByteArray,ByteArray>
 
+    internal fun cleanData(){
+        updateDao.destroy()
+        offchainTransactionDao.destroy()
+        aMTreeProofDao.destroy()
+        dataStore.destroy()
+
+        updateDao.init()
+        offchainTransactionDao.init()
+        aMTreeProofDao.init()
+        dataStore.init()
+    }
+
     companion object {
         private val h2databaseUrl = "jdbc:h2:~/.starcoin/liq/%s/wallet;FILE_LOCK=FS;PAGE_SIZE=1024;CACHE_SIZE=819;MODE=Mysql"
         private val h2databaseUrlMemory = H2DBStore.h2dbUrlMemoryFormat

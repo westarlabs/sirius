@@ -174,7 +174,7 @@ class EthereumChain constructor(url: String = DEFAULT_WS) :
                 headNotify.subscribe(
                     {
                         val blockNum = it.params.result.number.hexToByteArray().toUnsignedBigInteger()
-                        LOG.info("Recive block num:$blockNum")
+                        //LOG.info("Recive block num:$blockNum")
                         if (blockNum > syncBlockNum) {
                             notifych.sendBlocking(blockNum)
                         }

@@ -89,9 +89,9 @@ abstract class WithLogging : Loggable {
 
     init {
         val rootLogger = LogManager.getLogManager().getLogger("")
-        rootLogger.level = Level.ALL
+        rootLogger.level = Level.INFO
         for (h in rootLogger.handlers) {
-            h.level = Level.ALL
+            h.level = Level.INFO
         }
     }
 }
