@@ -11,3 +11,33 @@ dependencies{
     testCompile project(":sirius-hub")
 
 }
+
+jar {
+    manifest {
+        attributes('Implementation-Title': project.name,
+                'Implementation-Version': project.version,
+                'Main-Class': 'org.starcoin.sirius.wallet.MainKt'
+        )
+    }
+}
+
+task fatJar(type: Jar) {
+    manifest {
+        attributes('Implementation-Title': project.name,
+                'Implementation-Version': project.version,
+                'Main-Class': 'org.starcoin.sirius.wallet.MainKt'
+        )
+    }
+    classifier = 'all'
+    from { configurations.compile.collect { it.isDirectory() ? it : zipTree(it) }
+    }{
+        exclude "META-INF/*.SF"
+        exclude "META-INF/*.DSA"
+        exclude "META-INF/*.RSA"
+    }
+    with jar
+}
+
+artifacts {
+    archives fatJar
+}
