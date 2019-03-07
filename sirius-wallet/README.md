@@ -23,21 +23,13 @@ Starcoin offical wallet
 
 ## Begin to use
 	Assume Bob and Alice need to do some mirco pay for each other.
-
-	1. Create a REPL for Bob and Alice
-	   ```
-	   >java -jar $lib_path/starcoind-1.0-SNAPSHOT-all.jar Bob
-	   bob>
-       ```
-	   Same as Alice
-
 	
-	2. Regisger account in hub
+	1. Regisger account in hub
 	   ```
 	   bob>wallet reg
 	   ```
 	
-	3. Display your hub account
+	2. Display your hub account
 	   ```
 	   bob>wallet account
 	   {
@@ -52,7 +44,7 @@ Starcoin offical wallet
 	   e1bed6be7a42b46e8a0ff3998612af5b4f0cbca1  //note: encoded address for transfer
        ```
 
-	4. Deposit some coin to hub and check it 
+	3. Deposit some coin to hub and check it 
 		Deposit 1000 coin:
 		```
 		>wallet deposit value=1000 
@@ -66,7 +58,7 @@ Starcoin offical wallet
 			chain balance is 0
 		```
 		
-	5. Transfer coin 
+	4. Transfer coin 
 	
 		transfer 100 coin from Bob to Alice:
 		```
@@ -88,7 +80,7 @@ Starcoin offical wallet
         finish change eon
 	    ```
 		
-	6. Withdraw coin
+	5. Withdraw coin
 	   withdraw 100 coin:
 	   ```
 	   bob>wallet wd value=100
@@ -103,7 +95,7 @@ Starcoin offical wallet
        chain balance is 100
 	   ```
 	   
-	7. Malicious mode and challenge
+	6. Malicious mode and challenge
 		After deposit
 		wallet cheat flag =0|1|2|3
 		flag=0 means steal deposit
@@ -121,26 +113,3 @@ Starcoin offical wallet
 		txh is offline transaction hash, when you open a offline transaction
 		successfully, wallet will print transaction hash in terminal.
 		
-		
-	8. Sync
-	   When wallet disconnected from hub, wallet need to sync data from hub by this command
-	   This comannd will sync user status from hub, such as balance/update/MPT tree path/withdraw.
-		```
-		bob>wallet sync
-		```
-		
-	9. Manual mode
-		If sometimes wallet lose event notify connections from hub, the wallet 
-		won't recieve the offline transaction and hub signed update from hub.
-		So you need recieve data through manual mode manually.
-		
-		Recieve offline transaction:
-		```
-		bob>wallet rt 
-		```
-		
-		Recieve hub signed update:
-		```
-        bob>wallet rhs 
-		```
-
