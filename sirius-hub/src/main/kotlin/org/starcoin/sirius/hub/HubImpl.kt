@@ -117,13 +117,13 @@ class HubImpl<A : ChainAccount>(
     override val hubInfo: HubInfo
         get() {
             if (!this.ready) {
-                return HubInfo(this.ready, this.recoveryMode, this.blocksPerEon)
+                return HubInfo(this.ready, this.recoveryMode, 0, this.blocksPerEon)
             }
             return HubInfo(
                 ready,
                 this.recoveryMode,
-                blocksPerEon,
                 eonState.eon,
+                blocksPerEon,
                 stateRoot.toAMTreePathNode(),
                 owner.key.keyPair.public
             )
