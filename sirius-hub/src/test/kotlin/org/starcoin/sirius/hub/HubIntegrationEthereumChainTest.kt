@@ -2,7 +2,6 @@ package org.starcoin.sirius.hub
 
 import kotlinx.coroutines.runBlocking
 import org.junit.AfterClass
-import org.junit.Before
 import org.junit.BeforeClass
 import org.starcoin.sirius.core.Address
 import org.starcoin.sirius.crypto.CryptoService
@@ -16,8 +15,8 @@ import org.starcoin.sirius.util.WithLogging
 import java.math.BigInteger
 import kotlin.properties.Delegates
 
-class HubServerIntegrationEthereumChainTest :
-    HubServerIntegrationTestBase<EthereumTransaction, EthereumAccount, EthereumChain>() {
+class HubIntegrationEthereumChainTest :
+    HubIntegrationTestBase<EthereumTransaction, EthereumAccount, EthereumChain>() {
 
     companion object : WithLogging() {
         @AfterClass

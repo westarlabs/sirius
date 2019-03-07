@@ -28,7 +28,7 @@ import java.util.concurrent.atomic.AtomicLong
 import kotlin.coroutines.CoroutineContext
 import kotlin.properties.Delegates
 
-abstract class HubServerIntegrationTestBase<T : ChainTransaction, A : ChainAccount, C : Chain<T, out Block<T>, A>> {
+abstract class HubIntegrationTestBase<T : ChainTransaction, A : ChainAccount, C : Chain<T, out Block<T>, A>> {
 
 
     private var configuration: Config by Delegates.notNull()
