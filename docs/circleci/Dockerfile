@@ -2,9 +2,7 @@ FROM circleci/openjdk:8-jdk
 
 USER root
 
-RUN curl -sL https://deb.nodesource.com/setup_11.x | bash - \
- && apt-get install -y nodejs \
- && npm install -g solc \
- && ln -s /usr/bin/solcjs /usr/bin/solc
+RUN curl -L https://github.com/ethereum/solidity/releases/download/v0.5.5/solc-static-linux -o /usr/bin/solc \
+ && chmod +x /usr/bin/solc
 
 USER circleci
