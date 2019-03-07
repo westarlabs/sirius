@@ -6,8 +6,8 @@ import org.starcoin.sirius.protocol.EthereumTransaction
 import org.starcoin.sirius.protocol.ethereum.EthereumAccount
 import org.starcoin.sirius.protocol.ethereum.InMemoryChain
 
-class HubIntegrationMemoryChainTest :
-    HubIntegrationTestBase<EthereumTransaction, EthereumAccount, InMemoryChain>() {
+class HubMemoryChainTest :
+    HubTestBase<EthereumTransaction, EthereumAccount, InMemoryChain>() {
 
     override fun createChainAccount(amount: Long): EthereumAccount {
         val key = CryptoService.generateCryptoKey()

@@ -7,7 +7,7 @@ import org.junit.BeforeClass
 import org.starcoin.sirius.util.WithLogging
 import java.math.BigInteger
 
-class EthereumHubContractTest : HubContractTestBase() {
+class EthereumHubContractIntegrationTest : HubContractTestBase() {
 
     override val chain: EthereumBaseChain by lazy { EthereumChain() }
 
@@ -36,7 +36,7 @@ class EthereumHubContractTest : HubContractTestBase() {
             try {
                 chain.waitBlocks(1)
             } catch (e: Exception) {
-                EthereumChainTest.LOG.info("waiting block exception: $e")
+                EthereumChainIntegrationTest.LOG.info("waiting block exception: $e")
                 Thread.sleep(1000)
                 continue
             }

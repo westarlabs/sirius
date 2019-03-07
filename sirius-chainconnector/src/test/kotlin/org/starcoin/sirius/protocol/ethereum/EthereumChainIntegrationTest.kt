@@ -13,7 +13,7 @@ import org.starcoin.sirius.lang.toBigInteger
 import org.starcoin.sirius.util.WithLogging
 
 
-class EthereumChainTest {
+class EthereumChainIntegrationTest {
 
     private val chain: EthereumChain by lazy { EthereumChain() }
     private val alice = EthereumAccount(CryptoService.generateCryptoKey())

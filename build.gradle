@@ -99,4 +99,14 @@ subprojects {
                                            "-Xuse-experimental=kotlinx.coroutines.InternalCoroutinesApi",
                                            "-progressive"]
     }
+
+    task unitTest(type: Test ) {
+        exclude '**/*IntegrationTest*'
+        ignoreFailures true
+    }
+
+    task integrationTest(type: Test ) {
+        include '**/*IntegrationTest*'
+        ignoreFailures true
+    }
 }
