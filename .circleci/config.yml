@@ -47,8 +47,6 @@ jobs:
             mkdir -p ~/test-results/unit/
             find . -type f -regex ".*/build/test-results/unit/.*xml" -exec cp {} ~/test-results/unit/ \;
           when: always
-                  - store_test_results:
-                  path: ~/test-results
 
       - store_test_results:
           path: ~/test-results
