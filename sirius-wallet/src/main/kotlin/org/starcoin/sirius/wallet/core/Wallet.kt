@@ -36,10 +36,15 @@ class Wallet<T : ChainTransaction, A : ChainAccount> {
         val localHeight = blockChain.getLocalHeight()
 
         var startBlockHeight = hub.hubInfo.startBlockNumber
+
+        if(localHeight>hub.hubInfo.startBlockNumber)
+            startBlockHeight=localHeight
+
         val eonNumber=(currentChainHeight-localHeight.toLong())/hub.hubInfo.blocksPerEon
         if(eonNumber>1){
             sync()
-            startBlockHeight+=BigInteger.valueOf(hub.hubInfo.latestEon*hub.hubInfo.blocksPerEon.toLong()+1)
+            startBlockHeight=BigInteger.valueOf(currentChainHeight)
+            //hub.hubInfo.startBlockNumber+BigInteger.valueOf(hub.hubInfo.latestEon*hub.hubInfo.blocksPerEon.toLong()+1)
         }
         blockChain.startWatch=true
         blockChain.watachBlock(startBlockHeight)
