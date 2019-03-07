@@ -115,7 +115,6 @@ data class Update(
         this.sign = key.sign(this.data)
     }
 
-    @Deprecated("Should use sign(CryptoKey)", replaceWith = ReplaceWith("sign", "CryptoKey"))
     fun sign(privateKey: PrivateKey) {
         this.sign(CryptoService.loadCryptoKey(privateKey))
     }
@@ -124,7 +123,6 @@ data class Update(
         this.hubSign = key.sign(this.data)
     }
 
-    @Deprecated("Should use signHub(CryptoKey)", replaceWith = ReplaceWith("signHub", "CryptoKey"))
     fun signHub(hubPrivateKey: PrivateKey) {
         this.sign(CryptoService.loadCryptoKey(hubPrivateKey))
     }

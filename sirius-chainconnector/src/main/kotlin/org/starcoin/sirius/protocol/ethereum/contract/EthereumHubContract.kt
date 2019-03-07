@@ -34,9 +34,9 @@ class EthereumHubContract internal constructor(
     override fun <S : SiriusObject> executeContractFunction(
         account: EthereumAccount,
         function: ContractFunction<S>,
-        input: S
+        arguments: S
     ): TxDeferred {
-        val data = function.encode(input)
+        val data = function.encode(arguments)
         val hash = chain.submitTransaction(
             account,
             EthereumTransaction(
@@ -45,7 +45,7 @@ class EthereumHubContract internal constructor(
                 EthereumBaseChain.defaultGasPrice, EthereumBaseChain.defaultGasLimit, data
             )
         )
-        LOG.info("executeContractFunction ${function.name}, txHash:$hash, input:$input")
+        LOG.info("executeContractFunction ${function.name}, txHash:$hash, input:$arguments")
         return hash
     }
 
