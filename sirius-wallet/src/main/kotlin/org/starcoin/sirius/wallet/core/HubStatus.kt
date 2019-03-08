@@ -207,7 +207,7 @@ class HubStatus {
     internal fun lastUpdate(eon: Eon):Update{
         val updateList = this.eonStatuses[getEonByIndex(lastIndex)].updateHistory
         if (updateList.size == 0) {
-            return Update(eon.id, 0, 0, 0)
+            return Update(eon.id-1, 0, 0, 0)
         } else {
             val index = updateList.size - 1
             return updateList[index]
