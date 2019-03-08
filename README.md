@@ -51,6 +51,10 @@ Run integration tests(need Docker environment)
 ./gradlew integrationTest
 ```
 
+#### Development Environment
+
+TODO 
+
 <a name="gettingstarted"></a>
 ## Getting Started
 Instructions detailing the process of running and using the software can be found in [Getting Started](./docs/gettingstarted.md).
