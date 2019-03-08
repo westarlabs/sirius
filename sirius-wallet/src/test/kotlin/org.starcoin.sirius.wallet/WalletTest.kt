@@ -196,6 +196,61 @@ class WalletTest {
     fun testBalanceChallenge() {
         testReg()
 
+        waitToNextEon()
+        runBlocking {
+            withTimeout(10000L){
+                println(walletAlice.getMessageChannel()?.receive())
+            }
+        }
+
+        walletAlice.cheat(Starcoin.HubMaliciousFlag.STEAL_DEPOSIT_VALUE)
+
+        val amount = EtherUtil.convert(2000, EtherUtil.Unit.ETHER)
+        deposit(amount,false)
+
+        var account=walletAlice.hubAccount()
+        Assert.assertEquals(account?.address,alice.address)
+        Assert.assertTrue(account?.deposit?:0.toBigInteger()<amount)
+
+        waitToNextEon()
+
+        runBlocking {
+            withTimeout(10000L){
+                println(walletAlice.getMessageChannel()?.receive())
+                println(walletAlice.getMessageChannel()?.receive())
+                println(walletAlice.getMessageChannel()?.receive())
+            }
+        }
+
+        waitToNextEon()
+        runBlocking {
+            withTimeout(10000L){
+                println(walletAlice.getMessageChannel()?.receive())
+            }
+        }
+
+        createBlocks(1)
+
+        walletAlice.deposit(amount)
+        createBlocks(1)
+
+        walletAlice.deposit(amount)
+        createBlocks(1)
+
+        runBlocking {
+            withTimeout(10000L){
+                println(walletAlice.getMessageChannel()?.receive())
+            }
+        }
+
+        Assert.assertTrue(contract.isRecoveryMode(alice))
+
+    }
+
+    @Test
+    fun testFirstBalanceChallenge() {
+        testReg()
+
         walletAlice.cheat(Starcoin.HubMaliciousFlag.STEAL_DEPOSIT_VALUE)
 
         val amount = EtherUtil.convert(2000, EtherUtil.Unit.ETHER)
@@ -251,7 +306,7 @@ class WalletTest {
             }
         }
 
-        walletAlice.cheat(Starcoin.HubMaliciousFlag.STEAL_TRANSACTION_IOU_VALUE)
+        walletBob.cheat(Starcoin.HubMaliciousFlag.STEAL_TRANSACTION_IOU_VALUE)
 
         val amount=EtherUtil.convert(20, EtherUtil.Unit.ETHER)
 
@@ -263,7 +318,7 @@ class WalletTest {
         runBlocking {
             withTimeout(10000L){
                 walletAlice.getMessageChannel()?.receive()
-            println(walletAlice.getMessageChannel()?.receive())
+                println(walletAlice.getMessageChannel()?.receive())
             }
         }
 

@@ -18,6 +18,7 @@ import org.starcoin.sirius.protocol.HubContract
 import org.starcoin.sirius.serialization.rlp.toByteArray
 import org.starcoin.sirius.util.WithLogging
 import java.lang.IllegalStateException
+import java.lang.Thread.sleep
 import java.math.BigInteger
 import kotlin.properties.Delegates
 
@@ -175,12 +176,14 @@ class Hub <T : ChainTransaction, A : ChainAccount> {
     }
 
     private fun onNewUpdate(update: Update) {
+        LOG.info("get hub sign")
         if(!(this.hubStatus.update?.sign?.equals(update.sign)?:false)){
+            LOG.warning("local update is ${this.hubStatus.update}, hub update is ${update}")
+            LOG.warning("sign of hub update is not right")
             return
         }
         this.hubStatus.addUpdate(update)
         serverEventHandler?.onNewUpdate(update)
-        LOG.info("get hub sign")
     }
 
     private fun nextEon(hubRoot: HubRoot) {
