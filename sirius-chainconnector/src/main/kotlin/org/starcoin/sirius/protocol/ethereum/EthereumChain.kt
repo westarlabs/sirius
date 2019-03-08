@@ -28,9 +28,11 @@ import org.web3j.protocol.core.methods.response.EthLog.LogObject
 import org.web3j.protocol.core.methods.response.Transaction
 import org.web3j.protocol.http.HttpService
 import org.web3j.protocol.ipc.UnixIpcService
+import org.web3j.protocol.websocket.WebSocketClient
 import org.web3j.protocol.websocket.WebSocketService
 import java.io.IOException
 import java.math.BigInteger
+import java.net.URI
 
 
 const val DEFAULT_WS = "ws://127.0.0.1:8546"
@@ -74,15 +76,21 @@ class EthereumChain constructor(url: String = DEFAULT_WS) :
 
     }
 
+    var webSocketClient: WebSocketClient? = null
+
     val web3: Web3j =
         Web3j.build(
             when {
                 url.startsWith("http://") -> HttpService(url)
                 url.startsWith("ipc://") -> UnixIpcService(url)
-                url.startsWith("ws://") -> WebSocketService(url, false).also { it.connect() } //TODO: close connection
+                url.startsWith("ws://") -> {
+                    webSocketClient = WebSocketClient(URI(url))
+                    WebSocketService(webSocketClient, false).also { it.connect() }
+                }
                 else -> fail { "Unknown url to init EtherumChain" }
             }
         )
+
 
     override fun getNonce(address: Address): BigInteger {
         //TODO use transactionCount is right?
@@ -179,10 +187,9 @@ class EthereumChain constructor(url: String = DEFAULT_WS) :
                             notifych.sendBlocking(blockNum)
                         }
                     },
-                    {},
-                    {
-                        notifych.close()
-                    })
+                    { webSocketClient?.reconnect() },
+                    { notifych.close() }
+                )
             }
             GlobalScope.launch(Dispatchers.IO) {
                 while (!notifych.isClosedForSend) {
@@ -284,5 +291,9 @@ class EthereumChain constructor(url: String = DEFAULT_WS) :
             EthereumBaseChain.defaultGasLimit,
             value
         )
+    }
+
+    override fun stop() {
+        web3.shutdown()
     }
 }
