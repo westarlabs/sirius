@@ -598,33 +598,36 @@ class HubImpl<A : ChainAccount>(
                 LOG.info("steal transaction iou from:" + sendIOU.transaction.from)
                 val from = eonState.getAccount(sendIOU.transaction.from)
                 from.checkIOU(sendIOU)
-                val tx = OffchainTransaction(
-                    sendIOU.transaction.eon,
-                    sendIOU.transaction.from,
-                    gang.participant.address,
-                    sendIOU.transaction.amount
-                )
+                //Async do steal, not block user request.
+                GlobalScope.launch {
+                    val tx = OffchainTransaction(
+                        sendIOU.transaction.eon,
+                        sendIOU.transaction.from,
+                        gang.participant.address,
+                        sendIOU.transaction.amount
+                    )
 
-                val to = eonState.getAccount(gang.participant.address)
-                val sendTxs = ArrayList(to.getTransactions())
-                sendTxs.add(tx)
-                val toUpdate = Update.newUpdate(
-                    to.update.eon, to.update.version + 1, to.address, sendTxs
-                )
-                toUpdate.sign(gang.privateKey)
+                    val to = eonState.getAccount(gang.participant.address)
+                    val sendTxs = ArrayList(to.getTransactions())
+                    sendTxs.add(tx)
+                    val toUpdate = Update.newUpdate(
+                        to.update.eon, to.update.version + 1, to.address, sendTxs
+                    )
+                    toUpdate.sign(gang.privateKey)
 
-                val fromUpdate = sendIOU.update
+                    val fromUpdate = sendIOU.update
 
-                from.confirmTransaction(sendIOU.transaction, fromUpdate, true)
-                to.confirmTransaction(tx, toUpdate, true)
+                    from.confirmTransaction(sendIOU.transaction, fromUpdate, true)
+                    to.confirmTransaction(tx, toUpdate, true)
 
-                fromUpdate.signHub(owner.key)
-                toUpdate.signHub(owner.key)
+                    fromUpdate.signHub(owner.key)
+                    toUpdate.signHub(owner.key)
 
-                eonState.saveAccount(from)
-                eonState.saveAccount(to)
-                // only notice from.
-                fireEvent(HubEvent(HubEventType.NEW_UPDATE, fromUpdate, from.address))
+                    eonState.saveAccount(from)
+                    eonState.saveAccount(to)
+                    // only notice from.
+                    fireEvent(HubEvent(HubEventType.NEW_UPDATE, fromUpdate, from.address))
+                }
             } else {
                 normalAction()
             }
