@@ -626,16 +626,17 @@ require(newEon > 0, "newEon > 0");
                 ModelLib.verifyProof(balances[0].eon, close.addr, owner, close.proof, true);
             }
 
+            uint preAllotment = 0;
             if(stat.proof.hasPath) {
-                uint preAllotment = stat.proof.path.leaf.allotment;
-
-                uint t1 = SafeMath.add(close.proof.leaf.update.upData.receiveAmount, preAllotment);
-                t1 = SafeMath.add(t1, depositAmount);
-                t1 = SafeMath.sub(t1, withdrawalAmount);
-                uint t2 = close.proof.leaf.update.upData.sendAmount;
-                uint allotment = SafeMath.sub(t1, t2);
-                require(allotment == close.proof.path.leaf.allotment, "check proof allotment fail.");
+                preAllotment = stat.proof.path.leaf.allotment;
             }
+
+            uint t1 = SafeMath.add(close.proof.leaf.update.upData.receiveAmount, preAllotment);
+            t1 = SafeMath.add(t1, depositAmount);
+            t1 = SafeMath.sub(t1, withdrawalAmount);
+            uint t2 = close.proof.leaf.update.upData.sendAmount;
+            uint allotment = SafeMath.sub(t1, t2);
+            require(allotment == close.proof.path.leaf.allotment, "check proof allotment fail.");
 
             tmpStat.status = ModelLib.ChallengeStatus.CLOSE;
             dataStore.bucData[balances[0].eon][close.addr] = tmpStat;
