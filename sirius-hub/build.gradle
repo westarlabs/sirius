@@ -1,11 +1,6 @@
 apply plugin: 'application'
 mainClassName = 'org.starcoin.sirius.hub.MainKt'
 
-sourceSets {
-    main.resources.includes += ['*.conf',"*.xml"]
-    test.resources.includes += ['*.conf',"*.xml"]
-}
-
 dependencies{
     compile project(":sirius-core")
     compile project(":sirius-chainconnector")
