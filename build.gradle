@@ -56,6 +56,11 @@ subprojects {
 
     sourceCompatibility = 1.8
 
+    sourceSets {
+        main.resources.includes += ['*.conf',"*.xml","*.properties"]
+        test.resources.includes += ['*.conf',"*.xml","*.properties"]
+    }
+
     repositories {
         jcenter()
         mavenCentral()

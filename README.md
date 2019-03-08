@@ -25,12 +25,24 @@ Go to project dir:
 ./gradlew build -x test
 ```
 
+Build by Docker(Java and solc in docker image)
+
+```bash
+./gradleDocker build -x test
+```
+
 #### Test
 
 Run unit tests
 
 ```bash
 ./gradlew unitTest
+```
+
+Run unit tests by Docker
+
+```bash
+./gradleDocker unitTest
 ```
 
 Run integration tests(need Docker environment)
