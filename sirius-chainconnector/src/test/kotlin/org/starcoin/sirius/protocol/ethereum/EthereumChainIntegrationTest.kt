@@ -144,7 +144,7 @@ class EthereumChainIntegrationTest {
     }
 
     @Test
-    fun testwatchBlock2(){
+    fun testwatchBlock2() {
         var startNum = 11.toBigInteger()
         chain.waitBlocks(startNum.toInt())
         val blockch = chain.watchBlock()
@@ -152,7 +152,7 @@ class EthereumChainIntegrationTest {
             runBlocking {
                 val block = blockch.receive()
                 LOG.info("block height:${block.height.toBigInteger()}")
-                Assert.assertTrue(block.height.toBigInteger()>=startNum)
+                Assert.assertTrue(block.height.toBigInteger() >= startNum)
                 startNum = startNum.inc()
             }
         }
