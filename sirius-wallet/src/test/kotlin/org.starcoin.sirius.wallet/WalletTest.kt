@@ -359,6 +359,16 @@ class WalletTest {
 
     }
 
+    @Test(expected = IllegalStateException::class)
+    fun testWithdrawalException() {
+        testDeposit()
+
+        val amount=EtherUtil.convert(20, EtherUtil.Unit.ETHER)
+
+        walletAlice.withdrawal(amount)
+
+    }
+
     @Test
     fun testWithdrawal() {
         testDeposit()
@@ -694,6 +704,8 @@ class WalletTest {
         val aliceWalletClone = Wallet(this.contract.contractAddress,chain,alice)
         aliceWalletClone.restore()
         Assert.assertEquals(walletAlice.balance(), aliceWalletClone.balance())
+        Assert.assertEquals(walletAlice.hub.getWithdrawalCoin(), amount)
+
     }
 
     private fun waitToNextEon() {

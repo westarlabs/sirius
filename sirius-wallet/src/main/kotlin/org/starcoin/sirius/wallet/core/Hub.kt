@@ -429,7 +429,7 @@ class Hub <T : ChainTransaction, A : ChainAccount> {
             LOG.info("already have withdrawal in progress.")
             throw IllegalStateException("already have withdrawal in progress.")
         }
-        if (hubStatus.currentEonProof() == null) {
+        if (hubStatus.lastEonProof() == null) {
             LOG.info("last eon path doesn't exists.")
             throw IllegalStateException("last eon path doesn't exists.")
         }
