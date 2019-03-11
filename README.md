@@ -1,5 +1,7 @@
 # Sirius - a blockchain layer 2 protocol implementation
 
+[![CircleCI](https://circleci.com/gh/starcoinorg/sirius.svg?style=svg)](https://circleci.com/gh/starcoinorg/sirius)
+
 Welcome to the Sirius source code repository! 
 
 ## About
