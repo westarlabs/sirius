@@ -16,7 +16,7 @@ TODO
 ### Prerequisites
 
 1. Java(1.8)
-2. solc (npm install -g solc)
+2. solc (0.5.1) [installing-solidity](https://solidity.readthedocs.io/en/v0.5.1/installing-solidity.html)
 2. Docker(for run and test)
 
 #### Build
