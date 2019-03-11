@@ -127,11 +127,6 @@ class HubStatus {
         return eonStatuses[getEonByIndex(lastIndex)].transactionMap[hash]
     }
 
-    internal fun currentEonProof(): AMTreeProof? {
-        val eonStatus = eonStatuses[currentEonStatusIndex]
-        return eonStatus?.treeProof
-    }
-
     internal fun lastEonProof(): AMTreeProof? {
         val eonStatus = eonStatuses[getEonByIndex(lastIndex)]
         return eonStatus?.treeProof
