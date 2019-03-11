@@ -105,11 +105,33 @@ subprojects {
                                            "-progressive"]
     }
 
+    test {
+        reports.html.enabled = false
+        maxHeapSize = "2048m"
+        maxParallelForks = Runtime.runtime.availableProcessors().intdiv(2) ?: 1
+    }
+
     task unitTest(type: Test ) {
         exclude '**/*IntegrationTest*'
+        reports.html.enabled = false
+        maxHeapSize = "2048m"
+        maxParallelForks = Runtime.runtime.availableProcessors().intdiv(2) ?: 1
     }
 
     task integrationTest(type: Test ) {
         include '**/*IntegrationTest*'
+        reports.html.enabled = false
+        maxHeapSize = "2048m"
+        maxParallelForks = Runtime.runtime.availableProcessors().intdiv(2) ?: 1
     }
+}
+
+task unitTestReport(type: TestReport) {
+    destinationDir = file("$buildDir/reports/unitTests")
+    reportOn subprojects*.unitTest
+}
+
+task integrationTestReport(type: TestReport) {
+    destinationDir = file("$buildDir/reports/integrationTests")
+    reportOn subprojects*.integrationTest
 }
