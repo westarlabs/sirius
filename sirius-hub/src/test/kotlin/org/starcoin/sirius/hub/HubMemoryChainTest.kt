@@ -1,11 +1,13 @@
 package org.starcoin.sirius.hub
 
 import org.ethereum.util.blockchain.EtherUtil
+import org.junit.Ignore
 import org.starcoin.sirius.crypto.CryptoService
 import org.starcoin.sirius.protocol.EthereumTransaction
 import org.starcoin.sirius.protocol.ethereum.EthereumAccount
 import org.starcoin.sirius.protocol.ethereum.InMemoryChain
 
+@Ignore
 class HubMemoryChainTest :
     HubTestBase<EthereumTransaction, EthereumAccount, InMemoryChain>() {
 
