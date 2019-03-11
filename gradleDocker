@@ -1,3 +1,3 @@
 #!/usr/bin/env bash
 
-docker run --rm -v $(pwd):/home/circleci/repo -v ~/.gradle/:/home/circleci/.gradle -w="/home/circleci/repo" starcoin/sirius:buildv2 ./gradlew --no-daemon $@
+docker run --rm -v $(pwd):/home/circleci/repo -v /tmp/gradleDocker:/home/circleci/.gradle -w="/home/circleci/repo" starcoin/sirius:buildv2 ./gradlew --no-daemon $@
