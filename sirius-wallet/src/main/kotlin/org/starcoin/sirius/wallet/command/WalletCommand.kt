@@ -64,11 +64,11 @@ class NewTransfer<T : ChainTransaction, A : ChainAccount> : Runnable {
     var addr: Address? = null
 
     @CommandLine.Option(names = ["value"], description = ["coin amount"], required = true)
-    var value: Long = 0
+    var value: BigInteger = BigInteger.ZERO
 
     override fun run() {
         try {
-            val tx = walletCommand!!.wallet.hub.newTransfer(addr!!, BigInteger.valueOf(value))
+            val tx = walletCommand!!.wallet.hub.newTransfer(addr!!, value)
             if (tx != null) {
                 System.out.println("transaction hash is :" + tx!!.hash().toMD5Hex())
             } else {
@@ -280,11 +280,11 @@ class ChainTransfer<T : ChainTransaction, A : ChainAccount> : Runnable {
     var addr: Address? = null
 
     @CommandLine.Option(names = ["value"], description = ["coin amount"], required = true)
-    var value: Long = 0
+    var value: BigInteger = BigInteger.ZERO
 
     override fun run() {
         try {
-            val tx = walletCommand!!.wallet.chainTransfer(addr!!, BigInteger.valueOf(value))
+            val tx = walletCommand!!.wallet.chainTransfer(addr!!, value)
             if (tx != null) {
                 System.out.println("transaction hash is :" + tx.hash())
             } else {
