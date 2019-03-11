@@ -21,6 +21,7 @@ import org.starcoin.sirius.util.WithLogging
 import java.math.BigInteger
 import java.util.concurrent.atomic.AtomicLong
 
+
 @Serializable
 data class Data(
     val boolean: Boolean,
@@ -59,6 +60,7 @@ abstract class ContractTestBase(val contractPath: String, val contractName: Stri
 
     @Before
     fun setup() {
+        printlnJVMArgs()
         val tmp = deployContract()
         sb = tmp.sb
         contract = tmp.contract
