@@ -48,6 +48,11 @@ class Wallet<T : ChainTransaction, A : ChainAccount> {
         }
         blockChain.startWatch=true
         blockChain.watachBlock(startBlockHeight)
+
+        if(hub.hasRegister()){
+            hub.recieveTransacion()
+            hub.recieveHubSign()
+        }
     }
 
     fun deposit(value:BigInteger) = hub.deposit(value)

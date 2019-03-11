@@ -28,7 +28,6 @@ import org.starcoin.sirius.wallet.core.ResourceManager
 import org.starcoin.sirius.wallet.core.Wallet
 import java.math.BigInteger
 import java.util.logging.Logger
-import kotlin.math.log
 import kotlin.properties.Delegates
 
 class WalletTest {
@@ -360,6 +359,16 @@ class WalletTest {
 
     }
 
+    @Test(expected = IllegalStateException::class)
+    fun testWithdrawalException() {
+        testDeposit()
+
+        val amount=EtherUtil.convert(20, EtherUtil.Unit.ETHER)
+
+        walletAlice.withdrawal(amount)
+
+    }
+
     @Test
     fun testWithdrawal() {
         testDeposit()
@@ -401,6 +410,7 @@ class WalletTest {
             }
         }
         Assert.assertTrue(!walletAlice.hub.hubStatus.couldWithDrawal())
+        Assert.assertEquals(walletAlice.hub.getWithdrawalCoin(),amount)
 
         var balance=chain.getBalance(alice.address)
 
@@ -411,12 +421,7 @@ class WalletTest {
             }
         }
 
-        waitToNextEon()
-        runBlocking {
-            withTimeout(10000L){
-                println(walletAlice.getMessageChannel()?.receive())
-            }
-        }
+        Assert.assertEquals(walletAlice.hub.getWithdrawalCoin(),BigInteger.ZERO)
 
         var account=walletAlice.hubAccount()
         var remaining= EtherUtil.convert(2000, EtherUtil.Unit.ETHER) - amount-amount
@@ -483,6 +488,7 @@ class WalletTest {
         Assert.assertEquals(walletAlice.balance(),depositAmount)
 
         amount = EtherUtil.convert(3000, EtherUtil.Unit.ETHER)
+        walletAlice.hub.checkBalance=false
         walletAlice.withdrawal(amount)
 
         runBlocking {
@@ -490,6 +496,7 @@ class WalletTest {
                 walletAlice.getMessageChannel()?.receive()
             }
         }
+        Assert.assertEquals(walletAlice.hub.getWithdrawalCoin(),amount)
 
         createBlocks(1)
 
@@ -504,6 +511,8 @@ class WalletTest {
 
         Assert.assertEquals(walletBob.balance(),depositAmount)
         Assert.assertEquals(walletAlice.balance(),depositAmount)
+
+        Assert.assertEquals(walletAlice.hub.getWithdrawalCoin(),BigInteger.ZERO)
 
     }
 
@@ -696,6 +705,8 @@ class WalletTest {
         val aliceWalletClone = Wallet(this.contract.contractAddress,chain,alice)
         aliceWalletClone.restore()
         Assert.assertEquals(walletAlice.balance(), aliceWalletClone.balance())
+        Assert.assertEquals(walletAlice.hub.getWithdrawalCoin(), amount)
+
     }
 
     private fun waitToNextEon() {

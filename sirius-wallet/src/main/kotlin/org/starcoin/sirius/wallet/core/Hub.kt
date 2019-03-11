@@ -55,6 +55,8 @@ class Hub <T : ChainTransaction, A : ChainAccount> {
 
     internal var hubInfo:ContractHubInfo
 
+    internal var checkBalance = true
+
     constructor(
         contract: HubContract<A>,
         account: A,
@@ -75,6 +77,12 @@ class Hub <T : ChainTransaction, A : ChainAccount> {
         hubStatus.blocksPerEon= hubInfo.blocksPerEon
 
         LOG.info(getHubInfo().toJSON())
+
+        this.hubAccount=this.accountInfo()
+    }
+
+    internal fun hasRegister():Boolean{
+        return this.hubAccount!=null
     }
 
     private fun getChainEon():Eon{
@@ -89,7 +97,7 @@ class Hub <T : ChainTransaction, A : ChainAccount> {
     }
 
     @Synchronized
-    fun onHubRootCommit(hubRoot: HubRoot) {
+    internal fun onHubRootCommit(hubRoot: HubRoot) {
         try {
             // System.out.println("get new hub root"+hubRoot.toString());
             LOG.info("start get eon")
@@ -140,6 +148,10 @@ class Hub <T : ChainTransaction, A : ChainAccount> {
     }
 
     private fun onNewTransaction(offchainTransaction: OffchainTransaction) {
+        if(this.hubStatus.hasProcessed(offchainTransaction)){
+            LOG.info("transaction $offchainTransaction has been processed")
+        }
+
         val hubServiceBlockingStub = HubServiceGrpc.newBlockingStub(ResourceManager.hubChannel)
 
         this.hubStatus.addOffchainTransaction(offchainTransaction)
@@ -164,19 +176,32 @@ class Hub <T : ChainTransaction, A : ChainAccount> {
 
     }
 
-    fun recieveTransacion() {
-
+    internal fun recieveTransacion() {
+        val hubServiceBlockingStub = HubServiceGrpc.newBlockingStub(ResourceManager.hubChannel)
+        val offchainTransactionList=hubServiceBlockingStub.queryNewTransfer(this.account.address.toProto())
+        if(offchainTransactionList!=null)
+            offchainTransactionList.txsList.forEach{
+                this.onNewTransaction(it.toSiriusObject())
+            }
     }
 
-    fun recieveHubSign() {
+    internal fun recieveHubSign() {
+        val hubServiceBlockingStub = HubServiceGrpc.newBlockingStub(ResourceManager.hubChannel)
+        val update=hubServiceBlockingStub.queryUpdate(this.account.address.toProto())
+        this.onNewUpdate(update.toSiriusObject())
     }
 
-    fun hubInfo():ContractHubInfo{
+    internal fun hubInfo():ContractHubInfo{
         return contract.queryHubInfo(account)
     }
 
     private fun onNewUpdate(update: Update) {
         LOG.info("get hub sign")
+        if(this.hubStatus.hasProcessed(update)){
+            LOG.info("update $update has been processed")
+            return
+        }
+
         if(!(this.hubStatus.update?.sign?.equals(update.sign)?:false)){
             LOG.warning("local update is ${this.hubStatus.update}, hub update is ${update}")
             LOG.warning("sign of hub update is not right")
@@ -242,12 +267,16 @@ class Hub <T : ChainTransaction, A : ChainAccount> {
         return hubStatus.getAvailableCoin(this.currentEon)
     }
 
-    fun getWithdrawalCoin():Long {
-        return 0;
+    internal fun getWithdrawalCoin():BigInteger {
+        return hubStatus.withdrawalStatus?.withdrawalAmount?: BigInteger.ZERO
     }
 
     @Synchronized
-    fun sync() {
+    internal fun sync() {
+        if(this.hubAccount==null){
+            throw IllegalStateException("need reg/login first")
+        }
+
         ResourceManager.instance(account.address.toBytes().toHEXString()).cleanData()
         val hubServiceBlockingStub = HubServiceGrpc.newBlockingStub(ResourceManager.hubChannel)
 
@@ -308,7 +337,16 @@ class Hub <T : ChainTransaction, A : ChainAccount> {
 
     }
 
-    fun newTransfer(addr:Address, value:BigInteger) :OffchainTransaction{
+    internal fun newTransfer(addr:Address, value:BigInteger) :OffchainTransaction{
+        if(this.hubAccount==null){
+            throw IllegalStateException("need reg/login first")
+        }
+        if(value>this.getAvailableCoin()&&checkBalance){
+            val message = "transfer $value  is bigger than balance ${this.getAvailableCoin()}"
+            LOG.info(message)
+            throw IllegalStateException(message)
+        }
+
         val hubServiceBlockingStub = HubServiceGrpc.newBlockingStub(ResourceManager.hubChannel)
 
         val tx = OffchainTransaction(this.currentEon.id, account.address, addr, value)
@@ -336,18 +374,21 @@ class Hub <T : ChainTransaction, A : ChainAccount> {
         }
     }
 
-    fun deposit(value :BigInteger) {
+    internal fun deposit(value :BigInteger) {
+        if(this.hubAccount==null){
+            throw IllegalStateException("need reg/login first")
+        }
         val chainTransaction=chainTransaction(contract.contractAddress, value)
         var txDeferred = chain.submitTransaction(account, chainTransaction)
         this.hubStatus.addDepositTransaction(txDeferred.txHash, chainTransaction)
     }
 
-    fun chainTransaction(addr: Address,value :BigInteger):T {
+    internal fun chainTransaction(addr: Address,value :BigInteger):T {
         var chainTransaction=chain.newTransaction(account,addr, value)
         return chainTransaction
     }
 
-    fun register() : Update? {
+    internal fun register() : Update? {
         val hubServiceBlockingStub = HubServiceGrpc.newBlockingStub(ResourceManager.hubChannel)
 
         val builder = Starcoin.RegisterParticipantRequest.newBuilder()
@@ -372,7 +413,7 @@ class Hub <T : ChainTransaction, A : ChainAccount> {
 
     }
 
-    fun  accountInfo():HubAccount ?{
+    internal fun  accountInfo():HubAccount ?{
         val stub = HubServiceGrpc.newBlockingStub(ResourceManager.hubChannel)
         try{
             hubAccount=HubAccount.parseFromProtoMessage(stub.getHubAccount(account.address.toProto()))
@@ -388,6 +429,9 @@ class Hub <T : ChainTransaction, A : ChainAccount> {
     }
 
     internal fun openTransferChallenge(transactionHash:Hash){
+        if(this.hubAccount==null){
+            throw IllegalStateException("need reg/login first")
+        }
         val offchainTransaction=this.hubStatus.getTransactionByHash(transactionHash)
         val lastUpdate = this.hubStatus.lastUpdate(this.currentEon)
         val path = this.hubStatus.transactionPath(transactionHash)
@@ -400,15 +444,23 @@ class Hub <T : ChainTransaction, A : ChainAccount> {
         GlobalScope.launch { eonChannel?.send(ClientEventType.OPEN_TRANSFER_DELIVERY_CHALLENGE_PASS) }
     }
 
-    fun withDrawal(value: BigInteger) {
+    internal fun withDrawal(value: BigInteger) {
         // 这里需要增加value是否大于本地余额的校验
+        if(this.hubAccount==null){
+            throw IllegalStateException("need reg/login first")
+        }
         if (!hubStatus.couldWithDrawal()) {
             LOG.info("already have withdrawal in progress.")
             throw IllegalStateException("already have withdrawal in progress.")
         }
-        if (hubStatus.currentEonProof() == null) {
+        if (hubStatus.lastEonProof() == null) {
             LOG.info("last eon path doesn't exists.")
             throw IllegalStateException("last eon path doesn't exists.")
+        }
+        if(value>this.getAvailableCoin()&&checkBalance){
+            val message = "withdrawal $value  is bigger than balance ${this.getAvailableCoin()}"
+            LOG.info(message)
+            throw IllegalStateException(message)
         }
 
         val withdrawal = Withdrawal(hubStatus.lastEonProof()!!, value)
@@ -416,6 +468,10 @@ class Hub <T : ChainTransaction, A : ChainAccount> {
     }
 
     internal fun cheat(flag:Int){
+        if(this.hubAccount==null){
+            throw IllegalStateException("need reg/login first")
+        }
+
         val liquidityHubServiceBlockingStub = HubServiceGrpc.newBlockingStub(ResourceManager.hubChannel)
 
         val hubMaliciousFlag = Starcoin.HubMaliciousFlag.forNumber(flag)
@@ -486,6 +542,10 @@ class Hub <T : ChainTransaction, A : ChainAccount> {
     }
 
     internal fun restore(){
+        if(this.hubAccount==null){
+            throw IllegalStateException("need reg/login first")
+        }
+
         val lastSavedEon=ResourceManager.instance(account.address.toBytes().toHEXString()).dataStore.get(this.currentEonKey)?.toBigInteger()?.toInt()?:0
         val currentEon=this.getChainEon()
         if((currentEon.id-lastSavedEon)>1){

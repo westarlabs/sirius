@@ -7,6 +7,7 @@ import org.starcoin.sirius.lang.toBigInteger
 import org.starcoin.sirius.lang.toHEXString
 import org.starcoin.sirius.protocol.ChainAccount
 import org.starcoin.sirius.util.WithLogging
+import java.lang.IllegalStateException
 import java.math.BigInteger
 
 class HubStatus {
@@ -81,6 +82,12 @@ class HubStatus {
         this.eonStatuses[currentEonStatusIndex].updateHistory.add(update)
     }
 
+    internal fun hasProcessed(update: Update):Boolean {
+        return this.eonStatuses[currentEonStatusIndex].updateHistory.any {
+            it.equals(update)
+        }
+    }
+
     internal fun currentUpdate(eon: Eon): Update {
         val updateList = this.eonStatuses[currentEonStatusIndex].updateHistory
         if (updateList.size == 0) {
@@ -101,10 +108,14 @@ class HubStatus {
         var transactionIdsBytes=ResourceManager.instance(account.address.toBytes().toHEXString()).dataStore.get(key)
         val ids = mutableListOf<String>()
         if(transactionIdsBytes!=null){
-            ids.addAll(JSON.parseArray(transactionIdsBytes.toString(),String::class.java))
+            ids.addAll(JSON.parseArray(String(transactionIdsBytes),String::class.java))
         }
         ids.add(transaction.hash().toBytes().toHEXString())
         ResourceManager.instance(account.address.toBytes().toHEXString()).dataStore.put(key,JSON.toJSONBytes(ids))
+    }
+
+    internal fun hasProcessed(transaction: OffchainTransaction):Boolean{
+        return this.eonStatuses[currentEonStatusIndex].transactionMap.get(transaction.hash())!=null
     }
 
     internal fun transactionPath(hash: Hash): MerklePath? {
@@ -114,11 +125,6 @@ class HubStatus {
 
     internal fun getTransactionByHash(hash: Hash): OffchainTransaction? {
         return eonStatuses[getEonByIndex(lastIndex)].transactionMap[hash]
-    }
-
-    internal fun currentEonProof(): AMTreeProof? {
-        val eonStatus = eonStatuses[currentEonStatusIndex]
-        return eonStatus?.treeProof
     }
 
     internal fun lastEonProof(): AMTreeProof? {
@@ -207,7 +213,7 @@ class HubStatus {
     internal fun lastUpdate(eon: Eon):Update{
         val updateList = this.eonStatuses[getEonByIndex(lastIndex)].updateHistory
         if (updateList.size == 0) {
-            return Update(eon.id-1, 0, 0, 0)
+            throw IllegalStateException("can't find last eon update")
         } else {
             val index = updateList.size - 1
             return updateList[index]
