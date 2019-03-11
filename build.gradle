@@ -115,7 +115,7 @@ subprojects {
         exclude '**/*IntegrationTest*'
         reports.html.enabled = false
         maxHeapSize = "2048m"
-        maxParallelForks = Runtime.runtime.availableProcessors().intdiv(2) ?: 1
+        maxParallelForks = 1
     }
 
     task integrationTest(type: Test ) {
