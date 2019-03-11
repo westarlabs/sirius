@@ -28,7 +28,6 @@ import org.starcoin.sirius.wallet.core.ResourceManager
 import org.starcoin.sirius.wallet.core.Wallet
 import java.math.BigInteger
 import java.util.logging.Logger
-import kotlin.math.log
 import kotlin.properties.Delegates
 
 class WalletTest {
@@ -401,6 +400,7 @@ class WalletTest {
             }
         }
         Assert.assertTrue(!walletAlice.hub.hubStatus.couldWithDrawal())
+        Assert.assertEquals(walletAlice.hub.getWithdrawalCoin(),amount)
 
         var balance=chain.getBalance(alice.address)
 
@@ -411,12 +411,7 @@ class WalletTest {
             }
         }
 
-        waitToNextEon()
-        runBlocking {
-            withTimeout(10000L){
-                println(walletAlice.getMessageChannel()?.receive())
-            }
-        }
+        Assert.assertEquals(walletAlice.hub.getWithdrawalCoin(),BigInteger.ZERO)
 
         var account=walletAlice.hubAccount()
         var remaining= EtherUtil.convert(2000, EtherUtil.Unit.ETHER) - amount-amount
@@ -490,6 +485,7 @@ class WalletTest {
                 walletAlice.getMessageChannel()?.receive()
             }
         }
+        Assert.assertEquals(walletAlice.hub.getWithdrawalCoin(),amount)
 
         createBlocks(1)
 
@@ -504,6 +500,8 @@ class WalletTest {
 
         Assert.assertEquals(walletBob.balance(),depositAmount)
         Assert.assertEquals(walletAlice.balance(),depositAmount)
+
+        Assert.assertEquals(walletAlice.hub.getWithdrawalCoin(),BigInteger.ZERO)
 
     }
 
