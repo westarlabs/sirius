@@ -108,7 +108,7 @@ class HubStatus {
         var transactionIdsBytes=ResourceManager.instance(account.address.toBytes().toHEXString()).dataStore.get(key)
         val ids = mutableListOf<String>()
         if(transactionIdsBytes!=null){
-            ids.addAll(JSON.parseArray(transactionIdsBytes.toString(),String::class.java))
+            ids.addAll(JSON.parseArray(String(transactionIdsBytes),String::class.java))
         }
         ids.add(transaction.hash().toBytes().toHEXString())
         ResourceManager.instance(account.address.toBytes().toHEXString()).dataStore.put(key,JSON.toJSONBytes(ids))

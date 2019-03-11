@@ -57,7 +57,7 @@ class BlockChain <T : ChainTransaction, A : ChainAccount> (chain: Chain<T, out B
                 if(tx.from?.equals(account.address)?:false){
                     val input = contractFunction.decode(tx.data)
                         ?: fail { "$contractFunction decode tx:${txResult.tx} fail." }
-                    LOG.info("$contractFunction: $input")
+                    LOG.info("$contractFunction: $input,transaction result is ${txResult.receipt.status}")
                     val withdrawalStatus = WithdrawalStatus( WithdrawalStatusType.INIT,input)
                     hub.onWithdrawal(withdrawalStatus)
                 }
@@ -82,7 +82,7 @@ class BlockChain <T : ChainTransaction, A : ChainAccount> (chain: Chain<T, out B
                 if(tx.from?.equals(account.address)?:false) {
                     val input = contractFunction.decode(tx.data)
                         ?: fail { "$contractFunction decode tx:${txResult.tx} fail." }
-                    LOG.info("$contractFunction: $input")
+                    LOG.info("$contractFunction: $input,transaction result is ${txResult.receipt.status}")
                     hub.onBalanceUpdateChallenge(input)
                 }
             }

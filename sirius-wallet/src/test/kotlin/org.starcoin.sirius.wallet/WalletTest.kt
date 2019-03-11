@@ -488,6 +488,7 @@ class WalletTest {
         Assert.assertEquals(walletAlice.balance(),depositAmount)
 
         amount = EtherUtil.convert(3000, EtherUtil.Unit.ETHER)
+        walletAlice.hub.checkBalance=false
         walletAlice.withdrawal(amount)
 
         runBlocking {
