@@ -1,9 +1,5 @@
-apply plugin: 'com.google.protobuf'
-
-buildscript {
-    dependencies {
-        classpath 'com.google.protobuf:protobuf-gradle-plugin:0.8.5'
-    }
+plugins {
+    id 'com.google.protobuf'
 }
 
 protobuf {
