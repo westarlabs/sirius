@@ -103,20 +103,21 @@ subprojects {
     test {
         reports.html.enabled = false
         maxHeapSize = "4096m"
-        maxParallelForks = 1 
+        maxParallelForks = 1
     }
 
     task unitTest(type: Test ) {
         exclude '**/*IntegrationTest*'
         reports.html.enabled = false
-        maxHeapSize = "4096m"
+        maxHeapSize = "2048m"
         maxParallelForks = 1
+        jvmArgs "-XX:+UnlockExperimentalVMOptions", "-XX:+UseCGroupMemoryLimitForHeap"
     }
 
     task integrationTest(type: Test ) {
         include '**/*IntegrationTest*'
         reports.html.enabled = false
-        maxHeapSize = "4096m"
+        maxHeapSize = "2048m"
         maxParallelForks = 1 
     }
 }
