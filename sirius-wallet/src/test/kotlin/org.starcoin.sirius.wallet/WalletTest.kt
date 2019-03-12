@@ -28,6 +28,7 @@ import java.math.BigInteger
 import java.util.logging.Logger
 import kotlin.properties.Delegates
 
+@Ignore
 class WalletTest {
 
     private val logger = Logger.getLogger("test")
