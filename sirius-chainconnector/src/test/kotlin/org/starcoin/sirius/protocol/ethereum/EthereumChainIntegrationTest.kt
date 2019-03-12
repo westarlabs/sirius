@@ -24,14 +24,14 @@ class EthereumChainIntegrationTest {
         @BeforeClass
         @JvmStatic
         fun setup() {
-            scriptExec("scripts/docker.sh run --dev.period 1")
+            scriptExec("../scripts/docker.sh run --dev.period 1")
             Thread.sleep(4000)
         }
 
         @AfterClass
         @JvmStatic
         fun tearDown() {
-            scriptExec("scripts/docker.sh clean")
+            scriptExec("../scripts/docker.sh clean")
         }
     }
 
