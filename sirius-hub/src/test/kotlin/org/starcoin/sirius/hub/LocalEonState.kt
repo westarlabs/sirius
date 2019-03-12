@@ -24,6 +24,19 @@ data class LocalEonState(
 
     constructor(eon: Int, update: Update) : this(null, eon, update)
 
+    constructor(
+        previous: LocalEonState,
+        eon: Int,
+        update: Update,
+        hubRoot: HubRoot,
+        hubAccount: HubAccount,
+        proof: AMTreeProof
+    ) : this(previous, eon, update) {
+        this.hubRoot = hubRoot
+        this.hubAccount = hubAccount
+        this.proof = proof
+    }
+
     fun addTx(tx: OffchainTransaction) {
         this.txs.add(tx)
     }

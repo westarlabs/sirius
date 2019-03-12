@@ -57,7 +57,7 @@ class LocalAccount<T : ChainTransaction, A : ChainAccount>(
     private val eventBus = EventBus<HubEvent>()
 
     var hubAccount: HubAccount?
-        get() = if (this.state == null) null else this.state!!.hubAccount
+        get() = this.state?.hubAccount
         set(hubAccount) {
             if (hubAccount != null) {
                 this.state!!.hubAccount = hubAccount
@@ -107,6 +107,7 @@ class LocalAccount<T : ChainTransaction, A : ChainAccount>(
                     hubAccount = hubService.getHubAccount(address)
                 }
                 is LocalAccountAction.NewHubRoot -> {
+                    LOG.info("$address process NewHubRoot ${it.hubRoot}")
                     val hubRoot = it.hubRoot
                     val eon = hubRoot.eon
                     if (state?.eon == eon) {
@@ -114,23 +115,28 @@ class LocalAccount<T : ChainTransaction, A : ChainAccount>(
                     } else if (state?.eon == eon - 1) {
                         val update = Update(eon, 0, 0, 0)
                         update.sign(key)
-                        state = LocalEonState(state, eon, update)
+                        state = LocalEonState(
+                            state!!,
+                            eon,
+                            update,
+                            hubRoot,
+                            hubService.getHubAccount(address)!!,
+                            hubService.getProof(address)!!
+                        )
                         LOG.info("$address to new eon: $eon")
+                        accountStatus = if (!AMTree.verifyMembershipProof(
+                                state?.hubRoot?.root,
+                                state?.proof
+                            )
+                        ) {
+                            AccountStatus.Inconsistent
+                        } else {
+                            AccountStatus.Synced
+                        }
                     } else {
                         LOG.warning("Unexpected eon status, localEon: ${state?.eon}, hubRootEon: ${hubRoot.eon}")
                     }
-                    state!!.hubRoot = hubRoot
-                    state!!.proof = hubService.getProof(address)
-                    state!!.hubAccount = hubService.getHubAccount(address)
-                    accountStatus = if (!AMTree.verifyMembershipProof(
-                            state?.hubRoot?.root,
-                            state?.proof
-                        )
-                    ) {
-                        AccountStatus.Inconsistent
-                    } else {
-                        AccountStatus.Synced
-                    }
+
                 }
             }
         }
