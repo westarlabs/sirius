@@ -18,7 +18,7 @@ suspend fun <T> retry(
     } while (true)
 }
 
-suspend fun retryWithTimeout(
+suspend fun retryUntilTrueWithTimeout(
     timeoutMillis: Long = 200000,
     period: Long = 1000,
     condition: () -> Boolean

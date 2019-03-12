@@ -11,6 +11,7 @@ import org.starcoin.sirius.core.*
 import org.starcoin.sirius.eth.core.EtherUnit
 import org.starcoin.sirius.eth.core.ether
 import org.starcoin.sirius.eth.core.wei
+import org.starcoin.sirius.lang.retryUntilTrueWithTimeout
 import org.starcoin.sirius.lang.retryWithTimeout
 import org.starcoin.sirius.protocol.*
 import org.starcoin.sirius.util.WithLogging
@@ -185,7 +186,7 @@ abstract class HubTestBase<T : ChainTransaction, A : ChainAccount, C : Chain<T, 
                 } else {
                     LOG.warning("Expect eon:$expectEon, but get: ${hubRoot.eon}")
                 }
-                retryWithTimeout(waitTimeOutMillis) { localAccounts.all { it.state!!.eon == expectEon } }
+                retryUntilTrueWithTimeout(waitTimeOutMillis) { localAccounts.all { it.state!!.eon == expectEon } }
             } catch (e: TimeoutCancellationException) {
                 Assert.fail("Wait eon $expectEon timeout.")
             }
