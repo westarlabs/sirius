@@ -5,7 +5,10 @@ import io.grpc.inprocess.InProcessChannelBuilder
 import kotlinx.coroutines.*
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.channels.consumeEach
-import org.junit.*
+import org.junit.After
+import org.junit.Assert
+import org.junit.Before
+import org.junit.Test
 import org.starcoin.sirius.channel.receiveTimeout
 import org.starcoin.sirius.core.*
 import org.starcoin.sirius.eth.core.EtherUnit
@@ -248,7 +251,6 @@ abstract class HubTestBase<T : ChainTransaction, A : ChainAccount, C : Chain<T, 
 //        this.waitToNextEon()
     }
 
-    @Ignore
     @Test
     fun testBalanceUpdateChallengeWithOldUpdate() = runBlocking {
         val a0 = createAndInitLocalAccount()
