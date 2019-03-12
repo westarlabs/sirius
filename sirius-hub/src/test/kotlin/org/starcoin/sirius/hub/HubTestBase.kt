@@ -5,10 +5,7 @@ import io.grpc.inprocess.InProcessChannelBuilder
 import kotlinx.coroutines.*
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.channels.consumeEach
-import org.junit.After
-import org.junit.Assert
-import org.junit.Before
-import org.junit.Test
+import org.junit.*
 import org.starcoin.sirius.channel.receiveTimeout
 import org.starcoin.sirius.core.*
 import org.starcoin.sirius.eth.core.EtherUnit
@@ -188,6 +185,7 @@ abstract class HubTestBase<T : ChainTransaction, A : ChainAccount, C : Chain<T, 
                 } else {
                     LOG.warning("Expect eon:$expectEon, but get: ${hubRoot.eon}")
                 }
+                retryWithTimeout(waitTimeOutMillis) { localAccounts.all { it.state!!.eon == expectEon } }
             } catch (e: TimeoutCancellationException) {
                 Assert.fail("Wait eon $expectEon timeout.")
             }
@@ -249,24 +247,25 @@ abstract class HubTestBase<T : ChainTransaction, A : ChainAccount, C : Chain<T, 
 //        this.waitToNextEon()
     }
 
+    @Ignore
     @Test
-    fun testBalanceUpdateChallengeWithOldUpdate() {
-        val a0 = this.createAndInitLocalAccount()
-        val a1 = this.createAndInitLocalAccount()
+    fun testBalanceUpdateChallengeWithOldUpdate() = runBlocking {
+        val a0 = createAndInitLocalAccount()
+        val a1 = createAndInitLocalAccount()
         val depositAmount = 10.ether.inWei.value
-        this.deposit(a0, depositAmount)
+        deposit(a0, depositAmount)
 
-        this.waitToNextEon()
+        waitToNextEon()
 
         val balance = a0.hubAccount!!.balance
-        this.offchainTransfer(a0, a1, balance / 2.toBigInteger())
+        offchainTransfer(a0, a1, balance / 2.toBigInteger())
 
         val oldUpdate = a0.update
-        this.offchainTransfer(a0, a1, balance / 2.toBigInteger())
+        offchainTransfer(a0, a1, balance / 2.toBigInteger())
 
-        this.waitToNextEon()
-        this.balanceUpdateChallenge(a0, oldUpdate)
-        this.waitToNextEon()
+        waitToNextEon()
+        balanceUpdateChallenge(a0, oldUpdate)
+        waitToNextEon()
     }
 
     @Test
