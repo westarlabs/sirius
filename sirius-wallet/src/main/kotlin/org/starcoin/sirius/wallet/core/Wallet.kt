@@ -40,8 +40,8 @@ class Wallet<T : ChainTransaction, A : ChainAccount> {
         if(localHeight>hub.hubInfo.startBlockNumber)
             startBlockHeight=localHeight
 
-        val eonNumber=(currentChainHeight-localHeight.toLong())/hub.hubInfo.blocksPerEon
-        if(eonNumber>1&&hub.hasRegister()){
+        //val eonNumber=(currentChainHeight-localHeight.toLong())/hub.hubInfo.blocksPerEon
+        if(hub.hasRegister()){
             sync()
             startBlockHeight=BigInteger.valueOf(currentChainHeight)
             //hub.hubInfo.startBlockNumber+BigInteger.valueOf(hub.hubInfo.latestEon*hub.hubInfo.blocksPerEon.toLong()+1)

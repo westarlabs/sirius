@@ -7,6 +7,7 @@ import org.starcoin.sirius.core.*
 import org.starcoin.sirius.crypto.CryptoService
 import org.starcoin.sirius.protocol.ethereum.EthereumAccount
 import org.starcoin.sirius.protocol.ethereum.EthereumChain
+import org.starcoin.sirius.util.WithLogging
 import org.starcoin.sirius.wallet.command.CliCommands
 import org.starcoin.sirius.wallet.command.WalletCommand
 import org.starcoin.sirius.wallet.core.ClientAccount
@@ -16,12 +17,12 @@ import org.web3j.crypto.WalletUtils
 import picocli.CommandLine
 import java.io.File
 import java.io.FileInputStream
-import java.io.IOException
 import java.io.InputStream
 import java.nio.file.Files
 import java.nio.file.Paths
 import java.util.*
 import java.util.concurrent.atomic.AtomicLong
+import java.util.logging.Level
 
 
 fun main(args: Array<String>) {
@@ -47,6 +48,12 @@ fun main(args: Array<String>) {
         val cmd = CommandLine(CliCommands(reader))
         ResourceManager.hubChannel = NettyChannelBuilder.forAddress(InetAddressPort.valueOf(hubAddr).toInetSocketAddress()).usePlaintext().build();
         ResourceManager.isTest=false
+
+
+        val logDir = File(walletDir(name), "logs")
+        assert(logDir.mkdir())
+        WithLogging.addFileHandler(logDir.absolutePath + File.separator +"wallet%g.log")
+        WithLogging.setLogLevel(Level.INFO)
 
         val chain = EthereumChain(chainAddr)
         var account = loadAccount(keyStoreFilePath, password, chain)
@@ -83,7 +90,6 @@ fun main(args: Array<String>) {
 
 }
 
-@Throws(IOException::class)
 private fun loadConfig(name: String): Properties {
     val prop = Properties()
     var inputStream: InputStream? = null
@@ -104,6 +110,16 @@ private fun loadConfig(name: String): Properties {
     }
     prop.load(inputStream)
     return prop
+}
+
+private fun walletDir(name: String): File {
+    val prop = Properties()
+    var inputStream: InputStream? = null
+    val path = File(
+        System.getProperty("user.home"),
+        ".sirius" + File.separator + name + File.separator
+    )
+    return path
 }
 
 fun loadAccount(path: String, password: String, chain: EthereumChain): EthereumAccount {
