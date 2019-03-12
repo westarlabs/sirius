@@ -1,5 +1,7 @@
 # Sirius - a blockchain layer 2 protocol implementation
 
+[![CircleCI](https://circleci.com/gh/starcoinorg/sirius.svg?style=svg)](https://circleci.com/gh/starcoinorg/sirius)
+
 Welcome to the Sirius source code repository! 
 
 ## About
@@ -14,7 +16,7 @@ TODO
 ### Prerequisites
 
 1. Java(1.8)
-2. solc (npm install -g solc)
+2. solc (0.5.1) [installing-solidity](https://solidity.readthedocs.io/en/v0.5.1/installing-solidity.html)
 2. Docker(for run and test)
 
 #### Build

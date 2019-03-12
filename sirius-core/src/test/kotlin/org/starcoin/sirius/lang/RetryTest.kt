@@ -11,15 +11,16 @@ class RetryTest {
     @Test
     fun testRetryTimeoutOrNull() = runBlocking {
         val timeout = 2000L
+        val period = 100L
         val startTime = System.currentTimeMillis()
         val count = AtomicInteger()
-        val num = retryWithTimeoutOrNull(timeout, 100) { count.incrementAndGet(); null }
+        val num = retryWithTimeoutOrNull(timeout, period) { count.incrementAndGet(); null }
         val endTime = System.currentTimeMillis()
         val useTime = endTime - startTime
-        println("$useTime ${count.get()}")
-        Assert.assertTrue(useTime < timeout + 100)
+        //println("$useTime ${count.get()}")
+        Assert.assertTrue(useTime < timeout + 200)
         Assert.assertNull(num)
-        Assert.assertTrue(count.get() > 19)
+        Assert.assertTrue(count.get() >= timeout / period - 2)
     }
 
     private fun returnNUll(): Any? {
@@ -33,10 +34,10 @@ class RetryTest {
         try {
             retryWithTimeout(timeout, 100) { returnNUll() }
             Assert.fail("expect timeout")
-        }catch (e:TimeoutCancellationException){
+        } catch (e: TimeoutCancellationException) {
         }
         val endTime = System.currentTimeMillis()
         val useTime = endTime - startTime
-        Assert.assertTrue(useTime < timeout + 100)
+        Assert.assertTrue(useTime < timeout + 200)
     }
 }

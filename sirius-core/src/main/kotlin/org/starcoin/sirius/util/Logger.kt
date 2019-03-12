@@ -2,6 +2,7 @@ package org.starcoin.sirius.util
 
 import kotlinx.io.PrintWriter
 import kotlinx.io.StringWriter
+import org.starcoin.sirius.lang.getJVMArgs
 import java.util.logging.FileHandler
 import java.util.logging.Level
 import java.util.logging.LogManager
@@ -118,5 +119,10 @@ abstract class WithLogging : Loggable {
             handler.formatter = java.util.logging.SimpleFormatter()
             rootLogger.addHandler(handler)
         }
+    }
+
+    fun printlnJVMArgs() {
+        LOG.info("JVM args:")
+        LOG.info(getJVMArgs().joinToString("\n"))
     }
 }

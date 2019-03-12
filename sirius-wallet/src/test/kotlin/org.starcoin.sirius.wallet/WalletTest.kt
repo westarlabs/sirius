@@ -6,10 +6,7 @@ import io.grpc.inprocess.InProcessChannelBuilder
 import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.withTimeout
 import org.ethereum.util.blockchain.EtherUtil
-import org.junit.After
-import org.junit.Assert
-import org.junit.Before
-import org.junit.Test
+import org.junit.*
 import org.starcoin.proto.HubServiceGrpc
 import org.starcoin.proto.Starcoin
 import org.starcoin.sirius.core.ContractHubInfo
@@ -138,6 +135,7 @@ class WalletTest {
     fun deposit(amount : BigInteger) {
         deposit(amount, true)
     }
+
     fun deposit(amount : BigInteger, flag:Boolean){
 
         walletAlice.deposit(amount)
@@ -148,7 +146,7 @@ class WalletTest {
         runBlocking {
             withTimeout(10000L){
                 walletBob.getMessageChannel()?.receive()
-            walletAlice.getMessageChannel()?.receive()
+                walletAlice.getMessageChannel()?.receive()
             }
         }
 
@@ -175,7 +173,7 @@ class WalletTest {
             withTimeout(10000L){
                 walletBob.getMessageChannel()?.receive()
                 walletAlice.getMessageChannel()?.receive()
-            walletBob.getMessageChannel()?.receive()
+                walletBob.getMessageChannel()?.receive()
             }
         }
 
@@ -394,7 +392,7 @@ class WalletTest {
             withTimeout(10000L){
                 walletBob.getMessageChannel()?.receive()
                 walletAlice.getMessageChannel()?.receive()
-            walletBob.getMessageChannel()?.receive()
+                walletBob.getMessageChannel()?.receive()
             }
         }
 
@@ -454,7 +452,7 @@ class WalletTest {
             withTimeout(10000L){
                 walletAlice.getMessageChannel()?.receive()
                 walletBob.getMessageChannel()?.receive()
-            walletAlice.getMessageChannel()?.receive()
+                walletAlice.getMessageChannel()?.receive()
             }
         }
 
@@ -483,7 +481,7 @@ class WalletTest {
             withTimeout(10000L){
                 walletBob.getMessageChannel()?.receive()
                 walletAlice.getMessageChannel()?.receive()
-            walletBob.getMessageChannel()?.receive()
+                walletBob.getMessageChannel()?.receive()
             }
         }
 
@@ -577,7 +575,7 @@ class WalletTest {
             withTimeout(10000L){
                 walletBob.getMessageChannel()?.receive()
                 walletAlice.getMessageChannel()?.receive()
-            walletBob.getMessageChannel()?.receive()
+                walletBob.getMessageChannel()?.receive()
             }
         }
 
@@ -600,7 +598,7 @@ class WalletTest {
             withTimeout(10000L){
                 walletBob.getMessageChannel()?.receive()
                 walletAlice.getMessageChannel()?.receive()
-            walletBob.getMessageChannel()?.receive()
+                walletBob.getMessageChannel()?.receive()
             }
         }
         walletAlice.hub.disconnect=true
@@ -631,7 +629,7 @@ class WalletTest {
             withTimeout(10000L) {
                 walletBob.getMessageChannel()?.receive()
                 walletAlice.getMessageChannel()?.receive()
-            walletBob.getMessageChannel()?.receive()
+                walletBob.getMessageChannel()?.receive()
             }
         }
         walletAlice.hub.disconnect=true
@@ -676,7 +674,7 @@ class WalletTest {
             withTimeout(10000L){
                 walletBob.getMessageChannel()?.receive()
                 walletAlice.getMessageChannel()?.receive()
-            walletBob.getMessageChannel()?.receive()
+                walletBob.getMessageChannel()?.receive()
             }
         }
 
@@ -718,7 +716,7 @@ class WalletTest {
         logger.info("current height is $height,need generate $blockNumber blocks")
         for (i in 0..blockNumber) {
             chain.createBlock()
-       }
+        }
     }
 
     private fun createBlocks(number:Int){
