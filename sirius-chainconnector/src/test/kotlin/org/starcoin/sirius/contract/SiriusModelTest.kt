@@ -1,8 +1,10 @@
 package org.starcoin.sirius.contract
 
+import kotlinx.coroutines.runBlocking
 import org.junit.Assert
 import org.junit.Test
 import org.starcoin.sirius.core.*
+import org.starcoin.sirius.lang.retryWithTimeout
 import org.starcoin.sirius.lang.toHEXString
 import org.starcoin.sirius.util.MockUtils
 import kotlin.reflect.KClass
@@ -16,10 +18,17 @@ class SiriusModelTest : ContractTestBase("solidity/test_all", "test_all") {
         this.doTest(obj, functionName)
     }
 
-    fun <T : SiriusObject> doTest(obj: T, functionName: String) {
+    fun <T : SiriusObject> doTest(obj: T, functionName: String) = runBlocking {
         val companion = obj.javaClass.kotlin.companionObjectInstance as SiriusObjectCompanion<*, *>
         val data = obj.toRLP()
-        val callResult = contract.callConstFunction(functionName, data)[0] as ByteArray
+        val callResult = retryWithTimeout(
+            5000,
+            condition = { bytes -> bytes != null && bytes.isNotEmpty() }) {
+            contract.callConstFunction(
+                functionName,
+                data
+            )[0] as ByteArray
+        }
         Assert.assertArrayEquals("expect ${data.toHEXString()} but get ${callResult.toHEXString()}", data, callResult)
         val obj1 = companion.parseFromRLP(callResult)
         Assert.assertEquals(obj, obj1)
