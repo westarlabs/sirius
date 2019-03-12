@@ -108,10 +108,10 @@ subprojects {
 
     task unitTest(type: Test ) {
         exclude '**/*IntegrationTest*'
-        reports.html.enabled = false
+        reports.html.enabled = true
         maxHeapSize = "2048m"
         maxParallelForks = 1
-        jvmArgs "-XX:+UnlockExperimentalVMOptions", "-XX:+UseCGroupMemoryLimitForHeap"
+        jvmArgs "-XX:+UnlockExperimentalVMOptions"
     }
 
     task integrationTest(type: Test ) {
@@ -122,12 +122,13 @@ subprojects {
     }
 }
 
-task unitTestReport(type: TestReport) {
-    destinationDir = file("$buildDir/reports/unitTests")
-    reportOn subprojects*.unitTest
-}
-
-task integrationTestReport(type: TestReport) {
-    destinationDir = file("$buildDir/reports/integrationTests")
-    reportOn subprojects*.integrationTest
+task aggregateReports(){
+    doLast {
+        this.subprojects.each{ subProject ->
+            copy{
+                from "${subProject.buildDir}/reports"
+                into "$buildDir/reports/${subProject.name}"
+            }
+        }
+    }
 }

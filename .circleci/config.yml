@@ -41,12 +41,14 @@ jobs:
       # run tests!
       - run: ./gradlew unitTest --stacktrace --continue --no-daemon --max-workers 2
 
+      - run: ./gradlew aggregateReports --no-daemon
+
       - run:
           name: Save test results
           command: |
             mkdir -p ~/artifacts/test-results/unit/
             find . -type f -regex ".*/build/test-results/unitTest/.*xml" -exec cp {} ~/artifacts/test-results/unit/ \;
-          #TODO report  cp -r build/reports/integrationTests ~/artifacts/reports/
+            cp -r build/reports ~/artifacts/reports
           when: always
 
       - store_test_results:
