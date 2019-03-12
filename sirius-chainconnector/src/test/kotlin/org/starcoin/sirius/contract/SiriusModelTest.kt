@@ -21,7 +21,7 @@ class SiriusModelTest : ContractTestBase("solidity/test_all", "test_all") {
                 val obj = companion.mock()
                 doTest(obj, functionName)
                 true
-            } catch (e: Exception) {
+            } catch (e: Error) {
                 LOG.error(e)
                 false
             }

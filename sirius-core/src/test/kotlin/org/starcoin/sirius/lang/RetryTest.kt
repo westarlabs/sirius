@@ -40,4 +40,18 @@ class RetryTest {
         val useTime = endTime - startTime
         Assert.assertTrue(useTime < timeout + 200)
     }
+
+    @Test
+    fun testRetryUntilTrue() = runBlocking {
+        val timeout = 2000L
+        val startTime = System.currentTimeMillis()
+        try {
+            retryUntilTrueWithTimeout(timeout, 100) { false }
+            Assert.fail("expect timeout")
+        } catch (e: TimeoutCancellationException) {
+        }
+        val endTime = System.currentTimeMillis()
+        val useTime = endTime - startTime
+        Assert.assertTrue(useTime < timeout + 200)
+    }
 }
