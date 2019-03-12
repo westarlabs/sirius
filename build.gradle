@@ -103,21 +103,21 @@ subprojects {
     test {
         reports.html.enabled = false
         maxHeapSize = "4096m"
-        maxParallelForks = Runtime.runtime.availableProcessors().intdiv(2) ?: 1
+        maxParallelForks = 1 
     }
 
     task unitTest(type: Test ) {
         exclude '**/*IntegrationTest*'
         reports.html.enabled = false
-        maxHeapSize = "2048m"
+        maxHeapSize = "4096m"
         maxParallelForks = 1
     }
 
     task integrationTest(type: Test ) {
         include '**/*IntegrationTest*'
         reports.html.enabled = false
-        maxHeapSize = "2048m"
-        maxParallelForks = Runtime.runtime.availableProcessors().intdiv(2) ?: 1
+        maxHeapSize = "4096m"
+        maxParallelForks = 1 
     }
 }
 
