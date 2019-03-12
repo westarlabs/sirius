@@ -1,6 +1,5 @@
 package org.starcoin.sirius.wallet
 
-import com.google.common.base.Preconditions
 import io.grpc.netty.NettyChannelBuilder
 import jline.console.ConsoleReader
 import jline.console.completer.ArgumentCompleter
@@ -10,6 +9,7 @@ import org.starcoin.sirius.protocol.ethereum.EthereumAccount
 import org.starcoin.sirius.protocol.ethereum.EthereumChain
 import org.starcoin.sirius.wallet.command.CliCommands
 import org.starcoin.sirius.wallet.command.WalletCommand
+import org.starcoin.sirius.wallet.core.ClientAccount
 import org.starcoin.sirius.wallet.core.ResourceManager
 import org.starcoin.sirius.wallet.core.Wallet
 import org.web3j.crypto.WalletUtils
@@ -51,7 +51,7 @@ fun main(args: Array<String>) {
         val chain = EthereumChain(chainAddr)
         var account = loadAccount(keyStoreFilePath, password, chain)
 
-        var wallet = Wallet(Address.wrap(contractAddr), chain, account)
+        var wallet = Wallet(Address.wrap(contractAddr), chain, ClientAccount(account,name))
 
         cmd.addSubcommand("wallet", WalletCommand(wallet))
 
@@ -89,7 +89,7 @@ private fun loadConfig(name: String): Properties {
     var inputStream: InputStream? = null
     val configFile = File(
         System.getProperty("user.home"),
-        ".starcoin" + File.separator + "liq"  +File.separator+name+ File.separator + "conf.properties"
+        ".sirius" + File.separator +name+ File.separator + "conf.properties"
     )
 
     if (configFile.exists()) {
@@ -104,22 +104,6 @@ private fun loadConfig(name: String): Properties {
     }
     prop.load(inputStream)
     return prop
-}
-
-fun getWalletDir(name: String): File {
-    val walletDir = genWalletDir(name)
-    Preconditions.checkState(
-        walletDir.exists(),
-        "wallet " + walletDir.absolutePath + " is not exist, please create first."
-    )
-    return walletDir
-}
-
-fun genWalletDir(name: String): File {
-    return File(
-        System.getProperty("user.home"),
-        ".starcoin" + File.separator + "liq" + File.separator + name
-    )
 }
 
 fun loadAccount(path: String, password: String, chain: EthereumChain): EthereumAccount {

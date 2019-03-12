@@ -20,18 +20,21 @@ class ResourceManager private constructor(){
 
     lateinit internal var dataStore:DataStore<ByteArray,ByteArray>
 
+    @Synchronized
     internal fun cleanData(){
         updateDao.destroy()
         offchainTransactionDao.destroy()
         aMTreeProofDao.destroy()
+        dataStore.destroy()
 
         updateDao.init()
         offchainTransactionDao.init()
         aMTreeProofDao.init()
+        dataStore.init()
     }
 
     companion object {
-        private val h2databaseUrl = "jdbc:h2:~/.starcoin/liq/%s/wallet;FILE_LOCK=FS;PAGE_SIZE=1024;CACHE_SIZE=819;MODE=Mysql"
+        private var h2databaseUrl = "jdbc:h2:~/.sirius/%s/wallet;FILE_LOCK=FS;PAGE_SIZE=1024;CACHE_SIZE=819;MODE=Mysql"
         private val h2databaseUrlMemory = H2DBStore.h2dbUrlMemoryFormat
 
         private val resourceManagerMap :MutableMap<String, ResourceManager> = mutableMapOf()
@@ -74,8 +77,4 @@ class ResourceManager private constructor(){
             return resourceManagerMap.get(name)?:initDB(name)
         }
     }
-}
-
-fun InetAddressPort.toHttpURL():String{
-    return String.format("http://%s:%d",this.host,this.port)
 }
