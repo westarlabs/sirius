@@ -4,32 +4,36 @@ import kotlinx.coroutines.runBlocking
 import org.junit.Assert
 import org.junit.Test
 import org.starcoin.sirius.core.*
-import org.starcoin.sirius.lang.retryWithTimeout
+import org.starcoin.sirius.lang.retryUntilTrueWithTimeout
 import org.starcoin.sirius.lang.toHEXString
 import org.starcoin.sirius.util.MockUtils
+import org.starcoin.sirius.util.error
 import kotlin.reflect.KClass
 import kotlin.reflect.full.companionObjectInstance
 
 class SiriusModelTest : ContractTestBase("solidity/test_all", "test_all") {
 
-    fun <T : SiriusObject> doTest(siriusClass: KClass<T>, functionName: String) {
+    fun <T : SiriusObject> doTest(siriusClass: KClass<T>, functionName: String) = runBlocking {
         LOG.info("doTest $siriusClass")
         val companion = siriusClass.companionObjectInstance as SiriusObjectCompanion<*, *>
-        val obj = companion.mock()
-        this.doTest(obj, functionName)
+        retryUntilTrueWithTimeout(5000) {
+            try {
+                val obj = companion.mock()
+                doTest(obj, functionName)
+                true
+            } catch (e: Exception) {
+                LOG.error(e)
+                false
+            }
+        }
+
     }
 
     fun <T : SiriusObject> doTest(obj: T, functionName: String) = runBlocking {
+        LOG.info("doTest $obj")
         val companion = obj.javaClass.kotlin.companionObjectInstance as SiriusObjectCompanion<*, *>
         val data = obj.toRLP()
-        val callResult = retryWithTimeout(
-            5000,
-            condition = { bytes -> bytes != null && bytes.isNotEmpty() }) {
-            contract.callConstFunction(
-                functionName,
-                data
-            )[0] as ByteArray
-        }
+        val callResult = contract.callConstFunction(functionName, data)[0] as ByteArray
         Assert.assertArrayEquals("expect ${data.toHEXString()} but get ${callResult.toHEXString()}", data, callResult)
         val obj1 = companion.parseFromRLP(callResult)
         Assert.assertEquals(obj, obj1)
