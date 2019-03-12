@@ -417,17 +417,26 @@ class HubImpl<A : ChainAccount>(
 
     private suspend fun processBlock(block: Block<*>) {
         LOG.info("Hub processBlock:$block")
-        //TODO handle blockchain fork and unexpected exit.
-        this.processedBlockNumber = block.height
+
         val eon = Eon.calculateEon(this.startBlockNumber, block.height, this.blocksPerEon)
         var newEon = false
         this.eonState.setEpoch(eon.epoch)
-        if (eon.id != this.eonState.eon) {
-            val eonState = EonState(eon.id, this.eonState)
-            this.eonState = eonState
-            newEon = true
+        when (eon.id) {
+            this.eonState.eon + 1 -> {
+                val eonState = this.eonState.toNextEon()
+                this.eonState = eonState
+                newEon = true
+            }
+            this.eonState.eon -> {
+                //continue
+            }
+            else -> {
+                LOG.error("Unexpect block ${block.height}, current eon: ${this.eonState.eon}, new eon: ${eon.id}")
+                return
+            }
         }
-
+        //TODO handle blockchain fork and unexpected exit.
+        this.processedBlockNumber = block.height
         block.transactions.filter { it.tx.to == contract.contractAddress }.forEach {
             processTransaction(block, it)
         }
@@ -435,6 +444,7 @@ class HubImpl<A : ChainAccount>(
         if (newEon) {
             this.doCommit()
         }
+
     }
 
     private fun doRecovery() {

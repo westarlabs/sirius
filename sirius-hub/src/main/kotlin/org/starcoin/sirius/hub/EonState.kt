@@ -4,31 +4,31 @@ import org.starcoin.sirius.core.*
 import org.starcoin.sirius.core.Eon.Epoch
 import org.starcoin.sirius.datastore.DataStoreFactory
 import org.starcoin.sirius.datastore.MapDataStoreFactory
-import java.util.*
+import org.starcoin.sirius.lang.settableLazy
 
-class EonState(val eon: Int, val state: AMTree, private val factory: DataStoreFactory) {
+class EonState(val eon: Int, private val factory: DataStoreFactory = MapDataStoreFactory()) {
 
     var currentEpoch: Epoch = Eon.Epoch.FIRST
         private set
     private val accountStore: HubAccountStore = HubAccountStore(eon, factory)
 
-    val previous: EonState?
-        get() = when (eon) {
+    var previous: EonState? by settableLazy {
+        when (eon) {
             0 -> null
             else -> EonState(eon - 1, factory)
         }
+    }
 
-    constructor(eon: Int, factory: DataStoreFactory = MapDataStoreFactory()) : this(
-        eon,
-        AMTree(eon, ArrayList()),
-        factory
-    )
+    //TODO store tree's nodes hash and implement lazy load tree.
+    val state: AMTree by lazy {
+        this.previous?.let { AMTree(eon, it.accountStore.asHubAccountIterable()) } ?: AMTree(eon, listOf())
+    }
 
-    constructor(eon: Int, previous: EonState) : this(
+    private constructor(eon: Int, previous: EonState) : this(
         eon,
-        AMTree(eon, previous.accountStore.asHubAccountIterable()),
         previous.factory
     ) {
+        this.previous = previous
         this.accountStore.updateBatch(previous.accountStore.asHubAccountIterable().map { it.toNextEon(eon) })
     }
 
@@ -79,4 +79,10 @@ class EonState(val eon: Int, val state: AMTree, private val factory: DataStoreFa
     fun saveAccount(account: HubAccount) {
         this.accountStore.put(account)
     }
+
+    fun toNextEon(): EonState {
+        val newEon = eon + 1
+        return EonState(newEon, this)
+    }
+
 }
