@@ -13,6 +13,7 @@ import kotlin.reflect.full.companionObjectInstance
 class SiriusModelTest : ContractTestBase("solidity/test_all", "test_all") {
 
     fun <T : SiriusObject> doTest(siriusClass: KClass<T>, functionName: String) {
+        LOG.info("doTest $siriusClass")
         val companion = siriusClass.companionObjectInstance as SiriusObjectCompanion<*, *>
         val obj = companion.mock()
         this.doTest(obj, functionName)
