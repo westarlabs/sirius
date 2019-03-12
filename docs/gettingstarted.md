@@ -3,26 +3,17 @@
 ## Setup ethereum
 
 We run a local ethereum development node for test.
-please ensure docker in your computer , execute such code in sirius dir.
+please ensure docker in your computer ,execute such code in sirius dir.
 
 #### run ethereum node
 ```
-cd sirius-chainconnector/scripts
-sh docker.sh run --dev.period 10
+./scripts/docker.sh run --dev.period 10
 ```
 
 #### create eth account
 
-Find ethereum node docker id by
-
 ```
-docker ps 
-```
-
-Find container id of image with name fikgol/starcoin-goethereum,then create account by 
-
-```
-docker exec -it {container_id} geth account new --keystore /tmp/geth_data/keystore
+>./scripts/docker.sh geth account new
 
 ```
 
@@ -53,9 +44,9 @@ Use one of the accounts address which you created in previous step to accountIDO
 ./gradlew sirius-hub:run
 ```
 
-then hub will create config dir in ~/.sirius/hub and auto deploy smart-contract, you can find contract addr in hub.conf file.
+Then hub will create config dir in ~/.sirius/hub and auto deploy smart-contract, you can find contract addr in hub.conf file.
 
-## run wallet
+## Run wallet
 
 1. Compile wallet
 
@@ -138,4 +129,3 @@ finish change eon
 start change eon
 finish change eon
 ```
-
