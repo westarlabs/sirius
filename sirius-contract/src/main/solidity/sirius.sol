@@ -130,9 +130,9 @@ contract SiriusService is Sirius {
                     address payable addr = balances[1].withdrawals[i];
                     GlobleLib.Withdrawal memory w = dataStore.withdrawalData[balances[1].eon][addr];
                     if(w.isVal && w.stat == GlobleLib.WithdrawalStatusType.INIT) {
+                        ModelLib.WithdrawalInfo memory wi = ModelLib.unmarshalWithdrawalInfo(RLPDecoder.toRLPItem(w.info, true));
                         w.stat = GlobleLib.WithdrawalStatusType.CONFIRMED;
                         dataStore.withdrawalData[balances[1].eon][addr] = w;
-                        ModelLib.WithdrawalInfo memory wi = ModelLib.unmarshalWithdrawalInfo(RLPDecoder.toRLPItem(w.info, true));
                         addr.transfer(wi.amount);
                         emit SiriusEvent2(addr, 3, ByteUtilLib.uint2byte(wi.amount));
                     }
@@ -633,10 +633,15 @@ require(newEon > 0, "newEon > 0");
 
             uint t1 = SafeMath.add(close.proof.leaf.update.upData.receiveAmount, preAllotment);
             t1 = SafeMath.add(t1, depositAmount);
-            t1 = SafeMath.sub(t1, withdrawalAmount);
-            uint t2 = close.proof.leaf.update.upData.sendAmount;
-            uint allotment = SafeMath.sub(t1, t2);
-            require(allotment == close.proof.path.leaf.allotment, "check proof allotment fail.");
+            uint t2 = SafeMath.add(withdrawalAmount, close.proof.leaf.update.upData.sendAmount);
+            if(t2 <= t1) {
+                uint allotment = SafeMath.sub(t1, t2);
+                if(stat.proof.hasPath) {
+                    require(allotment == close.proof.path.leaf.allotment, "check proof allotment fail1.");
+                } else {
+                    require(allotment <= close.proof.path.leaf.allotment, "check proof allotment fail2.");
+                }
+            }
 
             tmpStat.status = ModelLib.ChallengeStatus.CLOSE;
             dataStore.bucData[balances[0].eon][close.addr] = tmpStat;
