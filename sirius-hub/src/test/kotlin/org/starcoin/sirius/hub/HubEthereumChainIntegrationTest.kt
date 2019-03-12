@@ -22,13 +22,13 @@ class HubEthereumChainIntegrationTest :
         @AfterClass
         @JvmStatic
         fun tearDown() {
-            scriptExec("../sirius-chainconnector/scripts/docker.sh clean")
+            scriptExec("../scripts/docker.sh clean")
         }
 
         @BeforeClass
         @JvmStatic
         fun setUp() {
-            scriptExec("../sirius-chainconnector/scripts/docker.sh run")
+            scriptExec("../scripts/docker.sh run")
             Thread.sleep(5000)
         }
     }

@@ -19,7 +19,7 @@ class EthereumHubContractIntegrationTest : HubContractTestBase() {
         @BeforeClass
         @JvmStatic
         fun setup() {
-            scriptExec("scripts/docker.sh run --dev.period 1")
+            scriptExec("../scripts/docker.sh run --dev.period 1")
             Thread.sleep(4000)
         }
 
@@ -27,7 +27,7 @@ class EthereumHubContractIntegrationTest : HubContractTestBase() {
         @AfterClass
         @JvmStatic
         fun tearDown() {
-            scriptExec("scripts/docker.sh clean")
+            scriptExec("../scripts/docker.sh clean")
         }
     }
 
