@@ -13,4 +13,4 @@ database
 *.iws
 geth_data
 .ethash
-.temp
+*.temp

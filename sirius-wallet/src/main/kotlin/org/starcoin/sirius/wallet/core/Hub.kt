@@ -11,14 +11,12 @@ import org.starcoin.proto.HubServiceGrpc
 import org.starcoin.proto.Starcoin
 import org.starcoin.sirius.core.*
 import org.starcoin.sirius.lang.toBigInteger
-import org.starcoin.sirius.lang.toHEXString
 import org.starcoin.sirius.protocol.Chain
 import org.starcoin.sirius.protocol.ChainAccount
 import org.starcoin.sirius.protocol.HubContract
 import org.starcoin.sirius.serialization.rlp.toByteArray
 import org.starcoin.sirius.util.WithLogging
 import java.lang.IllegalStateException
-import java.lang.Thread.sleep
 import java.math.BigInteger
 import kotlin.properties.Delegates
 
@@ -28,7 +26,7 @@ class Hub <T : ChainTransaction, A : ChainAccount> {
 
     private var contract: HubContract<A>  by Delegates.notNull()
 
-    private var account: A  by Delegates.notNull()
+    private var account: ClientAccount<A>  by Delegates.notNull()
 
     internal var currentEon: Eon  by Delegates.notNull()
     private set
@@ -39,7 +37,7 @@ class Hub <T : ChainTransaction, A : ChainAccount> {
 
     private var hubAccount: HubAccount? = null
 
-    internal var hubStatus: HubStatus by Delegates.notNull()
+    internal var hubStatus: HubStatus<A> by Delegates.notNull()
         private set
 
     private var chain: Chain<T, out Block<T>, A> by Delegates.notNull()
@@ -59,7 +57,7 @@ class Hub <T : ChainTransaction, A : ChainAccount> {
 
     constructor(
         contract: HubContract<A>,
-        account: A,
+        account: ClientAccount<A>,
         serverEventHandler: ServerEventHandler?,
         chain :Chain<T, out Block<T>, A>
     ) {
@@ -68,7 +66,7 @@ class Hub <T : ChainTransaction, A : ChainAccount> {
         this.serverEventHandler = serverEventHandler
         this.chain = chain
 
-        hubInfo=contract.queryHubInfo(account)
+        hubInfo=contract.queryHubInfo(account.account)
         hubAddr=hubInfo.hubAddress
 
         this.currentEon=Eon.calculateEon(startBlockNumber = hubInfo.startBlockNumber.toLong(),blocksPerEon = hubInfo.blocksPerEon,currentBlockNumber = chain.getBlockNumber().toLong())
@@ -86,7 +84,7 @@ class Hub <T : ChainTransaction, A : ChainAccount> {
     }
 
     private fun getChainEon():Eon{
-        var hubInfo=contract.queryHubInfo(account)
+        var hubInfo=contract.queryHubInfo(account.account)
         return Eon.calculateEon(startBlockNumber = hubInfo.startBlockNumber.toLong(),blocksPerEon = hubInfo.blocksPerEon,currentBlockNumber = chain.getBlockNumber().toLong())
     }
 
@@ -192,7 +190,7 @@ class Hub <T : ChainTransaction, A : ChainAccount> {
     }
 
     internal fun hubInfo():ContractHubInfo{
-        return contract.queryHubInfo(account)
+        return contract.queryHubInfo(account.account)
     }
 
     private fun onNewUpdate(update: Update) {
@@ -249,13 +247,13 @@ class Hub <T : ChainTransaction, A : ChainAccount> {
             eonChannel?.send(ClientEventType.FINISH_EON_CHANGE)
         }
 
-        ResourceManager.instance(account.address.toBytes().toHEXString()).dataStore.put(this.currentEonKey,this.currentEon.id.toByteArray())
+        ResourceManager.instance(account.name).dataStore.put(this.currentEonKey,this.currentEon.id.toByteArray())
 
         if (!needChallenge) {
             return
         }
         var balanceUpdateProof=this.hubStatus.newChallenge(lastUpdate)
-        this.contract.openBalanceUpdateChallenge(account,balanceUpdateProof)
+        this.contract.openBalanceUpdateChallenge(account.account,balanceUpdateProof)
 
         GlobalScope.launch {
             eonChannel?.send(ClientEventType.OPEN_BALANCE_UPDATE_CHALLENGE)
@@ -277,7 +275,7 @@ class Hub <T : ChainTransaction, A : ChainAccount> {
             throw IllegalStateException("need reg/login first")
         }
 
-        ResourceManager.instance(account.address.toBytes().toHEXString()).cleanData()
+        ResourceManager.instance(account.name).cleanData()
         val hubServiceBlockingStub = HubServiceGrpc.newBlockingStub(ResourceManager.hubChannel)
 
         this.currentEon = this.getChainEon()
@@ -321,7 +319,7 @@ class Hub <T : ChainTransaction, A : ChainAccount> {
             }
 
             try{
-                var withdrawalStatus=contract.queryWithdrawalStatus(account)
+                var withdrawalStatus=contract.queryWithdrawalStatus(account.account)
                 if (withdrawalStatus?.status == WithdrawalStatusType.INIT.number) {
                     this.hubStatus.withdrawalStatus = withdrawalStatus
                 }
@@ -378,13 +376,14 @@ class Hub <T : ChainTransaction, A : ChainAccount> {
         if(this.hubAccount==null){
             throw IllegalStateException("need reg/login first")
         }
-        val chainTransaction=chainTransaction(contract.contractAddress, value)
-        var txDeferred = chain.submitTransaction(account, chainTransaction)
+        val chainTransaction=chain.newTransaction(account.account,contract.contractAddress, value)
+        var txDeferred = chain.submitTransaction(account.account, chainTransaction)
         this.hubStatus.addDepositTransaction(txDeferred.txHash, chainTransaction)
     }
 
     internal fun chainTransaction(addr: Address,value :BigInteger):T {
-        var chainTransaction=chain.newTransaction(account,addr, value)
+        val chainTransaction=chain.newTransaction(account.account,addr, value)
+        val txDeferred = chain.submitTransaction(account.account, chainTransaction)
         return chainTransaction
     }
 
@@ -420,7 +419,7 @@ class Hub <T : ChainTransaction, A : ChainAccount> {
             return hubAccount
         }catch (e :StatusRuntimeException){
             if(e.status == Status.NOT_FOUND){
-                LOG.warning("no such user")
+                LOG.info("no such user")
                 return null
             }
             throw e
@@ -436,7 +435,7 @@ class Hub <T : ChainTransaction, A : ChainAccount> {
         val lastUpdate = this.hubStatus.lastUpdate(this.currentEon)
         val path = this.hubStatus.transactionPath(transactionHash)
         val transferDeliveryChallenge = TransferDeliveryChallenge(lastUpdate,offchainTransaction!!,path)
-        this.contract.openTransferDeliveryChallenge(this.account,transferDeliveryChallenge)
+        this.contract.openTransferDeliveryChallenge(this.account.account,transferDeliveryChallenge)
         GlobalScope.launch { eonChannel?.send(ClientEventType.OPEN_TRANSFER_DELIVERY_CHALLENGE) }
     }
 
@@ -464,7 +463,7 @@ class Hub <T : ChainTransaction, A : ChainAccount> {
         }
 
         val withdrawal = Withdrawal(hubStatus.lastEonProof()!!, value)
-        this.contract.initiateWithdrawal(account,withdrawal)
+        this.contract.initiateWithdrawal(account.account,withdrawal)
     }
 
     internal fun cheat(flag:Int){
@@ -546,7 +545,7 @@ class Hub <T : ChainTransaction, A : ChainAccount> {
             throw IllegalStateException("need reg/login first")
         }
 
-        val lastSavedEon=ResourceManager.instance(account.address.toBytes().toHEXString()).dataStore.get(this.currentEonKey)?.toBigInteger()?.toInt()?:0
+        val lastSavedEon=ResourceManager.instance(account.name).dataStore.get(this.currentEonKey)?.toBigInteger()?.toInt()?:0
         val currentEon=this.getChainEon()
         if((currentEon.id-lastSavedEon)>1){
             throw java.lang.IllegalStateException("local data is too old,please use sync command")

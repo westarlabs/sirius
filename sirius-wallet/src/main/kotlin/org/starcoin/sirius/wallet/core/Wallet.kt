@@ -15,12 +15,12 @@ class Wallet<T : ChainTransaction, A : ChainAccount> {
 
     internal var blockChain: BlockChain<T,A> by Delegates.notNull()
 
-    private var account: A by Delegates.notNull()
+    private var account: ClientAccount<A> by Delegates.notNull()
 
     //TODO
     private var chain: Chain<T, out Block<T>, A> by Delegates.notNull()
 
-    constructor(contractAddress: Address, chain: Chain<T, out Block<T>, A>, account: A
+    constructor(contractAddress: Address, chain: Chain<T, out Block<T>, A>, account: ClientAccount<A>
     ) {
         this.chain = chain
         this.account = account
@@ -40,8 +40,8 @@ class Wallet<T : ChainTransaction, A : ChainAccount> {
         if(localHeight>hub.hubInfo.startBlockNumber)
             startBlockHeight=localHeight
 
-        val eonNumber=(currentChainHeight-localHeight.toLong())/hub.hubInfo.blocksPerEon
-        if(eonNumber>1){
+        //val eonNumber=(currentChainHeight-localHeight.toLong())/hub.hubInfo.blocksPerEon
+        if(hub.hasRegister()){
             sync()
             startBlockHeight=BigInteger.valueOf(currentChainHeight)
             //hub.hubInfo.startBlockNumber+BigInteger.valueOf(hub.hubInfo.latestEon*hub.hubInfo.blocksPerEon.toLong()+1)

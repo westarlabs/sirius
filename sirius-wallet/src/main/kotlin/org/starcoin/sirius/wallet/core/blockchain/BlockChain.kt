@@ -5,15 +5,15 @@ import kotlinx.coroutines.Job
 import kotlinx.coroutines.launch
 import org.starcoin.sirius.core.*
 import org.starcoin.sirius.lang.toBigInteger
-import org.starcoin.sirius.lang.toHEXString
 import org.starcoin.sirius.protocol.*
 import org.starcoin.sirius.util.WithLogging
+import org.starcoin.sirius.wallet.core.ClientAccount
 import org.starcoin.sirius.wallet.core.ClientEventType
 import org.starcoin.sirius.wallet.core.Hub
 import org.starcoin.sirius.wallet.core.ResourceManager
 import java.math.BigInteger
 
-class BlockChain <T : ChainTransaction, A : ChainAccount> (chain: Chain<T, out Block<T>, A>, hub: Hub<T,A>, hubContract: HubContract<A>, account: A){
+class BlockChain <T : ChainTransaction, A : ChainAccount> (chain: Chain<T, out Block<T>, A>, hub: Hub<T,A>, hubContract: HubContract<A>, account: ClientAccount<A>){
 
     private val chain = chain
     private val hub = hub
@@ -107,7 +107,7 @@ class BlockChain <T : ChainTransaction, A : ChainAccount> (chain: Chain<T, out B
                 for(transaction in transactions){
                     handleTransaction(transaction)
                 }
-                ResourceManager.instance(account.address.toBytes().toHEXString()).dataStore.put(
+                ResourceManager.instance(account.name).dataStore.put(
                     syncedHeight,
                     block.height.toBigInteger().toByteArray()
                 )
@@ -116,7 +116,7 @@ class BlockChain <T : ChainTransaction, A : ChainAccount> (chain: Chain<T, out B
     }
 
     fun getLocalHeight():BigInteger{
-        val heightBytes = ResourceManager.instance(account.address.toBytes().toHEXString()).dataStore.get(syncedHeight)
+        val heightBytes = ResourceManager.instance(account.name).dataStore.get(syncedHeight)
         return heightBytes?.toBigInteger()?:BigInteger.ZERO
     }
 

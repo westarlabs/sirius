@@ -3,60 +3,77 @@
 ## Setup ethereum
 
 We run a local ethereum development node for test.
-please ensure docker in your computer , execute such code in sirius dir.
+please ensure docker in your computer ,execute such code in sirius dir.
 
 #### run ethereum node
 ```
-cd sirius-chainconnector/scripts
-sh docker.sh run --dev.period 10
+./scripts/docker.sh run --dev.period 10
 ```
 
 #### create eth account
 
-Find ethereum node docker id by
-
 ```
-docker ps 
-```
-
-Find container id of image with name fikgol/starcoin-goethereum,then create account by 
-
-```
-docker exec -it {container_id} geth account new --keystore /tmp/geth_data/keystore
+>./scripts/docker.sh geth account new
 
 ```
 
-You need execute this command twice to create two new account.
+You need execute this command three times at least to create three new account.
+Then connect to eth in docker by this command:
+```
+>./scripts/docker.sh geth attach
+```
+Then transfer some eth to these account by this command:
+```
+eth.sendTransaction({from:eth.coinbase, to:eth.accounts[1], value: web3.toWei(5000, "ether")}) 
+```
+Note: this only transfer to the first account you created.You need execute this command several times to complete transfer.
 
 ## Run hub node
-
+1. create home dir ~/.sirius/hub and create hub.conf,copy this configuration to hub.conf
+```
+accountIDOrAddress=
+blocksPerEon=32
+ownerKeystorePassword=
+connector=chain\:ethereum\:ws\://127.0.0.1\:8546
+rpcBind=0.0.0.0\:7985
+ownerKeystore=/tmp/geth_data/keystore/
+network=DEV
+```
+Use one of the accounts address which you created in previous step to accountIDOrAddress.Then execute:
 ```
 ./gradlew sirius-hub:run
 ```
 
-then hub will create config dir in ~/.sirius/hub and auto deploy smart-contract, you can find contract addr in hub.conf file.
+Then hub will create config dir in ~/.sirius/hub and auto deploy smart-contract, you can find contract addr in hub.conf file.
 
-## run wallet
+## Run wallet
 
 1. Compile wallet
 
 ```
->gradle fatjar
+>./gradlew fatjar
 ```
 
 2. get contract addr in ~/.sirius/hub/hub.conf
     
 
-3. copy sirius-wallet/src/main/resources/conf.properties to dir ~/.starcoin/liq/alice. Change contract_addr to the dir you get in hub.conf.
+3. copy sirius-wallet/src/main/resources/conf.properties to dir ~/.sirius/alice. Change contract_addr to the dir you get in hub.conf.
     
 
-4. change keystore to the eth account keystore ,you could find them in /tmp/geth_data/keystore. at the same time ,change password to the password which you input when create new eth account.
-  
-  
-5. Run wallet for "alice"
+4. change keystore to the eth account keystore ,you could find them in /tmp/geth_data/keystore. at the same time ,change password to the password which you input when create new eth account.Configuration should like:
 
 ```
->java -jar build/libs/sirius-wallet-all.jar alice
+hub_addr=localhost:7985
+chain_addr=ws://127.0.0.1:8546
+contract_addr=0x2bb5bde59f025535640b3bfd8032626e6d2e7855 
+key_store=/tmp/geth_data/keystore/UTC--2019-03-12T07-35-32.014489400Z--8cea30258d425e0fea34ace11afc7e34142f2411
+password=abcd
+```
+
+5. Run wallet for "alice" by :
+
+```
+>java -jar sirius-wallet/build/libs/sirius-wallet-all.jar alice
 
 >alice
 ```
@@ -112,4 +129,3 @@ finish change eon
 start change eon
 finish change eon
 ```
-
