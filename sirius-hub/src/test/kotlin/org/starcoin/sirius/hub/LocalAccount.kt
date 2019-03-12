@@ -5,7 +5,6 @@ import kotlinx.coroutines.*
 import kotlinx.coroutines.channels.ReceiveChannel
 import kotlinx.coroutines.channels.actor
 import kotlinx.coroutines.channels.consumeEach
-import org.starcoin.proto.HubServiceGrpc
 import org.starcoin.sirius.channel.EventBus
 import org.starcoin.sirius.core.*
 import org.starcoin.sirius.crypto.CryptoKey
@@ -34,16 +33,8 @@ class LocalAccount<T : ChainTransaction, A : ChainAccount>(
     val chain: Chain<T, out Block<T>, A>,
     val contract: HubContract<A>,
     val owner: PublicKey,
-    val hubService: HubService
+    val hubService: HubServiceStub
 ) {
-
-    constructor(chainAccount: A, chain: Chain<T, out Block<T>, A>, contract: HubContract<A>, owner: A) : this(
-        chainAccount,
-        chain,
-        contract,
-        owner.key.keyPair.public,
-        HubServiceImpl(owner, chain, contract)
-    )
 
     constructor(
         chainAccount: A,
@@ -52,11 +43,11 @@ class LocalAccount<T : ChainTransaction, A : ChainAccount>(
         owner: PublicKey,
         configuration: Config
     ) : this(
-        chainAccount, chain, contract, owner, HubServiceStub(
-            HubServiceGrpc.newStub(
-                InProcessChannelBuilder.forName(configuration.rpcBind.toString()).build()
-            )
-        )
+        chainAccount,
+        chain,
+        contract,
+        owner,
+        HubServiceStub(InProcessChannelBuilder.forName(configuration.rpcBind.toString()).build())
     )
 
     val key: CryptoKey = chainAccount.key
@@ -68,7 +59,9 @@ class LocalAccount<T : ChainTransaction, A : ChainAccount>(
     var hubAccount: HubAccount?
         get() = if (this.state == null) null else this.state!!.hubAccount
         set(hubAccount) {
-            this.state!!.hubAccount = hubAccount
+            if (hubAccount != null) {
+                this.state!!.hubAccount = hubAccount
+            }
         }
 
     var update: Update
@@ -129,14 +122,14 @@ class LocalAccount<T : ChainTransaction, A : ChainAccount>(
                     state!!.hubRoot = hubRoot
                     state!!.proof = hubService.getProof(address)
                     state!!.hubAccount = hubService.getHubAccount(address)
-                    if (!AMTree.verifyMembershipProof(
+                    accountStatus = if (!AMTree.verifyMembershipProof(
                             state?.hubRoot?.root,
                             state?.proof
                         )
                     ) {
-                        accountStatus = AccountStatus.Inconsistent
+                        AccountStatus.Inconsistent
                     } else {
-                        accountStatus = AccountStatus.Inconsistent
+                        AccountStatus.Synced
                     }
                 }
             }
@@ -195,6 +188,7 @@ class LocalAccount<T : ChainTransaction, A : ChainAccount>(
 
     fun destroy() {
         this.hubEventJob?.cancel()
+        this.hubService.stop()
     }
 
     companion object : WithLogging() {

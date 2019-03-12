@@ -2,6 +2,7 @@ package org.starcoin.sirius.hub
 
 import com.google.protobuf.Empty
 import io.grpc.Deadline
+import io.grpc.ManagedChannel
 import io.grpc.Status
 import io.grpc.StatusRuntimeException
 import io.grpc.stub.StreamObserver
@@ -48,10 +49,11 @@ class StreamObserverChannel<V>(val channel: Channel<V> = Channel()) : StreamObse
     }
 }
 
-class HubServiceStub(private val originStub: HubServiceGrpc.HubServiceStub, private val timeoutMillis: Long = 2000) :
+class HubServiceStub(private val channel: ManagedChannel, private val timeoutMillis: Long = 4000) :
     HubService {
 
-    val stub: HubServiceGrpc.HubServiceStub
+    private val originStub: HubServiceGrpc.HubServiceStub = HubServiceGrpc.newStub(channel)
+    private val stub: HubServiceGrpc.HubServiceStub
         get() = originStub.withDeadline(Deadline.after(timeoutMillis, TimeUnit.MILLISECONDS))
 
     override var hubMaliciousFlag: EnumSet<HubService.HubMaliciousFlag>
@@ -76,6 +78,7 @@ class HubServiceStub(private val originStub: HubServiceGrpc.HubServiceStub, priv
     }
 
     override fun stop() {
+        channel.shutdownNow()
     }
 
     private suspend inline fun <I, O> call(input: I, method: (I, StreamObserver<O>) -> Unit): O {

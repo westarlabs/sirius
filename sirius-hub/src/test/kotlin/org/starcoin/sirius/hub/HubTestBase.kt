@@ -9,7 +9,6 @@ import org.junit.After
 import org.junit.Assert
 import org.junit.Before
 import org.junit.Test
-import org.starcoin.proto.HubServiceGrpc
 import org.starcoin.sirius.channel.receiveTimeout
 import org.starcoin.sirius.core.*
 import org.starcoin.sirius.eth.core.EtherUnit
@@ -36,7 +35,7 @@ abstract class HubTestBase<T : ChainTransaction, A : ChainAccount, C : Chain<T, 
 
     protected var chain: C by Delegates.notNull()
 
-    private var hubService: HubService by Delegates.notNull()
+    private var hubService: HubServiceStub by Delegates.notNull()
     private var contract: HubContract<A> by Delegates.notNull()
 
     private var hubRootChannel: Channel<HubRoot> by Delegates.notNull()
@@ -92,11 +91,7 @@ abstract class HubTestBase<T : ChainTransaction, A : ChainAccount, C : Chain<T, 
 
         this.eon.set(contractHubInfo.latestEon)
 
-        hubService = HubServiceStub(
-            HubServiceGrpc.newStub(
-                InProcessChannelBuilder.forName(configuration.rpcBind.toString()).build()
-            )
-        )
+        hubService = HubServiceStub(InProcessChannelBuilder.forName(configuration.rpcBind.toString()).build())
 
         this.waitServerStart()
         this.watchHubJob = this.watchEon()
@@ -594,6 +589,7 @@ abstract class HubTestBase<T : ChainTransaction, A : ChainAccount, C : Chain<T, 
         runBlocking {
             hubService.resetHubMaliciousFlag()
         }
+        this.hubService.stop()
         this.hubServer.stop()
         this.watchBlockJob.cancel()
         this.chain.stop()
