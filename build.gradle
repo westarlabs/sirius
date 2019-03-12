@@ -24,7 +24,7 @@ buildscript {
 
 plugins {
     id 'org.jetbrains.kotlin.jvm' version '1.3.20' apply false
-    id 'com.google.protobuf' version '0.8.5' apply false
+    id 'com.google.protobuf' version '0.8.8' apply false
 }
 
 version = '1.0-SNAPSHOT'
@@ -55,11 +55,6 @@ subprojects {
     apply plugin: 'project-report'
 
     sourceCompatibility = 1.8
-
-//    sourceSets {
-//        main.resources.includes += ['*.conf',"*.xml","*.properties"]
-//        test.resources.includes += ['*.conf',"*.xml","*.properties"]
-//    }
 
     repositories {
         jcenter()
@@ -107,7 +102,7 @@ subprojects {
 
     test {
         reports.html.enabled = false
-        maxHeapSize = "2048m"
+        maxHeapSize = "4096m"
         maxParallelForks = Runtime.runtime.availableProcessors().intdiv(2) ?: 1
     }
 
