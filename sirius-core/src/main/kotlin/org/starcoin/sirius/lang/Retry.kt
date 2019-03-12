@@ -18,6 +18,16 @@ suspend fun <T> retry(
     } while (true)
 }
 
+suspend fun retryWithTimeout(
+    timeoutMillis: Long = 200000,
+    period: Long = 1000,
+    condition: () -> Boolean
+) {
+    withTimeout(timeoutMillis) {
+        retry(period, { b: Boolean? -> b != null && b }, condition)
+    }
+}
+
 suspend fun <T> retryWithTimeout(
     timeoutMillis: Long = 200000,
     period: Long = 1000,
