@@ -20,7 +20,7 @@ please ensure docker in your computer ,execute such code in sirius dir.
 You need execute this command three times at least to create three new account.
 Then connect to eth in docker by this command:
 ```
-geth attach http://localhost:8545 
+>./scripts/docker.sh geth attach
 ```
 Then transfer some eth to these account by this command:
 ```
@@ -51,7 +51,7 @@ Then hub will create config dir in ~/.sirius/hub and auto deploy smart-contract,
 1. Compile wallet
 
 ```
->gradle fatjar
+>./gradlew fatjar
 ```
 
 2. get contract addr in ~/.sirius/hub/hub.conf
@@ -73,7 +73,7 @@ password=abcd
 5. Run wallet for "alice" by :
 
 ```
->java -jar build/libs/sirius-wallet-all.jar alice
+>java -jar sirius-wallet/build/libs/sirius-wallet-all.jar alice
 
 >alice
 ```
