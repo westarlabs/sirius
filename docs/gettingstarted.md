@@ -1,131 +1,105 @@
 # Getting started
 
-## Setup ethereum
+## Required
++ Java version >= "1.8.0"
++ Gradle version >= "4.10.x"
++ Docker version >= 18 for testing enviroment of ethereum
 
-We run a local ethereum development node for test.
-please ensure docker in your computer ,execute such code in sirius dir.
-
-#### run ethereum node
+## Run ethereum node
 ```
-./scripts/docker.sh run --dev.period 10
-```
-
-#### create eth account
-
-```
->./scripts/docker.sh geth account new
-
+>./scripts/docker.sh run --dev.period 10
 ```
 
-You need execute this command three times at least to create three new account.
-Then connect to eth in docker by this command:
-```
->./scripts/docker.sh geth attach
-```
-Then transfer some eth to these account by this command:
-```
-eth.sendTransaction({from:eth.coinbase, to:eth.accounts[1], value: web3.toWei(5000, "ether")}) 
-```
-Note: this only transfer to the first account you created.You need execute this command several times to complete transfer.
+## Prepare ethereum accounts
 
-## Run hub node
-1. create home dir ~/.sirius/hub and create hub.conf,copy this configuration to hub.conf
+Create three new accounts without password for testing. 
+The first one for hub, the second one for alice, the last one for bob.
 ```
-accountIDOrAddress=
-blocksPerEon=32
-ownerKeystorePassword=
-connector=chain\:ethereum\:ws\://127.0.0.1\:8546
-rpcBind=0.0.0.0\:7985
-ownerKeystore=/tmp/geth_data/keystore/
-network=DEV
+>touch /tmp/geth_data/pass; 
+>for i in {1..3};do ./scripts/docker.sh geth account new --password /tmp/geth_data/pass;done
 ```
-Use one of the accounts address which you created in previous step to accountIDOrAddress.Then execute:
+Then transfer some testing eth from coinbase to these new accounts
 ```
-./gradlew sirius-hub:run
+>./scripts/docker.sh geth --exec='eth.sendTransaction({from:eth.coinbase,to:eth.accounts[1],value:web3.toWei(5000,"ether")})' attach
+>./scripts/docker.sh geth --exec='eth.sendTransaction({from:eth.coinbase,to:eth.accounts[2],value:web3.toWei(5000,"ether")})' attach
+>./scripts/docker.sh geth --exec='eth.sendTransaction({from:eth.coinbase,to:eth.accounts[3],value:web3.toWei(5000,"ether")})' attach
 ```
 
-Then hub will create config dir in ~/.sirius/hub and auto deploy smart-contract, you can find contract addr in hub.conf file.
+## Run hub service
+1. Prepare the hub configure
+    ```
+    mkdir -p ~/.sirius/hub;touch hub.conf
+    ```
+2. Edit ~/.sirius/hub/hub.conf
+
+    **NOTE: Replace those values being commented**
+
+    ```
+    accountIDOrAddress= // THE_HUB_ACCOUNT_CREATED_BEFORE
+    blocksPerEon=32
+    ownerKeystorePassword=
+    connector=chain\:ethereum\:ws\://127.0.0.1\:8546
+    rpcBind=0.0.0.0\:7985
+    ownerKeystore=/tmp/geth_data/keystore/
+    network=DEV
+    ```
+3. Start hub service
+    ```
+    ./gradlew sirius-hub:run
+    ```
 
 ## Run wallet
 
 1. Compile wallet
+    ```
+    >./gradlew fatjar
+    ```
 
-```
->./gradlew fatjar
-```
+2. Create configure for Alice
+    ```
+    >mkdir -p ~/.sirius/alice; cp sirius-wallet/src/main/resources/conf.properties ~/.sirius/alice
+    ```
+3. Replace the value of "contract_addr" in ~/.sirius/alice/conf.properties, which can be found in  ~/.sirius/hub/hub.conf
+4. Change keystore file to alice, which under the directory /tmp/geth_data/keystore
+5. Start the REPL wallet for "alice"
+    ```
+    >java -jar sirius-wallet/build/libs/sirius-wallet-all.jar alice
+    >alice
+    ```
+6. Register users
+    ```
+	alice>wallet reg
+    ```
+	Register bob repeatedly by step 2 to 5
+	
+7. Deposit to hub
+    Deposit 1000 coin
+	```
+	>wallet deposit value=1000
+	```
+	The response display
+	```
+	alice>Mar 13, 2019 12:04:22 PM org.starcoin.sirius.wallet.core.blockchain.BlockChain handleTransaction
+	INFO: Deposit:{"address":"0x5b65ad1e0ef2911bee87a27f8d7badf89c0683ea","amount":"0x03e8"}
+	```
+	After several blocks, check local balance
+	```	
+	hub balance is 1000
+	withdrawal coin is 0
+	chain balance is 4999999999999987386487
+	```
+	
+8. transfer money in hub 
+    transfer 100 coin from Alice to Bob:
+    ```
+	alice>wallet new_transfer addr=${ADDRESS_BOB} value=100
+	```
+	**NOTE: Get the binary addr from `wallet account` command**
 
-2. get contract addr in ~/.sirius/hub/hub.conf
-    
+	In the REPL of bob will display:
+	**NOTE: Do not need to run**
+	```
+	bob>INFO: recieve new transfer from 0xf2606e81b3ad0c28c3dddb504a9533e150a3ff3csucc: true
+	```
 
-3. copy sirius-wallet/src/main/resources/conf.properties to dir ~/.sirius/alice. Change contract_addr to the dir you get in hub.conf.
-    
-
-4. change keystore to the eth account keystore ,you could find them in /tmp/geth_data/keystore. at the same time ,change password to the password which you input when create new eth account.Configuration should like:
-
-```
-hub_addr=localhost:7985
-chain_addr=ws://127.0.0.1:8546
-contract_addr=0x2bb5bde59f025535640b3bfd8032626e6d2e7855 
-key_store=/tmp/geth_data/keystore/UTC--2019-03-12T07-35-32.014489400Z--8cea30258d425e0fea34ace11afc7e34142f2411
-password=abcd
-```
-
-5. Run wallet for "alice" by :
-
-```
->java -jar sirius-wallet/build/libs/sirius-wallet-all.jar alice
-
->alice
-```
-
-6. register user
-
-```
-alice> wallet reg
-```
-
-then you get response from hub which begin with 
-
-```
-Update.....
-```
-
-7. transfer money from coinbase to accounts you create. Repeat step 3-6, while keep keystore to use the first keystore and password need be blank. Transfer on chain 
-```
-wallet chain_transfer addr=Oxf10e422253061c6a2e9fec1219558c862c6b1b71 value=20000000000
-```
-you need change addr and value.And transfer money to both of accounts which you created.
-
-8. deposit to hub
-Deposit 1000 coin:
-```
->wallet deposit value=1000 
-succ: true
-```
-After several blocks ,Check local balance:
-```
-bob>wallet lb
-hub balance is 1000
-withdrawal coin is 0
-chain balance is 0
-```
-
-9. transfer money in hub 
-transfer 100 coin from Bob to Alice:
-```
-bob>wallet new_transfer addr=36709418f1cbec9774e60f51d8b6c368160755eb value=100
-transaction hash is :8230aaa7a2f267f791aa335bd3a8428a transaction will be used in sec 7
-```
-Note: get the binary addr from `wallet account` command
-
-In the REPL of alice will display:	   
-```
-// Note: do not need to run
-	   
-alice>recieve new transfer from e1bed6be7a42b46e8a0ff3998612af5b4f0cbca1succ: true
-get hub sign
-start change eon
-finish change eon
-start change eon
-finish change eon
-```
+More operation please see [sirius-wallet-doc](../sirius-wallet/README.md)

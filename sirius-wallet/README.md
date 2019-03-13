@@ -5,7 +5,7 @@ Starcoin offical wallet
 + Java version >= "1.8.0"
 + Gradle >= "4.10.x"
 + Start sirius-hub
-  See: docs in sirius-hub/README.md
+
 	
 ## Setting up wallet
 1. Compile wallet
