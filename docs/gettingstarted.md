@@ -28,7 +28,7 @@ Then transfer some testing eth from coinbase to these new accounts
 ## Run hub service
 1. Prepare the hub configure
     ```
-    mkdir -p ~/.sirius/hub;touch hub.conf
+    mkdir -p ~/.sirius/hub;touch ~/.sirius/hub/hub.conf
     ```
 2. Edit ~/.sirius/hub/hub.conf
 
