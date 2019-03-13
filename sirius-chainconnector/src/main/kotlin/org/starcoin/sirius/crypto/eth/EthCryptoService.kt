@@ -10,9 +10,7 @@ import org.starcoin.sirius.core.Address
 import org.starcoin.sirius.core.Hash
 import org.starcoin.sirius.core.Signature
 import org.starcoin.sirius.core.SiriusObject
-import org.starcoin.sirius.crypto.CryptoKey
 import org.starcoin.sirius.crypto.CryptoService
-import org.starcoin.sirius.serialization.rlp.*
 import org.starcoin.sirius.util.ByteUtil
 import java.math.BigInteger
 import java.security.*
@@ -38,16 +36,16 @@ object EthCryptoService : CryptoService {
     }
 
 
-    override val dummyCryptoKey: CryptoKey
+    override val dummyCryptoKey: EthCryptoKey
         get() {
             return EthCryptoKey(ECKey.DUMMY)
         }
 
-    override fun loadCryptoKey(bytes: ByteArray): CryptoKey {
+    override fun loadCryptoKey(bytes: ByteArray): EthCryptoKey {
         return EthCryptoKey(bytes)
     }
 
-    override fun generateCryptoKey(): CryptoKey {
+    override fun generateCryptoKey(): EthCryptoKey {
         return EthCryptoKey()
     }
 
@@ -75,7 +73,7 @@ object EthCryptoService : CryptoService {
         return ByteUtil.bigIntegerToBytes(pk.d, 32)
     }
 
-    override fun loadCryptoKey(privateKey: PrivateKey): CryptoKey {
+    override fun loadCryptoKey(privateKey: PrivateKey): EthCryptoKey {
         return EthCryptoKey(privateKey)
     }
 
@@ -125,17 +123,16 @@ object EthCryptoService : CryptoService {
 }
 
 fun Signature.toECDSASignature(): ECKey.ECDSASignature {
-    val list = this.toBytes().decodeRLP() as RLPList
-    val v = (list[0] as RLPElement).toByteFromRLP()
-    val r = (list[1] as RLPElement).toBigIntegerFromRLP()
-    val s = (list[2] as RLPElement).toBigIntegerFromRLP()
-    return ECKey.ECDSASignature.fromComponents(r.toByteArray(), s.toByteArray(), v)
+    val bytes = this.toBytes()
+    val r = bytes.sliceArray(0..31)
+    val s = bytes.sliceArray(32..63)
+    var v = bytes[64].toInt()
+    if (v < 27) {
+        v += 27
+    }
+    return ECKey.ECDSASignature.fromComponents(r, s, v.toByte())
 }
 
 fun ECKey.ECDSASignature.toSignature(): Signature {
-    val list = RLPList()
-    list.add(this.v.toRLP())
-    list.add(this.r.toRLP())
-    list.add(this.s.toRLP())
-    return Signature.wrap(list.encode())
+    return Signature.wrap(this.toByteArray())
 }

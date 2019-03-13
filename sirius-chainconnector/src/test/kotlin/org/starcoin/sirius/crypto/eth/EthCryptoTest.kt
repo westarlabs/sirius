@@ -67,6 +67,14 @@ class EthCryptoTest : CryptoTestBase() {
     }
 
     @Test
+    fun testSignatureSize() {
+        for (i in 0..100) {
+            val sign = EthCryptoService.dummyCryptoKey.sign(Hash.random())
+            Assert.assertEquals(65, sign.size)
+        }
+    }
+
+    @Test
     fun testGetAddressFromSignature() {
         val key = EthCryptoKey()
         val bytes = RandomUtils.nextBytes(32)
