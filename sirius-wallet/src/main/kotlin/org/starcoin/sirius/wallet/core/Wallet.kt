@@ -32,6 +32,14 @@ class Wallet<T : ChainTransaction, A : ChainAccount> {
 
         blockChain = BlockChain(chain,hub,contract,account)
 
+
+        //val eonNumber=(currentChainHeight-localHeight.toLong())/hub.hubInfo.blocksPerEon
+        if(hub.hasRegister()){
+            startWatch(true)
+        }
+    }
+
+    private fun startWatch(needSync:Boolean){
         val currentChainHeight=chain.getBlockNumber()
         val localHeight = blockChain.getLocalHeight()
 
@@ -40,19 +48,16 @@ class Wallet<T : ChainTransaction, A : ChainAccount> {
         if(localHeight>hub.hubInfo.startBlockNumber)
             startBlockHeight=localHeight
 
-        //val eonNumber=(currentChainHeight-localHeight.toLong())/hub.hubInfo.blocksPerEon
-        if(hub.hasRegister()){
+        if(needSync){
             sync()
-            startBlockHeight=BigInteger.valueOf(currentChainHeight)
-            //hub.hubInfo.startBlockNumber+BigInteger.valueOf(hub.hubInfo.latestEon*hub.hubInfo.blocksPerEon.toLong()+1)
         }
+        startBlockHeight=BigInteger.valueOf(currentChainHeight)
+        //hub.hubInfo.startBlockNumber+BigInteger.valueOf(hub.hubInfo.latestEon*hub.hubInfo.blocksPerEon.toLong()+1)
         blockChain.startWatch=true
         blockChain.watachBlock(startBlockHeight)
 
-        if(hub.hasRegister()){
-            hub.recieveTransacion()
-            hub.recieveHubSign()
-        }
+        hub.recieveTransacion()
+        hub.recieveHubSign()
     }
 
     fun deposit(value:BigInteger) = hub.deposit(value)
@@ -61,7 +66,13 @@ class Wallet<T : ChainTransaction, A : ChainAccount> {
 
     fun withdrawal(value:BigInteger)= hub.withDrawal(value)
 
-    fun register():Update?= hub.register()
+    fun register():Update?{
+        val update=hub.register()
+        if(update!=null){
+            startWatch(false)
+        }
+        return update
+    }
 
     fun openTransferChallenge(hash:Hash)= this.hub.openTransferChallenge(hash)
 

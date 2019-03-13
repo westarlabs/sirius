@@ -108,16 +108,20 @@ class Hub <T : ChainTransaction, A : ChainAccount> {
                 return
             }
             LOG.info("current eon is "+eon.id+" hubroot eon is " +hubRoot.eon)
+            var verifyResult=true
             if (eon.id === hubRoot.eon) {
                 LOG.info("start change eon")
-                nextEon(hubRoot)
+                verifyResult=nextEon(hubRoot)
                 LOG.info("finish change eon")
             } else {
                 GlobalScope.launch { eonChannel?.send(ClientEventType.EON_CHANGE_EXCEPTION) }
                 LOG.warning("hub eon is not right")
+                verifyResult= false
             }
+            serverEventHandler?.onHubRootCommit(hubRoot,verifyResult)
         } catch (e: Exception) {
-            e.printStackTrace()
+            LOG.warning(e.message)
+            serverEventHandler?.onHubRootCommit(hubRoot,false)
         }
     }
 
@@ -210,7 +214,7 @@ class Hub <T : ChainTransaction, A : ChainAccount> {
         serverEventHandler?.onNewUpdate(update)
     }
 
-    private fun nextEon(hubRoot: HubRoot) {
+    private fun nextEon(hubRoot: HubRoot) :Boolean{
         this.currentEon = this.getChainEon()
 
         this.checkChallengeStatus()
@@ -251,7 +255,7 @@ class Hub <T : ChainTransaction, A : ChainAccount> {
         ResourceManager.instance(account.name).dataStore.put(this.currentEonKey,this.currentEon.id.toByteArray())
 
         if (!needChallenge) {
-            return
+            return !needChallenge
         }
         var balanceUpdateProof=this.hubStatus.newChallenge(lastUpdate)
         this.contract.openBalanceUpdateChallenge(account.account,balanceUpdateProof)
@@ -259,7 +263,7 @@ class Hub <T : ChainTransaction, A : ChainAccount> {
         GlobalScope.launch {
             eonChannel?.send(ClientEventType.OPEN_BALANCE_UPDATE_CHALLENGE)
         }
-
+        return !needChallenge
     }
 
     internal fun getAvailableCoin():BigInteger {
@@ -483,9 +487,10 @@ class Hub <T : ChainTransaction, A : ChainAccount> {
     private fun checkChallengeStatus() {
     }
 
-    internal fun confirmDeposit(transaction: ChainTransaction){
+    internal fun confirmDeposit(transaction: ChainTransaction,deposit: Deposit){
         if(transaction.from?.equals(account.address)?:false)
             this.hubStatus.confirmDeposit(transaction)
+        serverEventHandler?.onDeposit(deposit)
     }
 
     @Synchronized
