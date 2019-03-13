@@ -757,40 +757,38 @@ library ModelLib {
     }
 
     struct Signature {
-        byte v;
         bytes32 r;
         bytes32 s;
+        byte v;
+        bool add;
     }
 
     function unmarshalSignature(RLPLib.RLPItem memory rlp) internal pure returns (Signature memory sign) {
-        rlp = RLPDecoder.toRLPItem(RLPLib.toData(rlp), true);
-        RLPLib.Iterator memory it = RLPDecoder.iterator(rlp);
-        uint len = RLPDecoder.items(rlp);
-        require(len == 3, "Signature unmarshal err");
-        uint idx;
-        while(RLPDecoder.hasNext(it)) {
-            RLPLib.RLPItem memory r = RLPDecoder.next(it);
-            if(idx == 0) {
-                bytes memory bs = RLPLib.toData(r);
-                sign.v = bs[0];
-            } else if(idx == 1) {
-                sign.r = ByteUtilLib.bytesToBytes32(RLPLib.toData(r));
-            } else if(idx == 2) {
-                sign.s = ByteUtilLib.bytesToBytes32(RLPLib.toData(r));
-             } else {}
-
-            idx++;
+        bytes memory bs = RLPLib.toData(rlp);
+        require(bs.length == 65, "err sign");
+        sign.r = ByteUtilLib.bytesToBytes32(bs);
+        sign.s = ByteUtilLib.bytesToBytes32(bs, 32);
+        uint8 tmp = uint8(bs[64]);
+        if (tmp < 27) {
+            tmp += 27;
+            sign.add = true;
         }
+        sign.v = byte(tmp);
     }
 
     function marshalSignature(Signature memory sign) internal pure returns (bytes memory) {
+        bytes memory r = ByteUtilLib.bytes32ToBytes(sign.r);
+        bytes memory s = ByteUtilLib.bytes32ToBytes(sign.s);
         bytes memory tmp = new bytes(1);
-        tmp[0] = sign.v;
-        bytes memory v = RLPEncoder.encodeBytes(tmp);
-        bytes memory r = RLPEncoder.encodeBytes(ByteUtilLib.bytes32ToBytes(sign.r));
-        bytes memory s = RLPEncoder.encodeBytes(ByteUtilLib.bytes32ToBytes(sign.s));
+        if(sign.add) {
+            uint8 tmp2 = uint8(sign.v) - 27;
+            tmp[0] = byte(tmp2);
+        } else {
+            tmp[0] = sign.v;
+        }
+        bytes memory v = tmp;
 
-        return RLPEncoder.encodeBytes(RLPEncoder.encodeList(ByteUtilLib.append(ByteUtilLib.append(v, r), s)));
+        return RLPEncoder.encodeBytes(ByteUtilLib.append(ByteUtilLib.append(r, s), v));
     }
 
     struct OffchainTransaction {

@@ -8,20 +8,37 @@ import "./lib/model.sol";
 
 contract test_all_interface {
     function hub_root_test(bytes calldata data) external returns (bytes memory);
+
     function initiate_withdrawal_test(bytes calldata data) external returns (bytes memory);
+
     function cancel_withdrawal_test(bytes calldata data) external returns (bytes memory);
+
+    function cancel_withdrawal_test2(bytes calldata data) external returns (bytes memory);
+
     function open_transfer_delivery_challenge_request_test(bytes calldata data) external returns (bytes memory);
+
     function close_transfer_delivery_challenge_test(bytes calldata data) external returns (bytes memory);
+
     function am_tree_path_node_test(bytes calldata data) external returns (bytes memory);
+
     function am_tree_path_test(bytes calldata data) external returns (bytes memory);
+
     function am_tree_proof_test(bytes calldata data) external returns (bytes memory);
+
     function close_balance_update_challenge_test(bytes calldata data) external returns (bytes memory);
+
     function balance_update_proof_test(bytes calldata data) external returns (bytes memory);
+
     function balance_update_proof_test2(bytes calldata data) external returns (bytes memory);
+
     function update_data_test(bytes calldata data) external returns (bytes memory);
+
     function update_test(bytes calldata data) external returns (bytes memory);
+
     function verify_proof_test(bytes calldata data1, bytes calldata data2) external returns (bool);
+
     function verify_merkle_test(bytes calldata data) external returns (bool);
+
     function verify_merkle_test2(bytes32 root, bytes32 left, bytes32 right) external returns (bool);
 }
 
@@ -42,8 +59,81 @@ contract test_all is test_all_interface {
 
     function cancel_withdrawal_test(bytes calldata data) external returns (bytes memory) {
         ModelLib.CancelWithdrawal memory cancel = ModelLib.unmarshalCancelWithdrawal(RLPDecoder.toRLPItem(data, true));
-
         return ModelLib.marshalCancelWithdrawal(cancel);
+    }
+
+    function cancel_withdrawal_test2(bytes calldata data) external returns (bytes memory) {
+        RLPLib.RLPItem memory rlp = RLPDecoder.toRLPItem(data, true);
+        ModelLib.CancelWithdrawal memory cancel;
+        RLPLib.Iterator memory it = RLPDecoder.iterator(rlp);
+        uint len = RLPDecoder.items(rlp);
+        require(len == 3, "CancelWithdrawal unmarshal err");
+        uint idx;
+        while (RLPDecoder.hasNext(it)) {
+            RLPLib.RLPItem memory r = RLPDecoder.next(it);
+            if (idx == 0) cancel.addr = RLPDecoder.toAddress(r);
+            else if (idx == 1) cancel.update = ModelLib.unmarshalUpdate(r);
+            else if (idx == 2) {
+                ModelLib.AMTreeProof memory proof;
+                RLPLib.Iterator memory it1 = RLPDecoder.iterator(r);
+                uint idx1;
+                uint len1 = RLPDecoder.items(r);
+                require(len1 == 2, "AMTreeProof unmarshal err");
+                while (RLPDecoder.hasNext(it1)) {
+                    RLPLib.RLPItem memory r1 = RLPDecoder.next(it1);
+                    if (idx1 == 0) proof.path = ModelLib.unmarshalAMTreePath(r1);
+                    else if (idx1 == 1) {
+                        ModelLib.AMTreeLeafNodeInfo memory node;
+                        RLPLib.Iterator memory it2 = RLPDecoder.iterator(r1);
+                        uint idx2;
+                        uint len2 = RLPDecoder.items(r1);
+                        require(len2 == 2, "AMTreeLeafNodeInfo unmarshal err");
+                        while (RLPDecoder.hasNext(it2)) {
+                            RLPLib.RLPItem memory r2 = RLPDecoder.next(it2);
+                            if (idx2 == 0) node.addressHash = ByteUtilLib.bytesToBytes32(RLPLib.toData(r2));
+                            else if (idx2 == 1) {
+                                ModelLib.Update memory update;
+                                RLPLib.Iterator memory it3 = RLPDecoder.iterator(r2);
+                                uint len3 = RLPDecoder.items(r2);
+                                require(len3 == 3, "Update unmarshal err");
+                                uint idx3;
+                                while (RLPDecoder.hasNext(it3)) {
+                                    RLPLib.RLPItem memory r3 = RLPDecoder.next(it3);
+                                    if (idx3 == 0) update.upData = ModelLib.unmarshalUpdateData(r3);
+                                    else if (idx3 == 1) {
+                                        update.sign = ModelLib.unmarshalSignature(r3);
+                                    }
+                                    else if (idx3 == 2) {
+                                        update.hubSign = ModelLib.unmarshalSignature(r3);
+                                    }
+                                    else {}
+
+                                    idx3++;
+                                }
+                                node.update = update;
+                            }
+                            //node.update = ModelLib.unmarshalUpdate(r2);
+                            else {}
+
+                            idx2++;
+                        }
+                        proof.leaf = node;
+                    }
+                    //proof.leaf = ModelLib.unmarshalAMTreeLeafNodeInfo(r1);
+                    else {}
+
+                    idx1++;
+                }
+
+                cancel.proof = proof;
+            }
+            //cancel.proof = ModelLib.unmarshalAMTreeProof(r);
+            else {}
+
+            idx++;
+        }
+
+        return data;
     }
 
     function open_transfer_delivery_challenge_request_test(bytes calldata data) external returns (bytes memory) {
@@ -88,11 +178,11 @@ contract test_all is test_all_interface {
 
         uint idx;
         ModelLib.BalanceUpdateProof memory bup;
-        while(RLPDecoder.hasNext(it)) {
+        while (RLPDecoder.hasNext(it)) {
             RLPLib.RLPItem memory r = RLPDecoder.next(it);
 
-            if(idx == 0) bup.hasUp = RLPDecoder.toBool(r);
-            else if(idx == 1) {
+            if (idx == 0) bup.hasUp = RLPDecoder.toBool(r);
+            else if (idx == 1) {
                 RLPLib.Iterator memory it1 = RLPDecoder.iterator(r);
                 ModelLib.Update memory update;
                 uint idx1;
@@ -102,21 +192,21 @@ contract test_all is test_all_interface {
                     if (idx1 == 0) {
                         update.upData = ModelLib.unmarshalUpdateData(r2);
                         Log.log("44", ModelLib.marshalUpdateData(update.upData));
-                    }else if (idx1 == 1) {
+                    } else if (idx1 == 1) {
                         RLPLib.RLPItem memory tmp = RLPDecoder.toRLPItem(RLPLib.toData(r2), true);
                         RLPLib.Iterator memory it3 = RLPDecoder.iterator(tmp);
                         ModelLib.Signature memory sign;
                         uint idx3;
-                        while(RLPDecoder.hasNext(it3)) {
+                        while (RLPDecoder.hasNext(it3)) {
                             RLPLib.RLPItem memory r3 = RLPDecoder.next(it3);
-                            if(idx3 == 0) {
+                            if (idx3 == 0) {
                                 bytes memory bs = RLPLib.toData(r3);
                                 sign.v = bs[0];
-                            } else if(idx3 == 1) {
+                            } else if (idx3 == 1) {
                                 sign.r = ByteUtilLib.bytesToBytes32(RLPLib.toData(r3));
-                            } else if(idx3 == 2) {
+                            } else if (idx3 == 2) {
                                 sign.s = ByteUtilLib.bytesToBytes32(RLPLib.toData(r3));
-                             } else {}
+                            } else {}
 
                             idx3++;
                         }
@@ -130,8 +220,8 @@ contract test_all is test_all_interface {
 
                 Log.log("22", ModelLib.marshalUpdate(update));
                 bup.update = update;
-            } else if(idx == 2) bup.hasPath = RLPDecoder.toBool(r);
-            else if(idx == 3) bup.path = ModelLib.unmarshalAMTreePath(r);
+            } else if (idx == 2) bup.hasPath = RLPDecoder.toBool(r);
+            else if (idx == 3) bup.path = ModelLib.unmarshalAMTreePath(r);
             else {}
 
             idx++;
@@ -187,10 +277,10 @@ contract test_all is test_all_interface {
     function unmarshalContractReturn(RLPLib.RLPItem memory rlp) private pure returns (ModelLib.ContractReturn memory cr) {
         RLPLib.Iterator memory it = RLPDecoder.iterator(rlp);
         uint idx;
-        while(RLPDecoder.hasNext(it)) {
+        while (RLPDecoder.hasNext(it)) {
             RLPLib.RLPItem memory r = RLPDecoder.next(it);
-            if(idx == 0) cr.hasVal = RLPDecoder.toBool(r);
-            else if(idx == 1) cr.payload = RLPLib.toData(r);
+            if (idx == 0) cr.hasVal = RLPDecoder.toBool(r);
+            else if (idx == 1) cr.payload = RLPLib.toData(r);
             else {}
 
             idx++;

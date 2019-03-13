@@ -10,6 +10,7 @@ import org.starcoin.sirius.util.MockUtils
 import org.starcoin.sirius.util.error
 import kotlin.reflect.KClass
 import kotlin.reflect.full.companionObjectInstance
+import org.starcoin.sirius.lang.hexToByteArray
 
 class SiriusModelTest : ContractTestBase("solidity/test_all", "test_all") {
 
@@ -52,6 +53,24 @@ class SiriusModelTest : ContractTestBase("solidity/test_all", "test_all") {
     @Test
     fun testCancelWithdrawal() {
         doTest(CancelWithdrawal::class, "cancel_withdrawal_test")
+    }
+
+    @Test
+    fun testCancelWithdrawal4Bytes() {
+        test4Bytes(
+            "cancel_withdrawal_test2",
+            CancelWithdrawal::class,
+            CancelWithdrawal.mock().toRLP().toHEXString()
+        )
+    }
+
+    fun <T : SiriusObject> test4Bytes(method: String, clazz: KClass<T>, str: String) {
+        val data = str.hexToByteArray()
+        val codec = SiriusObjectRLPCodec(clazz)
+        val cw = codec.decode(data)
+        println(cw.toString())
+        val callResult = contract.callConstFunction(method, data)[0] as ByteArray
+        Assert.assertArrayEquals("expect ${data.toHEXString()} but get ${callResult.toHEXString()}", data, callResult)
     }
 
     @Test
@@ -184,9 +203,11 @@ class SiriusModelTest : ContractTestBase("solidity/test_all", "test_all") {
         }
         val tree = MerkleTree(txs)
 
-        val callResult = contract.callFunction("verify_merkle_test2", tree.getRoot().hash().toBytes(),
+        val callResult = contract.callFunction(
+            "verify_merkle_test2", tree.getRoot().hash().toBytes(),
             txs[0].hash().toBytes(),
-            txs[1].hash().toBytes())
+            txs[1].hash().toBytes()
+        )
         callResult.receipt.logInfoList.forEach { logInfo ->
             LOG.info("event:$logInfo")
         }

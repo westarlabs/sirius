@@ -32,7 +32,8 @@ class Signature private constructor(private val bytes: ByteArray) {
         return this.bytes.toHEXString()
     }
 
-    fun toBytes() = this.bytes.copyOf()
+    //TODO need protected modify?
+    fun toBytes() = this.bytes
 
     fun toByteString(): ByteString = ByteString.copyFrom(this.bytes)
 
