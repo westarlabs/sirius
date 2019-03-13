@@ -2,6 +2,7 @@ package org.starcoin.sirius.hub
 
 import org.junit.Assert
 import org.junit.Test
+import org.starcoin.sirius.chain.ChainProvider
 import org.starcoin.sirius.core.Address
 
 class ConfigTest {
@@ -14,5 +15,12 @@ class ConfigTest {
         val config2 = Config.loadConfig(config.dataDir)
         Assert.assertEquals(config.contractAddress, config2.contractAddress)
         Assert.assertEquals(config.properties, config2.properties)
+    }
+
+    @Test
+    fun testConfigChainConnector() {
+        val config = Config.configurationForUNIT()
+        val chain = ChainProvider.createChain(config.connector)
+        Assert.assertNotNull(chain)
     }
 }

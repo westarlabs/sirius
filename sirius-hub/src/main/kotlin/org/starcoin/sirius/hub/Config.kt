@@ -2,6 +2,7 @@ package org.starcoin.sirius.hub
 
 
 import com.google.common.io.Files
+import org.starcoin.sirius.chain.ChainProvider
 import org.starcoin.sirius.core.Address
 import org.starcoin.sirius.core.InetAddressPort
 import org.starcoin.sirius.crypto.CryptoKey
@@ -9,6 +10,7 @@ import org.starcoin.sirius.crypto.CryptoService
 import org.starcoin.sirius.lang.delegate
 import org.starcoin.sirius.lang.hexToByteArray
 import org.starcoin.sirius.protocol.ContractConstructArgs
+import org.starcoin.sirius.protocol.ethereum.EthereumChainProvider
 import org.starcoin.sirius.protocol.ethereum.InMemoryChainProvider
 import org.starcoin.sirius.util.WithLogging
 import java.io.File
@@ -78,7 +80,7 @@ class Config private constructor(val properties: Properties, val dataDir: File, 
         private const val DEFAULT_RPC_PORT = 7985
         val DEFAULT_RPC_BIND = InetAddressPort("0.0.0.0", DEFAULT_RPC_PORT)
         const val DEFAULT_BLOCKS_PER_EON = ContractConstructArgs.TEST_BLOCKS_PER_EON
-        val DEFAULT_CONNECTOR = URI("${InMemoryChainProvider.scheme}:test")
+        val DEFAULT_CONNECTOR = URI("${ChainProvider.scheme}:${EthereumChainProvider.scheme}:ws://127.0.0.1:8546")
         val DEFAULT_DATA_DIR = "${System.getProperty("user.home")}/.sirius/hub/"
         const val DEFAULT_LOG_PATTERN = "sirius%g.log"
 
@@ -105,7 +107,8 @@ class Config private constructor(val properties: Properties, val dataDir: File, 
             val properties = Properties()
             properties[Config::network.name] = Network.UINT.name
             properties[Config::rpcBind.name] = InetAddressPort.random().toString()
-            properties[Config::connector.name] = DEFAULT_CONNECTOR.toASCIIString()
+            properties[Config::connector.name] =
+                URI("${ChainProvider.scheme}:${InMemoryChainProvider.scheme}:test").toASCIIString()
             val dataDir = Files.createTempDir()
             dataDir.deleteOnExit()
             return Config(properties, dataDir, File(dataDir, "hub.conf"))
