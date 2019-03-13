@@ -13,6 +13,38 @@ Inspiration of the name "Sirius" comes from the brightest star in the night sky.
 
 TODO 
 
+## Architecture
+
+```text
+                             
+                    +-------------------+
+                    |       Chain       |
+                    | +---------------+ |
+            +-------> |Sirius Contract| <-------+
+            |       | +---------------+ |       |
+            |       +-------------------+       |
+            |                                   |
+            |                                   |
+          Commit                                |
+            |                                Challenge
+            |                                   |
+            |                                   |
++-----------+-------------+                     |
+|      Sirius Hub         |            +--------+--------+
+| +---------------------+ |            |      Alice      |
+| | AugmentedMerkleTree | | Tx Witness |  +------------+ |
+| +---------------------+ +<-----------+  |   Wallet   | |
++-------------------------+            |  |AMTree Proof| |
+                    ^                  |  +------------+ |
+                    |                  +-----------------+
+                    |
+               +----+-----+
+               |   Bob    |
+               |          |
+               +----------+
+
+```
+
 ### Prerequisites
 
 1. Java(1.8)
