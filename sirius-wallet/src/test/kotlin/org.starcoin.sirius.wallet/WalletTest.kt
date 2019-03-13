@@ -28,7 +28,6 @@ import java.math.BigInteger
 import java.util.logging.Logger
 import kotlin.properties.Delegates
 
-@Ignore
 class WalletTest {
 
     private val logger = Logger.getLogger("test")
@@ -551,6 +550,7 @@ class WalletTest {
     }
 
     @Test
+    @Ignore
     fun testNoReg() {
         waitToNextEon()
 
@@ -563,6 +563,7 @@ class WalletTest {
     }
 
     @Test
+    @Ignore
     fun testRestore() {
         testDeposit()
 
@@ -586,6 +587,7 @@ class WalletTest {
     }
 
     @Test
+    @Ignore
     fun testNextEonRestore() {
         testDeposit()
 
@@ -654,6 +656,7 @@ class WalletTest {
     }
 
     @Test
+    @Ignore
     fun testWithdrawalRestore() {
         testDeposit()
 

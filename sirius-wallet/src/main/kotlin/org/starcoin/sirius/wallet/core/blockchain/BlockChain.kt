@@ -49,7 +49,7 @@ class BlockChain <T : ChainTransaction, A : ChainAccount> (chain: Chain<T, out B
                 if(tx.from?.equals(account.address)?:false){
                     val deposit = Deposit(tx.from!!, tx.amount)
                     LOG.info("Deposit:" + deposit.toJSON())
-                    hub.confirmDeposit(tx)
+                    hub.confirmDeposit(tx,deposit)
                     GlobalScope.launch { hub.eonChannel?.send(ClientEventType.DEPOSIT) }
                 }
             }
