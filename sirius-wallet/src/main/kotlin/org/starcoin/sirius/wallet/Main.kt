@@ -67,7 +67,7 @@ fun main(args: Array<String>) {
         while (reader.readLine().let { line = it;it != null }) {
             val list = ArgumentCompleter.WhitespaceArgumentDelimiter().delimit(line, line.length)
 
-            cmd.registerConverter(Address::class.java!!, Address.Companion::wrap)
+            cmd.registerConverter(Address::class.java, Address.Companion::wrap)
                 .parseWithHandlers(
                     CommandLine.RunLast(),
                     object : CommandLine.DefaultExceptionHandler<List<Any>>() {
@@ -92,7 +92,7 @@ fun main(args: Array<String>) {
 
 private fun loadConfig(name: String): Properties {
     val prop = Properties()
-    var inputStream: InputStream? = null
+    var inputStream: InputStream
     val configFile = File(
         System.getProperty("user.home"),
         ".sirius" + File.separator +name+ File.separator + "conf.properties"
@@ -113,8 +113,6 @@ private fun loadConfig(name: String): Properties {
 }
 
 private fun walletDir(name: String): File {
-    val prop = Properties()
-    var inputStream: InputStream? = null
     val path = File(
         System.getProperty("user.home"),
         ".sirius" + File.separator + name + File.separator
