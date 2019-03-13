@@ -108,8 +108,8 @@ class Hub <T : ChainTransaction, A : ChainAccount> {
                 return
             }
             LOG.info("current eon is "+eon.id+" hubroot eon is " +hubRoot.eon)
-            var verifyResult=true
-            if (eon.id === hubRoot.eon) {
+            var verifyResult :Boolean
+            if (eon.id == hubRoot.eon) {
                 LOG.info("start change eon")
                 verifyResult=nextEon(hubRoot)
                 LOG.info("finish change eon")
@@ -131,7 +131,7 @@ class Hub <T : ChainTransaction, A : ChainAccount> {
             eonChannel?.send(ClientEventType.CANCEL_WITHDRAWAL)
         }
 
-        LOG.info("cancel withdrawal")
+        LOG.info("cancel withdrawal $cancelWithdrawal")
     }
 
     internal fun onWithdrawal(withdrawalStatus: WithdrawalStatus) {
@@ -294,10 +294,6 @@ class Hub <T : ChainTransaction, A : ChainAccount> {
             }
             val index = this.hubStatus.getEonByIndex(-i)
 
-            if (this.hubStatus.eonStatuses[index] == null) {
-                this.hubStatus.eonStatuses[index] = EonStatus()
-            }
-
             val accountInfo = hubServiceBlockingStub.getHubAccount(account.address.toProto())
             this.hubStatus.eonStatuses[index].updateHistory.add(accountInfo.eonState.update.toSiriusObject())
             this.hubStatus.eonStatuses[index].transactionHistory.addAll(
@@ -389,6 +385,7 @@ class Hub <T : ChainTransaction, A : ChainAccount> {
     internal fun chainTransaction(addr: Address,value :BigInteger):T {
         val chainTransaction=chain.newTransaction(account.account,addr, value)
         val txDeferred = chain.submitTransaction(account.account, chainTransaction)
+        LOG.info("tx deferred is $txDeferred ")
         return chainTransaction
     }
 
@@ -429,7 +426,6 @@ class Hub <T : ChainTransaction, A : ChainAccount> {
             }
             throw e
         }
-        return null
     }
 
     internal fun openTransferChallenge(transactionHash:Hash){
@@ -445,6 +441,7 @@ class Hub <T : ChainTransaction, A : ChainAccount> {
     }
 
     internal fun onTransferDeliveryChallenge(transferDeliveryChallenge: TransferDeliveryChallenge){
+        LOG.info(transferDeliveryChallenge.toJSON())
         GlobalScope.launch { eonChannel?.send(ClientEventType.OPEN_TRANSFER_DELIVERY_CHALLENGE_PASS) }
     }
 

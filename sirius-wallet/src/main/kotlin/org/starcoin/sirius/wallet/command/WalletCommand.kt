@@ -69,12 +69,8 @@ class NewTransfer<T : ChainTransaction, A : ChainAccount> : Runnable {
 
     override fun run() {
         try {
-            val tx = walletCommand!!.wallet.hub.newTransfer(addr!!, value)
-            if (tx != null) {
-                System.out.println("transaction hash is :" + tx!!.hash().toMD5Hex())
-            } else {
-                println("transfer failed.")
-            }
+            val tx = walletCommand?.wallet?.hub?.newTransfer(addr!!, value)
+            System.out.println("transaction hash is :" + tx!!.hash().toMD5Hex())
         } catch (e: Exception) {
             System.out.println(e.getLocalizedMessage())
         }
@@ -111,8 +107,8 @@ class GetHubAccount<T : ChainTransaction, A : ChainAccount> : Runnable {
     override fun run() {
         val hubAccount = walletCommand!!.wallet.hub.accountInfo()
         if (hubAccount != null) {
-            System.out.println(hubAccount!!.toString())
-            System.out.println(hubAccount!!.address.toBytes().toHEXString())
+            System.out.println(hubAccount.toString())
+            System.out.println(hubAccount.address.toBytes().toHEXString())
         }
     }
 }
@@ -286,11 +282,7 @@ class ChainTransfer<T : ChainTransaction, A : ChainAccount> : Runnable {
     override fun run() {
         try {
             val tx = walletCommand!!.wallet.chainTransfer(addr!!, value)
-            if (tx != null) {
-                System.out.println("transaction hash is :" + tx.hash())
-            } else {
-                println("transfer failed.")
-            }
+            System.out.println("transaction hash is :" + tx.hash())
         } catch (e: Exception) {
             System.out.println(e.getLocalizedMessage())
         }
