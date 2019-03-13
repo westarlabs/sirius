@@ -47,7 +47,7 @@ class Deposit<T : ChainTransaction, A : ChainAccount>: Runnable {
 
     override fun run() {
         try {
-            val succResponse = walletCommand!!.wallet.hub.deposit(BigInteger.valueOf(value))
+            val succResponse = walletCommand!!.wallet.deposit(BigInteger.valueOf(value))
             println(succResponse)
         } catch (e: Throwable) {
             System.out.println(e.getLocalizedMessage())
@@ -69,7 +69,7 @@ class NewTransfer<T : ChainTransaction, A : ChainAccount> : Runnable {
 
     override fun run() {
         try {
-            val tx = walletCommand?.wallet?.hub?.newTransfer(addr!!, value)
+            val tx = walletCommand?.wallet?.hubTransfer(addr!!, value)
             System.out.println("transaction hash is :" + tx!!.hash().toMD5Hex())
         } catch (e: Exception) {
             System.out.println(e.getLocalizedMessage())
@@ -87,7 +87,7 @@ class Register<T : ChainTransaction, A : ChainAccount> : Runnable {
 
     override fun run() {
         try {
-            val updateResponse = walletCommand!!.wallet.hub.register()
+            val updateResponse = walletCommand!!.wallet.register()
             System.out.println(updateResponse)
         } catch (e: StatusRuntimeException) {
             if (e.status == Status.ALREADY_EXISTS) {
@@ -105,7 +105,7 @@ class GetHubAccount<T : ChainTransaction, A : ChainAccount> : Runnable {
     var walletCommand: WalletCommand<T,A>? = null
 
     override fun run() {
-        val hubAccount = walletCommand!!.wallet.hub.accountInfo()
+        val hubAccount = walletCommand!!.wallet.hubAccount()
         if (hubAccount != null) {
             System.out.println(hubAccount.toString())
             System.out.println(hubAccount.address.toBytes().toHEXString())
@@ -124,7 +124,7 @@ class OpenTransferDeliveryChallenge<T : ChainTransaction, A : ChainAccount> : Ru
 
     override fun run() {
         try {
-            val succResponse = walletCommand!!.wallet.hub.openTransferChallenge(Hash.wrap(transactionHash!!))
+            val succResponse = walletCommand!!.wallet.openTransferChallenge(Hash.wrap(transactionHash!!))
             println(succResponse)
         } catch (e: Exception) {
             System.out.println(e.message)
@@ -144,7 +144,7 @@ class WithDrawal<T : ChainTransaction, A : ChainAccount> : Runnable {
 
     override fun run() {
         try {
-            val txDeferred = walletCommand!!.wallet.hub.withDrawal(BigInteger.valueOf(value))
+            val txDeferred = walletCommand!!.wallet.withdrawal(BigInteger.valueOf(value))
             println(txDeferred)
         } catch (e: Exception) {
             System.out.println(e.message)
@@ -178,7 +178,7 @@ class SyncHub<T : ChainTransaction, A : ChainAccount> : Runnable {
     var walletCommand: WalletCommand<T,A>? = null
 
     override fun run() {
-        walletCommand!!.wallet.hub.sync()
+        walletCommand!!.wallet.sync()
         println("sync finish")
     }
 }
@@ -194,7 +194,7 @@ class CheatMode<T : ChainTransaction, A : ChainAccount> : Runnable {
 
     override fun run() {
         try {
-            val flags = walletCommand!!.wallet.hub.cheat(flag)
+            val flags = walletCommand!!.wallet.cheat(flag)
             System.out.println(flags)
         } catch (e: Exception) {
             System.out.println(e.message)
@@ -211,7 +211,7 @@ class RecieveTransaction<T : ChainTransaction, A : ChainAccount> : Runnable {
 
     override fun run() {
         try {
-            walletCommand!!.wallet.hub.recieveTransacion()
+            walletCommand!!.wallet.recieveTransacion()
         } catch (e: Exception) {
             System.out.println(e.message)
         }
@@ -227,7 +227,7 @@ class RecieveHubSign<T : ChainTransaction, A : ChainAccount> : Runnable {
 
     override fun run() {
         try {
-            walletCommand!!.wallet.hub.recieveHubSign()
+            walletCommand!!.wallet.recieveHubSign()
         } catch (e: Exception) {
             System.out.println(e.message)
         }
@@ -243,7 +243,7 @@ class HubInfo<T : ChainTransaction, A : ChainAccount> : Runnable {
 
     override fun run() {
         try {
-            println(walletCommand!!.wallet.hub.hubInfo())
+            println(walletCommand!!.wallet.hubInfo())
         } catch (e: Exception) {
             System.out.println(e.message)
         }

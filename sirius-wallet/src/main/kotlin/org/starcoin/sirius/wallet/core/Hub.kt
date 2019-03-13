@@ -373,13 +373,14 @@ class Hub <T : ChainTransaction, A : ChainAccount> {
         }
     }
 
-    internal fun deposit(value :BigInteger) {
+    internal fun deposit(value :BigInteger) :ChainTransaction{
         if(this.hubAccount==null){
             throw IllegalStateException("need reg/login first")
         }
         val chainTransaction=chain.newTransaction(account.account,contract.contractAddress, value)
         var txDeferred = chain.submitTransaction(account.account, chainTransaction)
         this.hubStatus.addDepositTransaction(txDeferred.txHash, chainTransaction)
+        return chainTransaction
     }
 
     internal fun chainTransaction(addr: Address,value :BigInteger):T {

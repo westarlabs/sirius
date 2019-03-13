@@ -39,7 +39,6 @@ fun main(args: Array<String>) {
         val properties = loadConfig(name)
         val hubAddr = properties.getProperty("hubAddr")
         val chainAddr = properties.getProperty("chainAddr")
-        val contractAddr = properties.getProperty("contractAddress")
         val keyStoreDirPath = properties.getProperty("keyStore")
         val accountIDOrAddress = properties.getProperty("accountIDOrAddress")
         val password = properties.getProperty("password")
@@ -60,7 +59,7 @@ fun main(args: Array<String>) {
         val chain = EthereumChain(chainAddr)
         val account=chain.createAccount(File(keyStoreDirPath),accountIDOrAddress,password)
 
-        var wallet = Wallet(Address.wrap(contractAddr), chain, ClientAccount(account,name),PrintEventHandler())
+        var wallet = Wallet(chain, ClientAccount(account,name),PrintEventHandler())
 
         cmd.addSubcommand("wallet", WalletCommand(wallet))
 
