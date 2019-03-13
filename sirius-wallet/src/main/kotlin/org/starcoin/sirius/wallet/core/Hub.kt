@@ -14,6 +14,7 @@ import org.starcoin.sirius.lang.toBigInteger
 import org.starcoin.sirius.protocol.Chain
 import org.starcoin.sirius.protocol.ChainAccount
 import org.starcoin.sirius.protocol.HubContract
+import org.starcoin.sirius.protocol.TxDeferred
 import org.starcoin.sirius.serialization.rlp.toByteArray
 import org.starcoin.sirius.util.WithLogging
 import java.lang.IllegalStateException
@@ -443,7 +444,7 @@ class Hub <T : ChainTransaction, A : ChainAccount> {
         GlobalScope.launch { eonChannel?.send(ClientEventType.OPEN_TRANSFER_DELIVERY_CHALLENGE_PASS) }
     }
 
-    internal fun withDrawal(value: BigInteger) {
+    internal fun withDrawal(value: BigInteger):TxDeferred {
         // 这里需要增加value是否大于本地余额的校验
         if(this.hubAccount==null){
             throw IllegalStateException("need reg/login first")
@@ -463,7 +464,7 @@ class Hub <T : ChainTransaction, A : ChainAccount> {
         }
 
         val withdrawal = Withdrawal(hubStatus.lastEonProof()!!, value)
-        this.contract.initiateWithdrawal(account.account,withdrawal)
+        return this.contract.initiateWithdrawal(account.account,withdrawal)
     }
 
     internal fun cheat(flag:Int){

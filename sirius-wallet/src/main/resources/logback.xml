@@ -6,7 +6,7 @@
               class="ch.qos.logback.core.rolling.RollingFileAppender">
         <file>./logs/info.log</file>
         <rollingPolicy class="ch.qos.logback.core.rolling.TimeBasedRollingPolicy">
-            <fileNamePattern>${catalina.base}/logs/guide_info.%d{yyyy-MM-dd}-%i.log</fileNamePattern>
+            <fileNamePattern>./logs/guide_info.%d{yyyy-MM-dd}-%i.log</fileNamePattern>
             <maxHistory>30</maxHistory>
             <timeBasedFileNamingAndTriggeringPolicy
                     class="ch.qos.logback.core.rolling.SizeAndTimeBasedFNATP">
@@ -23,7 +23,7 @@
               class="ch.qos.logback.core.rolling.RollingFileAppender">
         <file>./logs/error.log</file>
         <rollingPolicy class="ch.qos.logback.core.rolling.TimeBasedRollingPolicy">
-            <fileNamePattern>${catalina.base}/logs/guide.%d{yyyy-MM-dd}-%i.log</fileNamePattern>
+            <fileNamePattern>./logs/guide.%d{yyyy-MM-dd}-%i.log</fileNamePattern>
             <maxHistory>30</maxHistory>
             <timeBasedFileNamingAndTriggeringPolicy
                     class="ch.qos.logback.core.rolling.SizeAndTimeBasedFNATP">

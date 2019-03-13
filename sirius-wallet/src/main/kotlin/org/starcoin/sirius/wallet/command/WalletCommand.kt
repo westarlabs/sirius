@@ -48,6 +48,7 @@ class Deposit<T : ChainTransaction, A : ChainAccount>: Runnable {
     override fun run() {
         try {
             val succResponse = walletCommand!!.wallet.hub.deposit(BigInteger.valueOf(value))
+            println(succResponse)
         } catch (e: Throwable) {
             System.out.println(e.getLocalizedMessage())
         }
@@ -147,8 +148,8 @@ class WithDrawal<T : ChainTransaction, A : ChainAccount> : Runnable {
 
     override fun run() {
         try {
-            val succResponse = walletCommand!!.wallet.hub.withDrawal(BigInteger.valueOf(value))
-            println(succResponse)
+            val txDeferred = walletCommand!!.wallet.hub.withDrawal(BigInteger.valueOf(value))
+            println(txDeferred)
         } catch (e: Exception) {
             System.out.println(e.message)
         }
