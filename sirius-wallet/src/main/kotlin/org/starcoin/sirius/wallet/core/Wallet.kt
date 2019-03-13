@@ -43,19 +43,21 @@ class Wallet<T : ChainTransaction, A : ChainAccount> {
         }
     }
 
+    @SuppressWarnings
     private fun startWatch(needSync:Boolean){
         val currentChainHeight=chain.getBlockNumber()
-        val localHeight = blockChain.getLocalHeight()
+        //val localHeight = blockChain.getLocalHeight()
 
+        /**
         var startBlockHeight = hub.hubInfo.startBlockNumber
 
         if(localHeight>hub.hubInfo.startBlockNumber)
-            startBlockHeight=localHeight
+            startBlockHeight=localHeight*/
 
         if(needSync){
             sync()
         }
-        startBlockHeight=BigInteger.valueOf(currentChainHeight)
+        val startBlockHeight=BigInteger.valueOf(currentChainHeight)
         //hub.hubInfo.startBlockNumber+BigInteger.valueOf(hub.hubInfo.latestEon*hub.hubInfo.blocksPerEon.toLong()+1)
         blockChain.startWatch=true
         blockChain.watachBlock(startBlockHeight)
