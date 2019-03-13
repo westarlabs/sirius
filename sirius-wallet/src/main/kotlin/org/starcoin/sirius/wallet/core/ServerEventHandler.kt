@@ -4,7 +4,7 @@ import org.starcoin.sirius.core.*
 
 interface ServerEventHandler {
 
-    fun onHubRootCommit(hubRoot: HubRoot)
+    fun onHubRootCommit(hubRoot: HubRoot,localVerifyResult : Boolean)
 
     fun onDeposit(deposit: Deposit)
 

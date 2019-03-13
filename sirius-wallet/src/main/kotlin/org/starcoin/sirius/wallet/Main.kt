@@ -36,10 +36,10 @@ fun main(args: Array<String>) {
     }
     try {
         val properties = loadConfig(name)
-        val hubAddr = properties.getProperty("hub_addr")
-        val chainAddr = properties.getProperty("chain_addr")
-        val contractAddr = properties.getProperty("contract_addr")
-        val keyStoreFilePath = properties.getProperty("key_store")
+        val hubAddr = properties.getProperty("hubAddr")
+        val chainAddr = properties.getProperty("chainAddr")
+        val contractAddr = properties.getProperty("contractAddress")
+        val keyStoreFilePath = properties.getProperty("keyStore")
         val password = properties.getProperty("password")
 
         val reader = ConsoleReader()
