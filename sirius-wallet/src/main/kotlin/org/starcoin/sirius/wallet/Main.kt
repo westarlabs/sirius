@@ -11,6 +11,7 @@ import org.starcoin.sirius.util.WithLogging
 import org.starcoin.sirius.wallet.command.CliCommands
 import org.starcoin.sirius.wallet.command.WalletCommand
 import org.starcoin.sirius.wallet.core.ClientAccount
+import org.starcoin.sirius.wallet.core.PrintEventHandler
 import org.starcoin.sirius.wallet.core.ResourceManager
 import org.starcoin.sirius.wallet.core.Wallet
 import org.web3j.crypto.WalletUtils
@@ -39,7 +40,8 @@ fun main(args: Array<String>) {
         val hubAddr = properties.getProperty("hubAddr")
         val chainAddr = properties.getProperty("chainAddr")
         val contractAddr = properties.getProperty("contractAddress")
-        val keyStoreFilePath = properties.getProperty("keyStore")
+        val keyStoreDirPath = properties.getProperty("keyStore")
+        val accountIDOrAddress = properties.getProperty("accountIDOrAddress")
         val password = properties.getProperty("password")
 
         val reader = ConsoleReader()
@@ -56,9 +58,9 @@ fun main(args: Array<String>) {
         WithLogging.setLogLevel(Level.INFO)
 
         val chain = EthereumChain(chainAddr)
-        var account = loadAccount(keyStoreFilePath, password, chain)
+        val account=chain.createAccount(File(keyStoreDirPath),accountIDOrAddress,password)
 
-        var wallet = Wallet(Address.wrap(contractAddr), chain, ClientAccount(account,name))
+        var wallet = Wallet(Address.wrap(contractAddr), chain, ClientAccount(account,name),PrintEventHandler())
 
         cmd.addSubcommand("wallet", WalletCommand(wallet))
 
