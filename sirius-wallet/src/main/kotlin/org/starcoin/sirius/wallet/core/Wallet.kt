@@ -20,14 +20,13 @@ class Wallet<T : ChainTransaction, A : ChainAccount> {
     //TODO
     private var chain: Chain<T, out Block<T>, A> by Delegates.notNull()
 
-    constructor(contractAddress: Address, chain: Chain<T, out Block<T>, A>, account: ClientAccount<A>
-    ) {
+    constructor(contractAddress: Address, chain: Chain<T, out Block<T>, A>, account: ClientAccount<A>,serverEventHandler: ServerEventHandler?) {
         this.chain = chain
         this.account = account
 
         val contract=chain.loadContract(contractAddress)
 
-        val hub = Hub(contract,account,null,chain)
+        val hub = Hub(contract,account,serverEventHandler,chain)
         this.hub = hub
 
         blockChain = BlockChain(chain,hub,contract,account)
