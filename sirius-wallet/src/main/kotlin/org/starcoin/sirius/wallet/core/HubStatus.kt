@@ -129,7 +129,7 @@ class HubStatus<A : ChainAccount> {
 
     internal fun lastEonProof(): AMTreeProof? {
         val eonStatus = eonStatuses[getEonByIndex(lastIndex)]
-        return eonStatus?.treeProof
+        return eonStatus.treeProof
     }
 
     internal fun currentTransactions(): List<OffchainTransaction> {
@@ -169,8 +169,8 @@ class HubStatus<A : ChainAccount> {
 
     internal fun newChallenge(update: Update):BalanceUpdateProof {
         val index= getEonByIndex(lastIndex)
-        if (eonStatuses[index] != null && eonStatuses[index].treeProof != null) {
-            return BalanceUpdateProof(eonStatuses[index].treeProof!!.path!!)
+        if (eonStatuses[index].treeProof != null) {
+            return BalanceUpdateProof(eonStatuses[index].treeProof!!.path)
         } else {
             return BalanceUpdateProof(update)
         }
@@ -210,7 +210,7 @@ class HubStatus<A : ChainAccount> {
         return allotment
     }
 
-    internal fun lastUpdate(eon: Eon):Update{
+    internal fun lastUpdate():Update{
         val updateList = this.eonStatuses[getEonByIndex(lastIndex)].updateHistory
         if (updateList.size == 0) {
             throw IllegalStateException("can't find last eon update")
@@ -229,7 +229,7 @@ class HubStatus<A : ChainAccount> {
             val transactionIdsBytes = ResourceManager.instance(account.name).dataStore.get(key)
             eonStatuses[i]=EonStatus(eon-i).apply {
                 if(update!=null)
-                    this.updateHistory.add(update!!)
+                    this.updateHistory.add(update)
                 this.treeProof = proof
             }
             if(transactionIdsBytes!=null){
@@ -240,8 +240,8 @@ class HubStatus<A : ChainAccount> {
                     if(transaction==null){
                         continue
                     }
-                    eonStatuses[i].transactionHistory.add(transaction!!)
-                    eonStatuses[i].transactionMap.put(transaction.hash(),transaction!!)
+                    eonStatuses[i].transactionHistory.add(transaction)
+                    eonStatuses[i].transactionMap.put(transaction.hash(),transaction)
                 }
             }
 

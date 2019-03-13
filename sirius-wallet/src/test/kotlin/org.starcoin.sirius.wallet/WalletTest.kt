@@ -535,6 +535,7 @@ class WalletTest {
     }
 
     @Test
+    @Ignore
     fun testSyncEon() {
         testDeposit()
         waitToNextEon()

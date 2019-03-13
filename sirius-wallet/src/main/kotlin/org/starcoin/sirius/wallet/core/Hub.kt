@@ -434,7 +434,7 @@ class Hub <T : ChainTransaction, A : ChainAccount> {
             throw IllegalStateException("need reg/login first")
         }
         val offchainTransaction=this.hubStatus.getTransactionByHash(transactionHash)
-        val lastUpdate = this.hubStatus.lastUpdate(this.currentEon)
+        val lastUpdate = this.hubStatus.lastUpdate()
         val path = this.hubStatus.transactionPath(transactionHash)
         val transferDeliveryChallenge = TransferDeliveryChallenge(lastUpdate,offchainTransaction!!,path)
         this.contract.openTransferDeliveryChallenge(this.account.account,transferDeliveryChallenge)
