@@ -75,10 +75,10 @@ class WalletTest {
         hubServer.start()
         contract = hubServer.contract
 
-        walletAlice= Wallet(this.contract.contractAddress,chain, ClientAccount(alice,"alice"),null)
+        walletAlice= Wallet(chain, ClientAccount(alice,"alice"),null)
         walletAlice.initMessageChannel()
 
-        walletBob= Wallet(this.contract.contractAddress,chain,ClientAccount(bob,"bob"),null)
+        walletBob= Wallet(chain,ClientAccount(bob,"bob"),null)
         walletBob.initMessageChannel()
 
         hubInfo= contract.queryHubInfo(alice)
@@ -521,7 +521,7 @@ class WalletTest {
     fun testSync() {
         testDeposit()
 
-        val aliceWalletClone = Wallet(this.contract.contractAddress,chain,ClientAccount(alice,"alice"),null)
+        val aliceWalletClone = Wallet(chain,ClientAccount(alice,"alice"),null)
         aliceWalletClone.sync()
         Assert.assertEquals(walletAlice.balance(), aliceWalletClone.balance())
     }
@@ -529,7 +529,7 @@ class WalletTest {
     @Test
     fun testSyncBytransfer() {
         testTransfer()
-        val aliceWalletClone = Wallet(this.contract.contractAddress,chain,ClientAccount(alice,"alice"),null)
+        val aliceWalletClone = Wallet(chain,ClientAccount(alice,"alice"),null)
         aliceWalletClone.sync()
         Assert.assertEquals(walletAlice.balance(), aliceWalletClone.balance())
     }
@@ -544,7 +544,7 @@ class WalletTest {
             }
         }
 
-        val aliceWalletClone = Wallet(this.contract.contractAddress,chain,ClientAccount(alice,"alice"),null)
+        val aliceWalletClone = Wallet(chain,ClientAccount(alice,"alice"),null)
         aliceWalletClone.sync()
         Assert.assertEquals(walletAlice.balance(), aliceWalletClone.balance())
     }
@@ -581,7 +581,7 @@ class WalletTest {
             }
         }
 
-        val aliceWalletClone = Wallet(this.contract.contractAddress,chain,ClientAccount(alice,"alice"),null)
+        val aliceWalletClone = Wallet(chain,ClientAccount(alice,"alice"),null)
         aliceWalletClone.restore()
         Assert.assertEquals(walletAlice.balance(), aliceWalletClone.balance())
     }
@@ -613,7 +613,7 @@ class WalletTest {
             }
         }
 
-        val aliceWalletClone = Wallet(this.contract.contractAddress,chain,ClientAccount(alice,"alice"),null)
+        val aliceWalletClone = Wallet(chain,ClientAccount(alice,"alice"),null)
         aliceWalletClone.restore()
         Assert.assertEquals(walletAlice.balance(), aliceWalletClone.balance())
     }
@@ -651,7 +651,7 @@ class WalletTest {
             }
         }
 
-        val aliceWalletClone = Wallet(this.contract.contractAddress,chain,ClientAccount(alice,"alice"),null)
+        val aliceWalletClone = Wallet(chain,ClientAccount(alice,"alice"),null)
         aliceWalletClone.restore()
     }
 
@@ -707,7 +707,7 @@ class WalletTest {
             }
         }
 
-        val aliceWalletClone = Wallet(this.contract.contractAddress,chain,ClientAccount(alice,"alice"),null)
+        val aliceWalletClone = Wallet(chain,ClientAccount(alice,"alice"),null)
         aliceWalletClone.restore()
         Assert.assertEquals(walletAlice.balance(), aliceWalletClone.balance())
         Assert.assertEquals(walletAlice.hub.getWithdrawalCoin(), amount)

@@ -1,6 +1,8 @@
 package org.starcoin.sirius.wallet.core
 
+import com.google.protobuf.Empty
 import kotlinx.coroutines.channels.Channel
+import org.starcoin.proto.HubServiceGrpc
 import org.starcoin.sirius.core.*
 import org.starcoin.sirius.protocol.Chain
 import org.starcoin.sirius.protocol.ChainAccount
@@ -20,11 +22,14 @@ class Wallet<T : ChainTransaction, A : ChainAccount> {
     //TODO
     private var chain: Chain<T, out Block<T>, A> by Delegates.notNull()
 
-    constructor(contractAddress: Address, chain: Chain<T, out Block<T>, A>, account: ClientAccount<A>,serverEventHandler: ServerEventHandler?) {
+    constructor(chain: Chain<T, out Block<T>, A>, account: ClientAccount<A>,serverEventHandler: ServerEventHandler?) {
         this.chain = chain
         this.account = account
 
-        val contract=chain.loadContract(contractAddress)
+        val hubServiceBlockingStub=HubServiceGrpc.newBlockingStub(ResourceManager.hubChannel)
+        val hubInfo:HubInfo=hubServiceBlockingStub.getHubInfo(Empty.getDefaultInstance()).toSiriusObject()
+
+        val contract=chain.loadContract(hubInfo.contractAddress)
 
         val hub = Hub(contract,account,serverEventHandler,chain)
         this.hub = hub
@@ -94,6 +99,12 @@ class Wallet<T : ChainTransaction, A : ChainAccount> {
     fun restore() = hub.restore()
 
     fun chainTransfer(to:Address,value:BigInteger)=hub.chainTransaction(to,value)
+
+    fun recieveTransacion() = hub.recieveTransacion()
+
+    fun recieveHubSign() = hub.recieveHubSign()
+
+    fun hubInfo() = hub.hubInfo()
 
     suspend fun close() {
         blockChain.close()
