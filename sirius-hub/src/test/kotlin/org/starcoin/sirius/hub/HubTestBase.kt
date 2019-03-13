@@ -87,14 +87,17 @@ abstract class HubTestBase<T : ChainTransaction, A : ChainAccount, C : Chain<T, 
         blockHeight = AtomicLong(this.chain.getBlockNumber())
 
         hubServer.start()
-        contract = this.hubServer.contract
+
+        hubService = HubServiceStub(InProcessChannelBuilder.forName(configuration.rpcBind.toString()).build())
+
+        val hubInfo = this.waitServerStart()
+
+        contract = chain.loadContract(hubInfo.contractAddress)
         contractHubInfo = contract.queryHubInfo(this.owner)
 
         this.eon.set(contractHubInfo.latestEon)
 
-        hubService = HubServiceStub(InProcessChannelBuilder.forName(configuration.rpcBind.toString()).build())
 
-        this.waitServerStart()
         this.watchHubJob = this.watchEon()
         this.watchBlockJob = this.watchBlock()
 
@@ -111,7 +114,7 @@ abstract class HubTestBase<T : ChainTransaction, A : ChainAccount, C : Chain<T, 
 
     abstract fun createBlock()
 
-    private fun waitServerStart() {
+    private fun waitServerStart(): HubInfo {
         var hubInfo = hubService.hubInfo
         while (!hubInfo.ready) {
             sleep(100)
@@ -122,6 +125,7 @@ abstract class HubTestBase<T : ChainTransaction, A : ChainAccount, C : Chain<T, 
                 fail { "Hub server in recoveryMode" }
             }
         }
+        return hubInfo
     }
 
     private fun watchEon(): Job = GlobalScope.launch(this.coroutineContext) {

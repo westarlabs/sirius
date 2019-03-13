@@ -24,7 +24,9 @@ data class HubInfo(
     val root: AMTreePathNode = AMTreePathNode.DUMMY_NODE,
     @SerialId(6)
     @Serializable(with = PublicKeySerializer::class)
-    val publicKey: PublicKey = CryptoService.dummyCryptoKey.keyPair.public
+    val publicKey: PublicKey = CryptoService.dummyCryptoKey.keyPair.public,
+    @SerialId(7)
+    val contractAddress: Address = Address.DUMMY_ADDRESS
 ) : SiriusObject() {
 
     companion object : SiriusObjectCompanion<HubInfo, Starcoin.HubInfo>(HubInfo::class) {
@@ -35,7 +37,8 @@ data class HubInfo(
                 MockUtils.nextInt(10, 100) * 4,
                 MockUtils.nextInt(),
                 AMTreePathNode.mock(),
-                CryptoService.generateCryptoKey().keyPair.public
+                CryptoService.generateCryptoKey().keyPair.public,
+                Address.random()
             )
         }
 

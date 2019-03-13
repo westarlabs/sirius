@@ -125,7 +125,8 @@ class HubImpl<A : ChainAccount>(
                 eonState.eon,
                 blocksPerEon,
                 stateRoot.toAMTreePathNode(),
-                owner.key.keyPair.public
+                owner.key.keyPair.public,
+                this.contract.contractAddress
             )
         }
 

@@ -172,6 +172,7 @@ message HubInfo {
     required uint32 blocksPerEon = 4;
     required AMTreePathNode root = 5;
     required bytes publicKey = 6;
+    required bytes contractAddress = 7;
 }
 
 message ContractHubInfo {
