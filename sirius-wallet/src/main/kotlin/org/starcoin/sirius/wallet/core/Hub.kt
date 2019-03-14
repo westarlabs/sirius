@@ -455,7 +455,8 @@ class Hub <T : ChainTransaction, A : ChainAccount> {
             LOG.info("already have withdrawal in progress.")
             throw IllegalStateException("already have withdrawal in progress.")
         }
-        if (hubStatus.lastEonProof() == null) {
+        val currentEon = this.getChainEon()
+        if (hubStatus.lastEonProof(currentEon) == null) {
             LOG.info("last eon path doesn't exists.")
             throw IllegalStateException("last eon path doesn't exists.")
         }
@@ -465,7 +466,7 @@ class Hub <T : ChainTransaction, A : ChainAccount> {
             throw IllegalStateException(message)
         }
 
-        val withdrawal = Withdrawal(hubStatus.lastEonProof()!!, value)
+        val withdrawal = Withdrawal(hubStatus.lastEonProof(currentEon)!!, value)
         return this.contract.initiateWithdrawal(account.account,withdrawal)
     }
 
@@ -560,5 +561,9 @@ class Hub <T : ChainTransaction, A : ChainAccount> {
             val hubInfo:HubInfo=hubServiceBlockingStub.getHubInfo(Empty.getDefaultInstance()).toSiriusObject()
             onHubRootCommit(HubRoot(hubInfo.root,hubInfo.eon))
         }
+    }
+
+    internal fun isRecoveryMode():Boolean{
+        return contract.isRecoveryMode(account.account)
     }
 }

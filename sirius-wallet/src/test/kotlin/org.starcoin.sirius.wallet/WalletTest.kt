@@ -447,6 +447,7 @@ class WalletTest {
         var amount = EtherUtil.convert(1500, EtherUtil.Unit.ETHER)
         var transaction=walletBob.hubTransfer(alice.address,amount)
         Assert.assertNotNull(transaction)
+        println(10000000)
 
         runBlocking {
             withTimeout(10000L){
@@ -456,6 +457,7 @@ class WalletTest {
             }
         }
 
+        println(11111111)
         waitToNextEon()
 
         runBlocking {
@@ -474,6 +476,8 @@ class WalletTest {
             }
         }
 
+        println(222222)
+
         transaction=walletAlice.hubTransfer(bob.address,amount)
         Assert.assertNotNull(transaction)
 
@@ -484,6 +488,8 @@ class WalletTest {
                 walletBob.getMessageChannel()?.receive()
             }
         }
+
+        println(333333)
 
         Assert.assertEquals(walletAlice.hubAccount()?.balance,depositAmount)
         Assert.assertEquals(walletAlice.balance(),depositAmount)
