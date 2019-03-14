@@ -49,12 +49,12 @@ Then transfer some testing eth from coinbase to these new accounts
 	For Alice
     ```
     mkdir -p ~/.sirius/alice;
-    echo "hubAddr=localhost:7985\nchainAddr=ws://127.0.0.1:8546\nkeyStore=/tmp/geth_data/keystore/\npassword=\naccountIDOrAddress=2">~/.sirius/alice/conf.properties
+    echo -e "hubAddr=localhost:7985\nchainAddr=ws://127.0.0.1:8546\nkeyStore=/tmp/geth_data/keystore/\npassword=\naccountIDOrAddress=2">~/.sirius/alice/conf.properties
     ```
 	For Bob
     ```
     mkdir -p ~/.sirius/bob;
-    echo "hubAddr=localhost:7985\nchainAddr=ws://127.0.0.1:8546\nkeyStore=/tmp/geth_data/keystore/\npassword=\naccountIDOrAddress=3">~/.sirius/bob/conf.properties
+    echo -e "hubAddr=localhost:7985\nchainAddr=ws://127.0.0.1:8546\nkeyStore=/tmp/geth_data/keystore/\npassword=\naccountIDOrAddress=3">~/.sirius/bob/conf.properties
     ```
 3. Start the REPL wallet
 
