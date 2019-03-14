@@ -127,9 +127,13 @@ class HubStatus<A : ChainAccount> {
         return eonStatuses[getEonByIndex(lastIndex)].transactionMap[hash]
     }
 
-    internal fun lastEonProof(): AMTreeProof? {
-        val eonStatus = eonStatuses[getEonByIndex(lastIndex)]
-        return eonStatus.treeProof
+    internal fun lastEonProof(eon: Eon): AMTreeProof? {
+        for (eonStatus in eonStatuses){
+            if(eonStatus.eon==eon.id-1){
+                return eonStatus.treeProof
+            }
+        }
+        return null
     }
 
     internal fun currentTransactions(): List<OffchainTransaction> {

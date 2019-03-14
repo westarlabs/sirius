@@ -108,6 +108,10 @@ class Wallet<T : ChainTransaction, A : ChainAccount> {
 
     fun hubInfo() = hub.hubInfo()
 
+    fun isRecoveryMode():Boolean {
+        return hub.isRecoveryMode()
+    }
+
     suspend fun close() {
         blockChain.close()
         hub.eonChannel?.close()
