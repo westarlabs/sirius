@@ -83,7 +83,7 @@ class EthereumChain constructor(url: String = DEFAULT_WS) :
             when {
                 url.startsWith("http://") -> HttpService(url)
                 url.startsWith("ipc://") -> UnixIpcService(url)
-                url.startsWith("ws://") -> {
+                url.startsWith("ws://") || url.startsWith("wss://") -> {
                     webSocketClient = WebSocketClient(URI(url))
                     WebSocketService(webSocketClient, false).also { it.connect() }
                 }
