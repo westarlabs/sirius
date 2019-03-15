@@ -173,8 +173,9 @@ class EthereumChain constructor(url: String = DEFAULT_WS) :
             }
             var height = startBlockNum
             while (height <= syncBlockNum) {
-                val block = getBlock(height)!!
-                if (filter(block)) ch.sendBlocking(block)
+                val block = getBlock(height)
+
+                if (block!=null && filter(block)) ch.sendBlocking(block)
                 height = height.inc()
             }
             val notifych = Channel<BigInteger>()
@@ -225,7 +226,7 @@ class EthereumChain constructor(url: String = DEFAULT_WS) :
             true
         ).sendAsync().get()
         if (blockReq.hasError()) throw IOException(blockReq.error.message)
-        return blockReq.block.blockInfo()
+        return blockReq.block?.blockInfo()
     }
 
     private fun doGetTransactionReceipts(block: EthBlock.Block): List<Receipt> {
