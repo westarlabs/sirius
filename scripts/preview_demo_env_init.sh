@@ -3,7 +3,7 @@ set -euo pipefail
 SCRIPTPATH="$( cd "$(dirname "$0")" ; pwd -P )"
 
 start_ethereum(){
-    $SCRIPTPATH/docker.sh run --dev.period 10
+    $SCRIPTPATH/docker.sh run --dev.period 4
 }
 
 generate_etherum_test_accounts(){
