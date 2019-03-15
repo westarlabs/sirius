@@ -1,6 +1,6 @@
 1. Regist a project in https://infura.io which will genarate a endpoint for ropsten
     network https://ropsten.infura.io/v3/${project_id}, then we can get the securiety
-    websocket endpoint(wss) wss://ropsten.infura.io/v3/${project_id}
+    websocket endpoint(wss) wss://ropsten.infura.io/ws/v3/${project_id}
     
     You can use this ws endpoint we generated before for testing
     ```
