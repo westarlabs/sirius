@@ -47,7 +47,7 @@ abstract class DataStoreTestBase {
     @Test
     fun testDelete() {
         val keys = 1.rangeTo(100).map { Random.nextBytes(10) }
-        keys.forEach { store.put(it, it) }
+        store.updateBatch(keys.map { Pair(it, it) })
         val key = keys.random()
         Assert.assertArrayEquals(key, store.get(key))
         store.delete(key)
@@ -63,7 +63,7 @@ abstract class DataStoreTestBase {
     @Test
     fun testKeys() {
         val keys = 1.rangeTo(10).map { it.toByteArray() + Random.nextBytes(10) }
-        keys.forEach { store.put(it, it) }
+        store.updateBatch(keys.map { Pair(it, it) })
         val keys2 = store.keys()
         keys.forEachIndexed { index, key ->
             Assert.assertArrayEquals(key, keys2[index])
@@ -74,7 +74,7 @@ abstract class DataStoreTestBase {
     @Test
     fun testForEach() {
         val keys = 1.rangeTo(10).map { it.toByteArray() + Random.nextBytes(10) }
-        keys.forEach { store.put(it, it) }
+        store.updateBatch(keys.map { Pair(it, it) })
         val index = AtomicInteger(0)
         store.forEach { key, _ ->
             val idx = index.getAndIncrement()
