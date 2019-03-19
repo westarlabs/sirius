@@ -10,53 +10,19 @@
 ./scripts/docker.sh run --dev.period 10
 ```
 
-## Prepare ethereum accounts
-
-Create three new accounts without password for testing. 
-The first one for hub, the second one for alice, the last one for bob.
+## Prepare the configures
+For quick testing, you can run the script to generate all the configures of the test enviroment.
 ```
-touch /tmp/geth_data/pass;
-for i in {1..3};do ./scripts/docker.sh geth account new --password /tmp/geth_data/pass;done
+./scripts/preview_demo_env_init.sh
 ```
-Then transfer some testing eth from coinbase to these new accounts
-```
-./scripts/docker.sh geth --exec='eth.sendTransaction({from:eth.coinbase,to:eth.accounts[1],value:web3.toWei(5000,"ether")})' attach
-./scripts/docker.sh geth --exec='eth.sendTransaction({from:eth.coinbase,to:eth.accounts[2],value:web3.toWei(5000,"ether")})' attach
-./scripts/docker.sh geth --exec='eth.sendTransaction({from:eth.coinbase,to:eth.accounts[3],value:web3.toWei(5000,"ether")})' attach
-```
-
-## Run hub service
-1. Prepare the hub configure
-    ```
-    mkdir -p ~/.sirius/hub;touch ~/.sirius/hub/hub.conf
-	echo "accountIDOrAddress=1" >~/.sirius/hub/hub.conf
-	echo "ownerKeystore=/tmp/geth_data/keystore/" >>~/.sirius/hub/hub.conf
-	```
 	
-2. Start hub service
-    ```
-    ./gradlew sirius-hub:run
-    ```
+## Run hub service
+```
+./gradlew sirius-hub:run
+```
 
 ## Run wallet
-
-1. Compile wallet
-    ```
-	./gradlew fatjar
-    ```
-2. Create configure
-
-	For Alice
-    ```
-    mkdir -p ~/.sirius/alice;
-    echo -e "hubAddr=localhost:7985\nchainAddr=ws://127.0.0.1:8546\nkeyStore=/tmp/geth_data/keystore/\npassword=\naccountIDOrAddress=2">~/.sirius/alice/conf.properties
-    ```
-	For Bob
-    ```
-    mkdir -p ~/.sirius/bob;
-    echo -e "hubAddr=localhost:7985\nchainAddr=ws://127.0.0.1:8546\nkeyStore=/tmp/geth_data/keystore/\npassword=\naccountIDOrAddress=3">~/.sirius/bob/conf.properties
-    ```
-3. Start the REPL wallet
+	Start the REPL wallet
 
 	For Alice
     ```
