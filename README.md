@@ -99,8 +99,15 @@ Run integration tests(need Docker environment)
 ```
 
 #### Development Environment
+Using Ethereum on Docker
+```
+./scripts/docker.sh run --dev.period 10
+```
 
-TODO 
+Or connecting to the ethereum ropsten testnet
+```
+./docs/ethereum_ropsten_setup.md
+```
 
 <a name="gettingstarted"></a>
 ## Getting Started
