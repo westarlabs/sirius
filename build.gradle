@@ -29,7 +29,6 @@ plugins {
 
 version = '0.2-SNAPSHOT'
 group = 'org.starcoin'
-
 apply plugin: 'project-report'
 
 subprojects {

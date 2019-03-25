@@ -22,10 +22,6 @@ Clients hold their private keys that control their identities and use them to si
 
 The hub will periodically commits the off-chain ledger state as a proof to the blockchain. once a untrusted or malicious operation happen, the client can issue a challenge to hub and withdraw their funds.
 
-## Features 
-
-TODO 
-
 ## Architecture
 
 ```text
